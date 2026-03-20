@@ -24,15 +24,24 @@ const emptyDietForm = {
   content: '',
 }
 
-function totalSetCount(items = []) {
+function getTotalSetCount(items = []) {
   return items.reduce((sum, item) => sum + (item.sets?.length || 0), 0)
+}
+
+function normalizeSets(sets = []) {
+  return sets
+    .filter((setRow) => setRow.kg !== '' || setRow.reps !== '')
+    .map((setRow) => ({
+      kg: String(setRow.kg ?? ''),
+      reps: String(setRow.reps ?? ''),
+    }))
 }
 
 export default function MemberDashboard({ member, accessCode, onLogout }) {
   const [activeTab, setActiveTab] = useState('내정보')
-  const [memberInfo, setMemberInfo] = useState(member)
   const [loading, setLoading] = useState(true)
   const [message, setMessage] = useState('')
+  const [memberInfo, setMemberInfo] = useState(member)
 
   const [workouts, setWorkouts] = useState([])
   const [workoutItemsMap, setWorkoutItemsMap] = useState({})
@@ -48,9 +57,24 @@ export default function MemberDashboard({ member, accessCode, onLogout }) {
   const [routine, setRoutine] = useState(null)
   const [manual, setManual] = useState(null)
 
+  const stats = useMemo(() => {
+    const ptCount = workouts.filter((workout) => workout.workout_type === 'pt').length
+    const personalCount = workouts.filter((workout) => workout.workout_type === 'personal').length
+    const remainingSessions = Math.max(
+      Number(memberInfo.total_sessions || 0) - Number(memberInfo.used_sessions || 0),
+      0,
+    )
+
+    return {
+      ptCount,
+      personalCount,
+      remainingSessions,
+    }
+  }, [workouts, memberInfo])
+
   const progressPercent = useMemo(() => {
-    const total = Number(memberInfo?.total_sessions || 0)
-    const used = Number(memberInfo?.used_sessions || 0)
+    const total = Number(memberInfo.total_sessions || 0)
+    const used = Number(memberInfo.used_sessions || 0)
     if (!total) return 0
     return Math.min(Math.round((used / total) * 100), 100)
   }, [memberInfo])
@@ -113,8 +137,8 @@ export default function MemberDashboard({ member, accessCode, onLogout }) {
 
     if (!workoutData) return
 
-    const workoutIds = workoutData.map((w) => w.id)
     let itemMap = {}
+    const workoutIds = workoutData.map((workout) => workout.id)
 
     if (workoutIds.length > 0) {
       const { data: itemData } = await supabase
@@ -130,13 +154,14 @@ export default function MemberDashboard({ member, accessCode, onLogout }) {
       }, {})
     }
 
+    const collapsed = {}
+    workoutData.forEach((workout) => {
+      collapsed[workout.id] = true
+    })
+
     setWorkouts(workoutData)
     setWorkoutItemsMap(itemMap)
-    const defaultCollapse = {}
-    workoutData.forEach((w) => {
-      defaultCollapse[w.id] = true
-    })
-    setCollapsedWorkouts(defaultCollapse)
+    setCollapsedWorkouts(collapsed)
   }
 
   const loadDietLogs = async () => {
@@ -148,12 +173,12 @@ export default function MemberDashboard({ member, accessCode, onLogout }) {
       .order('created_at', { ascending: false })
 
     if (data) {
-      setDietLogs(data)
-      const defaultCollapse = {}
-      data.forEach((d) => {
-        defaultCollapse[d.id] = true
+      const collapsed = {}
+      data.forEach((diet) => {
+        collapsed[diet.id] = true
       })
-      setCollapsedDiets(defaultCollapse)
+      setDietLogs(data)
+      setCollapsedDiets(collapsed)
     }
   }
 
@@ -177,14 +202,29 @@ export default function MemberDashboard({ member, accessCode, onLogout }) {
     setManual(data || null)
   }
 
-  const updatePersonalExercise = (index, exerciseId) => {
-    const found = exercises.find((ex) => String(ex.id) === String(exerciseId))
+  const resetPersonalForm = () => {
+    setPersonalForm(emptyPersonalForm)
+  }
+
+  const updatePersonalItemSelect = (itemIndex, exerciseId) => {
+    const found = exercises.find((exercise) => String(exercise.id) === String(exerciseId))
     setPersonalForm((prev) => {
       const nextItems = [...prev.items]
-      nextItems[index] = {
-        ...nextItems[index],
+      nextItems[itemIndex] = {
+        ...nextItems[itemIndex],
         exercise_id: found?.id || '',
-        exercise_name_snapshot: found?.name || '',
+        exercise_name_snapshot: found?.name || nextItems[itemIndex].exercise_name_snapshot,
+      }
+      return { ...prev, items: nextItems }
+    })
+  }
+
+  const updatePersonalItemName = (itemIndex, value) => {
+    setPersonalForm((prev) => {
+      const nextItems = [...prev.items]
+      nextItems[itemIndex] = {
+        ...nextItems[itemIndex],
+        exercise_name_snapshot: value,
       }
       return { ...prev, items: nextItems }
     })
@@ -204,14 +244,14 @@ export default function MemberDashboard({ member, accessCode, onLogout }) {
     }))
   }
 
-  const removePersonalItem = (index) => {
+  const removePersonalItem = (itemIndex) => {
     setPersonalForm((prev) => ({
       ...prev,
-      items: prev.items.filter((_, i) => i !== index),
+      items: prev.items.filter((_, idx) => idx !== itemIndex),
     }))
   }
 
-  const addPersonalSet = (itemIndex) => {
+  const addSet = (itemIndex) => {
     setPersonalForm((prev) => {
       const nextItems = [...prev.items]
       nextItems[itemIndex] = {
@@ -222,41 +262,43 @@ export default function MemberDashboard({ member, accessCode, onLogout }) {
     })
   }
 
-  const removePersonalSet = (itemIndex, setIndex) => {
+  const removeSet = (itemIndex, setIndex) => {
     setPersonalForm((prev) => {
       const nextItems = [...prev.items]
       nextItems[itemIndex] = {
         ...nextItems[itemIndex],
-        sets: nextItems[itemIndex].sets.filter((_, i) => i !== setIndex),
+        sets: nextItems[itemIndex].sets.filter((_, idx) => idx !== setIndex),
       }
       return { ...prev, items: nextItems }
     })
   }
 
-  const updatePersonalSetValue = (itemIndex, setIndex, field, value) => {
+  const updateSetValue = (itemIndex, setIndex, field, value) => {
     setPersonalForm((prev) => {
       const nextItems = [...prev.items]
       const nextSets = [...nextItems[itemIndex].sets]
-      nextSets[setIndex] = { ...nextSets[setIndex], [field]: value }
-      nextItems[itemIndex] = { ...nextItems[itemIndex], sets: nextSets }
+      nextSets[setIndex] = {
+        ...nextSets[setIndex],
+        [field]: value,
+      }
+      nextItems[itemIndex] = {
+        ...nextItems[itemIndex],
+        sets: nextSets,
+      }
       return { ...prev, items: nextItems }
     })
   }
 
-  const resetPersonalForm = () => {
-    setPersonalForm(emptyPersonalForm)
-  }
-
-  const handlePersonalWorkoutSubmit = async (e) => {
+  const handlePersonalSubmit = async (e) => {
     e.preventDefault()
 
     const cleanedItems = personalForm.items
-      .filter((item) => item.exercise_name_snapshot)
+      .filter((item) => item.exercise_name_snapshot?.trim())
       .map((item, index) => ({
         exercise_id: item.exercise_id || null,
-        exercise_name_snapshot: item.exercise_name_snapshot,
+        exercise_name_snapshot: item.exercise_name_snapshot.trim(),
         sort_order: index,
-        sets: item.sets.filter((set) => set.kg !== '' || set.reps !== ''),
+        sets: normalizeSets(item.sets),
       }))
 
     if (cleanedItems.length === 0) {
@@ -268,8 +310,8 @@ export default function MemberDashboard({ member, accessCode, onLogout }) {
       member_id: member.id,
       workout_date: personalForm.workout_date,
       workout_type: 'personal',
-      good: personalForm.good,
-      improve: personalForm.improve,
+      good: personalForm.good?.trim() || '',
+      improve: personalForm.improve?.trim() || '',
       created_by: null,
     }
 
@@ -296,31 +338,37 @@ export default function MemberDashboard({ member, accessCode, onLogout }) {
     setActiveTab('운동기록')
   }
 
-  const handlePersonalWorkoutEdit = (workout) => {
+  const handlePersonalEdit = (workout) => {
     const items = workoutItemsMap[workout.id] || []
+
     setPersonalForm({
       id: workout.id,
       workout_date: workout.workout_date,
       good: workout.good || '',
       improve: workout.improve || '',
-      items: items.length
-        ? items.map((item) => ({
-            exercise_id: item.exercise_id || '',
-            exercise_name_snapshot: item.exercise_name_snapshot || '',
-            sets: Array.isArray(item.sets) && item.sets.length ? item.sets : [{ kg: '', reps: '' }],
-          }))
-        : [
-            {
-              exercise_id: '',
-              exercise_name_snapshot: '',
-              sets: [{ kg: '', reps: '' }],
-            },
-          ],
+      items:
+        items.length > 0
+          ? items.map((item) => ({
+              exercise_id: item.exercise_id || '',
+              exercise_name_snapshot: item.exercise_name_snapshot || '',
+              sets:
+                Array.isArray(item.sets) && item.sets.length > 0
+                  ? item.sets
+                  : [{ kg: '', reps: '' }],
+            }))
+          : [
+              {
+                exercise_id: '',
+                exercise_name_snapshot: '',
+                sets: [{ kg: '', reps: '' }],
+              },
+            ],
     })
+
     setActiveTab('개인운동입력')
   }
 
-  const handlePersonalWorkoutDelete = async (workoutId) => {
+  const handlePersonalDelete = async (workoutId) => {
     if (!window.confirm('개인운동 기록을 삭제할까요?')) return
     await supabase.from('workouts').delete().eq('id', workoutId)
     await loadWorkouts()
@@ -333,8 +381,13 @@ export default function MemberDashboard({ member, accessCode, onLogout }) {
     const payload = {
       member_id: member.id,
       log_date: dietForm.log_date,
-      meal_type: dietForm.meal_type,
-      content: dietForm.content,
+      meal_type: dietForm.meal_type?.trim() || '식단',
+      content: dietForm.content?.trim() || '',
+    }
+
+    if (!payload.content) {
+      setMessage('식단 내용을 입력해주세요.')
+      return
     }
 
     if (dietForm.id) {
@@ -360,10 +413,10 @@ export default function MemberDashboard({ member, accessCode, onLogout }) {
   }
 
   const handleDietDelete = async (dietId) => {
-    if (!window.confirm('식단을 삭제할까요?')) return
+    if (!window.confirm('식단 기록을 삭제할까요?')) return
     await supabase.from('diet_logs').delete().eq('id', dietId)
     await loadDietLogs()
-    setMessage('식단이 삭제되었습니다.')
+    setMessage('식단 기록이 삭제되었습니다.')
   }
 
   if (loading) {
@@ -398,39 +451,57 @@ export default function MemberDashboard({ member, accessCode, onLogout }) {
       {message ? <div className="message success">{message}</div> : null}
 
       {activeTab === '내정보' && (
-        <div className="two-col">
-          <section className="card">
-            <h2>내 정보</h2>
-            <div className="detail-box">
-              <p><strong>이름:</strong> {memberInfo.name}</p>
-              <p><strong>목표:</strong> {memberInfo.goal || '-'}</p>
-              <p><strong>시작일:</strong> {memberInfo.start_date || '-'}</p>
-              <p><strong>종료일:</strong> {memberInfo.end_date || '-'}</p>
-              <p><strong>메모:</strong> {memberInfo.memo || '-'}</p>
-            </div>
-          </section>
-
-          <section className="card">
-            <h2>세션 진행 현황</h2>
-            <div className="detail-box">
-              <p><strong>총 세션:</strong> {memberInfo.total_sessions || 0}회</p>
-              <p><strong>사용 세션:</strong> {memberInfo.used_sessions || 0}회</p>
-              <p><strong>남은 세션:</strong> {Math.max((memberInfo.total_sessions || 0) - (memberInfo.used_sessions || 0), 0)}회</p>
-            </div>
-
-            <div className="progress-wrap">
-              <div className="progress-bar">
-                <div className="progress-fill" style={{ width: `${progressPercent}%` }} />
+        <div className="stack-gap">
+          <div className="two-col">
+            <section className="card">
+              <h2>내 정보</h2>
+              <div className="detail-box">
+                <p><strong>이름:</strong> {memberInfo.name}</p>
+                <p><strong>목표:</strong> {memberInfo.goal || '-'}</p>
+                <p><strong>시작일:</strong> {memberInfo.start_date || '-'}</p>
+                <p><strong>종료일:</strong> {memberInfo.end_date || '-'}</p>
+                <p><strong>메모:</strong> {memberInfo.memo || '-'}</p>
               </div>
-              <span>{progressPercent}% 진행</span>
+            </section>
+
+            <section className="card">
+              <h2>세션 진행 현황</h2>
+              <div className="detail-box">
+                <p><strong>총 세션:</strong> {memberInfo.total_sessions || 0}회</p>
+                <p><strong>사용 세션:</strong> {memberInfo.used_sessions || 0}회</p>
+                <p><strong>남은 세션:</strong> {stats.remainingSessions}회</p>
+              </div>
+
+              <div className="progress-wrap">
+                <div className="progress-bar">
+                  <div className="progress-fill" style={{ width: `${progressPercent}%` }} />
+                </div>
+                <span>{progressPercent}% 진행</span>
+              </div>
+            </section>
+          </div>
+
+          <div className="stats-grid">
+            <div className="stat-card">
+              <span>내 PT 횟수</span>
+              <strong>{stats.ptCount}</strong>
             </div>
-          </section>
+            <div className="stat-card">
+              <span>내 개인운동 횟수</span>
+              <strong>{stats.personalCount}</strong>
+            </div>
+            <div className="stat-card">
+              <span>남은 세션</span>
+              <strong>{stats.remainingSessions}</strong>
+            </div>
+          </div>
         </div>
       )}
 
       {activeTab === '운동기록' && (
         <div className="card">
           <h2>운동기록</h2>
+
           <div className="list-stack">
             {workouts.map((workout) => {
               const items = workoutItemsMap[workout.id] || []
@@ -445,11 +516,12 @@ export default function MemberDashboard({ member, accessCode, onLogout }) {
                   </div>
 
                   <div className="compact-text">
-                    간추려보기: 날짜 {workout.workout_date} / 운동 {items.length}개 / 총세트 {totalSetCount(items)}세트
+                    간략히보기: 운동 {items.length}개 / 총세트 {getTotalSetCount(items)}세트
                   </div>
 
                   <div className="inline-actions wrap">
                     <button
+                      type="button"
                       className="secondary-btn"
                       onClick={() =>
                         setCollapsedWorkouts((prev) => ({
@@ -458,15 +530,23 @@ export default function MemberDashboard({ member, accessCode, onLogout }) {
                         }))
                       }
                     >
-                      {collapsed ? '상세히보기' : '간추려보기'}
+                      {collapsed ? '상세히보기' : '간략히보기'}
                     </button>
 
                     {isPersonal ? (
                       <>
-                        <button className="secondary-btn" onClick={() => handlePersonalWorkoutEdit(workout)}>
+                        <button
+                          type="button"
+                          className="secondary-btn"
+                          onClick={() => handlePersonalEdit(workout)}
+                        >
                           수정
                         </button>
-                        <button className="danger-btn" onClick={() => handlePersonalWorkoutDelete(workout.id)}>
+                        <button
+                          type="button"
+                          className="danger-btn"
+                          onClick={() => handlePersonalDelete(workout.id)}
+                        >
                           삭제
                         </button>
                       </>
@@ -479,9 +559,9 @@ export default function MemberDashboard({ member, accessCode, onLogout }) {
                         <div key={item.id} className="record-item-box">
                           <strong>{item.exercise_name_snapshot}</strong>
                           <ul className="set-list">
-                            {(item.sets || []).map((setRow, index) => (
-                              <li key={index}>
-                                {index + 1}세트 - {setRow.kg || '-'}kg / {setRow.reps || '-'}회
+                            {(item.sets || []).map((setRow, idx) => (
+                              <li key={idx}>
+                                {idx + 1}세트 - {setRow.kg || '-'}kg / {setRow.reps || '-'}회
                               </li>
                             ))}
                           </ul>
@@ -501,13 +581,16 @@ export default function MemberDashboard({ member, accessCode, onLogout }) {
       {activeTab === '개인운동입력' && (
         <div className="card">
           <h2>개인운동 입력 / 수정</h2>
-          <form className="stack-gap" onSubmit={handlePersonalWorkoutSubmit}>
+
+          <form className="stack-gap" onSubmit={handlePersonalSubmit}>
             <label className="field">
               <span>날짜</span>
               <input
                 type="date"
                 value={personalForm.workout_date}
-                onChange={(e) => setPersonalForm({ ...personalForm, workout_date: e.target.value })}
+                onChange={(e) =>
+                  setPersonalForm({ ...personalForm, workout_date: e.target.value })
+                }
               />
             </label>
 
@@ -526,18 +609,27 @@ export default function MemberDashboard({ member, accessCode, onLogout }) {
                 </div>
 
                 <label className="field">
-                  <span>운동 선택</span>
+                  <span>운동DB 선택</span>
                   <select
                     value={item.exercise_id}
-                    onChange={(e) => updatePersonalExercise(itemIndex, e.target.value)}
+                    onChange={(e) => updatePersonalItemSelect(itemIndex, e.target.value)}
                   >
-                    <option value="">운동 선택</option>
+                    <option value="">선택 안함</option>
                     {exercises.map((exercise) => (
                       <option key={exercise.id} value={exercise.id}>
                         [{exercise.brands?.name || '브랜드없음'}] {exercise.name}
                       </option>
                     ))}
                   </select>
+                </label>
+
+                <label className="field">
+                  <span>운동명 직접 입력</span>
+                  <input
+                    value={item.exercise_name_snapshot}
+                    onChange={(e) => updatePersonalItemName(itemIndex, e.target.value)}
+                    placeholder="예: 스쿼트, 힙힌지, 밴드 워크"
+                  />
                 </label>
 
                 <div className="stack-gap">
@@ -547,20 +639,20 @@ export default function MemberDashboard({ member, accessCode, onLogout }) {
                         placeholder="kg"
                         value={setRow.kg}
                         onChange={(e) =>
-                          updatePersonalSetValue(itemIndex, setIndex, 'kg', e.target.value)
+                          updateSetValue(itemIndex, setIndex, 'kg', e.target.value)
                         }
                       />
                       <input
                         placeholder="reps"
                         value={setRow.reps}
                         onChange={(e) =>
-                          updatePersonalSetValue(itemIndex, setIndex, 'reps', e.target.value)
+                          updateSetValue(itemIndex, setIndex, 'reps', e.target.value)
                         }
                       />
                       <button
                         type="button"
                         className="danger-btn"
-                        onClick={() => removePersonalSet(itemIndex, setIndex)}
+                        onClick={() => removeSet(itemIndex, setIndex)}
                         disabled={item.sets.length === 1}
                       >
                         세트 삭제
@@ -569,11 +661,7 @@ export default function MemberDashboard({ member, accessCode, onLogout }) {
                   ))}
                 </div>
 
-                <button
-                  type="button"
-                  className="secondary-btn"
-                  onClick={() => addPersonalSet(itemIndex)}
-                >
+                <button type="button" className="secondary-btn" onClick={() => addSet(itemIndex)}>
                   세트 추가
                 </button>
               </div>
@@ -601,12 +689,12 @@ export default function MemberDashboard({ member, accessCode, onLogout }) {
               />
             </label>
 
-            <div className="inline-actions">
+            <div className="inline-actions wrap">
               <button className="primary-btn" type="submit">
                 {personalForm.id ? '개인운동 수정' : '개인운동 저장'}
               </button>
               <button type="button" className="secondary-btn" onClick={resetPersonalForm}>
-                취소
+                초기화
               </button>
             </div>
           </form>
@@ -617,6 +705,7 @@ export default function MemberDashboard({ member, accessCode, onLogout }) {
         <div className="two-col">
           <section className="card">
             <h2>식단 입력 / 수정</h2>
+
             <form className="stack-gap" onSubmit={handleDietSubmit}>
               <label className="field">
                 <span>날짜</span>
@@ -645,7 +734,7 @@ export default function MemberDashboard({ member, accessCode, onLogout }) {
                 />
               </label>
 
-              <div className="inline-actions">
+              <div className="inline-actions wrap">
                 <button className="primary-btn" type="submit">
                   {dietForm.id ? '식단 수정' : '식단 저장'}
                 </button>
@@ -662,6 +751,7 @@ export default function MemberDashboard({ member, accessCode, onLogout }) {
 
           <section className="card">
             <h2>내 식단 기록</h2>
+
             <div className="list-stack">
               {dietLogs.map((diet) => {
                 const collapsed = collapsedDiets[diet.id] ?? true
@@ -674,22 +764,37 @@ export default function MemberDashboard({ member, accessCode, onLogout }) {
                     </div>
 
                     <div className="compact-text">
-                      간추려보기: {diet.content.slice(0, 30)}{diet.content.length > 30 ? '...' : ''}
+                      간략히보기: {diet.content.slice(0, 30)}
+                      {diet.content.length > 30 ? '...' : ''}
                     </div>
 
                     <div className="inline-actions wrap">
                       <button
+                        type="button"
                         className="secondary-btn"
                         onClick={() =>
-                          setCollapsedDiets((prev) => ({ ...prev, [diet.id]: !collapsed }))
+                          setCollapsedDiets((prev) => ({
+                            ...prev,
+                            [diet.id]: !collapsed,
+                          }))
                         }
                       >
-                        {collapsed ? '상세히보기' : '간추려보기'}
+                        {collapsed ? '상세히보기' : '간략히보기'}
                       </button>
-                      <button className="secondary-btn" onClick={() => handleDietEdit(diet)}>
+
+                      <button
+                        type="button"
+                        className="secondary-btn"
+                        onClick={() => handleDietEdit(diet)}
+                      >
                         수정
                       </button>
-                      <button className="danger-btn" onClick={() => handleDietDelete(diet.id)}>
+
+                      <button
+                        type="button"
+                        className="danger-btn"
+                        onClick={() => handleDietDelete(diet.id)}
+                      >
                         삭제
                       </button>
                     </div>
@@ -697,7 +802,10 @@ export default function MemberDashboard({ member, accessCode, onLogout }) {
                     {!collapsed ? (
                       <div className="detail-box">
                         <p><strong>내용:</strong> {diet.content}</p>
-                        <p><strong>관리자 피드백:</strong> {diet.coach_feedback || '아직 피드백이 없습니다.'}</p>
+                        <p>
+                          <strong>관리자 피드백:</strong>{' '}
+                          {diet.coach_feedback || '아직 피드백이 없습니다.'}
+                        </p>
                       </div>
                     ) : null}
                   </div>
