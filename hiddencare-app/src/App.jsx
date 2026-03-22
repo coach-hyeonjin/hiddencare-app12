@@ -9,10 +9,16 @@ const MEMBER_STORAGE_KEY = 'hiddencare_member_session_v1'
 function BrandHeader({ large = false }) {
   return (
     <div className={`brand-header ${large ? 'large' : ''}`}>
-      <img src={logo} alt="숨바꼭질케어 로고" className={`brand-logo ${large ? 'large' : ''}`} />
+      <img
+        src={logo}
+        alt="숨바꼭질케어 로고"
+        className={`brand-logo ${large ? 'large' : ''}`}
+      />
       <div className="brand-header-text">
         <div className="brand-mark">숨바꼭질케어</div>
-        {large ? <div className="brand-caption">회원 관리 · 운동 기록 · 식단 기록</div> : null}
+        {large ? (
+          <div className="brand-caption">회원 관리 · 운동 기록 · 식단 기록</div>
+        ) : null}
       </div>
     </div>
   )
@@ -211,6 +217,7 @@ export default function App() {
     const restore = async () => {
       try {
         const savedMember = localStorage.getItem(MEMBER_STORAGE_KEY)
+
         if (savedMember) {
           try {
             const parsed = JSON.parse(savedMember)
