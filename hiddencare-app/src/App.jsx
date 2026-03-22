@@ -6,11 +6,14 @@ import logo from './assets/logo.png'
 
 const MEMBER_STORAGE_KEY = 'hiddencare_member_session_v1'
 
-function BrandHeader() {
+function BrandHeader({ large = false }) {
   return (
-    <div className="brand-header">
-      <img src={logo} alt="숨바꼭질케어 로고" className="brand-logo" />
-      <div className="brand-mark">숨바꼭질케어</div>
+    <div className={`brand-header ${large ? 'large' : ''}`}>
+      <img src={logo} alt="숨바꼭질케어 로고" className={`brand-logo ${large ? 'large' : ''}`} />
+      <div className="brand-header-text">
+        <div className="brand-mark">숨바꼭질케어</div>
+        {large ? <div className="brand-caption">회원 관리 · 운동 기록 · 식단 기록</div> : null}
+      </div>
     </div>
   )
 }
@@ -18,6 +21,7 @@ function BrandHeader() {
 function AdminLogin({ onLogin, onBack }) {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
+  const [showPassword, setShowPassword] = useState(false)
   const [loading, setLoading] = useState(false)
   const [message, setMessage] = useState('')
 
@@ -64,8 +68,8 @@ function AdminLogin({ onLogin, onBack }) {
   }
 
   return (
-    <div className="auth-card">
-      <BrandHeader />
+    <div className="auth-card auth-card-large">
+      <BrandHeader large />
       <h1>관리자 로그인</h1>
       <p className="sub-text">Supabase 관리자 계정으로 로그인하세요.</p>
 
@@ -82,12 +86,21 @@ function AdminLogin({ onLogin, onBack }) {
 
         <label className="field">
           <span>비밀번호</span>
-          <input
-            type="password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            placeholder="비밀번호 입력"
-          />
+          <div className="password-wrapper">
+            <input
+              type={showPassword ? 'text' : 'password'}
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              placeholder="비밀번호 입력"
+            />
+            <button
+              type="button"
+              className="toggle-btn"
+              onClick={() => setShowPassword((prev) => !prev)}
+            >
+              {showPassword ? '숨김' : '보기'}
+            </button>
+          </div>
         </label>
 
         <button className="primary-btn" type="submit" disabled={loading}>
@@ -143,8 +156,8 @@ function MemberAccess({ initialMemberId, onSuccess, onBack }) {
   }
 
   return (
-    <div className="auth-card">
-      <BrandHeader />
+    <div className="auth-card auth-card-large">
+      <BrandHeader large />
       <h1>회원 입장</h1>
       <p className="sub-text">회원 링크의 member 값과 access code를 입력하세요.</p>
 
@@ -332,8 +345,8 @@ export default function App() {
   return (
     <div className="app-shell center-screen">
       <div className="choice-grid">
-        <div className="auth-card">
-          <BrandHeader />
+        <div className="auth-card auth-card-large">
+          <BrandHeader large />
           <h1>시작하기</h1>
           <p className="sub-text">관리자 또는 회원으로 입장할 수 있습니다.</p>
 
