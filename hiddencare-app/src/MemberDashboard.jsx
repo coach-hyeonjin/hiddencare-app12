@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useState } from 'react'
 import { supabase } from './supabase'
+import logo from './assets/logo.png'
 
-const TABS = ['내정보', '운동기록', '개인운동입력', '식단', '루틴', '사용방법']
+const TABS = ['내정보', '운동기록', '개인운동입력', '식단', '루틴', '코치스케줄', '사용방법']
 
 const emptyPersonalForm = {
   id: null,
@@ -37,6 +38,10 @@ function normalizeSets(sets = []) {
     }))
 }
 
+function getMonthKey(dateString) {
+  return (dateString || '').slice(0, 7)
+}
+
 export default function MemberDashboard({ member, accessCode, onLogout }) {
   const [activeTab, setActiveTab] = useState('내정보')
   const [loading, setLoading] = useState(true)
@@ -56,6 +61,12 @@ export default function MemberDashboard({ member, accessCode, onLogout }) {
 
   const [routine, setRoutine] = useState(null)
   const [manual, setManual] = useState(null)
+
+  const [coaches, setCoaches] = useState([])
+  const [coachSchedules, setCoachSchedules] = useState([])
+  const [coachScheduleSlotsMap, setCoachScheduleSlotsMap] = useState({})
+  const [collapsedSchedules, setCollapsedSchedules] = useState({})
+  const [scheduleMonth, setScheduleMonth] = useState(new Date().toISOString().slice(0, 7))
 
   const stats = useMemo(() => {
     const ptCount = workouts.filter((workout) => workout.workout_type === 'pt').length
@@ -79,6 +90,10 @@ export default function MemberDashboard({ member, accessCode, onLogout }) {
     return Math.min(Math.round((used / total) * 100), 100)
   }, [memberInfo])
 
+  const filteredSchedules = useMemo(() => {
+    return coachSchedules.filter((schedule) => getMonthKey(schedule.schedule_date) === scheduleMonth)
+  }, [coachSchedules, scheduleMonth])
+
   useEffect(() => {
     loadAll()
   }, [memberInfo?.id])
@@ -94,6 +109,8 @@ export default function MemberDashboard({ member, accessCode, onLogout }) {
       loadDietLogs(),
       loadRoutine(),
       loadManual(),
+      loadCoaches(),
+      loadCoachSchedules(),
     ])
 
     setLoading(false)
@@ -200,6 +217,51 @@ export default function MemberDashboard({ member, accessCode, onLogout }) {
       .maybeSingle()
 
     setManual(data || null)
+  }
+
+  const loadCoaches = async () => {
+    const { data } = await supabase
+      .from('coaches')
+      .select('*')
+      .eq('is_active', true)
+      .order('created_at', { ascending: true })
+
+    if (data) setCoaches(data)
+  }
+
+  const loadCoachSchedules = async () => {
+    const { data: scheduleData } = await supabase
+      .from('coach_schedules')
+      .select('*')
+      .order('schedule_date', { ascending: false })
+
+    if (!scheduleData) return
+
+    let slotMap = {}
+    const scheduleIds = scheduleData.map((schedule) => schedule.id)
+
+    if (scheduleIds.length > 0) {
+      const { data: slotData } = await supabase
+        .from('coach_schedule_slots')
+        .select('*')
+        .in('schedule_id', scheduleIds)
+        .order('slot_time', { ascending: true })
+
+      slotMap = (slotData || []).reduce((acc, slot) => {
+        if (!acc[slot.schedule_id]) acc[slot.schedule_id] = []
+        acc[slot.schedule_id].push(slot)
+        return acc
+      }, {})
+    }
+
+    const collapsed = {}
+    scheduleData.forEach((schedule) => {
+      collapsed[schedule.id] = true
+    })
+
+    setCoachSchedules(scheduleData)
+    setCoachScheduleSlotsMap(slotMap)
+    setCollapsedSchedules(collapsed)
   }
 
   const resetPersonalForm = () => {
@@ -426,11 +488,15 @@ export default function MemberDashboard({ member, accessCode, onLogout }) {
   return (
     <div className="dashboard-shell">
       <header className="topbar">
-        <div>
-          <div className="brand-mark">숨바꼭질케어</div>
-          <h1 className="page-title">{memberInfo.name} 회원 화면</h1>
-          <p className="sub-text">access code 인증 완료</p>
+        <div className="topbar-brand">
+          <img src={logo} alt="숨바꼭질케어 로고" className="topbar-logo small" />
+          <div>
+            <div className="brand-mark">숨바꼭질케어</div>
+            <h1 className="page-title">{memberInfo.name} 회원 화면</h1>
+            <p className="sub-text">access code 인증 완료</p>
+          </div>
         </div>
+
         <button className="secondary-btn" onClick={onLogout}>
           나가기
         </button>
@@ -821,6 +887,72 @@ export default function MemberDashboard({ member, accessCode, onLogout }) {
           <h2>{routine?.title || '루틴'}</h2>
           <div className="detail-box">
             <pre className="pre-text">{routine?.content || '아직 등록된 루틴이 없습니다.'}</pre>
+          </div>
+        </div>
+      )}
+
+      {activeTab === '코치스케줄' && (
+        <div className="card">
+          <div className="section-head">
+            <h2>코치 스케줄</h2>
+            <input
+              type="month"
+              value={scheduleMonth}
+              onChange={(e) => setScheduleMonth(e.target.value)}
+            />
+          </div>
+
+          <div className="list-stack">
+            {filteredSchedules.map((schedule) => {
+              const coach = coaches.find((item) => item.id === schedule.coach_id)
+              const collapsed = collapsedSchedules[schedule.id] ?? true
+              const slots = coachScheduleSlotsMap[schedule.id] || []
+
+              return (
+                <div key={schedule.id} className="list-card">
+                  <div className="list-card-top">
+                    <strong>{coach?.name || '코치'} / {schedule.schedule_date}</strong>
+                    <span className="pill">
+                      {schedule.is_working ? '근무' : '휴무'}
+                      {schedule.is_weekend_work ? ' / 주말근무' : ''}
+                    </span>
+                  </div>
+
+                  <div className="compact-text">
+                    간략히보기: {schedule.is_working ? `${schedule.work_start || '-'} ~ ${schedule.work_end || '-'}` : '휴무'} / 가능시간 {slots.length}개
+                  </div>
+
+                  <div className="inline-actions wrap">
+                    <button
+                      type="button"
+                      className="secondary-btn"
+                      onClick={() =>
+                        setCollapsedSchedules((prev) => ({
+                          ...prev,
+                          [schedule.id]: !collapsed,
+                        }))
+                      }
+                    >
+                      {collapsed ? '상세히보기' : '간략히보기'}
+                    </button>
+                  </div>
+
+                  {!collapsed ? (
+                    <div className="detail-box">
+                      <p><strong>코치:</strong> {coach?.name || '-'}</p>
+                      <p><strong>근무상태:</strong> {schedule.is_working ? '근무' : '휴무'}</p>
+                      <p><strong>주말근무:</strong> {schedule.is_weekend_work ? '예' : '아니오'}</p>
+                      <p><strong>근무시간:</strong> {schedule.work_start || '-'} ~ {schedule.work_end || '-'}</p>
+                      <p><strong>메모:</strong> {schedule.memo || '-'}</p>
+                      <p>
+                        <strong>가능시간:</strong>{' '}
+                        {slots.length > 0 ? slots.map((slot) => slot.slot_time).join(', ') : '없음'}
+                      </p>
+                    </div>
+                  ) : null}
+                </div>
+              )
+            })}
           </div>
         </div>
       )}
