@@ -5,7 +5,7 @@ import MemberDashboard from './MemberDashboard'
 
 const MEMBER_STORAGE_KEY = 'hiddencare_member_session_v1'
 
-function AdminLogin({ onLogin }) {
+function AdminLogin({ onLogin, onBack }) {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [loading, setLoading] = useState(false)
@@ -84,13 +84,17 @@ function AdminLogin({ onLogin }) {
           {loading ? '로그인 중...' : '관리자 로그인'}
         </button>
 
+        <button type="button" className="secondary-btn" onClick={onBack}>
+          돌아가기
+        </button>
+
         {message ? <div className="message error">{message}</div> : null}
       </form>
     </div>
   )
 }
 
-function MemberAccess({ initialMemberId, onSuccess }) {
+function MemberAccess({ initialMemberId, onSuccess, onBack }) {
   const [memberId, setMemberId] = useState(initialMemberId || '')
   const [accessCode, setAccessCode] = useState('')
   const [loading, setLoading] = useState(false)
@@ -119,15 +123,13 @@ function MemberAccess({ initialMemberId, onSuccess }) {
     }
 
     const member = data[0]
-    localStorage.setItem(
-      MEMBER_STORAGE_KEY,
-      JSON.stringify({
-        member,
-        accessCode: accessCode.trim(),
-      }),
-    )
+    const sessionData = {
+      member,
+      accessCode: accessCode.trim(),
+    }
 
-    onSuccess(member, accessCode.trim())
+    localStorage.setItem(MEMBER_STORAGE_KEY, JSON.stringify(sessionData))
+    onSuccess(sessionData)
     setLoading(false)
   }
 
@@ -135,7 +137,7 @@ function MemberAccess({ initialMemberId, onSuccess }) {
     <div className="auth-card">
       <div className="brand-mark">숨바꼭질케어</div>
       <h1>회원 입장</h1>
-      <p className="sub-text">회원 전용 링크의 member 값과 access code를 입력하세요.</p>
+      <p className="sub-text">회원 링크의 member 값과 access code를 입력하세요.</p>
 
       <form onSubmit={handleAccess} className="stack-gap">
         <label className="field">
@@ -160,6 +162,10 @@ function MemberAccess({ initialMemberId, onSuccess }) {
           {loading ? '확인 중...' : '회원 입장'}
         </button>
 
+        <button type="button" className="secondary-btn" onClick={onBack}>
+          돌아가기
+        </button>
+
         {message ? <div className="message error">{message}</div> : null}
       </form>
     </div>
@@ -178,57 +184,64 @@ export default function App() {
   }, [])
 
   useEffect(() => {
+    let isMounted = true
+
     const restore = async () => {
-      const { data } = await supabase.auth.getSession()
-      const session = data?.session
+      try {
+        const { data } = await supabase.auth.getSession()
+        const session = data?.session
 
-      if (session?.user) {
-        const { data: profile } = await supabase
-          .from('profiles')
-          .select('*')
-          .eq('id', session.user.id)
-          .maybeSingle()
+        if (session?.user) {
+          const { data: profile } = await supabase
+            .from('profiles')
+            .select('*')
+            .eq('id', session.user.id)
+            .maybeSingle()
 
-        if (profile?.role === 'admin') {
-          setAdminProfile(profile)
-          setMode('admin')
-          setLoading(false)
-          return
-        }
-      }
+          if (!isMounted) return
 
-      const savedMember = localStorage.getItem(MEMBER_STORAGE_KEY)
-      if (savedMember) {
-        try {
-          const parsed = JSON.parse(savedMember)
-          if (parsed?.member?.id && parsed?.accessCode) {
-            setMemberSession(parsed)
-            setMode('member')
+          if (profile?.role === 'admin') {
+            setAdminProfile(profile)
+            setMode('admin')
             setLoading(false)
             return
           }
-        } catch {
-          localStorage.removeItem(MEMBER_STORAGE_KEY)
         }
-      }
 
-      if (initialMemberId) {
-        setMode('member-access')
-      } else {
-        setMode('home')
-      }
+        const savedMember = localStorage.getItem(MEMBER_STORAGE_KEY)
 
-      setLoading(false)
+        if (savedMember) {
+          try {
+            const parsed = JSON.parse(savedMember)
+            if (parsed?.member?.id && parsed?.accessCode) {
+              if (!isMounted) return
+              setMemberSession(parsed)
+              setMode('member')
+              setLoading(false)
+              return
+            }
+          } catch {
+            localStorage.removeItem(MEMBER_STORAGE_KEY)
+          }
+        }
+
+        if (!isMounted) return
+        setMode(initialMemberId ? 'member-access' : 'home')
+        setLoading(false)
+      } catch {
+        if (!isMounted) return
+        setMode(initialMemberId ? 'member-access' : 'home')
+        setLoading(false)
+      }
     }
 
     restore()
 
     const { data: listener } = supabase.auth.onAuthStateChange(async (_event, session) => {
+      if (!isMounted) return
+
       if (!session?.user) {
         setAdminProfile(null)
-        if (!memberSession) {
-          setMode(initialMemberId ? 'member-access' : 'home')
-        }
         return
       }
 
@@ -238,6 +251,8 @@ export default function App() {
         .eq('id', session.user.id)
         .maybeSingle()
 
+      if (!isMounted) return
+
       if (profile?.role === 'admin') {
         setAdminProfile(profile)
         setMode('admin')
@@ -245,9 +260,10 @@ export default function App() {
     })
 
     return () => {
+      isMounted = false
       listener?.subscription?.unsubscribe()
     }
-  }, [initialMemberId, memberSession])
+  }, [initialMemberId])
 
   const handleAdminLogout = async () => {
     await supabase.auth.signOut()
@@ -289,15 +305,30 @@ export default function App() {
     )
   }
 
+  if (mode === 'admin-login') {
+    return (
+      <div className="app-shell center-screen">
+        <AdminLogin
+          onLogin={(profile) => {
+            setAdminProfile(profile)
+            setMode('admin')
+          }}
+          onBack={() => setMode('home')}
+        />
+      </div>
+    )
+  }
+
   if (mode === 'member-access') {
     return (
       <div className="app-shell center-screen">
         <MemberAccess
           initialMemberId={initialMemberId}
-          onSuccess={(member, accessCode) => {
-            setMemberSession({ member, accessCode })
+          onSuccess={(sessionData) => {
+            setMemberSession(sessionData)
             setMode('member')
           }}
+          onBack={() => setMode('home')}
         />
       </div>
     )
@@ -325,25 +356,11 @@ export default function App() {
           <h2>입장 방식</h2>
           <ul className="info-list">
             <li>관리자: 이메일 / 비밀번호 로그인</li>
-            <li>회원: URL의 member 값 + access code 입력</li>
+            <li>회원: URL의 member 값 + access code</li>
             <li>새로고침 시 세션 유지</li>
           </ul>
         </div>
       </div>
-
-      {mode === 'admin-login' ? (
-        <div className="overlay-area">
-          <AdminLogin
-            onLogin={(profile) => {
-              setAdminProfile(profile)
-              setMode('admin')
-            }}
-          />
-          <button className="text-btn" onClick={() => setMode('home')}>
-            돌아가기
-          </button>
-        </div>
-      ) : null}
     </div>
   )
 }
