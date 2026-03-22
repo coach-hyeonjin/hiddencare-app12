@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useState } from 'react'
 import { supabase } from './supabase'
+import logo from './assets/logo.png'
 
-const TABS = ['회원', '기록작성', '운동DB', '식단', '통계', '사용방법']
+const TABS = ['회원', '기록작성', '운동DB', '식단', '통계', '코치스케줄', '사용방법']
 
 const emptyMemberForm = {
   name: '',
@@ -39,6 +40,25 @@ const emptyExerciseForm = {
   brand_id: '',
 }
 
+const defaultBulkExerciseText = `뉴텍|시티드 디클라인 체스트 프레스|가슴|머신
+뉴텍|시티드 체스트 프레스|가슴|머신
+뉴텍|펙덱 플라이|가슴|머신`
+
+const timeSlotOptions = [
+  '09:00',
+  '10:00',
+  '11:00',
+  '12:00',
+  '13:00',
+  '14:00',
+  '15:00',
+  '16:00',
+  '17:00',
+  '18:00',
+  '19:00',
+  '20:00',
+]
+
 function randomCode() {
   return Math.random().toString(36).slice(2, 10).toUpperCase()
 }
@@ -58,6 +78,10 @@ function normalizeSets(sets = []) {
       kg: String(setRow.kg ?? ''),
       reps: String(setRow.reps ?? ''),
     }))
+}
+
+function getMonthKey(dateString) {
+  return (dateString || '').slice(0, 7)
 }
 
 export default function AdminDashboard({ profile, onLogout }) {
@@ -83,6 +107,9 @@ export default function AdminDashboard({ profile, onLogout }) {
   const [exerciseForm, setExerciseForm] = useState(emptyExerciseForm)
   const [editingExerciseId, setEditingExerciseId] = useState(null)
   const [exerciseSearch, setExerciseSearch] = useState('')
+  const [collapsedExercises, setCollapsedExercises] = useState({})
+  const [bulkExerciseText, setBulkExerciseText] = useState(defaultBulkExerciseText)
+  const [showBulkInput, setShowBulkInput] = useState(false)
 
   const [dietLogs, setDietLogs] = useState([])
   const [collapsedDiets, setCollapsedDiets] = useState({})
@@ -93,9 +120,30 @@ export default function AdminDashboard({ profile, onLogout }) {
   const [manualForm, setManualForm] = useState({ title: '', content: '' })
   const [manuals, setManuals] = useState([])
 
+  const [coaches, setCoaches] = useState([])
+  const [selectedCoachId, setSelectedCoachId] = useState('')
+  const [scheduleMonth, setScheduleMonth] = useState(new Date().toISOString().slice(0, 7))
+  const [scheduleForm, setScheduleForm] = useState({
+    schedule_date: new Date().toISOString().slice(0, 10),
+    is_working: true,
+    is_weekend_work: false,
+    work_start: '09:00',
+    work_end: '18:00',
+    memo: '',
+    selectedSlots: ['10:00', '11:00', '14:00', '15:00'],
+  })
+  const [coachSchedules, setCoachSchedules] = useState([])
+  const [coachScheduleSlotsMap, setCoachScheduleSlotsMap] = useState({})
+  const [collapsedSchedules, setCollapsedSchedules] = useState({})
+
   const selectedMember = useMemo(
     () => members.find((member) => member.id === selectedMemberId) || null,
     [members, selectedMemberId],
+  )
+
+  const selectedCoach = useMemo(
+    () => coaches.find((coach) => coach.id === selectedCoachId) || null,
+    [coaches, selectedCoachId],
   )
 
   const filteredExercises = useMemo(() => {
@@ -155,6 +203,10 @@ export default function AdminDashboard({ profile, onLogout }) {
     }
   }, [workouts, members])
 
+  const filteredSchedules = useMemo(() => {
+    return coachSchedules.filter((schedule) => getMonthKey(schedule.schedule_date) === scheduleMonth)
+  }, [coachSchedules, scheduleMonth])
+
   useEffect(() => {
     loadAll()
   }, [])
@@ -190,6 +242,8 @@ export default function AdminDashboard({ profile, onLogout }) {
       loadWorkouts(),
       loadDietLogs(),
       loadManuals(),
+      loadCoaches(),
+      loadCoachSchedules(),
     ])
 
     setLoading(false)
@@ -218,7 +272,14 @@ export default function AdminDashboard({ profile, onLogout }) {
       .select('*, brands(id, name)')
       .order('created_at', { ascending: false })
 
-    if (data) setExercises(data)
+    if (data) {
+      const collapsed = {}
+      data.forEach((exercise) => {
+        collapsed[exercise.id] = true
+      })
+      setExercises(data)
+      setCollapsedExercises(collapsed)
+    }
   }
 
   const loadWorkouts = async () => {
@@ -296,14 +357,53 @@ export default function AdminDashboard({ profile, onLogout }) {
     if (data) setManuals(data)
   }
 
-  const recalcMemberUsedSessions = async (memberId) => {
-    const ptCount = workouts.filter(
-      (workout) => workout.member_id === memberId && workout.workout_type === 'pt',
-    ).length
+  const loadCoaches = async () => {
+    const { data } = await supabase
+      .from('coaches')
+      .select('*')
+      .order('created_at', { ascending: true })
 
-    const freshPtCount = ptCount
-    await supabase.from('members').update({ used_sessions: freshPtCount }).eq('id', memberId)
-    await loadMembers()
+    if (data) {
+      setCoaches(data)
+      if (!selectedCoachId && data[0]) {
+        setSelectedCoachId(data[0].id)
+      }
+    }
+  }
+
+  const loadCoachSchedules = async () => {
+    const { data: scheduleData } = await supabase
+      .from('coach_schedules')
+      .select('*')
+      .order('schedule_date', { ascending: false })
+
+    if (!scheduleData) return
+
+    let slotMap = {}
+    const scheduleIds = scheduleData.map((schedule) => schedule.id)
+
+    if (scheduleIds.length > 0) {
+      const { data: slotData } = await supabase
+        .from('coach_schedule_slots')
+        .select('*')
+        .in('schedule_id', scheduleIds)
+        .order('slot_time', { ascending: true })
+
+      slotMap = (slotData || []).reduce((acc, slot) => {
+        if (!acc[slot.schedule_id]) acc[slot.schedule_id] = []
+        acc[slot.schedule_id].push(slot)
+        return acc
+      }, {})
+    }
+
+    const collapsed = {}
+    scheduleData.forEach((schedule) => {
+      collapsed[schedule.id] = true
+    })
+
+    setCoachSchedules(scheduleData)
+    setCoachScheduleSlotsMap(slotMap)
+    setCollapsedSchedules(collapsed)
   }
 
   const resetMemberForm = () => {
@@ -700,6 +800,71 @@ export default function AdminDashboard({ profile, onLogout }) {
     setMessage('운동이 삭제되었습니다.')
   }
 
+  const handleBulkExerciseInsert = async () => {
+    const lines = bulkExerciseText
+      .split('\n')
+      .map((line) => line.trim())
+      .filter(Boolean)
+
+    if (lines.length === 0) {
+      setMessage('일괄 입력할 내용을 넣어주세요.')
+      return
+    }
+
+    const brandMap = new Map(brands.map((brand) => [brand.name, brand.id]))
+    const rowsToInsert = []
+
+    for (const line of lines) {
+      const [brandNameRaw, nameRaw, bodyPartRaw, categoryRaw] = line.split('|')
+      const brandName = (brandNameRaw || '').trim()
+      const name = (nameRaw || '').trim()
+      const body_part = (bodyPartRaw || '').trim()
+      const category = (categoryRaw || '').trim()
+
+      if (!name) continue
+
+      let brandId = null
+
+      if (brandName) {
+        if (!brandMap.has(brandName)) {
+          const { data: newBrand, error } = await supabase
+            .from('brands')
+            .insert({ name: brandName })
+            .select()
+            .single()
+
+          if (!error && newBrand) {
+            brandMap.set(brandName, newBrand.id)
+          }
+        }
+
+        brandId = brandMap.get(brandName) || null
+      }
+
+      rowsToInsert.push({
+        name,
+        body_part,
+        category,
+        brand_id: brandId,
+      })
+    }
+
+    if (rowsToInsert.length === 0) {
+      setMessage('입력 가능한 운동 데이터가 없습니다.')
+      return
+    }
+
+    const { error } = await supabase.from('exercises').insert(rowsToInsert)
+    if (error) {
+      setMessage(error.message)
+      return
+    }
+
+    await loadBrands()
+    await loadExercises()
+    setMessage(`${rowsToInsert.length}개의 운동이 일괄 등록되었습니다.`)
+  }
+
   const handleDietFeedbackSave = async (dietId, feedback) => {
     await supabase.from('diet_logs').update({ coach_feedback: feedback }).eq('id', dietId)
     await loadDietLogs()
@@ -743,6 +908,106 @@ export default function AdminDashboard({ profile, onLogout }) {
     setMessage('사용방법이 삭제되었습니다.')
   }
 
+  const resetScheduleForm = () => {
+    setScheduleForm({
+      schedule_date: new Date().toISOString().slice(0, 10),
+      is_working: true,
+      is_weekend_work: false,
+      work_start: '09:00',
+      work_end: '18:00',
+      memo: '',
+      selectedSlots: ['10:00', '11:00', '14:00', '15:00'],
+    })
+  }
+
+  const toggleScheduleSlot = (time) => {
+    setScheduleForm((prev) => {
+      const exists = prev.selectedSlots.includes(time)
+      return {
+        ...prev,
+        selectedSlots: exists
+          ? prev.selectedSlots.filter((slot) => slot !== time)
+          : [...prev.selectedSlots, time].sort(),
+      }
+    })
+  }
+
+  const handleScheduleSave = async () => {
+    if (!selectedCoachId) {
+      setMessage('코치를 먼저 선택해주세요.')
+      return
+    }
+
+    if (!scheduleForm.schedule_date) {
+      setMessage('날짜를 선택해주세요.')
+      return
+    }
+
+    const payload = {
+      coach_id: selectedCoachId,
+      schedule_date: scheduleForm.schedule_date,
+      is_working: scheduleForm.is_working,
+      is_weekend_work: scheduleForm.is_weekend_work,
+      work_start: scheduleForm.is_working ? scheduleForm.work_start || null : null,
+      work_end: scheduleForm.is_working ? scheduleForm.work_end || null : null,
+      memo: scheduleForm.memo?.trim() || '',
+    }
+
+    const { data: existing } = await supabase
+      .from('coach_schedules')
+      .select('id')
+      .eq('coach_id', selectedCoachId)
+      .eq('schedule_date', scheduleForm.schedule_date)
+      .maybeSingle()
+
+    let scheduleId = existing?.id || null
+
+    if (scheduleId) {
+      await supabase.from('coach_schedules').update(payload).eq('id', scheduleId)
+      await supabase.from('coach_schedule_slots').delete().eq('schedule_id', scheduleId)
+    } else {
+      const { data } = await supabase.from('coach_schedules').insert(payload).select().single()
+      scheduleId = data.id
+    }
+
+    if (scheduleForm.is_working && scheduleForm.selectedSlots.length > 0) {
+      await supabase.from('coach_schedule_slots').insert(
+        scheduleForm.selectedSlots.map((slot) => ({
+          schedule_id: scheduleId,
+          slot_time: slot,
+          is_available: true,
+          note: '',
+        })),
+      )
+    }
+
+    await loadCoachSchedules()
+    setMessage('코치 스케줄이 저장되었습니다.')
+    resetScheduleForm()
+  }
+
+  const handleScheduleEdit = (schedule) => {
+    const slots = coachScheduleSlotsMap[schedule.id] || []
+    setSelectedCoachId(schedule.coach_id)
+    setScheduleForm({
+      schedule_date: schedule.schedule_date,
+      is_working: schedule.is_working,
+      is_weekend_work: schedule.is_weekend_work,
+      work_start: schedule.work_start || '09:00',
+      work_end: schedule.work_end || '18:00',
+      memo: schedule.memo || '',
+      selectedSlots: slots.filter((slot) => slot.is_available).map((slot) => slot.slot_time),
+    })
+    setActiveTab('코치스케줄')
+  }
+
+  const handleScheduleDelete = async (scheduleId) => {
+    if (!window.confirm('이 스케줄을 삭제할까요?')) return
+    await supabase.from('coach_schedules').delete().eq('id', scheduleId)
+    await loadCoachSchedules()
+    setMessage('코치 스케줄이 삭제되었습니다.')
+  }
+
   const displayedDietLogs = dietMemberFilter
     ? dietLogs.filter((diet) => diet.member_id === dietMemberFilter)
     : dietLogs
@@ -754,11 +1019,15 @@ export default function AdminDashboard({ profile, onLogout }) {
   return (
     <div className="dashboard-shell">
       <header className="topbar">
-        <div>
-          <div className="brand-mark">숨바꼭질케어</div>
-          <h1 className="page-title">관리자 대시보드</h1>
-          <p className="sub-text">{profile?.name || '관리자'}님으로 로그인됨</p>
+        <div className="topbar-brand">
+          <img src={logo} alt="숨바꼭질케어 로고" className="topbar-logo small" />
+          <div>
+            <div className="brand-mark">숨바꼭질케어</div>
+            <h1 className="page-title">관리자 대시보드</h1>
+            <p className="sub-text">{profile?.name || '관리자'}님으로 로그인됨</p>
+          </div>
         </div>
+
         <button className="secondary-btn" onClick={onLogout}>
           로그아웃
         </button>
@@ -1305,7 +1574,16 @@ export default function AdminDashboard({ profile, onLogout }) {
           </section>
 
           <section className="card">
-            <h2>운동 관리</h2>
+            <div className="section-head">
+              <h2>운동 관리</h2>
+              <button
+                type="button"
+                className="secondary-btn"
+                onClick={() => setShowBulkInput((prev) => !prev)}
+              >
+                {showBulkInput ? '개별 입력만 보기' : '일괄 입력 열기'}
+              </button>
+            </div>
 
             <form className="stack-gap" onSubmit={handleExerciseSubmit}>
               <label className="field">
@@ -1374,6 +1652,26 @@ export default function AdminDashboard({ profile, onLogout }) {
               </div>
             </form>
 
+            {showBulkInput ? (
+              <div className="sub-card">
+                <h3>운동DB 일괄 입력</h3>
+                <p className="sub-text">
+                  형식: 브랜드|운동명|부위|카테고리
+                </p>
+                <label className="field">
+                  <span>여러 줄 입력</span>
+                  <textarea
+                    rows="8"
+                    value={bulkExerciseText}
+                    onChange={(e) => setBulkExerciseText(e.target.value)}
+                  />
+                </label>
+                <button type="button" className="primary-btn" onClick={handleBulkExerciseInsert}>
+                  일괄 등록
+                </button>
+              </div>
+            ) : null}
+
             <label className="field">
               <span>검색</span>
               <input
@@ -1384,44 +1682,69 @@ export default function AdminDashboard({ profile, onLogout }) {
             </label>
 
             <div className="list-stack">
-              {filteredExercises.map((exercise) => (
-                <div key={exercise.id} className="list-card">
-                  <div className="list-card-top">
-                    <strong>{exercise.name}</strong>
-                    <span className="pill">{exercise.brands?.name || '브랜드없음'}</span>
-                  </div>
+              {filteredExercises.map((exercise) => {
+                const collapsed = collapsedExercises[exercise.id] ?? true
+                return (
+                  <div key={exercise.id} className="list-card">
+                    <div className="list-card-top">
+                      <strong>{exercise.name}</strong>
+                      <span className="pill">{exercise.brands?.name || '브랜드없음'}</span>
+                    </div>
 
-                  <div className="compact-text">
-                    {exercise.body_part || '-'} / {exercise.category || '-'}
-                  </div>
+                    <div className="compact-text">
+                      간략히보기: {exercise.body_part || '-'} / {exercise.category || '-'}
+                    </div>
 
-                  <div className="inline-actions wrap">
-                    <button
-                      type="button"
-                      className="secondary-btn"
-                      onClick={() => {
-                        setEditingExerciseId(exercise.id)
-                        setExerciseForm({
-                          name: exercise.name || '',
-                          body_part: exercise.body_part || '',
-                          category: exercise.category || '',
-                          brand_id: exercise.brand_id || '',
-                        })
-                      }}
-                    >
-                      수정
-                    </button>
+                    <div className="inline-actions wrap">
+                      <button
+                        type="button"
+                        className="secondary-btn"
+                        onClick={() =>
+                          setCollapsedExercises((prev) => ({
+                            ...prev,
+                            [exercise.id]: !collapsed,
+                          }))
+                        }
+                      >
+                        {collapsed ? '상세히보기' : '간략히보기'}
+                      </button>
 
-                    <button
-                      type="button"
-                      className="danger-btn"
-                      onClick={() => handleExerciseDelete(exercise.id)}
-                    >
-                      삭제
-                    </button>
+                      <button
+                        type="button"
+                        className="secondary-btn"
+                        onClick={() => {
+                          setEditingExerciseId(exercise.id)
+                          setExerciseForm({
+                            name: exercise.name || '',
+                            body_part: exercise.body_part || '',
+                            category: exercise.category || '',
+                            brand_id: exercise.brand_id || '',
+                          })
+                        }}
+                      >
+                        수정
+                      </button>
+
+                      <button
+                        type="button"
+                        className="danger-btn"
+                        onClick={() => handleExerciseDelete(exercise.id)}
+                      >
+                        삭제
+                      </button>
+                    </div>
+
+                    {!collapsed ? (
+                      <div className="detail-box">
+                        <p><strong>운동명:</strong> {exercise.name}</p>
+                        <p><strong>브랜드:</strong> {exercise.brands?.name || '-'}</p>
+                        <p><strong>부위:</strong> {exercise.body_part || '-'}</p>
+                        <p><strong>카테고리:</strong> {exercise.category || '-'}</p>
+                      </div>
+                    ) : null}
                   </div>
-                </div>
-              ))}
+                )
+              })}
             </div>
           </section>
         </div>
@@ -1503,6 +1826,203 @@ export default function AdminDashboard({ profile, onLogout }) {
               ))}
             </div>
           </div>
+        </div>
+      )}
+
+      {activeTab === '코치스케줄' && (
+        <div className="two-col">
+          <section className="card">
+            <h2>코치 스케줄 등록 / 수정</h2>
+
+            <div className="stack-gap">
+              <label className="field">
+                <span>코치 선택</span>
+                <select value={selectedCoachId} onChange={(e) => setSelectedCoachId(e.target.value)}>
+                  <option value="">코치 선택</option>
+                  {coaches.map((coach) => (
+                    <option key={coach.id} value={coach.id}>
+                      {coach.name}
+                    </option>
+                  ))}
+                </select>
+              </label>
+
+              <label className="field">
+                <span>날짜</span>
+                <input
+                  type="date"
+                  value={scheduleForm.schedule_date}
+                  onChange={(e) =>
+                    setScheduleForm({ ...scheduleForm, schedule_date: e.target.value })
+                  }
+                />
+              </label>
+
+              <div className="grid-2">
+                <label className="checkbox-line">
+                  <input
+                    type="checkbox"
+                    checked={scheduleForm.is_working}
+                    onChange={(e) =>
+                      setScheduleForm({ ...scheduleForm, is_working: e.target.checked })
+                    }
+                  />
+                  <span>근무일</span>
+                </label>
+
+                <label className="checkbox-line">
+                  <input
+                    type="checkbox"
+                    checked={scheduleForm.is_weekend_work}
+                    onChange={(e) =>
+                      setScheduleForm({ ...scheduleForm, is_weekend_work: e.target.checked })
+                    }
+                  />
+                  <span>주말 근무</span>
+                </label>
+              </div>
+
+              <div className="grid-2">
+                <label className="field">
+                  <span>근무 시작</span>
+                  <input
+                    type="time"
+                    value={scheduleForm.work_start}
+                    onChange={(e) =>
+                      setScheduleForm({ ...scheduleForm, work_start: e.target.value })
+                    }
+                    disabled={!scheduleForm.is_working}
+                  />
+                </label>
+
+                <label className="field">
+                  <span>근무 종료</span>
+                  <input
+                    type="time"
+                    value={scheduleForm.work_end}
+                    onChange={(e) =>
+                      setScheduleForm({ ...scheduleForm, work_end: e.target.value })
+                    }
+                    disabled={!scheduleForm.is_working}
+                  />
+                </label>
+              </div>
+
+              <div className="field">
+                <span>한가한 시간 체크</span>
+                <div className="slot-grid">
+                  {timeSlotOptions.map((slot) => {
+                    const checked = scheduleForm.selectedSlots.includes(slot)
+                    return (
+                      <label key={slot} className={`slot-chip ${checked ? 'active' : ''}`}>
+                        <input
+                          type="checkbox"
+                          checked={checked}
+                          onChange={() => toggleScheduleSlot(slot)}
+                          disabled={!scheduleForm.is_working}
+                        />
+                        <span>{slot}</span>
+                      </label>
+                    )
+                  })}
+                </div>
+              </div>
+
+              <label className="field">
+                <span>메모</span>
+                <textarea
+                  rows="4"
+                  value={scheduleForm.memo}
+                  onChange={(e) => setScheduleForm({ ...scheduleForm, memo: e.target.value })}
+                />
+              </label>
+
+              <div className="inline-actions wrap">
+                <button type="button" className="primary-btn" onClick={handleScheduleSave}>
+                  스케줄 저장
+                </button>
+                <button type="button" className="secondary-btn" onClick={resetScheduleForm}>
+                  초기화
+                </button>
+              </div>
+            </div>
+          </section>
+
+          <section className="card">
+            <div className="section-head">
+              <h2>월별 코치 스케줄</h2>
+              <input
+                type="month"
+                value={scheduleMonth}
+                onChange={(e) => setScheduleMonth(e.target.value)}
+              />
+            </div>
+
+            <div className="list-stack">
+              {filteredSchedules.map((schedule) => {
+                const coach = coaches.find((item) => item.id === schedule.coach_id)
+                const collapsed = collapsedSchedules[schedule.id] ?? true
+                const slots = coachScheduleSlotsMap[schedule.id] || []
+
+                return (
+                  <div key={schedule.id} className="list-card">
+                    <div className="list-card-top">
+                      <strong>{coach?.name || '코치없음'} / {schedule.schedule_date}</strong>
+                      <span className="pill">
+                        {schedule.is_working ? '근무' : '휴무'}
+                        {schedule.is_weekend_work ? ' / 주말근무' : ''}
+                      </span>
+                    </div>
+
+                    <div className="compact-text">
+                      간략히보기: {schedule.is_working ? `${schedule.work_start || '-'} ~ ${schedule.work_end || '-'}` : '휴무'} / 가능시간 {slots.length}개
+                    </div>
+
+                    <div className="inline-actions wrap">
+                      <button
+                        type="button"
+                        className="secondary-btn"
+                        onClick={() =>
+                          setCollapsedSchedules((prev) => ({
+                            ...prev,
+                            [schedule.id]: !collapsed,
+                          }))
+                        }
+                      >
+                        {collapsed ? '상세히보기' : '간략히보기'}
+                      </button>
+
+                      <button
+                        type="button"
+                        className="secondary-btn"
+                        onClick={() => handleScheduleEdit(schedule)}
+                      >
+                        수정
+                      </button>
+
+                      <button
+                        type="button"
+                        className="danger-btn"
+                        onClick={() => handleScheduleDelete(schedule.id)}
+                      >
+                        삭제
+                      </button>
+                    </div>
+
+                    {!collapsed ? (
+                      <div className="detail-box">
+                        <p><strong>근무상태:</strong> {schedule.is_working ? '근무' : '휴무'}</p>
+                        <p><strong>주말근무:</strong> {schedule.is_weekend_work ? '예' : '아니오'}</p>
+                        <p><strong>근무시간:</strong> {schedule.work_start || '-'} ~ {schedule.work_end || '-'}</p>
+                        <p><strong>메모:</strong> {schedule.memo || '-'}</p>
+                        <p><strong>가능시간:</strong> {slots.length > 0 ? slots.map((slot) => slot.slot_time).join(', ') : '없음'}</p>
+                      </div>
+                    ) : null}
+                  </div>
+                )
+              })}
+            </div>
+          </section>
         </div>
       )}
 
