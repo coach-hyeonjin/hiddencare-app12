@@ -2,7 +2,18 @@ import { useEffect, useMemo, useState } from 'react'
 import { supabase } from './supabase'
 import logo from './assets/logo.png'
 
-const TABS = ['회원', '기록작성', '운동DB', '식단', '통계', '코치스케줄', '사용방법']
+const TABS = [
+  '회원',
+  '기록작성',
+  '운동DB',
+  '식단',
+  '통계',
+  '코치스케줄',
+  '매출기록',
+  '프로그램',
+  '공지사항',
+  '사용방법',
+]
 
 const emptyMemberForm = {
   name: '',
@@ -13,6 +24,7 @@ const emptyMemberForm = {
   end_date: '',
   memo: '',
   access_code: '',
+  current_program_id: '',
 }
 
 const emptyWorkoutItem = {
@@ -59,6 +71,43 @@ const timeSlotOptions = [
   '20:00',
 ]
 
+const emptyProgramForm = {
+  id: null,
+  name: '',
+  price: '',
+  session_count: '',
+  description: '',
+  is_vip: false,
+  is_active: true,
+}
+
+const emptyNoticeForm = {
+  id: null,
+  title: '',
+  content: '',
+  category: '공지',
+  image_url: '',
+  video_url: '',
+  is_published: true,
+  starts_at: '',
+  ends_at: '',
+}
+
+const emptySaleForm = {
+  id: null,
+  member_id: '',
+  program_id: '',
+  sale_date: new Date().toISOString().slice(0, 10),
+  amount: '',
+  payment_method: '카드',
+  installment_months: 0,
+  cash_receipt_issued: false,
+  purchased_session_count: 0,
+  service_session_count: 0,
+  is_vip: false,
+  memo: '',
+}
+
 function randomCode() {
   return Math.random().toString(36).slice(2, 10).toUpperCase()
 }
@@ -93,6 +142,11 @@ export default function AdminDashboard({ profile, onLogout }) {
   const [selectedMemberId, setSelectedMemberId] = useState('')
   const [memberForm, setMemberForm] = useState(emptyMemberForm)
   const [editingMemberId, setEditingMemberId] = useState(null)
+
+  const [memberHealthLogs, setMemberHealthLogs] = useState([])
+  const [collapsedHealthLogs, setCollapsedHealthLogs] = useState({})
+  const [adminNotes, setAdminNotes] = useState([])
+  const [adminNoteInput, setAdminNoteInput] = useState('')
 
   const [workouts, setWorkouts] = useState([])
   const [workoutItemsMap, setWorkoutItemsMap] = useState({})
@@ -136,6 +190,21 @@ export default function AdminDashboard({ profile, onLogout }) {
   const [coachScheduleSlotsMap, setCoachScheduleSlotsMap] = useState({})
   const [collapsedSchedules, setCollapsedSchedules] = useState({})
 
+  const [programs, setPrograms] = useState([])
+  const [programForm, setProgramForm] = useState(emptyProgramForm)
+  const [editingProgramId, setEditingProgramId] = useState(null)
+
+  const [salesRecords, setSalesRecords] = useState([])
+  const [saleForm, setSaleForm] = useState(emptySaleForm)
+  const [editingSaleId, setEditingSaleId] = useState(null)
+  const [saleMonth, setSaleMonth] = useState(new Date().toISOString().slice(0, 7))
+  const [salesSummary, setSalesSummary] = useState(null)
+
+  const [notices, setNotices] = useState([])
+  const [noticeForm, setNoticeForm] = useState(emptyNoticeForm)
+  const [editingNoticeId, setEditingNoticeId] = useState(null)
+  const [collapsedNotices, setCollapsedNotices] = useState({})
+
   const selectedMember = useMemo(
     () => members.find((member) => member.id === selectedMemberId) || null,
     [members, selectedMemberId],
@@ -149,7 +218,6 @@ export default function AdminDashboard({ profile, onLogout }) {
   const filteredExercises = useMemo(() => {
     const keyword = exerciseSearch.trim().toLowerCase()
     if (!keyword) return exercises
-
     return exercises.filter((exercise) => {
       const brandName = exercise.brands?.name || ''
       return (
@@ -165,14 +233,11 @@ export default function AdminDashboard({ profile, onLogout }) {
     return members.map((member) => {
       const memberWorkouts = workouts.filter((workout) => workout.member_id === member.id)
       const ptCount = memberWorkouts.filter((workout) => workout.workout_type === 'pt').length
-      const personalCount = memberWorkouts.filter(
-        (workout) => workout.workout_type === 'personal',
-      ).length
+      const personalCount = memberWorkouts.filter((workout) => workout.workout_type === 'personal').length
       const remainingSessions = Math.max(
         Number(member.total_sessions || 0) - Number(member.used_sessions || 0),
         0,
       )
-
       return {
         ...member,
         ptCount,
@@ -187,17 +252,12 @@ export default function AdminDashboard({ profile, onLogout }) {
     const monthWorkouts = workouts.filter((workout) =>
       (workout.workout_date || '').startsWith(monthKey),
     )
-
     return {
       ptCount: monthWorkouts.filter((workout) => workout.workout_type === 'pt').length,
       personalCount: monthWorkouts.filter((workout) => workout.workout_type === 'personal').length,
       remainingSessions: members.reduce(
         (sum, member) =>
-          sum +
-          Math.max(
-            Number(member.total_sessions || 0) - Number(member.used_sessions || 0),
-            0,
-          ),
+          sum + Math.max(Number(member.total_sessions || 0) - Number(member.used_sessions || 0), 0),
         0,
       ),
     }
@@ -206,6 +266,10 @@ export default function AdminDashboard({ profile, onLogout }) {
   const filteredSchedules = useMemo(() => {
     return coachSchedules.filter((schedule) => getMonthKey(schedule.schedule_date) === scheduleMonth)
   }, [coachSchedules, scheduleMonth])
+
+  const filteredSales = useMemo(() => {
+    return salesRecords.filter((sale) => getMonthKey(sale.sale_date) === saleMonth)
+  }, [salesRecords, saleMonth])
 
   useEffect(() => {
     loadAll()
@@ -226,10 +290,19 @@ export default function AdminDashboard({ profile, onLogout }) {
   useEffect(() => {
     if (!selectedMemberId) {
       setRoutineForm({ title: '루틴', content: '' })
+      setAdminNotes([])
+      setMemberHealthLogs([])
+      setAdminNoteInput('')
       return
     }
     loadRoutine(selectedMemberId)
+    loadAdminNotes(selectedMemberId)
+    loadHealthLogs(selectedMemberId)
   }, [selectedMemberId])
+
+  useEffect(() => {
+    loadSalesSummary(saleMonth)
+  }, [saleMonth])
 
   const loadAll = async () => {
     setLoading(true)
@@ -244,6 +317,9 @@ export default function AdminDashboard({ profile, onLogout }) {
       loadManuals(),
       loadCoaches(),
       loadCoachSchedules(),
+      loadPrograms(),
+      loadSalesRecords(),
+      loadNotices(),
     ])
 
     setLoading(false)
@@ -252,13 +328,40 @@ export default function AdminDashboard({ profile, onLogout }) {
   const loadMembers = async () => {
     const { data } = await supabase
       .from('members')
-      .select('*')
+      .select('*, programs(id, name)')
       .order('created_at', { ascending: false })
 
     if (data) {
       setMembers(data)
       if (!selectedMemberId && data[0]) setSelectedMemberId(data[0].id)
     }
+  }
+
+  const loadHealthLogs = async (memberId) => {
+    const { data } = await supabase
+      .from('member_health_logs')
+      .select('*')
+      .eq('member_id', memberId)
+      .order('record_date', { ascending: false })
+      .order('created_at', { ascending: false })
+
+    const collapsed = {}
+    ;(data || []).forEach((item) => {
+      collapsed[item.id] = true
+    })
+    setMemberHealthLogs(data || [])
+    setCollapsedHealthLogs(collapsed)
+  }
+
+  const loadAdminNotes = async (memberId) => {
+    const { data } = await supabase
+      .from('member_admin_notes')
+      .select('*')
+      .eq('member_id', memberId)
+      .order('updated_at', { ascending: false })
+      .order('created_at', { ascending: false })
+
+    setAdminNotes(data || [])
   }
 
   const loadBrands = async () => {
@@ -365,9 +468,7 @@ export default function AdminDashboard({ profile, onLogout }) {
 
     if (data) {
       setCoaches(data)
-      if (!selectedCoachId && data[0]) {
-        setSelectedCoachId(data[0].id)
-      }
+      if (!selectedCoachId && data[0]) setSelectedCoachId(data[0].id)
     }
   }
 
@@ -406,6 +507,48 @@ export default function AdminDashboard({ profile, onLogout }) {
     setCollapsedSchedules(collapsed)
   }
 
+  const loadPrograms = async () => {
+    const { data } = await supabase
+      .from('programs')
+      .select('*')
+      .order('created_at', { ascending: false })
+    if (data) setPrograms(data)
+  }
+
+  const loadSalesRecords = async () => {
+    const { data } = await supabase
+      .from('sales_records')
+      .select('*, members(id, name), programs(id, name)')
+      .order('sale_date', { ascending: false })
+      .order('created_at', { ascending: false })
+    if (data) setSalesRecords(data)
+  }
+
+  const loadSalesSummary = async (month) => {
+    const { data } = await supabase.rpc('get_sales_summary', { target_month: month })
+    if (data && data[0]) {
+      setSalesSummary(data[0])
+    } else {
+      setSalesSummary(null)
+    }
+  }
+
+  const loadNotices = async () => {
+    const { data } = await supabase
+      .from('notices')
+      .select('*')
+      .order('created_at', { ascending: false })
+
+    if (data) {
+      const collapsed = {}
+      data.forEach((notice) => {
+        collapsed[notice.id] = true
+      })
+      setNotices(data)
+      setCollapsedNotices(collapsed)
+    }
+  }
+
   const resetMemberForm = () => {
     setMemberForm(emptyMemberForm)
     setEditingMemberId(null)
@@ -420,10 +563,11 @@ export default function AdminDashboard({ profile, onLogout }) {
       goal: memberForm.goal?.trim() || '',
       total_sessions: Number(memberForm.total_sessions) || 0,
       used_sessions: Number(memberForm.used_sessions) || 0,
-      start_date: memberForm.start_date ? memberForm.start_date : null,
-      end_date: memberForm.end_date ? memberForm.end_date : null,
+      start_date: memberForm.start_date || null,
+      end_date: memberForm.end_date || null,
       memo: memberForm.memo?.trim() || '',
       access_code: (memberForm.access_code || randomCode()).trim().toUpperCase(),
+      current_program_id: memberForm.current_program_id || null,
     }
 
     if (!payload.name) {
@@ -463,6 +607,7 @@ export default function AdminDashboard({ profile, onLogout }) {
       end_date: member.end_date || '',
       memo: member.memo || '',
       access_code: member.access_code || '',
+      current_program_id: member.current_program_id || '',
     })
   }
 
@@ -473,6 +618,8 @@ export default function AdminDashboard({ profile, onLogout }) {
       setSelectedMemberId('')
       resetMemberForm()
       setRoutineForm({ title: '루틴', content: '' })
+      setAdminNotes([])
+      setMemberHealthLogs([])
     }
     await loadAll()
     setMessage('회원이 삭제되었습니다.')
@@ -486,6 +633,35 @@ export default function AdminDashboard({ profile, onLogout }) {
     } catch {
       setMessage('복사에 실패했습니다.')
     }
+  }
+
+  const handleAdminNoteSave = async () => {
+    if (!selectedMemberId || !adminNoteInput.trim()) {
+      setMessage('회원과 메모 내용을 확인해주세요.')
+      return
+    }
+
+    const { error } = await supabase.from('member_admin_notes').insert({
+      member_id: selectedMemberId,
+      admin_id: profile?.id || null,
+      note: adminNoteInput.trim(),
+    })
+
+    if (error) {
+      setMessage(error.message)
+      return
+    }
+
+    setAdminNoteInput('')
+    await loadAdminNotes(selectedMemberId)
+    setMessage('관리자 메모가 저장되었습니다.')
+  }
+
+  const handleAdminNoteDelete = async (noteId) => {
+    if (!window.confirm('이 메모를 삭제할까요?')) return
+    await supabase.from('member_admin_notes').delete().eq('id', noteId)
+    await loadAdminNotes(selectedMemberId)
+    setMessage('관리자 메모가 삭제되었습니다.')
   }
 
   const handleRoutineSave = async () => {
@@ -596,14 +772,8 @@ export default function AdminDashboard({ profile, onLogout }) {
     setWorkoutForm((prev) => {
       const nextItems = [...prev.items]
       const nextSets = [...nextItems[itemIndex].sets]
-      nextSets[setIndex] = {
-        ...nextSets[setIndex],
-        [field]: value,
-      }
-      nextItems[itemIndex] = {
-        ...nextItems[itemIndex],
-        sets: nextSets,
-      }
+      nextSets[setIndex] = { ...nextSets[setIndex], [field]: value }
+      nextItems[itemIndex] = { ...nextItems[itemIndex], sets: nextSets }
       return { ...prev, items: nextItems }
     })
   }
@@ -673,9 +843,7 @@ export default function AdminDashboard({ profile, onLogout }) {
         .select('*')
         .eq('member_id', workoutForm.member_id)
 
-      const freshPtCount = (freshWorkouts || []).filter(
-        (workout) => workout.workout_type === 'pt',
-      ).length
+      const freshPtCount = (freshWorkouts || []).filter((workout) => workout.workout_type === 'pt').length
 
       await supabase
         .from('members')
@@ -703,10 +871,7 @@ export default function AdminDashboard({ profile, onLogout }) {
           ? items.map((item) => ({
               exercise_id: item.exercise_id || '',
               exercise_name_snapshot: item.exercise_name_snapshot || '',
-              sets:
-                Array.isArray(item.sets) && item.sets.length > 0
-                  ? item.sets
-                  : [{ kg: '', reps: '' }],
+              sets: Array.isArray(item.sets) && item.sets.length > 0 ? item.sets : [{ kg: '', reps: '' }],
             }))
           : [{ ...emptyWorkoutItem }],
     })
@@ -725,15 +890,9 @@ export default function AdminDashboard({ profile, onLogout }) {
         .select('*')
         .eq('member_id', workout.member_id)
 
-      const freshPtCount = (freshWorkouts || []).filter(
-        (item) => item.workout_type === 'pt',
-      ).length
+      const freshPtCount = (freshWorkouts || []).filter((item) => item.workout_type === 'pt').length
 
-      await supabase
-        .from('members')
-        .update({ used_sessions: freshPtCount })
-        .eq('id', workout.member_id)
-
+      await supabase.from('members').update({ used_sessions: freshPtCount }).eq('id', workout.member_id)
       await loadMembers()
     }
 
@@ -801,11 +960,7 @@ export default function AdminDashboard({ profile, onLogout }) {
   }
 
   const handleBulkExerciseInsert = async () => {
-    const lines = bulkExerciseText
-      .split('\n')
-      .map((line) => line.trim())
-      .filter(Boolean)
-
+    const lines = bulkExerciseText.split('\n').map((line) => line.trim()).filter(Boolean)
     if (lines.length === 0) {
       setMessage('일괄 입력할 내용을 넣어주세요.')
       return
@@ -820,7 +975,6 @@ export default function AdminDashboard({ profile, onLogout }) {
       const name = (nameRaw || '').trim()
       const body_part = (bodyPartRaw || '').trim()
       const category = (categoryRaw || '').trim()
-
       if (!name) continue
 
       let brandId = null
@@ -837,7 +991,6 @@ export default function AdminDashboard({ profile, onLogout }) {
             brandMap.set(brandName, newBrand.id)
           }
         }
-
         brandId = brandMap.get(brandName) || null
       }
 
@@ -865,8 +1018,8 @@ export default function AdminDashboard({ profile, onLogout }) {
     setMessage(`${rowsToInsert.length}개의 운동이 일괄 등록되었습니다.`)
   }
 
-  const handleDietFeedbackSave = async (dietId, feedback) => {
-    await supabase.from('diet_logs').update({ coach_feedback: feedback }).eq('id', dietId)
+  const handleDietFeedbackSave = async (dietId, payload) => {
+    await supabase.from('diet_logs').update(payload).eq('id', dietId)
     await loadDietLogs()
     setMessage('식단 피드백이 저장되었습니다.')
   }
@@ -1008,6 +1161,194 @@ export default function AdminDashboard({ profile, onLogout }) {
     setMessage('코치 스케줄이 삭제되었습니다.')
   }
 
+  const resetProgramForm = () => {
+    setProgramForm(emptyProgramForm)
+    setEditingProgramId(null)
+  }
+
+  const handleProgramSubmit = async (e) => {
+    e.preventDefault()
+
+    const payload = {
+      name: programForm.name?.trim() || '',
+      price: Number(programForm.price) || 0,
+      session_count: Number(programForm.session_count) || 0,
+      description: programForm.description?.trim() || '',
+      is_vip: !!programForm.is_vip,
+      is_active: !!programForm.is_active,
+    }
+
+    if (!payload.name) {
+      setMessage('프로그램명을 입력해주세요.')
+      return
+    }
+
+    if (editingProgramId) {
+      await supabase.from('programs').update(payload).eq('id', editingProgramId)
+      setMessage('프로그램이 수정되었습니다.')
+    } else {
+      await supabase.from('programs').insert(payload)
+      setMessage('프로그램이 추가되었습니다.')
+    }
+
+    resetProgramForm()
+    await loadPrograms()
+    await loadMembers()
+  }
+
+  const handleProgramEdit = (program) => {
+    setEditingProgramId(program.id)
+    setProgramForm({
+      id: program.id,
+      name: program.name || '',
+      price: program.price || '',
+      session_count: program.session_count || '',
+      description: program.description || '',
+      is_vip: !!program.is_vip,
+      is_active: !!program.is_active,
+    })
+  }
+
+  const handleProgramDelete = async (programId) => {
+    if (!window.confirm('프로그램을 삭제할까요?')) return
+    await supabase.from('programs').delete().eq('id', programId)
+    await loadPrograms()
+    setMessage('프로그램이 삭제되었습니다.')
+  }
+
+  const resetSaleForm = () => {
+    setSaleForm(emptySaleForm)
+    setEditingSaleId(null)
+  }
+
+  const handleSaleSubmit = async (e) => {
+    e.preventDefault()
+
+    const payload = {
+      member_id: saleForm.member_id || null,
+      program_id: saleForm.program_id || null,
+      sale_date: saleForm.sale_date,
+      amount: Number(saleForm.amount) || 0,
+      payment_method: saleForm.payment_method,
+      installment_months: Number(saleForm.installment_months) || 0,
+      cash_receipt_issued: !!saleForm.cash_receipt_issued,
+      purchased_session_count: Number(saleForm.purchased_session_count) || 0,
+      service_session_count: Number(saleForm.service_session_count) || 0,
+      is_vip: !!saleForm.is_vip,
+      memo: saleForm.memo?.trim() || '',
+    }
+
+    if (editingSaleId) {
+      await supabase.from('sales_records').update(payload).eq('id', editingSaleId)
+      setMessage('매출 기록이 수정되었습니다.')
+    } else {
+      await supabase.from('sales_records').insert(payload)
+      setMessage('매출 기록이 저장되었습니다.')
+    }
+
+    resetSaleForm()
+    await loadSalesRecords()
+    await loadSalesSummary(saleMonth)
+  }
+
+  const handleSaleEdit = (sale) => {
+    setEditingSaleId(sale.id)
+    setSaleForm({
+      id: sale.id,
+      member_id: sale.member_id || '',
+      program_id: sale.program_id || '',
+      sale_date: sale.sale_date,
+      amount: sale.amount || '',
+      payment_method: sale.payment_method || '카드',
+      installment_months: sale.installment_months || 0,
+      cash_receipt_issued: !!sale.cash_receipt_issued,
+      purchased_session_count: sale.purchased_session_count || 0,
+      service_session_count: sale.service_session_count || 0,
+      is_vip: !!sale.is_vip,
+      memo: sale.memo || '',
+    })
+  }
+
+  const handleSaleDelete = async (saleId) => {
+    if (!window.confirm('매출 기록을 삭제할까요?')) return
+    await supabase.from('sales_records').delete().eq('id', saleId)
+    await loadSalesRecords()
+    await loadSalesSummary(saleMonth)
+    setMessage('매출 기록이 삭제되었습니다.')
+  }
+
+  const getSalesAutoFeedback = () => {
+    if (!salesSummary) return '매출 데이터가 없습니다.'
+    const total = Number(salesSummary.total_sales || 0)
+    const count = Number(salesSummary.total_count || 0)
+    const vip = Number(salesSummary.vip_sales_count || 0)
+
+    if (count === 0) return '이번 달 등록된 매출 기록이 없습니다.'
+    if (total >= 3000000) return '좋습니다. 이번 달 매출 흐름이 안정적입니다.'
+    if (vip >= 3) return 'VIP 전환이 잘 이루어지고 있습니다.'
+    if (total < 1000000) return '이번 달은 신규 등록/재등록 전환 전략 점검이 필요합니다.'
+    return '현재 매출 흐름은 보통 수준입니다. 결제수단과 프로그램 전환율을 함께 보세요.'
+  }
+
+  const resetNoticeForm = () => {
+    setNoticeForm(emptyNoticeForm)
+    setEditingNoticeId(null)
+  }
+
+  const handleNoticeSubmit = async (e) => {
+    e.preventDefault()
+
+    const payload = {
+      title: noticeForm.title?.trim() || '',
+      content: noticeForm.content?.trim() || '',
+      category: noticeForm.category,
+      image_url: noticeForm.image_url?.trim() || '',
+      video_url: noticeForm.video_url?.trim() || '',
+      is_published: !!noticeForm.is_published,
+      starts_at: noticeForm.starts_at || null,
+      ends_at: noticeForm.ends_at || null,
+      created_by: profile?.id || null,
+    }
+
+    if (!payload.title) {
+      setMessage('공지 제목을 입력해주세요.')
+      return
+    }
+
+    if (editingNoticeId) {
+      await supabase.from('notices').update(payload).eq('id', editingNoticeId)
+      setMessage('공지사항이 수정되었습니다.')
+    } else {
+      await supabase.from('notices').insert(payload)
+      setMessage('공지사항이 등록되었습니다.')
+    }
+
+    resetNoticeForm()
+    await loadNotices()
+  }
+
+  const handleNoticeEdit = (notice) => {
+    setEditingNoticeId(notice.id)
+    setNoticeForm({
+      id: notice.id,
+      title: notice.title || '',
+      content: notice.content || '',
+      category: notice.category || '공지',
+      image_url: notice.image_url || '',
+      video_url: notice.video_url || '',
+      is_published: !!notice.is_published,
+      starts_at: notice.starts_at || '',
+      ends_at: notice.ends_at || '',
+    })
+  }
+
+  const handleNoticeDelete = async (noticeId) => {
+    if (!window.confirm('공지사항을 삭제할까요?')) return
+    await supabase.from('notices').delete().eq('id', noticeId)
+    await loadNotices()
+    setMessage('공지사항이 삭제되었습니다.')
+  }
+
   const displayedDietLogs = dietMemberFilter
     ? dietLogs.filter((diet) => diet.member_id === dietMemberFilter)
     : dietLogs
@@ -1027,7 +1368,6 @@ export default function AdminDashboard({ profile, onLogout }) {
             <p className="sub-text">{profile?.name || '관리자'}님으로 로그인됨</p>
           </div>
         </div>
-
         <button className="secondary-btn" onClick={onLogout}>
           로그아웃
         </button>
@@ -1054,18 +1394,27 @@ export default function AdminDashboard({ profile, onLogout }) {
             <form className="stack-gap" onSubmit={handleMemberSubmit}>
               <label className="field">
                 <span>이름</span>
-                <input
-                  value={memberForm.name}
-                  onChange={(e) => setMemberForm({ ...memberForm, name: e.target.value })}
-                />
+                <input value={memberForm.name} onChange={(e) => setMemberForm({ ...memberForm, name: e.target.value })} />
               </label>
 
               <label className="field">
                 <span>목표</span>
-                <input
-                  value={memberForm.goal}
-                  onChange={(e) => setMemberForm({ ...memberForm, goal: e.target.value })}
-                />
+                <input value={memberForm.goal} onChange={(e) => setMemberForm({ ...memberForm, goal: e.target.value })} />
+              </label>
+
+              <label className="field">
+                <span>현재 프로그램</span>
+                <select
+                  value={memberForm.current_program_id}
+                  onChange={(e) => setMemberForm({ ...memberForm, current_program_id: e.target.value })}
+                >
+                  <option value="">선택 안함</option>
+                  {programs.map((program) => (
+                    <option key={program.id} value={program.id}>
+                      {program.name}
+                    </option>
+                  ))}
+                </select>
               </label>
 
               <div className="grid-2">
@@ -1074,9 +1423,7 @@ export default function AdminDashboard({ profile, onLogout }) {
                   <input
                     type="number"
                     value={memberForm.total_sessions}
-                    onChange={(e) =>
-                      setMemberForm({ ...memberForm, total_sessions: e.target.value })
-                    }
+                    onChange={(e) => setMemberForm({ ...memberForm, total_sessions: e.target.value })}
                   />
                 </label>
 
@@ -1085,9 +1432,7 @@ export default function AdminDashboard({ profile, onLogout }) {
                   <input
                     type="number"
                     value={memberForm.used_sessions}
-                    onChange={(e) =>
-                      setMemberForm({ ...memberForm, used_sessions: e.target.value })
-                    }
+                    onChange={(e) => setMemberForm({ ...memberForm, used_sessions: e.target.value })}
                   />
                 </label>
               </div>
@@ -1098,9 +1443,7 @@ export default function AdminDashboard({ profile, onLogout }) {
                   <input
                     type="date"
                     value={memberForm.start_date}
-                    onChange={(e) =>
-                      setMemberForm({ ...memberForm, start_date: e.target.value })
-                    }
+                    onChange={(e) => setMemberForm({ ...memberForm, start_date: e.target.value })}
                   />
                 </label>
 
@@ -1115,12 +1458,8 @@ export default function AdminDashboard({ profile, onLogout }) {
               </div>
 
               <label className="field">
-                <span>메모</span>
-                <textarea
-                  rows="4"
-                  value={memberForm.memo}
-                  onChange={(e) => setMemberForm({ ...memberForm, memo: e.target.value })}
-                />
+                <span>회원 메모(회원에게 보임)</span>
+                <textarea rows="4" value={memberForm.memo} onChange={(e) => setMemberForm({ ...memberForm, memo: e.target.value })} />
               </label>
 
               <label className="field">
@@ -1128,22 +1467,12 @@ export default function AdminDashboard({ profile, onLogout }) {
                 <div className="inline-actions">
                   <input
                     value={memberForm.access_code}
-                    onChange={(e) =>
-                      setMemberForm({
-                        ...memberForm,
-                        access_code: e.target.value.toUpperCase(),
-                      })
-                    }
+                    onChange={(e) => setMemberForm({ ...memberForm, access_code: e.target.value.toUpperCase() })}
                   />
                   <button
                     type="button"
                     className="secondary-btn"
-                    onClick={() =>
-                      setMemberForm((prev) => ({
-                        ...prev,
-                        access_code: randomCode(),
-                      }))
-                    }
+                    onClick={() => setMemberForm((prev) => ({ ...prev, access_code: randomCode() }))}
                   >
                     생성
                   </button>
@@ -1166,7 +1495,6 @@ export default function AdminDashboard({ profile, onLogout }) {
             <div className="list-stack">
               {memberStats.map((member) => {
                 const isSelected = selectedMemberId === member.id
-
                 return (
                   <div
                     key={member.id}
@@ -1181,9 +1509,8 @@ export default function AdminDashboard({ profile, onLogout }) {
                     <div className="compact-text">
                       목표: {member.goal || '-'} / Access: {member.access_code}
                     </div>
-
                     <div className="compact-text">
-                      PT {member.ptCount}회 / 개인운동 {member.personalCount}회
+                      PT {member.ptCount}회 / 개인운동 {member.personalCount}회 / 프로그램 {member.programs?.name || '-'}
                     </div>
 
                     <div className="inline-actions wrap">
@@ -1226,49 +1553,108 @@ export default function AdminDashboard({ profile, onLogout }) {
             </div>
 
             {selectedMember ? (
-              <div className="sub-card">
-                <h3>선택 회원 상세 / 루틴 관리</h3>
-                <div className="detail-box">
-                  <p><strong>이름:</strong> {selectedMember.name}</p>
-                  <p><strong>목표:</strong> {selectedMember.goal || '-'}</p>
-                  <p>
-                    <strong>기간:</strong> {formatDate(selectedMember.start_date)} ~{' '}
-                    {formatDate(selectedMember.end_date)}
-                  </p>
-                  <p><strong>메모:</strong> {selectedMember.memo || '-'}</p>
-                  <p>
-                    <strong>회원 링크:</strong> {window.location.origin}?member={selectedMember.id}
-                  </p>
-                </div>
+              <>
+                <div className="sub-card">
+                  <h3>선택 회원 상세 / 루틴 관리</h3>
+                  <div className="detail-box">
+                    <p><strong>이름:</strong> {selectedMember.name}</p>
+                    <p><strong>목표:</strong> {selectedMember.goal || '-'}</p>
+                    <p><strong>프로그램:</strong> {selectedMember.programs?.name || '-'}</p>
+                    <p><strong>기간:</strong> {formatDate(selectedMember.start_date)} ~ {formatDate(selectedMember.end_date)}</p>
+                    <p><strong>회원 메모:</strong> {selectedMember.memo || '-'}</p>
+                    <p><strong>회원 링크:</strong> {window.location.origin}?member={selectedMember.id}</p>
+                  </div>
 
-                <div className="stack-gap">
-                  <label className="field">
-                    <span>루틴 제목</span>
-                    <input
-                      value={routineForm.title}
-                      onChange={(e) => setRoutineForm({ ...routineForm, title: e.target.value })}
-                    />
-                  </label>
+                  <div className="stack-gap">
+                    <label className="field">
+                      <span>루틴 제목</span>
+                      <input value={routineForm.title} onChange={(e) => setRoutineForm({ ...routineForm, title: e.target.value })} />
+                    </label>
 
-                  <label className="field">
-                    <span>루틴 내용</span>
-                    <textarea
-                      rows="6"
-                      value={routineForm.content}
-                      onChange={(e) => setRoutineForm({ ...routineForm, content: e.target.value })}
-                    />
-                  </label>
+                    <label className="field">
+                      <span>루틴 내용</span>
+                      <textarea rows="6" value={routineForm.content} onChange={(e) => setRoutineForm({ ...routineForm, content: e.target.value })} />
+                    </label>
 
-                  <div className="inline-actions wrap">
-                    <button className="primary-btn" type="button" onClick={handleRoutineSave}>
-                      루틴 저장
-                    </button>
-                    <button className="danger-btn" type="button" onClick={handleRoutineDelete}>
-                      루틴 삭제
-                    </button>
+                    <div className="inline-actions wrap">
+                      <button className="primary-btn" type="button" onClick={handleRoutineSave}>
+                        루틴 저장
+                      </button>
+                      <button className="danger-btn" type="button" onClick={handleRoutineDelete}>
+                        루틴 삭제
+                      </button>
+                    </div>
                   </div>
                 </div>
-              </div>
+
+                <div className="sub-card">
+                  <h3>관리자 전용 메모</h3>
+                  <label className="field">
+                    <span>비공개 메모 입력</span>
+                    <textarea rows="4" value={adminNoteInput} onChange={(e) => setAdminNoteInput(e.target.value)} />
+                  </label>
+                  <button className="primary-btn" type="button" onClick={handleAdminNoteSave}>
+                    메모 저장
+                  </button>
+
+                  <div className="list-stack">
+                    {adminNotes.map((note) => (
+                      <div key={note.id} className="list-card">
+                        <div className="compact-text">{note.note}</div>
+                        <div className="compact-text">수정일: {note.updated_at?.slice(0, 10) || '-'}</div>
+                        <button className="danger-btn" type="button" onClick={() => handleAdminNoteDelete(note.id)}>
+                          삭제
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="sub-card">
+                  <h3>회원 건강정보</h3>
+                  <div className="list-stack">
+                    {memberHealthLogs.length === 0 ? <div className="compact-text">등록된 건강정보가 없습니다.</div> : null}
+                    {memberHealthLogs.map((health) => {
+                      const collapsed = collapsedHealthLogs[health.id] ?? true
+                      return (
+                        <div key={health.id} className="list-card">
+                          <div className="list-card-top">
+                            <strong>{health.record_date}</strong>
+                            <span className="pill">체중 {health.weight_kg || '-'}kg</span>
+                          </div>
+                          <div className="compact-text">
+                            간략히보기: 키 {health.height_cm || '-'} / 체지방 {health.body_fat_percent || '-'} / 골격근 {health.skeletal_muscle_mass || '-'}
+                          </div>
+                          <button
+                            type="button"
+                            className="secondary-btn"
+                            onClick={() =>
+                              setCollapsedHealthLogs((prev) => ({
+                                ...prev,
+                                [health.id]: !collapsed,
+                              }))
+                            }
+                          >
+                            {collapsed ? '상세히보기' : '간략히보기'}
+                          </button>
+
+                          {!collapsed ? (
+                            <div className="detail-box">
+                              <p><strong>키:</strong> {health.height_cm || '-'}</p>
+                              <p><strong>체중:</strong> {health.weight_kg || '-'}</p>
+                              <p><strong>체지방:</strong> {health.body_fat_percent || '-'}</p>
+                              <p><strong>골격근량:</strong> {health.skeletal_muscle_mass || '-'}</p>
+                              <p><strong>병력사항:</strong> {health.medical_history || '-'}</p>
+                              <p><strong>회원 메모:</strong> {health.member_note || '-'}</p>
+                              <p><strong>인바디 이미지 URL:</strong> {health.inbody_image_url || '-'}</p>
+                            </div>
+                          ) : null}
+                        </div>
+                      )
+                    })}
+                  </div>
+                </div>
+              </>
             ) : null}
           </section>
         </div>
@@ -1278,17 +1664,11 @@ export default function AdminDashboard({ profile, onLogout }) {
         <div className="two-col">
           <section className="card">
             <h2>운동 기록 작성 / 수정</h2>
-
             <form className="stack-gap" onSubmit={handleWorkoutSubmit}>
               <div className="grid-2">
                 <label className="field">
                   <span>회원 선택</span>
-                  <select
-                    value={workoutForm.member_id}
-                    onChange={(e) =>
-                      setWorkoutForm({ ...workoutForm, member_id: e.target.value })
-                    }
-                  >
+                  <select value={workoutForm.member_id} onChange={(e) => setWorkoutForm({ ...workoutForm, member_id: e.target.value })}>
                     <option value="">회원 선택</option>
                     {members.map((member) => (
                       <option key={member.id} value={member.id}>
@@ -1303,21 +1683,14 @@ export default function AdminDashboard({ profile, onLogout }) {
                   <input
                     type="date"
                     value={workoutForm.workout_date}
-                    onChange={(e) =>
-                      setWorkoutForm({ ...workoutForm, workout_date: e.target.value })
-                    }
+                    onChange={(e) => setWorkoutForm({ ...workoutForm, workout_date: e.target.value })}
                   />
                 </label>
               </div>
 
               <label className="field">
                 <span>기록 타입</span>
-                <select
-                  value={workoutForm.workout_type}
-                  onChange={(e) =>
-                    setWorkoutForm({ ...workoutForm, workout_type: e.target.value })
-                  }
-                >
+                <select value={workoutForm.workout_type} onChange={(e) => setWorkoutForm({ ...workoutForm, workout_type: e.target.value })}>
                   <option value="pt">PT</option>
                   <option value="personal">개인운동</option>
                 </select>
@@ -1340,10 +1713,7 @@ export default function AdminDashboard({ profile, onLogout }) {
 
                     <label className="field">
                       <span>운동DB 선택</span>
-                      <select
-                        value={item.exercise_id}
-                        onChange={(e) => updateWorkoutItemSelect(itemIndex, e.target.value)}
-                      >
+                      <select value={item.exercise_id} onChange={(e) => updateWorkoutItemSelect(itemIndex, e.target.value)}>
                         <option value="">선택 안함</option>
                         {exercises.map((exercise) => (
                           <option key={exercise.id} value={exercise.id}>
@@ -1368,16 +1738,12 @@ export default function AdminDashboard({ profile, onLogout }) {
                           <input
                             placeholder="kg"
                             value={setRow.kg}
-                            onChange={(e) =>
-                              updateSetValue(itemIndex, setIndex, 'kg', e.target.value)
-                            }
+                            onChange={(e) => updateSetValue(itemIndex, setIndex, 'kg', e.target.value)}
                           />
                           <input
                             placeholder="reps"
                             value={setRow.reps}
-                            onChange={(e) =>
-                              updateSetValue(itemIndex, setIndex, 'reps', e.target.value)
-                            }
+                            onChange={(e) => updateSetValue(itemIndex, setIndex, 'reps', e.target.value)}
                           />
                           <button
                             type="button"
@@ -1404,20 +1770,12 @@ export default function AdminDashboard({ profile, onLogout }) {
 
               <label className="field">
                 <span>잘한점</span>
-                <textarea
-                  rows="3"
-                  value={workoutForm.good}
-                  onChange={(e) => setWorkoutForm({ ...workoutForm, good: e.target.value })}
-                />
+                <textarea rows="3" value={workoutForm.good} onChange={(e) => setWorkoutForm({ ...workoutForm, good: e.target.value })} />
               </label>
 
               <label className="field">
                 <span>보완점</span>
-                <textarea
-                  rows="3"
-                  value={workoutForm.improve}
-                  onChange={(e) => setWorkoutForm({ ...workoutForm, improve: e.target.value })}
-                />
+                <textarea rows="3" value={workoutForm.improve} onChange={(e) => setWorkoutForm({ ...workoutForm, improve: e.target.value })} />
               </label>
 
               <div className="inline-actions wrap">
@@ -1433,7 +1791,6 @@ export default function AdminDashboard({ profile, onLogout }) {
 
           <section className="card">
             <h2>운동 기록 목록</h2>
-
             <div className="list-stack">
               {workouts.map((workout) => {
                 const member = members.find((item) => item.id === workout.member_id)
@@ -1443,9 +1800,7 @@ export default function AdminDashboard({ profile, onLogout }) {
                 return (
                   <div key={workout.id} className="list-card">
                     <div className="list-card-top">
-                      <strong>
-                        {member?.name || '회원없음'} / {workout.workout_type === 'pt' ? 'PT' : '개인운동'}
-                      </strong>
+                      <strong>{member?.name || '회원없음'} / {workout.workout_type === 'pt' ? 'PT' : '개인운동'}</strong>
                       <span className="pill">{workout.workout_date}</span>
                     </div>
 
@@ -1467,19 +1822,11 @@ export default function AdminDashboard({ profile, onLogout }) {
                         {collapsed ? '상세히보기' : '간략히보기'}
                       </button>
 
-                      <button
-                        type="button"
-                        className="secondary-btn"
-                        onClick={() => handleWorkoutEdit(workout)}
-                      >
+                      <button type="button" className="secondary-btn" onClick={() => handleWorkoutEdit(workout)}>
                         수정
                       </button>
 
-                      <button
-                        type="button"
-                        className="danger-btn"
-                        onClick={() => handleWorkoutDelete(workout)}
-                      >
+                      <button type="button" className="danger-btn" onClick={() => handleWorkoutDelete(workout)}>
                         삭제
                       </button>
                     </div>
@@ -1514,14 +1861,10 @@ export default function AdminDashboard({ profile, onLogout }) {
         <div className="two-col">
           <section className="card">
             <h2>브랜드 관리</h2>
-
             <form className="stack-gap" onSubmit={handleBrandSubmit}>
               <label className="field">
                 <span>브랜드명</span>
-                <input
-                  value={brandForm.name}
-                  onChange={(e) => setBrandForm({ name: e.target.value })}
-                />
+                <input value={brandForm.name} onChange={(e) => setBrandForm({ name: e.target.value })} />
               </label>
 
               <div className="inline-actions wrap">
@@ -1547,7 +1890,6 @@ export default function AdminDashboard({ profile, onLogout }) {
                   <div className="list-card-top">
                     <strong>{brand.name}</strong>
                   </div>
-
                   <div className="inline-actions wrap">
                     <button
                       type="button"
@@ -1559,12 +1901,7 @@ export default function AdminDashboard({ profile, onLogout }) {
                     >
                       수정
                     </button>
-
-                    <button
-                      type="button"
-                      className="danger-btn"
-                      onClick={() => handleBrandDelete(brand.id)}
-                    >
+                    <button type="button" className="danger-btn" onClick={() => handleBrandDelete(brand.id)}>
                       삭제
                     </button>
                   </div>
@@ -1576,11 +1913,7 @@ export default function AdminDashboard({ profile, onLogout }) {
           <section className="card">
             <div className="section-head">
               <h2>운동 관리</h2>
-              <button
-                type="button"
-                className="secondary-btn"
-                onClick={() => setShowBulkInput((prev) => !prev)}
-              >
+              <button type="button" className="secondary-btn" onClick={() => setShowBulkInput((prev) => !prev)}>
                 {showBulkInput ? '개별 입력만 보기' : '일괄 입력 열기'}
               </button>
             </div>
@@ -1588,43 +1921,21 @@ export default function AdminDashboard({ profile, onLogout }) {
             <form className="stack-gap" onSubmit={handleExerciseSubmit}>
               <label className="field">
                 <span>운동명</span>
-                <input
-                  value={exerciseForm.name}
-                  onChange={(e) =>
-                    setExerciseForm({ ...exerciseForm, name: e.target.value })
-                  }
-                />
+                <input value={exerciseForm.name} onChange={(e) => setExerciseForm({ ...exerciseForm, name: e.target.value })} />
               </label>
 
               <div className="grid-3">
                 <label className="field">
                   <span>부위</span>
-                  <input
-                    value={exerciseForm.body_part}
-                    onChange={(e) =>
-                      setExerciseForm({ ...exerciseForm, body_part: e.target.value })
-                    }
-                  />
+                  <input value={exerciseForm.body_part} onChange={(e) => setExerciseForm({ ...exerciseForm, body_part: e.target.value })} />
                 </label>
-
                 <label className="field">
                   <span>카테고리</span>
-                  <input
-                    value={exerciseForm.category}
-                    onChange={(e) =>
-                      setExerciseForm({ ...exerciseForm, category: e.target.value })
-                    }
-                  />
+                  <input value={exerciseForm.category} onChange={(e) => setExerciseForm({ ...exerciseForm, category: e.target.value })} />
                 </label>
-
                 <label className="field">
                   <span>브랜드</span>
-                  <select
-                    value={exerciseForm.brand_id}
-                    onChange={(e) =>
-                      setExerciseForm({ ...exerciseForm, brand_id: e.target.value })
-                    }
-                  >
+                  <select value={exerciseForm.brand_id} onChange={(e) => setExerciseForm({ ...exerciseForm, brand_id: e.target.value })}>
                     <option value="">선택 안함</option>
                     {brands.map((brand) => (
                       <option key={brand.id} value={brand.id}>
@@ -1655,16 +1966,10 @@ export default function AdminDashboard({ profile, onLogout }) {
             {showBulkInput ? (
               <div className="sub-card">
                 <h3>운동DB 일괄 입력</h3>
-                <p className="sub-text">
-                  형식: 브랜드|운동명|부위|카테고리
-                </p>
+                <p className="sub-text">형식: 브랜드|운동명|부위|카테고리</p>
                 <label className="field">
                   <span>여러 줄 입력</span>
-                  <textarea
-                    rows="8"
-                    value={bulkExerciseText}
-                    onChange={(e) => setBulkExerciseText(e.target.value)}
-                  />
+                  <textarea rows="8" value={bulkExerciseText} onChange={(e) => setBulkExerciseText(e.target.value)} />
                 </label>
                 <button type="button" className="primary-btn" onClick={handleBulkExerciseInsert}>
                   일괄 등록
@@ -1674,11 +1979,7 @@ export default function AdminDashboard({ profile, onLogout }) {
 
             <label className="field">
               <span>검색</span>
-              <input
-                value={exerciseSearch}
-                onChange={(e) => setExerciseSearch(e.target.value)}
-                placeholder="운동명 / 브랜드 / 부위"
-              />
+              <input value={exerciseSearch} onChange={(e) => setExerciseSearch(e.target.value)} placeholder="운동명 / 브랜드 / 부위" />
             </label>
 
             <div className="list-stack">
@@ -1725,11 +2026,7 @@ export default function AdminDashboard({ profile, onLogout }) {
                         수정
                       </button>
 
-                      <button
-                        type="button"
-                        className="danger-btn"
-                        onClick={() => handleExerciseDelete(exercise.id)}
-                      >
+                      <button type="button" className="danger-btn" onClick={() => handleExerciseDelete(exercise.id)}>
                         삭제
                       </button>
                     </div>
@@ -1754,10 +2051,7 @@ export default function AdminDashboard({ profile, onLogout }) {
         <div className="card">
           <div className="section-head">
             <h2>식단 기록</h2>
-            <select
-              value={dietMemberFilter}
-              onChange={(e) => setDietMemberFilter(e.target.value)}
-            >
+            <select value={dietMemberFilter} onChange={(e) => setDietMemberFilter(e.target.value)}>
               <option value="">전체 회원</option>
               {members.map((member) => (
                 <option key={member.id} value={member.id}>
@@ -1852,9 +2146,7 @@ export default function AdminDashboard({ profile, onLogout }) {
                 <input
                   type="date"
                   value={scheduleForm.schedule_date}
-                  onChange={(e) =>
-                    setScheduleForm({ ...scheduleForm, schedule_date: e.target.value })
-                  }
+                  onChange={(e) => setScheduleForm({ ...scheduleForm, schedule_date: e.target.value })}
                 />
               </label>
 
@@ -1863,9 +2155,7 @@ export default function AdminDashboard({ profile, onLogout }) {
                   <input
                     type="checkbox"
                     checked={scheduleForm.is_working}
-                    onChange={(e) =>
-                      setScheduleForm({ ...scheduleForm, is_working: e.target.checked })
-                    }
+                    onChange={(e) => setScheduleForm({ ...scheduleForm, is_working: e.target.checked })}
                   />
                   <span>근무일</span>
                 </label>
@@ -1874,9 +2164,7 @@ export default function AdminDashboard({ profile, onLogout }) {
                   <input
                     type="checkbox"
                     checked={scheduleForm.is_weekend_work}
-                    onChange={(e) =>
-                      setScheduleForm({ ...scheduleForm, is_weekend_work: e.target.checked })
-                    }
+                    onChange={(e) => setScheduleForm({ ...scheduleForm, is_weekend_work: e.target.checked })}
                   />
                   <span>주말 근무</span>
                 </label>
@@ -1888,9 +2176,7 @@ export default function AdminDashboard({ profile, onLogout }) {
                   <input
                     type="time"
                     value={scheduleForm.work_start}
-                    onChange={(e) =>
-                      setScheduleForm({ ...scheduleForm, work_start: e.target.value })
-                    }
+                    onChange={(e) => setScheduleForm({ ...scheduleForm, work_start: e.target.value })}
                     disabled={!scheduleForm.is_working}
                   />
                 </label>
@@ -1900,9 +2186,7 @@ export default function AdminDashboard({ profile, onLogout }) {
                   <input
                     type="time"
                     value={scheduleForm.work_end}
-                    onChange={(e) =>
-                      setScheduleForm({ ...scheduleForm, work_end: e.target.value })
-                    }
+                    onChange={(e) => setScheduleForm({ ...scheduleForm, work_end: e.target.value })}
                     disabled={!scheduleForm.is_working}
                   />
                 </label>
@@ -1930,11 +2214,7 @@ export default function AdminDashboard({ profile, onLogout }) {
 
               <label className="field">
                 <span>메모</span>
-                <textarea
-                  rows="4"
-                  value={scheduleForm.memo}
-                  onChange={(e) => setScheduleForm({ ...scheduleForm, memo: e.target.value })}
-                />
+                <textarea rows="4" value={scheduleForm.memo} onChange={(e) => setScheduleForm({ ...scheduleForm, memo: e.target.value })} />
               </label>
 
               <div className="inline-actions wrap">
@@ -1951,11 +2231,7 @@ export default function AdminDashboard({ profile, onLogout }) {
           <section className="card">
             <div className="section-head">
               <h2>월별 코치 스케줄</h2>
-              <input
-                type="month"
-                value={scheduleMonth}
-                onChange={(e) => setScheduleMonth(e.target.value)}
-              />
+              <input type="month" value={scheduleMonth} onChange={(e) => setScheduleMonth(e.target.value)} />
             </div>
 
             <div className="list-stack">
@@ -1992,19 +2268,11 @@ export default function AdminDashboard({ profile, onLogout }) {
                         {collapsed ? '상세히보기' : '간략히보기'}
                       </button>
 
-                      <button
-                        type="button"
-                        className="secondary-btn"
-                        onClick={() => handleScheduleEdit(schedule)}
-                      >
+                      <button type="button" className="secondary-btn" onClick={() => handleScheduleEdit(schedule)}>
                         수정
                       </button>
 
-                      <button
-                        type="button"
-                        className="danger-btn"
-                        onClick={() => handleScheduleDelete(schedule.id)}
-                      >
+                      <button type="button" className="danger-btn" onClick={() => handleScheduleDelete(schedule.id)}>
                         삭제
                       </button>
                     </div>
@@ -2026,14 +2294,396 @@ export default function AdminDashboard({ profile, onLogout }) {
         </div>
       )}
 
+      {activeTab === '매출기록' && (
+        <div className="stack-gap">
+          <div className="two-col">
+            <section className="card">
+              <h2>매출 기록 입력 / 수정</h2>
+              <form className="stack-gap" onSubmit={handleSaleSubmit}>
+                <div className="grid-2">
+                  <label className="field">
+                    <span>회원</span>
+                    <select value={saleForm.member_id} onChange={(e) => setSaleForm({ ...saleForm, member_id: e.target.value })}>
+                      <option value="">선택 안함</option>
+                      {members.map((member) => (
+                        <option key={member.id} value={member.id}>
+                          {member.name}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+
+                  <label className="field">
+                    <span>프로그램</span>
+                    <select value={saleForm.program_id} onChange={(e) => setSaleForm({ ...saleForm, program_id: e.target.value })}>
+                      <option value="">선택 안함</option>
+                      {programs.map((program) => (
+                        <option key={program.id} value={program.id}>
+                          {program.name}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                </div>
+
+                <div className="grid-2">
+                  <label className="field">
+                    <span>결제일</span>
+                    <input type="date" value={saleForm.sale_date} onChange={(e) => setSaleForm({ ...saleForm, sale_date: e.target.value })} />
+                  </label>
+
+                  <label className="field">
+                    <span>금액</span>
+                    <input type="number" value={saleForm.amount} onChange={(e) => setSaleForm({ ...saleForm, amount: e.target.value })} />
+                  </label>
+                </div>
+
+                <div className="grid-2">
+                  <label className="field">
+                    <span>결제방법</span>
+                    <select value={saleForm.payment_method} onChange={(e) => setSaleForm({ ...saleForm, payment_method: e.target.value })}>
+                      <option value="현금">현금</option>
+                      <option value="카드">카드</option>
+                      <option value="이체">이체</option>
+                      <option value="할부">할부</option>
+                    </select>
+                  </label>
+
+                  <label className="field">
+                    <span>할부 개월수</span>
+                    <input
+                      type="number"
+                      value={saleForm.installment_months}
+                      onChange={(e) => setSaleForm({ ...saleForm, installment_months: e.target.value })}
+                    />
+                  </label>
+                </div>
+
+                <div className="grid-2">
+                  <label className="field">
+                    <span>구매 세션</span>
+                    <input
+                      type="number"
+                      value={saleForm.purchased_session_count}
+                      onChange={(e) => setSaleForm({ ...saleForm, purchased_session_count: e.target.value })}
+                    />
+                  </label>
+
+                  <label className="field">
+                    <span>서비스 세션</span>
+                    <input
+                      type="number"
+                      value={saleForm.service_session_count}
+                      onChange={(e) => setSaleForm({ ...saleForm, service_session_count: e.target.value })}
+                    />
+                  </label>
+                </div>
+
+                <div className="grid-2">
+                  <label className="checkbox-line">
+                    <input
+                      type="checkbox"
+                      checked={saleForm.cash_receipt_issued}
+                      onChange={(e) => setSaleForm({ ...saleForm, cash_receipt_issued: e.target.checked })}
+                    />
+                    <span>현금영수증 발행</span>
+                  </label>
+
+                  <label className="checkbox-line">
+                    <input
+                      type="checkbox"
+                      checked={saleForm.is_vip}
+                      onChange={(e) => setSaleForm({ ...saleForm, is_vip: e.target.checked })}
+                    />
+                    <span>VIP</span>
+                  </label>
+                </div>
+
+                <label className="field">
+                  <span>메모</span>
+                  <textarea rows="4" value={saleForm.memo} onChange={(e) => setSaleForm({ ...saleForm, memo: e.target.value })} />
+                </label>
+
+                <div className="inline-actions wrap">
+                  <button className="primary-btn" type="submit">
+                    {editingSaleId ? '매출 수정' : '매출 저장'}
+                  </button>
+                  <button type="button" className="secondary-btn" onClick={resetSaleForm}>
+                    초기화
+                  </button>
+                </div>
+              </form>
+            </section>
+
+            <section className="card">
+              <div className="section-head">
+                <h2>월별 매출 요약</h2>
+                <input type="month" value={saleMonth} onChange={(e) => setSaleMonth(e.target.value)} />
+              </div>
+
+              <div className="stats-grid">
+                <div className="stat-card">
+                  <span>총 매출</span>
+                  <strong>{Number(salesSummary?.total_sales || 0).toLocaleString()}</strong>
+                </div>
+                <div className="stat-card">
+                  <span>등록 건수</span>
+                  <strong>{Number(salesSummary?.total_count || 0)}</strong>
+                </div>
+                <div className="stat-card">
+                  <span>VIP 결제 수</span>
+                  <strong>{Number(salesSummary?.vip_sales_count || 0)}</strong>
+                </div>
+              </div>
+
+              <div className="detail-box">
+                <p><strong>현금:</strong> {Number(salesSummary?.cash_sales || 0).toLocaleString()}</p>
+                <p><strong>카드:</strong> {Number(salesSummary?.card_sales || 0).toLocaleString()}</p>
+                <p><strong>이체:</strong> {Number(salesSummary?.transfer_sales || 0).toLocaleString()}</p>
+                <p><strong>할부:</strong> {Number(salesSummary?.installment_sales || 0).toLocaleString()}</p>
+                <p><strong>자동 피드백:</strong> {getSalesAutoFeedback()}</p>
+              </div>
+            </section>
+          </div>
+
+          <div className="card">
+            <h2>매출 목록</h2>
+            <div className="list-stack">
+              {filteredSales.map((sale) => (
+                <div key={sale.id} className="list-card">
+                  <div className="list-card-top">
+                    <strong>{sale.members?.name || '회원없음'} / {sale.programs?.name || '프로그램없음'}</strong>
+                    <span className="pill">{sale.sale_date}</span>
+                  </div>
+                  <div className="compact-text">
+                    {Number(sale.amount || 0).toLocaleString()}원 / {sale.payment_method} / 구매 {sale.purchased_session_count}회 / 서비스 {sale.service_session_count}회
+                  </div>
+                  <div className="inline-actions wrap">
+                    <button className="secondary-btn" type="button" onClick={() => handleSaleEdit(sale)}>
+                      수정
+                    </button>
+                    <button className="danger-btn" type="button" onClick={() => handleSaleDelete(sale.id)}>
+                      삭제
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {activeTab === '프로그램' && (
+        <div className="two-col">
+          <section className="card">
+            <h2>프로그램 등록 / 수정</h2>
+            <form className="stack-gap" onSubmit={handleProgramSubmit}>
+              <label className="field">
+                <span>프로그램명</span>
+                <input value={programForm.name} onChange={(e) => setProgramForm({ ...programForm, name: e.target.value })} />
+              </label>
+
+              <div className="grid-2">
+                <label className="field">
+                  <span>가격</span>
+                  <input type="number" value={programForm.price} onChange={(e) => setProgramForm({ ...programForm, price: e.target.value })} />
+                </label>
+                <label className="field">
+                  <span>횟수</span>
+                  <input type="number" value={programForm.session_count} onChange={(e) => setProgramForm({ ...programForm, session_count: e.target.value })} />
+                </label>
+              </div>
+
+              <label className="field">
+                <span>설명</span>
+                <textarea rows="5" value={programForm.description} onChange={(e) => setProgramForm({ ...programForm, description: e.target.value })} />
+              </label>
+
+              <div className="grid-2">
+                <label className="checkbox-line">
+                  <input
+                    type="checkbox"
+                    checked={programForm.is_vip}
+                    onChange={(e) => setProgramForm({ ...programForm, is_vip: e.target.checked })}
+                  />
+                  <span>VIP 프로그램</span>
+                </label>
+
+                <label className="checkbox-line">
+                  <input
+                    type="checkbox"
+                    checked={programForm.is_active}
+                    onChange={(e) => setProgramForm({ ...programForm, is_active: e.target.checked })}
+                  />
+                  <span>활성 상태</span>
+                </label>
+              </div>
+
+              <div className="inline-actions wrap">
+                <button className="primary-btn" type="submit">
+                  {editingProgramId ? '프로그램 수정' : '프로그램 추가'}
+                </button>
+                <button type="button" className="secondary-btn" onClick={resetProgramForm}>
+                  초기화
+                </button>
+              </div>
+            </form>
+          </section>
+
+          <section className="card">
+            <h2>프로그램 목록</h2>
+            <div className="list-stack">
+              {programs.map((program) => (
+                <div key={program.id} className="list-card">
+                  <div className="list-card-top">
+                    <strong>{program.name}</strong>
+                    <span className="pill">{program.is_vip ? 'VIP' : '일반'}</span>
+                  </div>
+                  <div className="compact-text">
+                    {Number(program.price || 0).toLocaleString()}원 / {program.session_count}회 / {program.is_active ? '활성' : '비활성'}
+                  </div>
+                  <div className="inline-actions wrap">
+                    <button className="secondary-btn" type="button" onClick={() => handleProgramEdit(program)}>
+                      수정
+                    </button>
+                    <button className="danger-btn" type="button" onClick={() => handleProgramDelete(program.id)}>
+                      삭제
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </section>
+        </div>
+      )}
+
+      {activeTab === '공지사항' && (
+        <div className="two-col">
+          <section className="card">
+            <h2>공지 / 이벤트 등록</h2>
+            <form className="stack-gap" onSubmit={handleNoticeSubmit}>
+              <label className="field">
+                <span>제목</span>
+                <input value={noticeForm.title} onChange={(e) => setNoticeForm({ ...noticeForm, title: e.target.value })} />
+              </label>
+
+              <label className="field">
+                <span>카테고리</span>
+                <select value={noticeForm.category} onChange={(e) => setNoticeForm({ ...noticeForm, category: e.target.value })}>
+                  <option value="공지">공지</option>
+                  <option value="이벤트">이벤트</option>
+                  <option value="운동영상">운동영상</option>
+                </select>
+              </label>
+
+              <label className="field">
+                <span>내용</span>
+                <textarea rows="6" value={noticeForm.content} onChange={(e) => setNoticeForm({ ...noticeForm, content: e.target.value })} />
+              </label>
+
+              <label className="field">
+                <span>이미지 URL</span>
+                <input value={noticeForm.image_url} onChange={(e) => setNoticeForm({ ...noticeForm, image_url: e.target.value })} />
+              </label>
+
+              <label className="field">
+                <span>영상 URL</span>
+                <input value={noticeForm.video_url} onChange={(e) => setNoticeForm({ ...noticeForm, video_url: e.target.value })} />
+              </label>
+
+              <div className="grid-2">
+                <label className="field">
+                  <span>시작일</span>
+                  <input type="date" value={noticeForm.starts_at} onChange={(e) => setNoticeForm({ ...noticeForm, starts_at: e.target.value })} />
+                </label>
+
+                <label className="field">
+                  <span>종료일</span>
+                  <input type="date" value={noticeForm.ends_at} onChange={(e) => setNoticeForm({ ...noticeForm, ends_at: e.target.value })} />
+                </label>
+              </div>
+
+              <label className="checkbox-line">
+                <input
+                  type="checkbox"
+                  checked={noticeForm.is_published}
+                  onChange={(e) => setNoticeForm({ ...noticeForm, is_published: e.target.checked })}
+                />
+                <span>게시중</span>
+              </label>
+
+              <div className="inline-actions wrap">
+                <button className="primary-btn" type="submit">
+                  {editingNoticeId ? '공지 수정' : '공지 등록'}
+                </button>
+                <button type="button" className="secondary-btn" onClick={resetNoticeForm}>
+                  초기화
+                </button>
+              </div>
+            </form>
+          </section>
+
+          <section className="card">
+            <h2>공지 / 이벤트 목록</h2>
+            <div className="list-stack">
+              {notices.map((notice) => {
+                const collapsed = collapsedNotices[notice.id] ?? true
+                return (
+                  <div key={notice.id} className="list-card">
+                    <div className="list-card-top">
+                      <strong>{notice.title}</strong>
+                      <span className="pill">{notice.category}</span>
+                    </div>
+
+                    <div className="compact-text">
+                      간략히보기: {notice.content.slice(0, 40)}{notice.content.length > 40 ? '...' : ''}
+                    </div>
+
+                    <div className="inline-actions wrap">
+                      <button
+                        className="secondary-btn"
+                        type="button"
+                        onClick={() =>
+                          setCollapsedNotices((prev) => ({
+                            ...prev,
+                            [notice.id]: !collapsed,
+                          }))
+                        }
+                      >
+                        {collapsed ? '상세히보기' : '간략히보기'}
+                      </button>
+
+                      <button className="secondary-btn" type="button" onClick={() => handleNoticeEdit(notice)}>
+                        수정
+                      </button>
+
+                      <button className="danger-btn" type="button" onClick={() => handleNoticeDelete(notice.id)}>
+                        삭제
+                      </button>
+                    </div>
+
+                    {!collapsed ? (
+                      <div className="detail-box">
+                        <p><strong>내용:</strong> {notice.content || '-'}</p>
+                        <p><strong>이미지 URL:</strong> {notice.image_url || '-'}</p>
+                        <p><strong>영상 URL:</strong> {notice.video_url || '-'}</p>
+                        <p><strong>기간:</strong> {formatDate(notice.starts_at)} ~ {formatDate(notice.ends_at)}</p>
+                        <p><strong>게시상태:</strong> {notice.is_published ? '게시중' : '숨김'}</p>
+                      </div>
+                    ) : null}
+                  </div>
+                )
+              })}
+            </div>
+          </section>
+        </div>
+      )}
+
       {activeTab === '사용방법' && (
         <div className="card">
           <div className="section-head">
             <h2>사용방법 관리</h2>
-            <select
-              value={manualTarget}
-              onChange={(e) => setManualTarget(e.target.value)}
-            >
+            <select value={manualTarget} onChange={(e) => setManualTarget(e.target.value)}>
               <option value="member">회원용</option>
               <option value="admin">관리자용</option>
             </select>
@@ -2042,19 +2692,12 @@ export default function AdminDashboard({ profile, onLogout }) {
           <div className="stack-gap">
             <label className="field">
               <span>제목</span>
-              <input
-                value={manualForm.title}
-                onChange={(e) => setManualForm({ ...manualForm, title: e.target.value })}
-              />
+              <input value={manualForm.title} onChange={(e) => setManualForm({ ...manualForm, title: e.target.value })} />
             </label>
 
             <label className="field">
               <span>내용</span>
-              <textarea
-                rows="10"
-                value={manualForm.content}
-                onChange={(e) => setManualForm({ ...manualForm, content: e.target.value })}
-              />
+              <textarea rows="10" value={manualForm.content} onChange={(e) => setManualForm({ ...manualForm, content: e.target.value })} />
             </label>
 
             <div className="inline-actions wrap">
@@ -2087,8 +2730,8 @@ function DietAdminCard({ diet, memberName, collapsed, onToggle, onSave, onDelete
       </div>
 
       <div className="compact-text">
-        간략히보기: {diet.meal_type} / {diet.content.slice(0, 30)}
-        {diet.content.length > 30 ? '...' : ''}
+        간략히보기: {diet.meal_type || '식단'} / {diet.meal_time || '-'} / {diet.content?.slice(0, 24) || ''}
+        {diet.content?.length > 24 ? '...' : ''}
       </div>
 
       <div className="inline-actions wrap">
@@ -2102,24 +2745,70 @@ function DietAdminCard({ diet, memberName, collapsed, onToggle, onSave, onDelete
       </div>
 
       {!collapsed ? (
-        <div className="detail-box stack-gap">
-          <p><strong>식단 종류:</strong> {diet.meal_type}</p>
-          <p><strong>내용:</strong> {diet.content}</p>
-
-          <label className="field">
-            <span>관리자 피드백</span>
-            <textarea
-              rows="4"
-              value={feedback}
-              onChange={(e) => setFeedback(e.target.value)}
-            />
-          </label>
-
-          <button type="button" className="primary-btn" onClick={() => onSave(diet.id, feedback)}>
-            피드백 저장
-          </button>
-        </div>
+        <DietFeedbackEditor diet={diet} feedback={feedback} setFeedback={setFeedback} onSave={onSave} />
       ) : null}
+    </div>
+  )
+}
+
+function DietFeedbackEditor({ diet, feedback, setFeedback, onSave }) {
+  const [local, setLocal] = useState({
+    meal_type: diet.meal_type || '식단',
+    meal_time: diet.meal_time || '',
+    carb_g: diet.carb_g || 0,
+    protein_g: diet.protein_g || 0,
+    fat_g: diet.fat_g || 0,
+    product_brand: diet.product_brand || '',
+    product_name: diet.product_name || '',
+    meal_category: diet.meal_category || '일반식',
+    hunger_level: diet.hunger_level || 0,
+    member_note: diet.member_note || '',
+    content: diet.content || '',
+  })
+
+  useEffect(() => {
+    setLocal({
+      meal_type: diet.meal_type || '식단',
+      meal_time: diet.meal_time || '',
+      carb_g: diet.carb_g || 0,
+      protein_g: diet.protein_g || 0,
+      fat_g: diet.fat_g || 0,
+      product_brand: diet.product_brand || '',
+      product_name: diet.product_name || '',
+      meal_category: diet.meal_category || '일반식',
+      hunger_level: diet.hunger_level || 0,
+      member_note: diet.member_note || '',
+      content: diet.content || '',
+    })
+  }, [diet])
+
+  return (
+    <div className="detail-box stack-gap">
+      <p><strong>식단 종류:</strong> {local.meal_type}</p>
+      <p><strong>시간:</strong> {local.meal_time || '-'}</p>
+      <p><strong>내용:</strong> {local.content || '-'}</p>
+      <p><strong>탄수/단백질/지방:</strong> {local.carb_g || 0}g / {local.protein_g || 0}g / {local.fat_g || 0}g</p>
+      <p><strong>제품:</strong> {local.product_brand || '-'} / {local.product_name || '-'}</p>
+      <p><strong>식사 유형:</strong> {local.meal_category || '-'}</p>
+      <p><strong>배고픔 정도:</strong> {local.hunger_level || 0}</p>
+      <p><strong>회원 메모:</strong> {local.member_note || '-'}</p>
+
+      <label className="field">
+        <span>코치 피드백</span>
+        <textarea rows="4" value={feedback} onChange={(e) => setFeedback(e.target.value)} />
+      </label>
+
+      <button
+        type="button"
+        className="primary-btn"
+        onClick={() =>
+          onSave(diet.id, {
+            coach_feedback: feedback,
+          })
+        }
+      >
+        피드백 저장
+      </button>
     </div>
   )
 }
