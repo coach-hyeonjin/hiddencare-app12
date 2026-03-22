@@ -2,8 +2,18 @@ import { useEffect, useMemo, useState } from 'react'
 import { supabase } from './supabase'
 import AdminDashboard from './AdminDashboard'
 import MemberDashboard from './MemberDashboard'
+import logo from './assets/logo.png'
 
 const MEMBER_STORAGE_KEY = 'hiddencare_member_session_v1'
+
+function BrandHeader() {
+  return (
+    <div className="brand-header">
+      <img src={logo} alt="숨바꼭질케어 로고" className="brand-logo" />
+      <div className="brand-mark">숨바꼭질케어</div>
+    </div>
+  )
+}
 
 function AdminLogin({ onLogin, onBack }) {
   const [email, setEmail] = useState('')
@@ -55,7 +65,7 @@ function AdminLogin({ onLogin, onBack }) {
 
   return (
     <div className="auth-card">
-      <div className="brand-mark">숨바꼭질케어</div>
+      <BrandHeader />
       <h1>관리자 로그인</h1>
       <p className="sub-text">Supabase 관리자 계정으로 로그인하세요.</p>
 
@@ -122,9 +132,8 @@ function MemberAccess({ initialMemberId, onSuccess, onBack }) {
       return
     }
 
-    const member = data[0]
     const sessionData = {
-      member,
+      member: data[0],
       accessCode: accessCode.trim(),
     }
 
@@ -135,7 +144,7 @@ function MemberAccess({ initialMemberId, onSuccess, onBack }) {
 
   return (
     <div className="auth-card">
-      <div className="brand-mark">숨바꼭질케어</div>
+      <BrandHeader />
       <h1>회원 입장</h1>
       <p className="sub-text">회원 링크의 member 값과 access code를 입력하세요.</p>
 
@@ -184,11 +193,37 @@ export default function App() {
   }, [])
 
   useEffect(() => {
-    let isMounted = true
+    let cancelled = false
 
     const restore = async () => {
       try {
-        const { data } = await supabase.auth.getSession()
+        const savedMember = localStorage.getItem(MEMBER_STORAGE_KEY)
+        if (savedMember) {
+          try {
+            const parsed = JSON.parse(savedMember)
+            if (parsed?.member?.id && parsed?.accessCode) {
+              if (!cancelled) {
+                setMemberSession(parsed)
+                setMode('member')
+                setLoading(false)
+              }
+              return
+            }
+          } catch {
+            localStorage.removeItem(MEMBER_STORAGE_KEY)
+          }
+        }
+
+        const { data, error } = await supabase.auth.getSession()
+
+        if (error) {
+          if (!cancelled) {
+            setMode(initialMemberId ? 'member-access' : 'home')
+            setLoading(false)
+          }
+          return
+        }
+
         const session = data?.session
 
         if (session?.user) {
@@ -198,9 +233,7 @@ export default function App() {
             .eq('id', session.user.id)
             .maybeSingle()
 
-          if (!isMounted) return
-
-          if (profile?.role === 'admin') {
+          if (!cancelled && profile?.role === 'admin') {
             setAdminProfile(profile)
             setMode('admin')
             setLoading(false)
@@ -208,60 +241,22 @@ export default function App() {
           }
         }
 
-        const savedMember = localStorage.getItem(MEMBER_STORAGE_KEY)
-
-        if (savedMember) {
-          try {
-            const parsed = JSON.parse(savedMember)
-            if (parsed?.member?.id && parsed?.accessCode) {
-              if (!isMounted) return
-              setMemberSession(parsed)
-              setMode('member')
-              setLoading(false)
-              return
-            }
-          } catch {
-            localStorage.removeItem(MEMBER_STORAGE_KEY)
-          }
+        if (!cancelled) {
+          setMode(initialMemberId ? 'member-access' : 'home')
+          setLoading(false)
         }
-
-        if (!isMounted) return
-        setMode(initialMemberId ? 'member-access' : 'home')
-        setLoading(false)
       } catch {
-        if (!isMounted) return
-        setMode(initialMemberId ? 'member-access' : 'home')
-        setLoading(false)
+        if (!cancelled) {
+          setMode(initialMemberId ? 'member-access' : 'home')
+          setLoading(false)
+        }
       }
     }
 
     restore()
 
-    const { data: listener } = supabase.auth.onAuthStateChange(async (_event, session) => {
-      if (!isMounted) return
-
-      if (!session?.user) {
-        setAdminProfile(null)
-        return
-      }
-
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', session.user.id)
-        .maybeSingle()
-
-      if (!isMounted) return
-
-      if (profile?.role === 'admin') {
-        setAdminProfile(profile)
-        setMode('admin')
-      }
-    })
-
     return () => {
-      isMounted = false
-      listener?.subscription?.unsubscribe()
+      cancelled = true
     }
   }, [initialMemberId])
 
@@ -338,7 +333,7 @@ export default function App() {
     <div className="app-shell center-screen">
       <div className="choice-grid">
         <div className="auth-card">
-          <div className="brand-mark">숨바꼭질케어</div>
+          <BrandHeader />
           <h1>시작하기</h1>
           <p className="sub-text">관리자 또는 회원으로 입장할 수 있습니다.</p>
 
