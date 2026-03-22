@@ -69,9 +69,9 @@ textarea {
 }
 
 .choice-grid {
-  width: min(100%, 980px);
+  width: min(100%, 1040px);
   display: grid;
-  grid-template-columns: 1.2fr 0.8fr;
+  grid-template-columns: 1.1fr 0.9fr;
   gap: 20px;
   align-items: start;
 }
@@ -87,21 +87,63 @@ textarea {
 }
 
 .auth-card {
-  width: min(100%, 440px);
+  width: min(100%, 460px);
 }
 
-.overlay-area {
-  margin-top: 20px;
+.auth-card-large {
+  padding: 28px;
+}
+
+.brand-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.brand-header.large {
+  margin-bottom: 18px;
+}
+
+.brand-header-text {
   display: flex;
   flex-direction: column;
-  gap: 12px;
-  align-items: center;
+  gap: 2px;
 }
 
-.brand-mark {
-  font-weight: 800;
-  color: var(--primary);
-  margin-bottom: 8px;
+.brand-logo {
+  width: 52px;
+  height: 52px;
+  object-fit: contain;
+  border-radius: 14px;
+  background: #fff;
+  flex-shrink: 0;
+}
+
+.brand-logo.large {
+  width: 86px;
+  height: 86px;
+  border-radius: 18px;
+}
+
+.brand-caption {
+  color: var(--sub);
+  font-size: 13px;
+}
+
+.topbar-logo.small {
+  width: 40px;
+  height: 40px;
+  object-fit: contain;
+  border-radius: 12px;
+  background: #fff;
+  flex-shrink: 0;
+}
+
+.topbar-brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
 }
 
 .page-title,
@@ -393,6 +435,75 @@ textarea {
   color: var(--sub);
 }
 
+.password-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.password-wrapper input {
+  flex: 1;
+}
+
+.toggle-btn {
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: none;
+  background: #e5e7eb;
+  cursor: pointer;
+  font-size: 12px;
+  white-space: nowrap;
+}
+
+.toggle-btn:hover {
+  background: #d1d5db;
+}
+
+.checkbox-line {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 44px;
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: #fff;
+}
+
+.checkbox-line input {
+  width: auto;
+  margin: 0;
+}
+
+.slot-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.slot-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 12px;
+  border-radius: 999px;
+  background: #f1f4f9;
+  color: var(--sub);
+  border: 1px solid transparent;
+  cursor: pointer;
+}
+
+.slot-chip input {
+  width: auto;
+  margin: 0;
+}
+
+.slot-chip.active {
+  background: var(--primary-soft);
+  color: var(--primary);
+  border-color: rgba(31, 111, 235, 0.25);
+}
+
 @media (max-width: 1024px) {
   .choice-grid,
   .two-col,
@@ -431,18 +542,14 @@ textarea {
   .tab-btn {
     white-space: nowrap;
   }
-}
-.brand-header {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  margin-bottom: 12px;
-}
 
-.brand-logo {
-  width: 42px;
-  height: 42px;
-  object-fit: contain;
-  border-radius: 10px;
-  background: #fff;
+  .brand-logo.large {
+    width: 72px;
+    height: 72px;
+  }
+
+  .password-wrapper {
+    flex-direction: column;
+    align-items: stretch;
+  }
 }
