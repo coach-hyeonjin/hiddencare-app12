@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { supabase, supabaseEnvReady } from './supabase'
+import { supabase } from './supabase'
 import AdminDashboard from './AdminDashboard'
 import MemberDashboard from './MemberDashboard'
 import logo from './assets/logo.png'
@@ -26,34 +26,45 @@ function BrandHeader({ large = false }) {
 }
 
 async function fetchProfileByUserId(userId) {
-  if (!supabase || !userId) return null
+  if (!userId) return null
 
-  const { data, error } = await supabase
-    .from('profiles')
-    .select('*')
-    .eq('id', userId)
-    .maybeSingle()
+  try {
+    const { data, error } = await supabase
+      .from('profiles')
+      .select('*')
+      .eq('id', userId)
+      .maybeSingle()
 
-  if (error || !data) return null
+    if (error || !data) return null
 
-  return {
-    ...data,
-    role: data.role || 'member',
-    gym_id: data.gym_id || null,
-    is_super_admin: data.role === 'super_admin',
+    return {
+      ...data,
+      role: data.role || 'member',
+      gym_id: data.gym_id || null,
+      is_super_admin: data.role === 'super_admin',
+    }
+  } catch {
+    return null
   }
 }
 
 async function verifyMemberAccess(memberId, accessCode) {
-  if (!supabase || !memberId || !accessCode) return null
+  if (!memberId || !accessCode) return null
 
-  const { data, error } = await supabase.rpc('get_member_by_code', {
-    member_uuid: memberId,
-    code: accessCode.trim(),
-  })
+  try {
+    const { data, error } = await supabase.rpc('get_member_by_code', {
+      member_uuid: memberId,
+      code: accessCode.trim(),
+    })
 
-  if (error || !data || data.length === 0) return null
-  return data[0]
+    if (error || !data || data.length === 0) {
+      return null
+    }
+
+    return data[0]
+  } catch {
+    return null
+  }
 }
 
 function AdminLogin({ onLogin, onBack }) {
@@ -66,11 +77,6 @@ function AdminLogin({ onLogin, onBack }) {
   const handleLogin = async (e) => {
     e.preventDefault()
 
-    if (!supabase) {
-      setMessage('Supabase 연결 설정을 확인해주세요.')
-      return
-    }
-
     if (!email.trim() || !password.trim()) {
       setMessage('이메일과 비밀번호를 입력해주세요.')
       return
@@ -79,37 +85,42 @@ function AdminLogin({ onLogin, onBack }) {
     setLoading(true)
     setMessage('')
 
-    const { error } = await supabase.auth.signInWithPassword({
-      email: email.trim(),
-      password,
-    })
+    try {
+      const { error } = await supabase.auth.signInWithPassword({
+        email: email.trim(),
+        password,
+      })
 
-    if (error) {
-      setMessage(error.message || '로그인에 실패했습니다.')
+      if (error) {
+        setMessage(error.message || '로그인에 실패했습니다.')
+        setLoading(false)
+        return
+      }
+
+      const { data: userData } = await supabase.auth.getUser()
+      const userId = userData?.user?.id
+
+      if (!userId) {
+        setMessage('사용자 정보를 불러오지 못했습니다.')
+        setLoading(false)
+        return
+      }
+
+      const profile = await fetchProfileByUserId(userId)
+
+      if (!profile || !ADMIN_ROLES.includes(profile.role)) {
+        await supabase.auth.signOut()
+        setMessage('관리자 계정만 접근할 수 있습니다.')
+        setLoading(false)
+        return
+      }
+
+      onLogin(profile)
+    } catch {
+      setMessage('로그인 중 오류가 발생했습니다.')
+    } finally {
       setLoading(false)
-      return
     }
-
-    const { data: userData } = await supabase.auth.getUser()
-    const userId = userData?.user?.id
-
-    if (!userId) {
-      setMessage('사용자 정보를 불러오지 못했습니다.')
-      setLoading(false)
-      return
-    }
-
-    const profile = await fetchProfileByUserId(userId)
-
-    if (!profile || !ADMIN_ROLES.includes(profile.role)) {
-      await supabase.auth.signOut()
-      setMessage('관리자 계정만 접근할 수 있습니다.')
-      setLoading(false)
-      return
-    }
-
-    onLogin(profile)
-    setLoading(false)
   }
 
   return (
@@ -171,11 +182,6 @@ function MemberAccess({ initialMemberId, initialAccessCode, onSuccess, onBack })
   const handleAccess = async (e) => {
     e.preventDefault()
 
-    if (!supabase) {
-      setMessage('Supabase 연결 설정을 확인해주세요.')
-      return
-    }
-
     if (!memberId.trim() || !accessCode.trim()) {
       setMessage('회원 ID와 access code를 입력해주세요.')
       return
@@ -184,23 +190,28 @@ function MemberAccess({ initialMemberId, initialAccessCode, onSuccess, onBack })
     setLoading(true)
     setMessage('')
 
-    const member = await verifyMemberAccess(memberId.trim(), accessCode.trim())
+    try {
+      const verifiedMember = await verifyMemberAccess(memberId.trim(), accessCode.trim())
 
-    if (!member) {
-      setMessage('회원 확인에 실패했습니다. ID 또는 access code를 다시 확인해주세요.')
+      if (!verifiedMember) {
+        setMessage('회원 확인에 실패했습니다. ID 또는 access code를 다시 확인해주세요.')
+        setLoading(false)
+        return
+      }
+
+      const sessionData = {
+        member: verifiedMember,
+        accessCode: accessCode.trim().toUpperCase(),
+        savedAt: new Date().toISOString(),
+      }
+
+      localStorage.setItem(MEMBER_STORAGE_KEY, JSON.stringify(sessionData))
+      onSuccess(sessionData)
+    } catch {
+      setMessage('회원 확인 중 오류가 발생했습니다.')
+    } finally {
       setLoading(false)
-      return
     }
-
-    const sessionData = {
-      member,
-      accessCode: accessCode.trim().toUpperCase(),
-      savedAt: new Date().toISOString(),
-    }
-
-    localStorage.setItem(MEMBER_STORAGE_KEY, JSON.stringify(sessionData))
-    onSuccess(sessionData)
-    setLoading(false)
   }
 
   return (
@@ -258,18 +269,13 @@ export default function App() {
   }, [])
 
   useEffect(() => {
-    let mounted = true
+    let alive = true
 
-    const boot = async () => {
+    const restore = async () => {
+      setLoading(true)
+      setBootError('')
+
       try {
-        if (!supabaseEnvReady || !supabase) {
-          if (!mounted) return
-          setBootError('Supabase 환경변수가 연결되지 않았습니다.')
-          setMode('home')
-          setLoading(false)
-          return
-        }
-
         const savedMemberRaw = localStorage.getItem(MEMBER_STORAGE_KEY)
 
         if (savedMemberRaw) {
@@ -281,12 +287,13 @@ export default function App() {
             if (savedMemberId && savedAccessCode) {
               const verifiedMember = await verifyMemberAccess(savedMemberId, savedAccessCode)
 
-              if (verifiedMember && mounted) {
+              if (verifiedMember && alive) {
                 const restoredSession = {
-                  ...parsed,
                   member: verifiedMember,
                   accessCode: savedAccessCode,
+                  savedAt: parsed?.savedAt || new Date().toISOString(),
                 }
+
                 localStorage.setItem(MEMBER_STORAGE_KEY, JSON.stringify(restoredSession))
                 setMemberSession(restoredSession)
                 setMode('member')
@@ -307,7 +314,7 @@ export default function App() {
         if (user) {
           const profile = await fetchProfileByUserId(user.id)
 
-          if (profile && ADMIN_ROLES.includes(profile.role) && mounted) {
+          if (profile && ADMIN_ROLES.includes(profile.role) && alive) {
             setAdminProfile(profile)
             setMode('admin')
             setLoading(false)
@@ -321,69 +328,66 @@ export default function App() {
             entryParams.accessCode,
           )
 
-          if (verifiedMember && mounted) {
-            const sessionValue = {
+          if (verifiedMember && alive) {
+            const sessionDataForMember = {
               member: verifiedMember,
               accessCode: entryParams.accessCode,
               savedAt: new Date().toISOString(),
             }
 
-            localStorage.setItem(MEMBER_STORAGE_KEY, JSON.stringify(sessionValue))
-            setMemberSession(sessionValue)
+            localStorage.setItem(MEMBER_STORAGE_KEY, JSON.stringify(sessionDataForMember))
+            setMemberSession(sessionDataForMember)
             setMode('member')
             setLoading(false)
             return
           }
         }
 
-        if (!mounted) return
-        setMode(entryParams.memberId ? 'member-access' : 'home')
-        setLoading(false)
-      } catch (error) {
-        if (!mounted) return
-        console.error('App boot error:', error)
-        setBootError(error?.message || '초기 로딩 중 오류가 발생했습니다.')
-        setMode(entryParams.memberId ? 'member-access' : 'home')
-        setLoading(false)
+        if (alive) {
+          setMode(entryParams.memberId ? 'member-access' : 'home')
+          setLoading(false)
+        }
+      } catch {
+        if (alive) {
+          setBootError('초기 확인 중 일부 연결이 지연되었습니다. 기본 화면으로 이동합니다.')
+          setMode(entryParams.memberId ? 'member-access' : 'home')
+          setLoading(false)
+        }
       }
     }
 
-    const timeout = window.setTimeout(() => {
-      if (!mounted) return
-      setBootError('초기 로딩이 지연되어 기본 화면으로 전환합니다.')
-      setMode(entryParams.memberId ? 'member-access' : 'home')
-      setLoading(false)
-    }, 4000)
-
-    boot()
+    restore()
 
     const {
       data: { subscription },
-    } = supabase && supabase.auth
-      ? supabase.auth.onAuthStateChange(async (_event, session) => {
-          if (!mounted) return
+    } = supabase.auth.onAuthStateChange(async (event, session) => {
+      if (!alive) return
 
-          if (session?.user) {
-            const profile = await fetchProfileByUserId(session.user.id)
-            if (profile && ADMIN_ROLES.includes(profile.role)) {
-              setAdminProfile(profile)
-              setMode('admin')
-            }
-          }
-        })
-      : { data: { subscription: { unsubscribe: () => {} } } }
+      if (event === 'SIGNED_OUT') {
+        setAdminProfile(null)
+        if (!memberSession) {
+          setMode(entryParams.memberId ? 'member-access' : 'home')
+        }
+        return
+      }
+
+      if (session?.user) {
+        const profile = await fetchProfileByUserId(session.user.id)
+        if (profile && ADMIN_ROLES.includes(profile.role) && alive) {
+          setAdminProfile(profile)
+          setMode('admin')
+        }
+      }
+    })
 
     return () => {
-      mounted = false
-      window.clearTimeout(timeout)
+      alive = false
       subscription.unsubscribe()
     }
   }, [entryParams.memberId, entryParams.accessCode])
 
   const handleAdminLogout = async () => {
-    if (supabase) {
-      await supabase.auth.signOut()
-    }
+    await supabase.auth.signOut()
     setAdminProfile(null)
     setMode(entryParams.memberId ? 'member-access' : 'home')
   }
@@ -478,7 +482,7 @@ export default function App() {
             <li>관리자: 이메일 / 비밀번호 로그인</li>
             <li>회원: URL의 member 값 + access code</li>
             <li>회원 세션 / 관리자 세션 자동 복원</li>
-            <li>환경변수 오류 시에도 홈 화면은 표시되도록 구성</li>
+            <li>세션 확인 실패 시 기본 홈 화면 복귀</li>
           </ul>
         </div>
       </div>
