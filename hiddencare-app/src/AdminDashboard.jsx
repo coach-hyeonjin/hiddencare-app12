@@ -15,6 +15,9 @@ const TABS = [
   '사용방법',
 ]
 
+const ROUTINE_CATEGORIES = ['상체', '하체', '코어', '유산소', '재활', '스트레칭']
+const ROUTINE_DAYS = ['월', '화', '수', '목', '금', '토', '일']
+
 const emptyMemberForm = {
   name: '',
   goal: '',
@@ -79,6 +82,7 @@ const emptyProgramForm = {
   description: '',
   is_vip: false,
   is_active: true,
+  display_order: 0,
 }
 
 const emptyNoticeForm = {
@@ -108,6 +112,16 @@ const emptySaleForm = {
   memo: '',
 }
 
+const emptyRoutineEntry = {
+  id: '',
+  month_key: new Date().toISOString().slice(0, 7),
+  day: '월',
+  category: '상체',
+  title: '',
+  content: '',
+  sort_order: 0,
+}
+
 function randomCode() {
   return Math.random().toString(36).slice(2, 10).toUpperCase()
 }
@@ -133,6 +147,78 @@ function getMonthKey(dateString) {
   return (dateString || '').slice(0, 7)
 }
 
+function textIncludes(value, keyword) {
+  return String(value || '').toLowerCase().includes(String(keyword || '').toLowerCase())
+}
+
+function safeJsonParse(value, fallback) {
+  try {
+    if (!value) return fallback
+    return JSON.parse(value)
+  } catch {
+    return fallback
+  }
+}
+
+function normalizeRoutineData(row) {
+  const parsed = safeJsonParse(row?.content_json, null)
+  const routineEntries = Array.isArray(parsed?.entries)
+    ? parsed.entries.map((entry, index) => ({
+        id: entry.id || `${index + 1}`,
+        month_key: entry.month_key || new Date().toISOString().slice(0, 7),
+        day: entry.day || '월',
+        category: entry.category || '상체',
+        title: entry.title || '',
+        content: entry.content || '',
+        sort_order: Number(entry.sort_order ?? index),
+      }))
+    : []
+
+  return {
+    title: row?.title || '루틴',
+    content: row?.content || '',
+    entries: routineEntries.sort((a, b) => Number(a.sort_order || 0) - Number(b.sort_order || 0)),
+  }
+}
+
+function buildRoutinePayload(routineForm, selectedMemberId, gymId) {
+  const normalizedEntries = (routineForm.entries || []).map((entry, index) => ({
+    id: entry.id || `${Date.now()}_${index}`,
+    month_key: entry.month_key || new Date().toISOString().slice(0, 7),
+    day: entry.day || '월',
+    category: entry.category || '상체',
+    title: entry.title?.trim() || '',
+    content: entry.content?.trim() || '',
+    sort_order: index,
+  }))
+
+  return {
+    member_id: selectedMemberId,
+    title: routineForm.title?.trim() || '루틴',
+    content: routineForm.content?.trim() || '',
+    content_json: JSON.stringify({
+      version: 2,
+      entries: normalizedEntries,
+    }),
+    gym_id: gymId || null,
+  }
+}
+
+function downloadCsv(filename, rows) {
+  if (!rows || rows.length === 0) return
+  const escape = (value) => `"${String(value ?? '').replace(/"/g, '""')}"`
+  const csv = rows.map((row) => row.map(escape).join(',')).join('\n')
+  const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' })
+  const url = URL.createObjectURL(blob)
+  const link = document.createElement('a')
+  link.href = url
+  link.setAttribute('download', filename)
+  document.body.appendChild(link)
+  link.click()
+  document.body.removeChild(link)
+  URL.revokeObjectURL(url)
+}
+
 export default function AdminDashboard({ profile, onLogout }) {
   const [activeTab, setActiveTab] = useState('회원')
   const [loading, setLoading] = useState(true)
@@ -142,6 +228,9 @@ export default function AdminDashboard({ profile, onLogout }) {
   const [selectedMemberId, setSelectedMemberId] = useState('')
   const [memberForm, setMemberForm] = useState(emptyMemberForm)
   const [editingMemberId, setEditingMemberId] = useState(null)
+  const [memberSearch, setMemberSearch] = useState('')
+  const [memberProgramFilter, setMemberProgramFilter] = useState('')
+  const [memberStatusFilter, setMemberStatusFilter] = useState('all')
 
   const [memberHealthLogs, setMemberHealthLogs] = useState([])
   const [collapsedHealthLogs, setCollapsedHealthLogs] = useState({})
@@ -152,6 +241,9 @@ export default function AdminDashboard({ profile, onLogout }) {
   const [workoutItemsMap, setWorkoutItemsMap] = useState({})
   const [collapsedWorkouts, setCollapsedWorkouts] = useState({})
   const [workoutForm, setWorkoutForm] = useState(emptyWorkoutForm)
+  const [workoutSearch, setWorkoutSearch] = useState('')
+  const [workoutMemberFilter, setWorkoutMemberFilter] = useState('')
+  const [workoutTypeFilter, setWorkoutTypeFilter] = useState('all')
 
   const [brands, setBrands] = useState([])
   const [brandForm, setBrandForm] = useState(emptyBrandForm)
@@ -168,8 +260,13 @@ export default function AdminDashboard({ profile, onLogout }) {
   const [dietLogs, setDietLogs] = useState([])
   const [collapsedDiets, setCollapsedDiets] = useState({})
   const [dietMemberFilter, setDietMemberFilter] = useState('')
+  const [dietSearch, setDietSearch] = useState('')
 
-  const [routineForm, setRoutineForm] = useState({ title: '루틴', content: '' })
+  const [routineForm, setRoutineForm] = useState({ title: '루틴', content: '', entries: [] })
+  const [routineMonthFilter, setRoutineMonthFilter] = useState(new Date().toISOString().slice(0, 7))
+  const [routineDayFilter, setRoutineDayFilter] = useState('all')
+  const [routineCategoryFilter, setRoutineCategoryFilter] = useState('all')
+
   const [manualTarget, setManualTarget] = useState('member')
   const [manualForm, setManualForm] = useState({ title: '', content: '' })
   const [manuals, setManuals] = useState([])
@@ -193,17 +290,25 @@ export default function AdminDashboard({ profile, onLogout }) {
   const [programs, setPrograms] = useState([])
   const [programForm, setProgramForm] = useState(emptyProgramForm)
   const [editingProgramId, setEditingProgramId] = useState(null)
+  const [collapsedPrograms, setCollapsedPrograms] = useState({})
+  const [programSearch, setProgramSearch] = useState('')
 
   const [salesRecords, setSalesRecords] = useState([])
   const [saleForm, setSaleForm] = useState(emptySaleForm)
   const [editingSaleId, setEditingSaleId] = useState(null)
   const [saleMonth, setSaleMonth] = useState(new Date().toISOString().slice(0, 7))
+  const [saleSearch, setSaleSearch] = useState('')
+  const [salePaymentFilter, setSalePaymentFilter] = useState('all')
+  const [collapsedSales, setCollapsedSales] = useState({})
   const [salesSummary, setSalesSummary] = useState(null)
 
   const [notices, setNotices] = useState([])
   const [noticeForm, setNoticeForm] = useState(emptyNoticeForm)
   const [editingNoticeId, setEditingNoticeId] = useState(null)
   const [collapsedNotices, setCollapsedNotices] = useState({})
+  const [noticeMonthFilter, setNoticeMonthFilter] = useState(new Date().toISOString().slice(0, 7))
+  const [noticeSearch, setNoticeSearch] = useState('')
+  const [noticeCategoryFilter, setNoticeCategoryFilter] = useState('all')
 
   const selectedMember = useMemo(
     () => members.find((member) => member.id === selectedMemberId) || null,
@@ -247,6 +352,32 @@ export default function AdminDashboard({ profile, onLogout }) {
     })
   }, [members, workouts])
 
+  const filteredMemberStats = useMemo(() => {
+    return memberStats.filter((member) => {
+      const matchesKeyword =
+        !memberSearch.trim() ||
+        textIncludes(member.name, memberSearch) ||
+        textIncludes(member.goal, memberSearch) ||
+        textIncludes(member.access_code, memberSearch) ||
+        textIncludes(member.programs?.name, memberSearch) ||
+        textIncludes(member.memo, memberSearch)
+
+      const matchesProgram = !memberProgramFilter || member.current_program_id === memberProgramFilter
+
+      const remainingSessions = Math.max(
+        Number(member.total_sessions || 0) - Number(member.used_sessions || 0),
+        0,
+      )
+
+      const matchesStatus =
+        memberStatusFilter === 'all' ||
+        (memberStatusFilter === 'remaining' && remainingSessions > 0) ||
+        (memberStatusFilter === 'ended' && remainingSessions <= 0)
+
+      return matchesKeyword && matchesProgram && matchesStatus
+    })
+  }, [memberStats, memberSearch, memberProgramFilter, memberStatusFilter])
+
   const monthlyStats = useMemo(() => {
     const monthKey = new Date().toISOString().slice(0, 7)
     const monthWorkouts = workouts.filter((workout) =>
@@ -267,11 +398,144 @@ export default function AdminDashboard({ profile, onLogout }) {
     return coachSchedules.filter((schedule) => getMonthKey(schedule.schedule_date) === scheduleMonth)
   }, [coachSchedules, scheduleMonth])
 
-  const filteredSales = useMemo(() => {
-    return salesRecords.filter((sale) => getMonthKey(sale.sale_date) === saleMonth)
-  }, [salesRecords, saleMonth])
+  const workoutCards = useMemo(() => {
+    return workouts
+      .map((workout) => {
+        const member = members.find((item) => item.id === workout.member_id)
+        const items = workoutItemsMap[workout.id] || []
+        const exerciseNames = items.map((item) => item.exercise_name_snapshot).join(' ')
+        return {
+          ...workout,
+          member,
+          items,
+          searchText: [
+            member?.name || '',
+            workout.workout_type || '',
+            workout.good || '',
+            workout.improve || '',
+            exerciseNames,
+            workout.workout_date || '',
+          ].join(' '),
+        }
+      })
+      .filter((workout) => {
+        const matchesKeyword = !workoutSearch.trim() || textIncludes(workout.searchText, workoutSearch)
+        const matchesMember = !workoutMemberFilter || workout.member_id === workoutMemberFilter
+        const matchesType = workoutTypeFilter === 'all' || workout.workout_type === workoutTypeFilter
+        return matchesKeyword && matchesMember && matchesType
+      })
+  }, [workouts, members, workoutItemsMap, workoutSearch, workoutMemberFilter, workoutTypeFilter])
 
-  useEffect(() => {
+  const displayedDietLogs = useMemo(() => {
+    return dietLogs.filter((diet) => {
+      const member = members.find((item) => item.id === diet.member_id)
+      const matchesMember = !dietMemberFilter || diet.member_id === dietMemberFilter
+      const matchesKeyword =
+        !dietSearch.trim() ||
+        textIncludes(diet.content, dietSearch) ||
+        textIncludes(diet.member_note, dietSearch) ||
+        textIncludes(diet.coach_feedback, dietSearch) ||
+        textIncludes(diet.meal_type, dietSearch) ||
+        textIncludes(diet.product_brand, dietSearch) ||
+        textIncludes(diet.product_name, dietSearch) ||
+        textIncludes(member?.name, dietSearch)
+      return matchesMember && matchesKeyword
+    })
+  }, [dietLogs, dietMemberFilter, dietSearch, members])
+
+  const filteredRoutineEntries = useMemo(() => {
+    return (routineForm.entries || []).filter((entry) => {
+      const matchesMonth = !routineMonthFilter || entry.month_key === routineMonthFilter
+      const matchesDay = routineDayFilter === 'all' || entry.day === routineDayFilter
+      const matchesCategory = routineCategoryFilter === 'all' || entry.category === routineCategoryFilter
+      return matchesMonth && matchesDay && matchesCategory
+    })
+  }, [routineForm.entries, routineMonthFilter, routineDayFilter, routineCategoryFilter])
+
+  const filteredSales = useMemo(() => {
+    return salesRecords
+      .filter((sale) => getMonthKey(sale.sale_date) === saleMonth)
+      .filter((sale) => {
+        const matchesPayment = salePaymentFilter === 'all' || sale.payment_method === salePaymentFilter
+        const matchesKeyword =
+          !saleSearch.trim() ||
+          textIncludes(sale.members?.name, saleSearch) ||
+          textIncludes(sale.programs?.name, saleSearch) ||
+          textIncludes(sale.payment_method, saleSearch) ||
+          textIncludes(sale.memo, saleSearch) ||
+          textIncludes(sale.sale_date, saleSearch) ||
+          textIncludes(sale.amount, saleSearch)
+        return matchesPayment && matchesKeyword
+      })
+  }, [salesRecords, saleMonth, saleSearch, salePaymentFilter])
+
+  const salesStatsExtended = useMemo(() => {
+    const total = filteredSales.reduce((sum, sale) => sum + Number(sale.amount || 0), 0)
+    const totalCount = filteredSales.length
+    const vipCount = filteredSales.filter((sale) => sale.is_vip).length
+    const vipRatio = totalCount > 0 ? Math.round((vipCount / totalCount) * 100) : 0
+
+    const paymentTotals = filteredSales.reduce((acc, sale) => {
+      const key = sale.payment_method || '기타'
+      acc[key] = (acc[key] || 0) + Number(sale.amount || 0)
+      return acc
+    }, {})
+
+    const programTotals = filteredSales.reduce((acc, sale) => {
+      const key = sale.programs?.name || '미지정'
+      acc[key] = (acc[key] || 0) + Number(sale.amount || 0)
+      return acc
+    }, {})
+
+    const chartSource = Object.entries(programTotals)
+      .map(([label, value]) => ({ label, value }))
+      .sort((a, b) => b.value - a.value)
+
+    return {
+      total,
+      totalCount,
+      vipCount,
+      vipRatio,
+      paymentTotals,
+      programTotals,
+      chartSource,
+    }
+  }, [filteredSales])
+
+  const filteredPrograms = useMemo(() => {
+    return [...programs]
+      .filter((program) => {
+        return (
+          !programSearch.trim() ||
+          textIncludes(program.name, programSearch) ||
+          textIncludes(program.description, programSearch) ||
+          textIncludes(program.session_count, programSearch) ||
+          textIncludes(program.price, programSearch)
+        )
+      })
+      .sort((a, b) => {
+        const orderA = Number(a.display_order ?? 999999)
+        const orderB = Number(b.display_order ?? 999999)
+        if (orderA !== orderB) return orderA - orderB
+        return new Date(b.created_at || 0).getTime() - new Date(a.created_at || 0).getTime()
+      })
+  }, [programs, programSearch])
+
+  const filteredNotices = useMemo(() => {
+    return notices.filter((notice) => {
+      const monthSource = getMonthKey(notice.starts_at || notice.created_at || '')
+      const matchesMonth = !noticeMonthFilter || monthSource === noticeMonthFilter
+      const matchesCategory = noticeCategoryFilter === 'all' || notice.category === noticeCategoryFilter
+      const matchesKeyword =
+        !noticeSearch.trim() ||
+        textIncludes(notice.title, noticeSearch) ||
+        textIncludes(notice.content, noticeSearch) ||
+        textIncludes(notice.category, noticeSearch)
+
+      return matchesMonth && matchesCategory && matchesKeyword
+    })
+  }, [notices, noticeMonthFilter, noticeCategoryFilter, noticeSearch])
+    useEffect(() => {
     loadAll()
   }, [])
 
@@ -289,7 +553,7 @@ export default function AdminDashboard({ profile, onLogout }) {
 
   useEffect(() => {
     if (!selectedMemberId) {
-      setRoutineForm({ title: '루틴', content: '' })
+      setRoutineForm({ title: '루틴', content: '', entries: [] })
       setAdminNotes([])
       setMemberHealthLogs([])
       setAdminNoteInput('')
@@ -326,10 +590,14 @@ export default function AdminDashboard({ profile, onLogout }) {
   }
 
   const loadMembers = async () => {
-    const { data } = await supabase
+    const query = supabase
       .from('members')
       .select('*, programs(id, name)')
       .order('created_at', { ascending: false })
+
+    const { data } = profile?.gym_id
+      ? await query.eq('gym_id', profile.gym_id)
+      : await query
 
     if (data) {
       setMembers(data)
@@ -365,15 +633,18 @@ export default function AdminDashboard({ profile, onLogout }) {
   }
 
   const loadBrands = async () => {
-    const { data } = await supabase.from('brands').select('*').order('name', { ascending: true })
+    const query = supabase.from('brands').select('*').order('name', { ascending: true })
+    const { data } = profile?.gym_id ? await query.eq('gym_id', profile.gym_id) : await query
     if (data) setBrands(data)
   }
 
   const loadExercises = async () => {
-    const { data } = await supabase
+    const query = supabase
       .from('exercises')
       .select('*, brands(id, name)')
       .order('created_at', { ascending: false })
+
+    const { data } = profile?.gym_id ? await query.eq('gym_id', profile.gym_id) : await query
 
     if (data) {
       const collapsed = {}
@@ -386,12 +657,13 @@ export default function AdminDashboard({ profile, onLogout }) {
   }
 
   const loadWorkouts = async () => {
-    const { data: workoutData } = await supabase
+    const query = supabase
       .from('workouts')
       .select('*')
       .order('workout_date', { ascending: false })
       .order('created_at', { ascending: false })
 
+    const { data: workoutData } = profile?.gym_id ? await query.eq('gym_id', profile.gym_id) : await query
     if (!workoutData) return
 
     let itemMap = {}
@@ -422,11 +694,13 @@ export default function AdminDashboard({ profile, onLogout }) {
   }
 
   const loadDietLogs = async () => {
-    const { data } = await supabase
+    const query = supabase
       .from('diet_logs')
       .select('*')
       .order('log_date', { ascending: false })
       .order('created_at', { ascending: false })
+
+    const { data } = profile?.gym_id ? await query.eq('gym_id', profile.gym_id) : await query
 
     if (data) {
       const collapsed = {}
@@ -445,26 +719,23 @@ export default function AdminDashboard({ profile, onLogout }) {
       .eq('member_id', memberId)
       .maybeSingle()
 
-    if (data) {
-      setRoutineForm({
-        title: data.title || '루틴',
-        content: data.content || '',
-      })
-    } else {
-      setRoutineForm({ title: '루틴', content: '' })
-    }
+    const normalized = normalizeRoutineData(data)
+    setRoutineForm(normalized)
   }
 
   const loadManuals = async () => {
-    const { data } = await supabase.from('app_manuals').select('*').order('target_role')
+    const query = supabase.from('app_manuals').select('*').order('target_role')
+    const { data } = profile?.gym_id ? await query.eq('gym_id', profile.gym_id) : await query
     if (data) setManuals(data)
   }
 
   const loadCoaches = async () => {
-    const { data } = await supabase
+    const query = supabase
       .from('coaches')
       .select('*')
       .order('created_at', { ascending: true })
+
+    const { data } = profile?.gym_id ? await query.eq('gym_id', profile.gym_id) : await query
 
     if (data) {
       setCoaches(data)
@@ -473,11 +744,12 @@ export default function AdminDashboard({ profile, onLogout }) {
   }
 
   const loadCoachSchedules = async () => {
-    const { data: scheduleData } = await supabase
+    const query = supabase
       .from('coach_schedules')
       .select('*')
       .order('schedule_date', { ascending: false })
 
+    const { data: scheduleData } = profile?.gym_id ? await query.eq('gym_id', profile.gym_id) : await query
     if (!scheduleData) return
 
     let slotMap = {}
@@ -508,20 +780,41 @@ export default function AdminDashboard({ profile, onLogout }) {
   }
 
   const loadPrograms = async () => {
-    const { data } = await supabase
+    const query = supabase
       .from('programs')
       .select('*')
+      .order('display_order', { ascending: true, nullsFirst: false })
       .order('created_at', { ascending: false })
-    if (data) setPrograms(data)
+
+    const { data } = profile?.gym_id ? await query.eq('gym_id', profile.gym_id) : await query
+
+    if (data) {
+      const collapsed = {}
+      data.forEach((program) => {
+        collapsed[program.id] = true
+      })
+      setPrograms(data)
+      setCollapsedPrograms(collapsed)
+    }
   }
 
   const loadSalesRecords = async () => {
-    const { data } = await supabase
+    const query = supabase
       .from('sales_records')
       .select('*, members(id, name), programs(id, name)')
       .order('sale_date', { ascending: false })
       .order('created_at', { ascending: false })
-    if (data) setSalesRecords(data)
+
+    const { data } = profile?.gym_id ? await query.eq('gym_id', profile.gym_id) : await query
+
+    if (data) {
+      const collapsed = {}
+      data.forEach((sale) => {
+        collapsed[sale.id] = true
+      })
+      setSalesRecords(data)
+      setCollapsedSales(collapsed)
+    }
   }
 
   const loadSalesSummary = async (month) => {
@@ -534,10 +827,12 @@ export default function AdminDashboard({ profile, onLogout }) {
   }
 
   const loadNotices = async () => {
-    const { data } = await supabase
+    const query = supabase
       .from('notices')
       .select('*')
       .order('created_at', { ascending: false })
+
+    const { data } = profile?.gym_id ? await query.eq('gym_id', profile.gym_id) : await query
 
     if (data) {
       const collapsed = {}
@@ -548,8 +843,7 @@ export default function AdminDashboard({ profile, onLogout }) {
       setCollapsedNotices(collapsed)
     }
   }
-
-  const resetMemberForm = () => {
+    const resetMemberForm = () => {
     setMemberForm(emptyMemberForm)
     setEditingMemberId(null)
   }
@@ -568,6 +862,7 @@ export default function AdminDashboard({ profile, onLogout }) {
       memo: memberForm.memo?.trim() || '',
       access_code: (memberForm.access_code || randomCode()).trim().toUpperCase(),
       current_program_id: memberForm.current_program_id || null,
+      gym_id: profile?.gym_id || null,
     }
 
     if (!payload.name) {
@@ -617,7 +912,7 @@ export default function AdminDashboard({ profile, onLogout }) {
     if (selectedMemberId === memberId) {
       setSelectedMemberId('')
       resetMemberForm()
-      setRoutineForm({ title: '루틴', content: '' })
+      setRoutineForm({ title: '루틴', content: '', entries: [] })
       setAdminNotes([])
       setMemberHealthLogs([])
     }
@@ -645,6 +940,7 @@ export default function AdminDashboard({ profile, onLogout }) {
       member_id: selectedMemberId,
       admin_id: profile?.id || null,
       note: adminNoteInput.trim(),
+      gym_id: profile?.gym_id || null,
     })
 
     if (error) {
@@ -664,17 +960,66 @@ export default function AdminDashboard({ profile, onLogout }) {
     setMessage('관리자 메모가 삭제되었습니다.')
   }
 
+  const addRoutineEntry = () => {
+    setRoutineForm((prev) => ({
+      ...prev,
+      entries: [
+        ...(prev.entries || []),
+        {
+          ...emptyRoutineEntry,
+          id: `${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
+          sort_order: prev.entries?.length || 0,
+          month_key: routineMonthFilter || new Date().toISOString().slice(0, 7),
+        },
+      ],
+    }))
+  }
+
+  const updateRoutineEntry = (entryId, field, value) => {
+    setRoutineForm((prev) => ({
+      ...prev,
+      entries: (prev.entries || []).map((entry) =>
+        entry.id === entryId ? { ...entry, [field]: value } : entry,
+      ),
+    }))
+  }
+
+  const removeRoutineEntry = (entryId) => {
+    setRoutineForm((prev) => ({
+      ...prev,
+      entries: (prev.entries || [])
+        .filter((entry) => entry.id !== entryId)
+        .map((entry, index) => ({ ...entry, sort_order: index })),
+    }))
+  }
+
+  const moveRoutineEntry = (entryId, direction) => {
+    setRoutineForm((prev) => {
+      const entries = [...(prev.entries || [])]
+      const index = entries.findIndex((entry) => entry.id === entryId)
+      if (index < 0) return prev
+
+      const swapIndex = direction === 'up' ? index - 1 : index + 1
+      if (swapIndex < 0 || swapIndex >= entries.length) return prev
+
+      const temp = entries[index]
+      entries[index] = entries[swapIndex]
+      entries[swapIndex] = temp
+
+      return {
+        ...prev,
+        entries: entries.map((entry, idx) => ({ ...entry, sort_order: idx })),
+      }
+    })
+  }
+
   const handleRoutineSave = async () => {
     if (!selectedMemberId) {
       setMessage('루틴을 저장할 회원을 먼저 선택해주세요.')
       return
     }
 
-    const payload = {
-      member_id: selectedMemberId,
-      title: routineForm.title?.trim() || '루틴',
-      content: routineForm.content?.trim() || '',
-    }
+    const payload = buildRoutinePayload(routineForm, selectedMemberId, profile?.gym_id)
 
     const { data: existing } = await supabase
       .from('member_routines')
@@ -700,7 +1045,7 @@ export default function AdminDashboard({ profile, onLogout }) {
     if (!window.confirm('이 회원의 루틴을 삭제할까요?')) return
 
     await supabase.from('member_routines').delete().eq('member_id', selectedMemberId)
-    setRoutineForm({ title: '루틴', content: '' })
+    setRoutineForm({ title: '루틴', content: '', entries: [] })
     setMessage('루틴이 삭제되었습니다.')
   }
 
@@ -808,6 +1153,7 @@ export default function AdminDashboard({ profile, onLogout }) {
       good: workoutForm.good?.trim() || '',
       improve: workoutForm.improve?.trim() || '',
       created_by: profile?.id || null,
+      gym_id: profile?.gym_id || null,
     }
 
     let targetWorkoutId = workoutForm.id
@@ -898,16 +1244,20 @@ export default function AdminDashboard({ profile, onLogout }) {
 
     setMessage('운동 기록이 삭제되었습니다.')
   }
-
-  const handleBrandSubmit = async (e) => {
+    const handleBrandSubmit = async (e) => {
     e.preventDefault()
     if (!brandForm.name.trim()) return
 
+    const payload = {
+      name: brandForm.name.trim(),
+      gym_id: profile?.gym_id || null,
+    }
+
     if (editingBrandId) {
-      await supabase.from('brands').update({ name: brandForm.name.trim() }).eq('id', editingBrandId)
+      await supabase.from('brands').update(payload).eq('id', editingBrandId)
       setMessage('브랜드가 수정되었습니다.')
     } else {
-      await supabase.from('brands').insert({ name: brandForm.name.trim() })
+      await supabase.from('brands').insert(payload)
       setMessage('브랜드가 추가되었습니다.')
     }
 
@@ -932,6 +1282,7 @@ export default function AdminDashboard({ profile, onLogout }) {
       body_part: exerciseForm.body_part?.trim() || '',
       category: exerciseForm.category?.trim() || '',
       brand_id: exerciseForm.brand_id || null,
+      gym_id: profile?.gym_id || null,
     }
 
     if (!payload.name) {
@@ -983,7 +1334,7 @@ export default function AdminDashboard({ profile, onLogout }) {
         if (!brandMap.has(brandName)) {
           const { data: newBrand, error } = await supabase
             .from('brands')
-            .insert({ name: brandName })
+            .insert({ name: brandName, gym_id: profile?.gym_id || null })
             .select()
             .single()
 
@@ -999,6 +1350,7 @@ export default function AdminDashboard({ profile, onLogout }) {
         body_part,
         category,
         brand_id: brandId,
+        gym_id: profile?.gym_id || null,
       })
     }
 
@@ -1036,6 +1388,7 @@ export default function AdminDashboard({ profile, onLogout }) {
       target_role: manualTarget,
       title: manualForm.title?.trim() || '',
       content: manualForm.content?.trim() || '',
+      gym_id: profile?.gym_id || null,
     }
 
     const existing = manuals.find((manual) => manual.target_role === manualTarget)
@@ -1104,6 +1457,7 @@ export default function AdminDashboard({ profile, onLogout }) {
       work_start: scheduleForm.is_working ? scheduleForm.work_start || null : null,
       work_end: scheduleForm.is_working ? scheduleForm.work_end || null : null,
       memo: scheduleForm.memo?.trim() || '',
+      gym_id: profile?.gym_id || null,
     }
 
     const { data: existing } = await supabase
@@ -1176,6 +1530,8 @@ export default function AdminDashboard({ profile, onLogout }) {
       description: programForm.description?.trim() || '',
       is_vip: !!programForm.is_vip,
       is_active: !!programForm.is_active,
+      display_order: Number(programForm.display_order) || 0,
+      gym_id: profile?.gym_id || null,
     }
 
     if (!payload.name) {
@@ -1206,6 +1562,7 @@ export default function AdminDashboard({ profile, onLogout }) {
       description: program.description || '',
       is_vip: !!program.is_vip,
       is_active: !!program.is_active,
+      display_order: Number(program.display_order || 0),
     })
   }
 
@@ -1214,6 +1571,25 @@ export default function AdminDashboard({ profile, onLogout }) {
     await supabase.from('programs').delete().eq('id', programId)
     await loadPrograms()
     setMessage('프로그램이 삭제되었습니다.')
+  }
+
+  const moveProgramOrder = async (program, direction) => {
+    const sorted = filteredPrograms
+    const index = sorted.findIndex((item) => item.id === program.id)
+    const swapIndex = direction === 'up' ? index - 1 : index + 1
+    if (index < 0 || swapIndex < 0 || swapIndex >= sorted.length) return
+
+    const current = sorted[index]
+    const target = sorted[swapIndex]
+
+    const currentOrder = Number(current.display_order || index)
+    const targetOrder = Number(target.display_order || swapIndex)
+
+    await supabase.from('programs').update({ display_order: targetOrder }).eq('id', current.id)
+    await supabase.from('programs').update({ display_order: currentOrder }).eq('id', target.id)
+
+    await loadPrograms()
+    setMessage('프로그램 표시 순서가 변경되었습니다.')
   }
 
   const resetSaleForm = () => {
@@ -1236,6 +1612,7 @@ export default function AdminDashboard({ profile, onLogout }) {
       service_session_count: Number(saleForm.service_session_count) || 0,
       is_vip: !!saleForm.is_vip,
       memo: saleForm.memo?.trim() || '',
+      gym_id: profile?.gym_id || null,
     }
 
     if (editingSaleId) {
@@ -1276,8 +1653,7 @@ export default function AdminDashboard({ profile, onLogout }) {
     await loadSalesSummary(saleMonth)
     setMessage('매출 기록이 삭제되었습니다.')
   }
-
-  const getSalesAutoFeedback = () => {
+    const getSalesAutoFeedback = () => {
     if (!salesSummary) return '매출 데이터가 없습니다.'
     const total = Number(salesSummary.total_sales || 0)
     const count = Number(salesSummary.total_count || 0)
@@ -1308,6 +1684,7 @@ export default function AdminDashboard({ profile, onLogout }) {
       starts_at: noticeForm.starts_at || null,
       ends_at: noticeForm.ends_at || null,
       created_by: profile?.id || null,
+      gym_id: profile?.gym_id || null,
     }
 
     if (!payload.title) {
@@ -1349,10 +1726,6 @@ export default function AdminDashboard({ profile, onLogout }) {
     setMessage('공지사항이 삭제되었습니다.')
   }
 
-  const displayedDietLogs = dietMemberFilter
-    ? dietLogs.filter((diet) => diet.member_id === dietMemberFilter)
-    : dietLogs
-
   if (loading) {
     return <div className="loading-card">데이터 불러오는 중...</div>
   }
@@ -1391,6 +1764,32 @@ export default function AdminDashboard({ profile, onLogout }) {
         <div className="two-col">
           <section className="card">
             <h2>회원 등록 / 수정</h2>
+
+            <div className="stack-gap">
+              <input
+                placeholder="이름 / 목표 / 프로그램 검색"
+                value={memberSearch}
+                onChange={(e) => setMemberSearch(e.target.value)}
+              />
+
+              <div className="grid-2">
+                <select value={memberProgramFilter} onChange={(e) => setMemberProgramFilter(e.target.value)}>
+                  <option value="">전체 프로그램</option>
+                  {programs.map((p) => (
+                    <option key={p.id} value={p.id}>
+                      {p.name}
+                    </option>
+                  ))}
+                </select>
+
+                <select value={memberStatusFilter} onChange={(e) => setMemberStatusFilter(e.target.value)}>
+                  <option value="all">전체</option>
+                  <option value="remaining">잔여 있음</option>
+                  <option value="ended">소진</option>
+                </select>
+              </div>
+            </div>
+
             <form className="stack-gap" onSubmit={handleMemberSubmit}>
               <label className="field">
                 <span>이름</span>
@@ -1492,8 +1891,9 @@ export default function AdminDashboard({ profile, onLogout }) {
 
           <section className="card">
             <h2>회원 목록</h2>
+
             <div className="list-stack">
-              {memberStats.map((member) => {
+              {filteredMemberStats.map((member) => {
                 const isSelected = selectedMemberId === member.id
                 return (
                   <div
@@ -1572,86 +1972,177 @@ export default function AdminDashboard({ profile, onLogout }) {
                     </label>
 
                     <label className="field">
-                      <span>루틴 내용</span>
-                      <textarea rows="6" value={routineForm.content} onChange={(e) => setRoutineForm({ ...routineForm, content: e.target.value })} />
+                      <span>기존 기본 메모형 루틴 내용</span>
+                      <textarea rows="4" value={routineForm.content} onChange={(e) => setRoutineForm({ ...routineForm, content: e.target.value })} />
                     </label>
+                                        <div className="sub-card">
+                      <h4>루틴 필터</h4>
+                      <div className="grid-3">
+                        <input
+                          type="month"
+                          value={routineMonthFilter}
+                          onChange={(e) => setRoutineMonthFilter(e.target.value)}
+                        />
 
-                    <div className="inline-actions wrap">
-                      <button className="primary-btn" type="button" onClick={handleRoutineSave}>
-                        루틴 저장
-                      </button>
-                      <button className="danger-btn" type="button" onClick={handleRoutineDelete}>
-                        루틴 삭제
-                      </button>
+                        <select value={routineDayFilter} onChange={(e) => setRoutineDayFilter(e.target.value)}>
+                          <option value="all">전체 요일</option>
+                          {ROUTINE_DAYS.map((d) => (
+                            <option key={d} value={d}>{d}</option>
+                          ))}
+                        </select>
+
+                        <select value={routineCategoryFilter} onChange={(e) => setRoutineCategoryFilter(e.target.value)}>
+                          <option value="all">전체 카테고리</option>
+                          {ROUTINE_CATEGORIES.map((c) => (
+                            <option key={c} value={c}>{c}</option>
+                          ))}
+                        </select>
+                      </div>
                     </div>
-                  </div>
-                </div>
 
-                <div className="sub-card">
-                  <h3>관리자 전용 메모</h3>
-                  <label className="field">
-                    <span>비공개 메모 입력</span>
-                    <textarea rows="4" value={adminNoteInput} onChange={(e) => setAdminNoteInput(e.target.value)} />
-                  </label>
-                  <button className="primary-btn" type="button" onClick={handleAdminNoteSave}>
-                    메모 저장
-                  </button>
+                    <div className="stack-gap">
+                      <h4>루틴 리스트</h4>
 
-                  <div className="list-stack">
-                    {adminNotes.map((note) => (
-                      <div key={note.id} className="list-card">
-                        <div className="compact-text">{note.note}</div>
-                        <div className="compact-text">수정일: {note.updated_at?.slice(0, 10) || '-'}</div>
-                        <button className="danger-btn" type="button" onClick={() => handleAdminNoteDelete(note.id)}>
-                          삭제
+                      {filteredRoutineEntries.map((entry) => (
+                        <div key={entry.id} className="sub-card">
+                          <div className="grid-3">
+                            <select
+                              value={entry.day}
+                              onChange={(e) => updateRoutineEntry(entry.id, 'day', e.target.value)}
+                            >
+                              {ROUTINE_DAYS.map((d) => (
+                                <option key={d} value={d}>{d}</option>
+                              ))}
+                            </select>
+
+                            <select
+                              value={entry.category}
+                              onChange={(e) => updateRoutineEntry(entry.id, 'category', e.target.value)}
+                            >
+                              {ROUTINE_CATEGORIES.map((c) => (
+                                <option key={c} value={c}>{c}</option>
+                              ))}
+                            </select>
+
+                            <input
+                              type="month"
+                              value={entry.month_key}
+                              onChange={(e) => updateRoutineEntry(entry.id, 'month_key', e.target.value)}
+                            />
+                          </div>
+
+                          <input
+                            placeholder="루틴 제목"
+                            value={entry.title}
+                            onChange={(e) => updateRoutineEntry(entry.id, 'title', e.target.value)}
+                          />
+
+                          <textarea
+                            rows="3"
+                            placeholder="루틴 내용"
+                            value={entry.content}
+                            onChange={(e) => updateRoutineEntry(entry.id, 'content', e.target.value)}
+                          />
+
+                          <div className="inline-actions wrap">
+                            <button type="button" className="secondary-btn" onClick={() => moveRoutineEntry(entry.id, 'up')}>
+                              ↑
+                            </button>
+                            <button type="button" className="secondary-btn" onClick={() => moveRoutineEntry(entry.id, 'down')}>
+                              ↓
+                            </button>
+                            <button type="button" className="danger-btn" onClick={() => removeRoutineEntry(entry.id)}>
+                              삭제
+                            </button>
+                          </div>
+                        </div>
+                      ))}
+
+                      <button type="button" className="secondary-btn" onClick={addRoutineEntry}>
+                        루틴 추가
+                      </button>
+
+                      <div className="inline-actions wrap">
+                        <button type="button" className="primary-btn" onClick={handleRoutineSave}>
+                          루틴 저장
+                        </button>
+                        <button type="button" className="danger-btn" onClick={handleRoutineDelete}>
+                          루틴 삭제
                         </button>
                       </div>
-                    ))}
-                  </div>
-                </div>
+                    </div>
 
-                <div className="sub-card">
-                  <h3>회원 건강정보</h3>
-                  <div className="list-stack">
-                    {memberHealthLogs.length === 0 ? <div className="compact-text">등록된 건강정보가 없습니다.</div> : null}
-                    {memberHealthLogs.map((health) => {
-                      const collapsed = collapsedHealthLogs[health.id] ?? true
-                      return (
-                        <div key={health.id} className="list-card">
-                          <div className="list-card-top">
-                            <strong>{health.record_date}</strong>
-                            <span className="pill">체중 {health.weight_kg || '-'}kg</span>
-                          </div>
-                          <div className="compact-text">
-                            간략히보기: 키 {health.height_cm || '-'} / 체지방 {health.body_fat_percent || '-'} / 골격근 {health.skeletal_muscle_mass || '-'}
-                          </div>
-                          <button
-                            type="button"
-                            className="secondary-btn"
-                            onClick={() =>
-                              setCollapsedHealthLogs((prev) => ({
-                                ...prev,
-                                [health.id]: !collapsed,
-                              }))
-                            }
-                          >
-                            {collapsed ? '상세히보기' : '간략히보기'}
-                          </button>
+                    <div className="sub-card">
+                      <h4>관리자 메모</h4>
 
-                          {!collapsed ? (
-                            <div className="detail-box">
-                              <p><strong>키:</strong> {health.height_cm || '-'}</p>
-                              <p><strong>체중:</strong> {health.weight_kg || '-'}</p>
-                              <p><strong>체지방:</strong> {health.body_fat_percent || '-'}</p>
-                              <p><strong>골격근량:</strong> {health.skeletal_muscle_mass || '-'}</p>
-                              <p><strong>병력사항:</strong> {health.medical_history || '-'}</p>
-                              <p><strong>회원 메모:</strong> {health.member_note || '-'}</p>
-                              <p><strong>인바디 이미지 URL:</strong> {health.inbody_image_url || '-'}</p>
+                      <textarea
+                        rows="3"
+                        placeholder="회원 내부 메모"
+                        value={adminNoteInput}
+                        onChange={(e) => setAdminNoteInput(e.target.value)}
+                      />
+
+                      <button type="button" className="primary-btn" onClick={handleAdminNoteSave}>
+                        메모 저장
+                      </button>
+
+                      <div className="list-stack">
+                        {adminNotes.map((note) => (
+                          <div key={note.id} className="list-card">
+                            <div className="compact-text">{note.note}</div>
+                            <div className="inline-actions">
+                              <button
+                                className="danger-btn"
+                                onClick={() => handleAdminNoteDelete(note.id)}
+                              >
+                                삭제
+                              </button>
                             </div>
-                          ) : null}
-                        </div>
-                      )
-                    })}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+
+                    <div className="sub-card">
+                      <h4>건강 기록</h4>
+
+                      <div className="list-stack">
+                        {memberHealthLogs.map((log) => {
+                          const collapsed = collapsedHealthLogs[log.id] ?? true
+
+                          return (
+                            <div key={log.id} className="list-card">
+                              <div className="list-card-top">
+                                <strong>{log.record_date}</strong>
+                                <span className="pill">{log.weight || '-'}kg</span>
+                              </div>
+
+                              <div className="inline-actions">
+                                <button
+                                  className="secondary-btn"
+                                  onClick={() =>
+                                    setCollapsedHealthLogs((prev) => ({
+                                      ...prev,
+                                      [log.id]: !collapsed,
+                                    }))
+                                  }
+                                >
+                                  {collapsed ? '상세' : '닫기'}
+                                </button>
+                              </div>
+
+                              {!collapsed && (
+                                <div className="detail-box">
+                                  <p>체지방: {log.body_fat || '-'}</p>
+                                  <p>골격근량: {log.smm || '-'}</p>
+                                  <p>메모: {log.memo || '-'}</p>
+                                </div>
+                              )}
+                            </div>
+                          )
+                        })}
+                      </div>
+                    </div>
                   </div>
                 </div>
               </>
@@ -1659,11 +2150,36 @@ export default function AdminDashboard({ profile, onLogout }) {
           </section>
         </div>
       )}
-
-      {activeTab === '기록작성' && (
+            {activeTab === '기록작성' && (
         <div className="two-col">
           <section className="card">
             <h2>운동 기록 작성 / 수정</h2>
+
+            <div className="stack-gap">
+              <input
+                placeholder="운동기록 검색"
+                value={workoutSearch}
+                onChange={(e) => setWorkoutSearch(e.target.value)}
+              />
+
+              <div className="grid-2">
+                <select value={workoutMemberFilter} onChange={(e) => setWorkoutMemberFilter(e.target.value)}>
+                  <option value="">전체 회원</option>
+                  {members.map((member) => (
+                    <option key={member.id} value={member.id}>
+                      {member.name}
+                    </option>
+                  ))}
+                </select>
+
+                <select value={workoutTypeFilter} onChange={(e) => setWorkoutTypeFilter(e.target.value)}>
+                  <option value="all">전체 타입</option>
+                  <option value="pt">PT</option>
+                  <option value="personal">개인운동</option>
+                </select>
+              </div>
+            </div>
+
             <form className="stack-gap" onSubmit={handleWorkoutSubmit}>
               <div className="grid-2">
                 <label className="field">
@@ -1792,20 +2308,17 @@ export default function AdminDashboard({ profile, onLogout }) {
           <section className="card">
             <h2>운동 기록 목록</h2>
             <div className="list-stack">
-              {workouts.map((workout) => {
-                const member = members.find((item) => item.id === workout.member_id)
-                const items = workoutItemsMap[workout.id] || []
+              {workoutCards.map((workout) => {
                 const collapsed = collapsedWorkouts[workout.id] ?? true
-
                 return (
                   <div key={workout.id} className="list-card">
                     <div className="list-card-top">
-                      <strong>{member?.name || '회원없음'} / {workout.workout_type === 'pt' ? 'PT' : '개인운동'}</strong>
+                      <strong>{workout.member?.name || '회원없음'} / {workout.workout_type === 'pt' ? 'PT' : '개인운동'}</strong>
                       <span className="pill">{workout.workout_date}</span>
                     </div>
 
                     <div className="compact-text">
-                      간략히보기: 운동 {items.length}개 / 총세트 {getTotalSetCount(items)}세트
+                      간추려보기: 운동 {workout.items.length}개 / 총세트 {getTotalSetCount(workout.items)}세트
                     </div>
 
                     <div className="inline-actions wrap">
@@ -1833,7 +2346,7 @@ export default function AdminDashboard({ profile, onLogout }) {
 
                     {!collapsed ? (
                       <div className="detail-box">
-                        {items.map((item) => (
+                        {workout.items.map((item) => (
                           <div key={item.id} className="record-item-box">
                             <strong>{item.exercise_name_snapshot}</strong>
                             <ul className="set-list">
@@ -1993,7 +2506,7 @@ export default function AdminDashboard({ profile, onLogout }) {
                     </div>
 
                     <div className="compact-text">
-                      간략히보기: {exercise.body_part || '-'} / {exercise.category || '-'}
+                      간추려보기: {exercise.body_part || '-'} / {exercise.category || '-'}
                     </div>
 
                     <div className="inline-actions wrap">
@@ -2059,6 +2572,15 @@ export default function AdminDashboard({ profile, onLogout }) {
                 </option>
               ))}
             </select>
+          </div>
+
+          <div className="field">
+            <span>검색</span>
+            <input
+              value={dietSearch}
+              onChange={(e) => setDietSearch(e.target.value)}
+              placeholder="내용 / 제품명 / 회원명 / 피드백 검색"
+            />
           </div>
 
           <div className="list-stack">
@@ -2251,7 +2773,7 @@ export default function AdminDashboard({ profile, onLogout }) {
                     </div>
 
                     <div className="compact-text">
-                      간략히보기: {schedule.is_working ? `${schedule.work_start || '-'} ~ ${schedule.work_end || '-'}` : '휴무'} / 가능시간 {slots.length}개
+                      간추려보기: {schedule.is_working ? `${schedule.work_start || '-'} ~ ${schedule.work_end || '-'}` : '휴무'} / 가능시간 {slots.length}개
                     </div>
 
                     <div className="inline-actions wrap">
@@ -2293,12 +2815,30 @@ export default function AdminDashboard({ profile, onLogout }) {
           </section>
         </div>
       )}
-
-      {activeTab === '매출기록' && (
+            {activeTab === '매출기록' && (
         <div className="stack-gap">
           <div className="two-col">
             <section className="card">
               <h2>매출 기록 입력 / 수정</h2>
+
+              <div className="stack-gap">
+                <input
+                  placeholder="매출 검색"
+                  value={saleSearch}
+                  onChange={(e) => setSaleSearch(e.target.value)}
+                />
+                <div className="grid-2">
+                  <input type="month" value={saleMonth} onChange={(e) => setSaleMonth(e.target.value)} />
+                  <select value={salePaymentFilter} onChange={(e) => setSalePaymentFilter(e.target.value)}>
+                    <option value="all">전체 결제수단</option>
+                    <option value="현금">현금</option>
+                    <option value="카드">카드</option>
+                    <option value="이체">이체</option>
+                    <option value="할부">할부</option>
+                  </select>
+                </div>
+              </div>
+
               <form className="stack-gap" onSubmit={handleSaleSubmit}>
                 <div className="grid-2">
                   <label className="field">
@@ -2418,7 +2958,25 @@ export default function AdminDashboard({ profile, onLogout }) {
             <section className="card">
               <div className="section-head">
                 <h2>월별 매출 요약</h2>
-                <input type="month" value={saleMonth} onChange={(e) => setSaleMonth(e.target.value)} />
+                <button
+                  type="button"
+                  className="secondary-btn"
+                  onClick={() =>
+                    downloadCsv(`sales_${saleMonth}.csv`, [
+                      ['날짜', '회원', '프로그램', '금액', '결제방법', 'VIP'],
+                      ...filteredSales.map((sale) => [
+                        sale.sale_date || '',
+                        sale.members?.name || '',
+                        sale.programs?.name || '',
+                        sale.amount || 0,
+                        sale.payment_method || '',
+                        sale.is_vip ? 'Y' : 'N',
+                      ]),
+                    ])
+                  }
+                >
+                  CSV
+                </button>
               </div>
 
               <div className="stats-grid">
@@ -2441,7 +2999,13 @@ export default function AdminDashboard({ profile, onLogout }) {
                 <p><strong>카드:</strong> {Number(salesSummary?.card_sales || 0).toLocaleString()}</p>
                 <p><strong>이체:</strong> {Number(salesSummary?.transfer_sales || 0).toLocaleString()}</p>
                 <p><strong>할부:</strong> {Number(salesSummary?.installment_sales || 0).toLocaleString()}</p>
+                <p><strong>VIP 비율:</strong> {salesStatsExtended.vipRatio}%</p>
                 <p><strong>자동 피드백:</strong> {getSalesAutoFeedback()}</p>
+              </div>
+
+              <div className="sub-card">
+                <h3>프로그램별 매출</h3>
+                <MiniBarChart data={salesStatsExtended.chartSource} />
               </div>
             </section>
           </div>
@@ -2449,25 +3013,49 @@ export default function AdminDashboard({ profile, onLogout }) {
           <div className="card">
             <h2>매출 목록</h2>
             <div className="list-stack">
-              {filteredSales.map((sale) => (
-                <div key={sale.id} className="list-card">
-                  <div className="list-card-top">
-                    <strong>{sale.members?.name || '회원없음'} / {sale.programs?.name || '프로그램없음'}</strong>
-                    <span className="pill">{sale.sale_date}</span>
+              {filteredSales.map((sale) => {
+                const collapsed = collapsedSales[sale.id] ?? true
+                return (
+                  <div key={sale.id} className="list-card">
+                    <div className="list-card-top">
+                      <strong>{sale.members?.name || '회원없음'} / {sale.programs?.name || '프로그램없음'}</strong>
+                      <span className="pill">{sale.sale_date}</span>
+                    </div>
+                    <div className="compact-text">
+                      간추려보기: {Number(sale.amount || 0).toLocaleString()}원 / {sale.payment_method}
+                    </div>
+                    <div className="inline-actions wrap">
+                      <button
+                        className="secondary-btn"
+                        type="button"
+                        onClick={() =>
+                          setCollapsedSales((prev) => ({
+                            ...prev,
+                            [sale.id]: !collapsed,
+                          }))
+                        }
+                      >
+                        {collapsed ? '상세히보기' : '간략히보기'}
+                      </button>
+                      <button className="secondary-btn" type="button" onClick={() => handleSaleEdit(sale)}>
+                        수정
+                      </button>
+                      <button className="danger-btn" type="button" onClick={() => handleSaleDelete(sale.id)}>
+                        삭제
+                      </button>
+                    </div>
+
+                    {!collapsed ? (
+                      <div className="detail-box">
+                        <p><strong>구매 세션:</strong> {sale.purchased_session_count || 0}</p>
+                        <p><strong>서비스 세션:</strong> {sale.service_session_count || 0}</p>
+                        <p><strong>메모:</strong> {sale.memo || '-'}</p>
+                        <p><strong>VIP:</strong> {sale.is_vip ? '예' : '아니오'}</p>
+                      </div>
+                    ) : null}
                   </div>
-                  <div className="compact-text">
-                    {Number(sale.amount || 0).toLocaleString()}원 / {sale.payment_method} / 구매 {sale.purchased_session_count}회 / 서비스 {sale.service_session_count}회
-                  </div>
-                  <div className="inline-actions wrap">
-                    <button className="secondary-btn" type="button" onClick={() => handleSaleEdit(sale)}>
-                      수정
-                    </button>
-                    <button className="danger-btn" type="button" onClick={() => handleSaleDelete(sale.id)}>
-                      삭제
-                    </button>
-                  </div>
-                </div>
-              ))}
+                )
+              })}
             </div>
           </div>
         </div>
@@ -2483,7 +3071,7 @@ export default function AdminDashboard({ profile, onLogout }) {
                 <input value={programForm.name} onChange={(e) => setProgramForm({ ...programForm, name: e.target.value })} />
               </label>
 
-              <div className="grid-2">
+              <div className="grid-3">
                 <label className="field">
                   <span>가격</span>
                   <input type="number" value={programForm.price} onChange={(e) => setProgramForm({ ...programForm, price: e.target.value })} />
@@ -2491,6 +3079,10 @@ export default function AdminDashboard({ profile, onLogout }) {
                 <label className="field">
                   <span>횟수</span>
                   <input type="number" value={programForm.session_count} onChange={(e) => setProgramForm({ ...programForm, session_count: e.target.value })} />
+                </label>
+                <label className="field">
+                  <span>표시 순서</span>
+                  <input type="number" value={programForm.display_order} onChange={(e) => setProgramForm({ ...programForm, display_order: e.target.value })} />
                 </label>
               </div>
 
@@ -2531,27 +3123,60 @@ export default function AdminDashboard({ profile, onLogout }) {
           </section>
 
           <section className="card">
-            <h2>프로그램 목록</h2>
+            <div className="section-head">
+              <h2>프로그램 목록</h2>
+              <input value={programSearch} onChange={(e) => setProgramSearch(e.target.value)} placeholder="프로그램 검색" />
+            </div>
+
             <div className="list-stack">
-              {programs.map((program) => (
-                <div key={program.id} className="list-card">
-                  <div className="list-card-top">
-                    <strong>{program.name}</strong>
-                    <span className="pill">{program.is_vip ? 'VIP' : '일반'}</span>
+              {filteredPrograms.map((program) => {
+                const collapsed = collapsedPrograms[program.id] ?? true
+                return (
+                  <div key={program.id} className="list-card">
+                    <div className="list-card-top">
+                      <strong>{program.name}</strong>
+                      <span className="pill">{program.is_vip ? 'VIP' : '일반'}</span>
+                    </div>
+                    <div className="compact-text">
+                      간추려보기: {Number(program.price || 0).toLocaleString()}원 / {program.session_count}회 / 순서 {Number(program.display_order || 0)}
+                    </div>
+
+                    <div className="inline-actions wrap">
+                      <button className="secondary-btn" type="button" onClick={() => moveProgramOrder(program, 'up')}>
+                        ↑
+                      </button>
+                      <button className="secondary-btn" type="button" onClick={() => moveProgramOrder(program, 'down')}>
+                        ↓
+                      </button>
+                      <button
+                        className="secondary-btn"
+                        type="button"
+                        onClick={() =>
+                          setCollapsedPrograms((prev) => ({
+                            ...prev,
+                            [program.id]: !collapsed,
+                          }))
+                        }
+                      >
+                        {collapsed ? '상세히보기' : '간략히보기'}
+                      </button>
+                      <button className="secondary-btn" type="button" onClick={() => handleProgramEdit(program)}>
+                        수정
+                      </button>
+                      <button className="danger-btn" type="button" onClick={() => handleProgramDelete(program.id)}>
+                        삭제
+                      </button>
+                    </div>
+
+                    {!collapsed ? (
+                      <div className="detail-box">
+                        <p><strong>설명:</strong> {program.description || '-'}</p>
+                        <p><strong>상태:</strong> {program.is_active ? '활성' : '비활성'}</p>
+                      </div>
+                    ) : null}
                   </div>
-                  <div className="compact-text">
-                    {Number(program.price || 0).toLocaleString()}원 / {program.session_count}회 / {program.is_active ? '활성' : '비활성'}
-                  </div>
-                  <div className="inline-actions wrap">
-                    <button className="secondary-btn" type="button" onClick={() => handleProgramEdit(program)}>
-                      수정
-                    </button>
-                    <button className="danger-btn" type="button" onClick={() => handleProgramDelete(program.id)}>
-                      삭제
-                    </button>
-                  </div>
-                </div>
-              ))}
+                )
+              })}
             </div>
           </section>
         </div>
@@ -2624,9 +3249,34 @@ export default function AdminDashboard({ profile, onLogout }) {
           </section>
 
           <section className="card">
-            <h2>공지 / 이벤트 목록</h2>
+            <div className="section-head">
+              <h2>공지 / 이벤트 목록</h2>
+              <div className="inline-actions wrap">
+                <input
+                  type="month"
+                  value={noticeMonthFilter}
+                  onChange={(e) => setNoticeMonthFilter(e.target.value)}
+                />
+                <select value={noticeCategoryFilter} onChange={(e) => setNoticeCategoryFilter(e.target.value)}>
+                  <option value="all">전체 카테고리</option>
+                  <option value="공지">공지</option>
+                  <option value="이벤트">이벤트</option>
+                  <option value="운동영상">운동영상</option>
+                </select>
+              </div>
+            </div>
+
+            <label className="field">
+              <span>검색</span>
+              <input
+                value={noticeSearch}
+                onChange={(e) => setNoticeSearch(e.target.value)}
+                placeholder="제목 / 내용 / 카테고리 검색"
+              />
+            </label>
+
             <div className="list-stack">
-              {notices.map((notice) => {
+              {filteredNotices.map((notice) => {
                 const collapsed = collapsedNotices[notice.id] ?? true
                 return (
                   <div key={notice.id} className="list-card">
@@ -2636,7 +3286,8 @@ export default function AdminDashboard({ profile, onLogout }) {
                     </div>
 
                     <div className="compact-text">
-                      간략히보기: {notice.content.slice(0, 40)}{notice.content.length > 40 ? '...' : ''}
+                      간추려보기: {(notice.content || '').slice(0, 40)}
+                      {(notice.content || '').length > 40 ? '...' : ''}
                     </div>
 
                     <div className="inline-actions wrap">
@@ -2730,7 +3381,7 @@ function DietAdminCard({ diet, memberName, collapsed, onToggle, onSave, onDelete
       </div>
 
       <div className="compact-text">
-        간략히보기: {diet.meal_type || '식단'} / {diet.meal_time || '-'} / {diet.content?.slice(0, 24) || ''}
+        간추려보기: {diet.meal_type || '식단'} / {diet.meal_time || '-'} / {diet.content?.slice(0, 24) || ''}
         {diet.content?.length > 24 ? '...' : ''}
       </div>
 
@@ -2809,6 +3460,28 @@ function DietFeedbackEditor({ diet, feedback, setFeedback, onSave }) {
       >
         피드백 저장
       </button>
+    </div>
+  )
+}
+
+function MiniBarChart({ data = [] }) {
+  const maxValue = Math.max(...data.map((item) => Number(item.value || 0)), 0)
+
+  return (
+    <div className="mini-chart">
+      {data.length === 0 ? <div className="compact-text">표시할 데이터가 없습니다.</div> : null}
+      {data.map((item) => {
+        const width = maxValue > 0 ? Math.max((Number(item.value || 0) / maxValue) * 100, 4) : 0
+        return (
+          <div key={item.label} className="mini-chart-row">
+            <div className="mini-chart-label">{item.label}</div>
+            <div className="mini-chart-bar-wrap">
+              <div className="mini-chart-bar" style={{ width: `${width}%` }} />
+            </div>
+            <div className="mini-chart-value">{Number(item.value || 0).toLocaleString()}</div>
+          </div>
+        )
+      })}
     </div>
   )
 }
