@@ -10,6 +10,7 @@ const TABS = [
   '통계',
   '코치스케줄',
   '매출기록',
+  '세일즈일지',
   '프로그램',
   '공지사항',
   '사용방법',
@@ -106,6 +107,17 @@ const emptySaleForm = {
   service_session_count: 0,
   is_vip: false,
   memo: '',
+}
+
+const emptySalesLogForm = {
+  id: null,
+  log_date: new Date().toISOString().slice(0, 10),
+  ot_count: 0,
+  greeting_count: 0,
+  greeted_to: '',
+  greeted_three_plus: false,
+  sales_result: 'pending',
+  diary: '',
 }
 
 function randomCode() {
@@ -229,6 +241,13 @@ export default function AdminDashboard({ profile, onLogout }) {
   const [salePaymentFilter, setSalePaymentFilter] = useState('all')
   const [collapsedSales, setCollapsedSales] = useState({})
   const [salesSummary, setSalesSummary] = useState(null)
+
+  const [salesLogs, setSalesLogs] = useState([])
+  const [salesLogForm, setSalesLogForm] = useState(emptySalesLogForm)
+  const [editingSalesLogId, setEditingSalesLogId] = useState(null)
+  const [collapsedSalesLogs, setCollapsedSalesLogs] = useState({})
+  const [salesLogSearch, setSalesLogSearch] = useState('')
+  const [salesLogMonth, setSalesLogMonth] = useState(new Date().toISOString().slice(0, 7))
 
   const [notices, setNotices] = useState([])
   const [noticeForm, setNoticeForm] = useState(emptyNoticeForm)
@@ -399,6 +418,22 @@ export default function AdminDashboard({ profile, onLogout }) {
     }
   }, [filteredSales])
 
+  const filteredSalesLogs = useMemo(() => {
+    return salesLogs.filter((log) => {
+      const matchesMonth = !salesLogMonth || getMonthKey(log.log_date) === salesLogMonth
+      const matchesKeyword =
+        !salesLogSearch.trim() ||
+        textIncludes(log.greeted_to, salesLogSearch) ||
+        textIncludes(log.diary, salesLogSearch) ||
+        textIncludes(log.sales_result, salesLogSearch) ||
+        textIncludes(log.log_date, salesLogSearch) ||
+        textIncludes(log.ot_count, salesLogSearch) ||
+        textIncludes(log.greeting_count, salesLogSearch)
+
+      return matchesMonth && matchesKeyword
+    })
+  }, [salesLogs, salesLogMonth, salesLogSearch])
+
   const filteredPrograms = useMemo(() => {
     return programs.filter((program) => {
       return (
@@ -474,6 +509,7 @@ export default function AdminDashboard({ profile, onLogout }) {
       loadCoachSchedules(),
       loadPrograms(),
       loadSalesRecords(),
+      loadSalesLogs(),
       loadNotices(),
     ])
 
@@ -684,6 +720,23 @@ export default function AdminDashboard({ profile, onLogout }) {
       })
       setSalesRecords(data)
       setCollapsedSales(collapsed)
+    }
+  }
+
+  const loadSalesLogs = async () => {
+    const { data } = await supabase
+      .from('sales_logs')
+      .select('*')
+      .order('log_date', { ascending: false })
+      .order('created_at', { ascending: false })
+
+    if (data) {
+      const collapsed = {}
+      data.forEach((log) => {
+        collapsed[log.id] = true
+      })
+      setSalesLogs(data)
+      setCollapsedSalesLogs(collapsed)
     }
   }
 
@@ -1438,6 +1491,73 @@ export default function AdminDashboard({ profile, onLogout }) {
     await loadSalesRecords()
     await loadSalesSummary(saleMonth)
     setMessage('매출 기록이 삭제되었습니다.')
+  }
+
+  const resetSalesLogForm = () => {
+    setSalesLogForm(emptySalesLogForm)
+    setEditingSalesLogId(null)
+  }
+
+  const handleSalesLogSubmit = async (e) => {
+    e.preventDefault()
+
+    const payload = {
+      log_date: salesLogForm.log_date,
+      admin_id: profile?.id || null,
+      ot_count: Number(salesLogForm.ot_count) || 0,
+      greeting_count: Number(salesLogForm.greeting_count) || 0,
+      greeted_to: salesLogForm.greeted_to?.trim() || '',
+      greeted_three_plus: !!salesLogForm.greeted_three_plus,
+      sales_result: salesLogForm.sales_result || 'pending',
+      diary: salesLogForm.diary?.trim() || '',
+    }
+
+    if (editingSalesLogId) {
+      const { error } = await supabase.from('sales_logs').update(payload).eq('id', editingSalesLogId)
+      if (error) {
+        setMessage(error.message)
+        return
+      }
+      setMessage('세일즈 일지가 수정되었습니다.')
+    } else {
+      const { error } = await supabase.from('sales_logs').insert(payload)
+      if (error) {
+        setMessage(error.message)
+        return
+      }
+      setMessage('세일즈 일지가 저장되었습니다.')
+    }
+
+    resetSalesLogForm()
+    await loadSalesLogs()
+  }
+
+  const handleSalesLogEdit = (log) => {
+    setEditingSalesLogId(log.id)
+    setSalesLogForm({
+      id: log.id,
+      log_date: log.log_date || new Date().toISOString().slice(0, 10),
+      ot_count: log.ot_count || 0,
+      greeting_count: log.greeting_count || 0,
+      greeted_to: log.greeted_to || '',
+      greeted_three_plus: !!log.greeted_three_plus,
+      sales_result: log.sales_result || 'pending',
+      diary: log.diary || '',
+    })
+    setActiveTab('세일즈일지')
+  }
+
+  const handleSalesLogDelete = async (logId) => {
+    if (!window.confirm('세일즈 일지를 삭제할까요?')) return
+
+    const { error } = await supabase.from('sales_logs').delete().eq('id', logId)
+    if (error) {
+      setMessage(error.message)
+      return
+    }
+
+    await loadSalesLogs()
+    setMessage('세일즈 일지가 삭제되었습니다.')
   }
 
   const getSalesAutoFeedback = () => {
@@ -2754,6 +2874,202 @@ export default function AdminDashboard({ profile, onLogout }) {
               })}
             </div>
           </div>
+        </div>
+      )}
+
+      {activeTab === '세일즈일지' && (
+        <div className="two-col">
+          <section className="card">
+            <h2>세일즈 일지 작성 / 수정</h2>
+
+            <div className="stack-gap">
+              <input
+                placeholder="세일즈 일지 검색"
+                value={salesLogSearch}
+                onChange={(e) => setSalesLogSearch(e.target.value)}
+              />
+              <input
+                type="month"
+                value={salesLogMonth}
+                onChange={(e) => setSalesLogMonth(e.target.value)}
+              />
+            </div>
+
+            <form className="stack-gap" onSubmit={handleSalesLogSubmit}>
+              <label className="field">
+                <span>날짜</span>
+                <input
+                  type="date"
+                  value={salesLogForm.log_date}
+                  onChange={(e) => setSalesLogForm({ ...salesLogForm, log_date: e.target.value })}
+                />
+              </label>
+
+              <div className="grid-2">
+                <label className="field">
+                  <span>OT 진행 인원</span>
+                  <input
+                    type="number"
+                    value={salesLogForm.ot_count}
+                    onChange={(e) => setSalesLogForm({ ...salesLogForm, ot_count: e.target.value })}
+                  />
+                </label>
+
+                <label className="field">
+                  <span>인사 횟수</span>
+                  <input
+                    type="number"
+                    value={salesLogForm.greeting_count}
+                    onChange={(e) => setSalesLogForm({ ...salesLogForm, greeting_count: e.target.value })}
+                  />
+                </label>
+              </div>
+
+              <label className="field">
+                <span>누구에게 인사했는지</span>
+                <textarea
+                  rows="3"
+                  value={salesLogForm.greeted_to}
+                  onChange={(e) => setSalesLogForm({ ...salesLogForm, greeted_to: e.target.value })}
+                  placeholder="예: 신규 상담 1명, 워크인 2명, 기존회원 3명"
+                />
+              </label>
+
+              <label className="checkbox-line">
+                <input
+                  type="checkbox"
+                  checked={salesLogForm.greeted_three_plus}
+                  onChange={(e) =>
+                    setSalesLogForm({ ...salesLogForm, greeted_three_plus: e.target.checked })
+                  }
+                />
+                <span>하루 3명 이상 인사함</span>
+              </label>
+
+              <label className="field">
+                <span>세일즈 결과</span>
+                <select
+                  value={salesLogForm.sales_result}
+                  onChange={(e) => setSalesLogForm({ ...salesLogForm, sales_result: e.target.value })}
+                >
+                  <option value="pending">진행중</option>
+                  <option value="success">성공</option>
+                  <option value="fail">실패</option>
+                </select>
+              </label>
+
+              <label className="field">
+                <span>세일즈 일지</span>
+                <textarea
+                  rows="6"
+                  value={salesLogForm.diary}
+                  onChange={(e) => setSalesLogForm({ ...salesLogForm, diary: e.target.value })}
+                  placeholder="오늘 OT/상담/인사/등록 흐름을 일기처럼 적어주세요."
+                />
+              </label>
+
+              <div className="inline-actions wrap">
+                <button className="primary-btn" type="submit">
+                  {editingSalesLogId ? '세일즈 일지 수정' : '세일즈 일지 저장'}
+                </button>
+                <button type="button" className="secondary-btn" onClick={resetSalesLogForm}>
+                  초기화
+                </button>
+              </div>
+            </form>
+          </section>
+
+          <section className="card">
+            <div className="section-head">
+              <h2>세일즈 일지 목록</h2>
+              <button
+                type="button"
+                className="secondary-btn"
+                onClick={() =>
+                  downloadCsv(`sales_logs_${salesLogMonth || 'all'}.csv`, [
+                    ['날짜', 'OT인원', '인사횟수', '3명이상인사', '결과', '인사대상', '일지'],
+                    ...filteredSalesLogs.map((log) => [
+                      log.log_date || '',
+                      log.ot_count || 0,
+                      log.greeting_count || 0,
+                      log.greeted_three_plus ? 'Y' : 'N',
+                      log.sales_result || '',
+                      log.greeted_to || '',
+                      log.diary || '',
+                    ]),
+                  ])
+                }
+              >
+                CSV
+              </button>
+            </div>
+
+            <div className="list-stack">
+              {filteredSalesLogs.map((log) => {
+                const collapsed = collapsedSalesLogs[log.id] ?? true
+                return (
+                  <div key={log.id} className="list-card">
+                    <div className="list-card-top">
+                      <strong>{log.log_date}</strong>
+                      <span className="pill">
+                        {log.sales_result === 'success'
+                          ? '성공'
+                          : log.sales_result === 'fail'
+                          ? '실패'
+                          : '진행중'}
+                      </span>
+                    </div>
+
+                    <div className="compact-text">
+                      간략히보기: OT {log.ot_count || 0}명 / 인사 {log.greeting_count || 0}회 / {log.greeted_three_plus ? '3명이상 인사함' : '3명 미만'}
+                    </div>
+
+                    <div className="inline-actions wrap">
+                      <button
+                        type="button"
+                        className="secondary-btn"
+                        onClick={() =>
+                          setCollapsedSalesLogs((prev) => ({
+                            ...prev,
+                            [log.id]: !collapsed,
+                          }))
+                        }
+                      >
+                        {collapsed ? '상세히보기' : '간략히보기'}
+                      </button>
+
+                      <button
+                        type="button"
+                        className="secondary-btn"
+                        onClick={() => handleSalesLogEdit(log)}
+                      >
+                        수정
+                      </button>
+
+                      <button
+                        type="button"
+                        className="danger-btn"
+                        onClick={() => handleSalesLogDelete(log.id)}
+                      >
+                        삭제
+                      </button>
+                    </div>
+
+                    {!collapsed ? (
+                      <div className="detail-box">
+                        <p><strong>OT 진행 인원:</strong> {log.ot_count || 0}명</p>
+                        <p><strong>인사 횟수:</strong> {log.greeting_count || 0}회</p>
+                        <p><strong>3명 이상 인사:</strong> {log.greeted_three_plus ? '예' : '아니오'}</p>
+                        <p><strong>인사 대상:</strong> {log.greeted_to || '-'}</p>
+                        <p><strong>세일즈 결과:</strong> {log.sales_result || '-'}</p>
+                        <p><strong>일지:</strong> {log.diary || '-'}</p>
+                      </div>
+                    ) : null}
+                  </div>
+                )
+              })}
+            </div>
+          </section>
         </div>
       )}
 
