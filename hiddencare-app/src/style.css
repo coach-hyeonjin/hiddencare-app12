@@ -8,6 +8,10 @@
   --primary-soft: #eaf2ff;
   --danger: #d64545;
   --danger-soft: #ffeaea;
+  --success: #1f7a43;
+  --success-soft: #eaf7ef;
+  --warning: #b26a00;
+  --warning-soft: #fff5e8;
   --shadow: 0 12px 32px rgba(17, 24, 39, 0.08);
   --radius: 18px;
 }
@@ -51,6 +55,13 @@ textarea {
   border-radius: 12px;
   padding: 12px 14px;
   outline: none;
+}
+
+input:focus,
+select:focus,
+textarea:focus {
+  border-color: rgba(31, 111, 235, 0.35);
+  box-shadow: 0 0 0 3px rgba(31, 111, 235, 0.08);
 }
 
 textarea {
@@ -237,6 +248,15 @@ img {
   transform: translateY(-1px);
 }
 
+.primary-btn:disabled,
+.secondary-btn:disabled,
+.danger-btn:disabled,
+.toggle-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+}
+
 .dashboard-shell {
   width: min(100%, 1400px);
   margin: 0 auto;
@@ -359,6 +379,10 @@ img {
 
 .detail-box p {
   margin: 0 0 8px;
+}
+
+.detail-box p:last-child {
+  margin-bottom: 0;
 }
 
 .message {
@@ -553,6 +577,38 @@ img {
   font-size: 13px;
   color: var(--sub);
   font-weight: 700;
+}
+
+/* 추가: 세일즈일지 상태 표현용 */
+.sales-log-card {
+  border-left: 4px solid var(--line);
+}
+
+.sales-log-card.success {
+  border-left-color: var(--success);
+}
+
+.sales-log-card.fail {
+  border-left-color: var(--danger);
+}
+
+.sales-log-card.pending {
+  border-left-color: var(--warning);
+}
+
+.status-pill-success {
+  background: var(--success-soft);
+  color: var(--success);
+}
+
+.status-pill-fail {
+  background: var(--danger-soft);
+  color: var(--danger);
+}
+
+.status-pill-pending {
+  background: var(--warning-soft);
+  color: var(--warning);
 }
 
 @media (max-width: 1024px) {
