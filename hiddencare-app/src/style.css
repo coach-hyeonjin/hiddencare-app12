@@ -160,7 +160,8 @@ img {
 .auth-card h1,
 .card h2,
 .info-card h2,
-.sub-card h3 {
+.sub-card h3,
+.sub-card h4 {
   margin: 0 0 8px;
 }
 
@@ -511,12 +512,64 @@ img {
   border-color: rgba(31, 111, 235, 0.25);
 }
 
+/* 추가: 매출 미니 차트 */
+.mini-chart {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 8px;
+}
+
+.mini-chart-row {
+  display: grid;
+  grid-template-columns: 120px 1fr 90px;
+  gap: 10px;
+  align-items: center;
+}
+
+.mini-chart-label {
+  font-size: 14px;
+  color: var(--text);
+  font-weight: 600;
+  word-break: break-word;
+}
+
+.mini-chart-bar-wrap {
+  width: 100%;
+  height: 12px;
+  background: #ebeff7;
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.mini-chart-bar {
+  height: 100%;
+  background: var(--primary);
+  border-radius: 999px;
+}
+
+.mini-chart-value {
+  text-align: right;
+  font-size: 13px;
+  color: var(--sub);
+  font-weight: 700;
+}
+
 @media (max-width: 1024px) {
   .choice-grid,
   .two-col,
   .stats-grid,
   .grid-3 {
     grid-template-columns: 1fr;
+  }
+
+  .mini-chart-row {
+    grid-template-columns: 1fr;
+    gap: 6px;
+  }
+
+  .mini-chart-value {
+    text-align: left;
   }
 }
 
