@@ -52,14 +52,11 @@ async function verifyMemberAccess(memberId, accessCode) {
     code: accessCode.trim(),
   })
 
-  if (error || !data || data.length === 0) {
-    return null
-  }
-
+  if (error || !data || data.length === 0) return null
   return data[0]
 }
 
-function AdminLogin({ onLogin, onBack, disabledReason = '' }) {
+function AdminLogin({ onLogin, onBack }) {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
@@ -70,7 +67,7 @@ function AdminLogin({ onLogin, onBack, disabledReason = '' }) {
     e.preventDefault()
 
     if (!supabase) {
-      setMessage(disabledReason || 'Supabase 연결이 설정되지 않았습니다.')
+      setMessage('Supabase 연결 설정을 확인해주세요.')
       return
     }
 
@@ -165,13 +162,7 @@ function AdminLogin({ onLogin, onBack, disabledReason = '' }) {
   )
 }
 
-function MemberAccess({
-  initialMemberId,
-  initialAccessCode,
-  onSuccess,
-  onBack,
-  disabledReason = '',
-}) {
+function MemberAccess({ initialMemberId, initialAccessCode, onSuccess, onBack }) {
   const [memberId, setMemberId] = useState(initialMemberId || '')
   const [accessCode, setAccessCode] = useState(initialAccessCode || '')
   const [loading, setLoading] = useState(false)
@@ -181,7 +172,7 @@ function MemberAccess({
     e.preventDefault()
 
     if (!supabase) {
-      setMessage(disabledReason || 'Supabase 연결이 설정되지 않았습니다.')
+      setMessage('Supabase 연결 설정을 확인해주세요.')
       return
     }
 
@@ -193,16 +184,16 @@ function MemberAccess({
     setLoading(true)
     setMessage('')
 
-    const verifiedMember = await verifyMemberAccess(memberId.trim(), accessCode.trim())
+    const member = await verifyMemberAccess(memberId.trim(), accessCode.trim())
 
-    if (!verifiedMember) {
+    if (!member) {
       setMessage('회원 확인에 실패했습니다. ID 또는 access code를 다시 확인해주세요.')
       setLoading(false)
       return
     }
 
     const sessionData = {
-      member: verifiedMember,
+      member,
       accessCode: accessCode.trim().toUpperCase(),
       savedAt: new Date().toISOString(),
     }
@@ -256,7 +247,7 @@ export default function App() {
   const [mode, setMode] = useState('home')
   const [adminProfile, setAdminProfile] = useState(null)
   const [memberSession, setMemberSession] = useState(null)
-  const [bootMessage, setBootMessage] = useState('')
+  const [bootError, setBootError] = useState('')
 
   const entryParams = useMemo(() => {
     const params = new URLSearchParams(window.location.search)
@@ -267,47 +258,39 @@ export default function App() {
   }, [])
 
   useEffect(() => {
-    let cancelled = false
-    let subscription = null
+    let mounted = true
 
-    const finishTo = (nextMode, extra = {}) => {
-      if (cancelled) return
-      if (extra.bootMessage !== undefined) setBootMessage(extra.bootMessage)
-      if (extra.adminProfile !== undefined) setAdminProfile(extra.adminProfile)
-      if (extra.memberSession !== undefined) setMemberSession(extra.memberSession)
-      setMode(nextMode)
-      setLoading(false)
-    }
-
-    const restore = async () => {
+    const boot = async () => {
       try {
         if (!supabaseEnvReady || !supabase) {
-          finishTo(entryParams.memberId ? 'member-access' : 'home', {
-            bootMessage: 'Supabase 환경변수가 아직 반영되지 않았습니다.',
-          })
+          if (!mounted) return
+          setBootError('Supabase 환경변수가 연결되지 않았습니다.')
+          setMode('home')
+          setLoading(false)
           return
         }
 
-        const savedMember = localStorage.getItem(MEMBER_STORAGE_KEY)
+        const savedMemberRaw = localStorage.getItem(MEMBER_STORAGE_KEY)
 
-        if (savedMember) {
+        if (savedMemberRaw) {
           try {
-            const parsed = JSON.parse(savedMember)
+            const parsed = JSON.parse(savedMemberRaw)
             const savedMemberId = parsed?.member?.id
             const savedAccessCode = parsed?.accessCode
 
             if (savedMemberId && savedAccessCode) {
               const verifiedMember = await verifyMemberAccess(savedMemberId, savedAccessCode)
 
-              if (verifiedMember) {
+              if (verifiedMember && mounted) {
                 const restoredSession = {
                   ...parsed,
                   member: verifiedMember,
-                  accessCode: String(savedAccessCode).toUpperCase(),
+                  accessCode: savedAccessCode,
                 }
-
                 localStorage.setItem(MEMBER_STORAGE_KEY, JSON.stringify(restoredSession))
-                finishTo('member', { memberSession: restoredSession })
+                setMemberSession(restoredSession)
+                setMode('member')
+                setLoading(false)
                 return
               }
             }
@@ -318,13 +301,16 @@ export default function App() {
           }
         }
 
-        const { data, error } = await supabase.auth.getSession()
+        const { data: sessionData } = await supabase.auth.getSession()
+        const user = sessionData?.session?.user || null
 
-        if (!error && data?.session?.user) {
-          const profile = await fetchProfileByUserId(data.session.user.id)
+        if (user) {
+          const profile = await fetchProfileByUserId(user.id)
 
-          if (profile && ADMIN_ROLES.includes(profile.role)) {
-            finishTo('admin', { adminProfile: profile })
+          if (profile && ADMIN_ROLES.includes(profile.role) && mounted) {
+            setAdminProfile(profile)
+            setMode('admin')
+            setLoading(false)
             return
           }
         }
@@ -335,56 +321,62 @@ export default function App() {
             entryParams.accessCode,
           )
 
-          if (verifiedMember) {
-            const sessionData = {
+          if (verifiedMember && mounted) {
+            const sessionValue = {
               member: verifiedMember,
               accessCode: entryParams.accessCode,
               savedAt: new Date().toISOString(),
             }
 
-            localStorage.setItem(MEMBER_STORAGE_KEY, JSON.stringify(sessionData))
-            finishTo('member', { memberSession: sessionData })
+            localStorage.setItem(MEMBER_STORAGE_KEY, JSON.stringify(sessionValue))
+            setMemberSession(sessionValue)
+            setMode('member')
+            setLoading(false)
             return
           }
         }
 
-        finishTo(entryParams.memberId ? 'member-access' : 'home')
+        if (!mounted) return
+        setMode(entryParams.memberId ? 'member-access' : 'home')
+        setLoading(false)
       } catch (error) {
-        console.error('App restore error:', error)
-        finishTo(entryParams.memberId ? 'member-access' : 'home', {
-          bootMessage: '초기 로딩 중 오류가 발생했습니다.',
-        })
+        if (!mounted) return
+        console.error('App boot error:', error)
+        setBootError(error?.message || '초기 로딩 중 오류가 발생했습니다.')
+        setMode(entryParams.memberId ? 'member-access' : 'home')
+        setLoading(false)
       }
     }
 
-    restore()
+    const timeout = window.setTimeout(() => {
+      if (!mounted) return
+      setBootError('초기 로딩이 지연되어 기본 화면으로 전환합니다.')
+      setMode(entryParams.memberId ? 'member-access' : 'home')
+      setLoading(false)
+    }, 4000)
 
-    if (supabase) {
-      const authListener = supabase.auth.onAuthStateChange(async (event, session) => {
-        if (cancelled) return
+    boot()
 
-        if (event === 'SIGNED_OUT') {
-          setAdminProfile(null)
-          setMode(entryParams.memberId ? 'member-access' : 'home')
-          return
-        }
+    const {
+      data: { subscription },
+    } = supabase && supabase.auth
+      ? supabase.auth.onAuthStateChange(async (_event, session) => {
+          if (!mounted) return
 
-        if (session?.user) {
-          const profile = await fetchProfileByUserId(session.user.id)
-
-          if (profile && ADMIN_ROLES.includes(profile.role)) {
-            setAdminProfile(profile)
-            setMode('admin')
+          if (session?.user) {
+            const profile = await fetchProfileByUserId(session.user.id)
+            if (profile && ADMIN_ROLES.includes(profile.role)) {
+              setAdminProfile(profile)
+              setMode('admin')
+            }
           }
-        }
-      })
-
-      subscription = authListener?.data?.subscription || null
-    }
+        })
+      : { data: { subscription: { unsubscribe: () => {} } } }
 
     return () => {
-      cancelled = true
-      if (subscription) subscription.unsubscribe()
+      mounted = false
+      window.clearTimeout(timeout)
+      subscription.unsubscribe()
     }
   }, [entryParams.memberId, entryParams.accessCode])
 
@@ -434,7 +426,6 @@ export default function App() {
     return (
       <div className="app-shell center-screen">
         <AdminLogin
-          disabledReason={bootMessage}
           onLogin={(profile) => {
             setAdminProfile(profile)
             setMode('admin')
@@ -451,7 +442,6 @@ export default function App() {
         <MemberAccess
           initialMemberId={entryParams.memberId}
           initialAccessCode={entryParams.accessCode}
-          disabledReason={bootMessage}
           onSuccess={(sessionData) => {
             setMemberSession(sessionData)
             setMode('member')
@@ -470,7 +460,7 @@ export default function App() {
           <h1>시작하기</h1>
           <p className="sub-text">관리자 또는 회원으로 입장할 수 있습니다.</p>
 
-          {bootMessage ? <div className="message error">{bootMessage}</div> : null}
+          {bootError ? <div className="message error">{bootError}</div> : null}
 
           <div className="stack-gap">
             <button className="primary-btn" onClick={() => setMode('admin-login')}>
@@ -488,7 +478,7 @@ export default function App() {
             <li>관리자: 이메일 / 비밀번호 로그인</li>
             <li>회원: URL의 member 값 + access code</li>
             <li>회원 세션 / 관리자 세션 자동 복원</li>
-            <li>향후 super_admin / gym_id 확장 대응 구조</li>
+            <li>환경변수 오류 시에도 홈 화면은 표시되도록 구성</li>
           </ul>
         </div>
       </div>
