@@ -74,6 +74,47 @@ function getMonthKey(dateString) {
   return (dateString || '').slice(0, 7)
 }
 
+function formatDate(value) {
+  return value || '-'
+}
+
+function textIncludes(value, keyword) {
+  return String(value || '').toLowerCase().includes(String(keyword || '').toLowerCase())
+}
+
+function safeJsonParse(value, fallback) {
+  try {
+    if (!value) return fallback
+    return JSON.parse(value)
+  } catch {
+    return fallback
+  }
+}
+
+function normalizeRoutineData(row) {
+  const parsed = safeJsonParse(row?.content_json, null)
+  const entries = Array.isArray(parsed?.entries)
+    ? parsed.entries
+        .map((entry, index) => ({
+          id: entry.id || `${index + 1}`,
+          month_key: entry.month_key || '',
+          day: entry.day || '',
+          category: entry.category || '',
+          title: entry.title || '',
+          content: entry.content || '',
+          sort_order: Number(entry.sort_order ?? index),
+        }))
+        .sort((a, b) => Number(a.sort_order || 0) - Number(b.sort_order || 0))
+    : []
+
+  return {
+    id: row?.id || null,
+    title: row?.title || '루틴',
+    content: row?.content || '',
+    entries,
+  }
+}
+
 export default function MemberDashboard({ member, accessCode, onLogout }) {
   const [activeTab, setActiveTab] = useState('내정보')
   const [loading, setLoading] = useState(true)
@@ -83,6 +124,8 @@ export default function MemberDashboard({ member, accessCode, onLogout }) {
   const [workouts, setWorkouts] = useState([])
   const [workoutItemsMap, setWorkoutItemsMap] = useState({})
   const [collapsedWorkouts, setCollapsedWorkouts] = useState({})
+  const [workoutSearch, setWorkoutSearch] = useState('')
+  const [workoutTypeFilter, setWorkoutTypeFilter] = useState('all')
 
   const [exercises, setExercises] = useState([])
   const [personalForm, setPersonalForm] = useState(emptyPersonalForm)
@@ -90,6 +133,8 @@ export default function MemberDashboard({ member, accessCode, onLogout }) {
   const [dietLogs, setDietLogs] = useState([])
   const [collapsedDiets, setCollapsedDiets] = useState({})
   const [dietForm, setDietForm] = useState(emptyDietForm)
+  const [dietSearch, setDietSearch] = useState('')
+  const [dietMealFilter, setDietMealFilter] = useState('all')
 
   const [healthLogs, setHealthLogs] = useState([])
   const [collapsedHealthLogs, setCollapsedHealthLogs] = useState({})
@@ -100,6 +145,7 @@ export default function MemberDashboard({ member, accessCode, onLogout }) {
 
   const [programs, setPrograms] = useState([])
   const [currentProgram, setCurrentProgram] = useState(null)
+  const [programSearch, setProgramSearch] = useState('')
 
   const [coaches, setCoaches] = useState([])
   const [coachSchedules, setCoachSchedules] = useState([])
@@ -109,6 +155,8 @@ export default function MemberDashboard({ member, accessCode, onLogout }) {
 
   const [notices, setNotices] = useState([])
   const [collapsedNotices, setCollapsedNotices] = useState({})
+  const [noticeSearch, setNoticeSearch] = useState('')
+  const [noticeCategoryFilter, setNoticeCategoryFilter] = useState('all')
 
   const stats = useMemo(() => {
     const ptCount = workouts.filter((workout) => workout.workout_type === 'pt').length
@@ -136,9 +184,74 @@ export default function MemberDashboard({ member, accessCode, onLogout }) {
     return coachSchedules.filter((schedule) => getMonthKey(schedule.schedule_date) === scheduleMonth)
   }, [coachSchedules, scheduleMonth])
 
+  const workoutCards = useMemo(() => {
+    return workouts
+      .map((workout) => {
+        const items = workoutItemsMap[workout.id] || []
+        const searchText = [
+          workout.workout_type,
+          workout.workout_date,
+          workout.good,
+          workout.improve,
+          ...items.map((item) => item.exercise_name_snapshot),
+        ].join(' ')
+
+        return {
+          ...workout,
+          items,
+          searchText,
+        }
+      })
+      .filter((workout) => {
+        const matchesKeyword = !workoutSearch.trim() || textIncludes(workout.searchText, workoutSearch)
+        const matchesType = workoutTypeFilter === 'all' || workout.workout_type === workoutTypeFilter
+        return matchesKeyword && matchesType
+      })
+  }, [workouts, workoutItemsMap, workoutSearch, workoutTypeFilter])
+
+  const displayedDietLogs = useMemo(() => {
+    return dietLogs.filter((diet) => {
+      const matchesMeal = dietMealFilter === 'all' || diet.meal_type === dietMealFilter
+      const matchesKeyword =
+        !dietSearch.trim() ||
+        textIncludes(diet.content, dietSearch) ||
+        textIncludes(diet.product_brand, dietSearch) ||
+        textIncludes(diet.product_name, dietSearch) ||
+        textIncludes(diet.member_note, dietSearch) ||
+        textIncludes(diet.coach_feedback, dietSearch) ||
+        textIncludes(diet.meal_type, dietSearch) ||
+        textIncludes(diet.meal_category, dietSearch)
+
+      return matchesMeal && matchesKeyword
+    })
+  }, [dietLogs, dietMealFilter, dietSearch])
+
+  const filteredPrograms = useMemo(() => {
+    return programs.filter((program) => {
+      return (
+        !programSearch.trim() ||
+        textIncludes(program.name, programSearch) ||
+        textIncludes(program.description, programSearch) ||
+        textIncludes(program.session_count, programSearch) ||
+        textIncludes(program.price, programSearch)
+      )
+    })
+  }, [programs, programSearch])
+
   const publishedNotices = useMemo(() => {
-    return notices.filter((notice) => notice.is_published)
-  }, [notices])
+    return notices
+      .filter((notice) => notice.is_published)
+      .filter((notice) => {
+        const matchesCategory = noticeCategoryFilter === 'all' || notice.category === noticeCategoryFilter
+        const matchesKeyword =
+          !noticeSearch.trim() ||
+          textIncludes(notice.title, noticeSearch) ||
+          textIncludes(notice.content, noticeSearch) ||
+          textIncludes(notice.category, noticeSearch)
+
+        return matchesCategory && matchesKeyword
+      })
+  }, [notices, noticeCategoryFilter, noticeSearch])
 
   useEffect(() => {
     loadAll()
@@ -274,7 +387,7 @@ export default function MemberDashboard({ member, accessCode, onLogout }) {
       .eq('member_id', member.id)
       .maybeSingle()
 
-    setRoutine(data || null)
+    setRoutine(data ? normalizeRoutineData(data) : null)
   }
 
   const loadManual = async () => {
@@ -889,9 +1002,22 @@ export default function MemberDashboard({ member, accessCode, onLogout }) {
         <div className="card">
           <h2>운동기록</h2>
 
+          <div className="stack-gap">
+            <input
+              placeholder="날짜 / 운동명 / 잘한점 / 보완점 검색"
+              value={workoutSearch}
+              onChange={(e) => setWorkoutSearch(e.target.value)}
+            />
+
+            <select value={workoutTypeFilter} onChange={(e) => setWorkoutTypeFilter(e.target.value)}>
+              <option value="all">전체 타입</option>
+              <option value="pt">PT</option>
+              <option value="personal">개인운동</option>
+            </select>
+          </div>
+
           <div className="list-stack">
-            {workouts.map((workout) => {
-              const items = workoutItemsMap[workout.id] || []
+            {workoutCards.map((workout) => {
               const collapsed = collapsedWorkouts[workout.id] ?? true
               const isPersonal = workout.workout_type === 'personal'
 
@@ -903,7 +1029,7 @@ export default function MemberDashboard({ member, accessCode, onLogout }) {
                   </div>
 
                   <div className="compact-text">
-                    간략히보기: 운동 {items.length}개 / 총세트 {getTotalSetCount(items)}세트
+                    간략히보기: 운동 {workout.items.length}개 / 총세트 {getTotalSetCount(workout.items)}세트
                   </div>
 
                   <div className="inline-actions wrap">
@@ -942,7 +1068,7 @@ export default function MemberDashboard({ member, accessCode, onLogout }) {
 
                   {!collapsed ? (
                     <div className="detail-box">
-                      {items.map((item) => (
+                      {workout.items.map((item) => (
                         <div key={item.id} className="record-item-box">
                           <strong>{item.exercise_name_snapshot}</strong>
                           <ul className="set-list">
@@ -1226,8 +1352,24 @@ export default function MemberDashboard({ member, accessCode, onLogout }) {
           <section className="card">
             <h2>내 식단 기록</h2>
 
+            <div className="stack-gap">
+              <input
+                value={dietSearch}
+                onChange={(e) => setDietSearch(e.target.value)}
+                placeholder="내용 / 제품명 / 피드백 검색"
+              />
+
+              <select value={dietMealFilter} onChange={(e) => setDietMealFilter(e.target.value)}>
+                <option value="all">전체 식사</option>
+                <option value="아침">아침</option>
+                <option value="점심">점심</option>
+                <option value="저녁">저녁</option>
+                <option value="간식">간식</option>
+              </select>
+            </div>
+
             <div className="list-stack">
-              {dietLogs.map((diet) => {
+              {displayedDietLogs.map((diet) => {
                 const collapsed = collapsedDiets[diet.id] ?? true
 
                 return (
@@ -1288,9 +1430,28 @@ export default function MemberDashboard({ member, accessCode, onLogout }) {
       {activeTab === '루틴' && (
         <div className="card">
           <h2>{routine?.title || '루틴'}</h2>
-          <div className="detail-box">
-            <pre className="pre-text">{routine?.content || '아직 등록된 루틴이 없습니다.'}</pre>
-          </div>
+
+          {routine?.entries && routine.entries.length > 0 ? (
+            <div className="list-stack">
+              {routine.entries.map((entry) => (
+                <div key={entry.id} className="list-card">
+                  <div className="list-card-top">
+                    <strong>{entry.title || '루틴 항목'}</strong>
+                    <span className="pill">
+                      {[entry.month_key, entry.day, entry.category].filter(Boolean).join(' / ') || '루틴'}
+                    </span>
+                  </div>
+                  <div className="detail-box">
+                    <pre className="pre-text">{entry.content || '-'}</pre>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="detail-box">
+              <pre className="pre-text">{routine?.content || '아직 등록된 루틴이 없습니다.'}</pre>
+            </div>
+          )}
         </div>
       )}
 
@@ -1314,9 +1475,17 @@ export default function MemberDashboard({ member, accessCode, onLogout }) {
           </section>
 
           <section className="card">
-            <h2>전체 프로그램 보기</h2>
+            <div className="section-head">
+              <h2>전체 프로그램 보기</h2>
+              <input
+                value={programSearch}
+                onChange={(e) => setProgramSearch(e.target.value)}
+                placeholder="프로그램 검색"
+              />
+            </div>
+
             <div className="list-stack">
-              {programs.map((program) => (
+              {filteredPrograms.map((program) => (
                 <div key={program.id} className="list-card">
                   <div className="list-card-top">
                     <strong>{program.name}</strong>
@@ -1324,6 +1493,9 @@ export default function MemberDashboard({ member, accessCode, onLogout }) {
                   </div>
                   <div className="compact-text">
                     {Number(program.price || 0).toLocaleString()}원 / {program.session_count}회
+                  </div>
+                  <div className="detail-box">
+                    <p><strong>설명:</strong> {program.description || '-'}</p>
                   </div>
                 </div>
               ))}
@@ -1399,6 +1571,21 @@ export default function MemberDashboard({ member, accessCode, onLogout }) {
         <div className="card">
           <h2>공지 / 이벤트</h2>
 
+          <div className="stack-gap">
+            <input
+              value={noticeSearch}
+              onChange={(e) => setNoticeSearch(e.target.value)}
+              placeholder="제목 / 내용 / 카테고리 검색"
+            />
+
+            <select value={noticeCategoryFilter} onChange={(e) => setNoticeCategoryFilter(e.target.value)}>
+              <option value="all">전체 카테고리</option>
+              <option value="공지">공지</option>
+              <option value="이벤트">이벤트</option>
+              <option value="운동영상">운동영상</option>
+            </select>
+          </div>
+
           <div className="list-stack">
             {publishedNotices.map((notice) => {
               const collapsed = collapsedNotices[notice.id] ?? true
@@ -1434,7 +1621,7 @@ export default function MemberDashboard({ member, accessCode, onLogout }) {
                       <p><strong>내용:</strong> {notice.content || '-'}</p>
                       <p><strong>이미지 URL:</strong> {notice.image_url || '-'}</p>
                       <p><strong>영상 URL:</strong> {notice.video_url || '-'}</p>
-                      <p><strong>기간:</strong> {notice.starts_at || '-'} ~ {notice.ends_at || '-'}</p>
+                      <p><strong>기간:</strong> {formatDate(notice.starts_at)} ~ {formatDate(notice.ends_at)}</p>
                     </div>
                   ) : null}
                 </div>
