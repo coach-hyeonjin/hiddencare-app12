@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { supabase } from './supabase'
+import { supabase, supabaseEnvReady } from './supabase'
 import AdminDashboard from './AdminDashboard'
 import MemberDashboard from './MemberDashboard'
 import logo from './assets/logo.png'
@@ -165,7 +165,13 @@ function AdminLogin({ onLogin, onBack, disabledReason = '' }) {
   )
 }
 
-function MemberAccess({ initialMemberId, initialAccessCode, onSuccess, onBack, disabledReason = '' }) {
+function MemberAccess({
+  initialMemberId,
+  initialAccessCode,
+  onSuccess,
+  onBack,
+  disabledReason = '',
+}) {
   const [memberId, setMemberId] = useState(initialMemberId || '')
   const [accessCode, setAccessCode] = useState(initialAccessCode || '')
   const [loading, setLoading] = useState(false)
@@ -264,14 +270,21 @@ export default function App() {
     let cancelled = false
     let subscription = null
 
+    const finishTo = (nextMode, extra = {}) => {
+      if (cancelled) return
+      if (extra.bootMessage !== undefined) setBootMessage(extra.bootMessage)
+      if (extra.adminProfile !== undefined) setAdminProfile(extra.adminProfile)
+      if (extra.memberSession !== undefined) setMemberSession(extra.memberSession)
+      setMode(nextMode)
+      setLoading(false)
+    }
+
     const restore = async () => {
       try {
-        if (!supabase) {
-          if (!cancelled) {
-            setBootMessage('Supabase 환경변수가 아직 반영되지 않았습니다.')
-            setMode(entryParams.memberId ? 'member-access' : 'home')
-            setLoading(false)
-          }
+        if (!supabaseEnvReady || !supabase) {
+          finishTo(entryParams.memberId ? 'member-access' : 'home', {
+            bootMessage: 'Supabase 환경변수가 아직 반영되지 않았습니다.',
+          })
           return
         }
 
@@ -294,12 +307,7 @@ export default function App() {
                 }
 
                 localStorage.setItem(MEMBER_STORAGE_KEY, JSON.stringify(restoredSession))
-
-                if (!cancelled) {
-                  setMemberSession(restoredSession)
-                  setMode('member')
-                  setLoading(false)
-                }
+                finishTo('member', { memberSession: restoredSession })
                 return
               }
             }
@@ -315,15 +323,13 @@ export default function App() {
         if (!error && data?.session?.user) {
           const profile = await fetchProfileByUserId(data.session.user.id)
 
-          if (!cancelled && profile && ADMIN_ROLES.includes(profile.role)) {
-            setAdminProfile(profile)
-            setMode('admin')
-            setLoading(false)
+          if (profile && ADMIN_ROLES.includes(profile.role)) {
+            finishTo('admin', { adminProfile: profile })
             return
           }
         }
 
-        if (entryParams.memberId && entryParams.accessCode && !cancelled) {
+        if (entryParams.memberId && entryParams.accessCode) {
           const verifiedMember = await verifyMemberAccess(
             entryParams.memberId,
             entryParams.accessCode,
@@ -337,22 +343,17 @@ export default function App() {
             }
 
             localStorage.setItem(MEMBER_STORAGE_KEY, JSON.stringify(sessionData))
-            setMemberSession(sessionData)
-            setMode('member')
-            setLoading(false)
+            finishTo('member', { memberSession: sessionData })
             return
           }
         }
 
-        if (!cancelled) {
-          setMode(entryParams.memberId ? 'member-access' : 'home')
-          setLoading(false)
-        }
-      } catch {
-        if (!cancelled) {
-          setMode(entryParams.memberId ? 'member-access' : 'home')
-          setLoading(false)
-        }
+        finishTo(entryParams.memberId ? 'member-access' : 'home')
+      } catch (error) {
+        console.error('App restore error:', error)
+        finishTo(entryParams.memberId ? 'member-access' : 'home', {
+          bootMessage: '초기 로딩 중 오류가 발생했습니다.',
+        })
       }
     }
 
