@@ -7,3 +7,5 @@ export const supabase =
   supabaseUrl && supabaseAnonKey
     ? createClient(supabaseUrl, supabaseAnonKey)
     : null
+
+export const supabaseEnvReady = Boolean(supabaseUrl && supabaseAnonKey)
