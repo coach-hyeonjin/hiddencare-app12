@@ -520,6 +520,7 @@ export default function AdminDashboard({ profile, onLogout }) {
     const { data } = await supabase
       .from('members')
       .select('*, programs(id, name)')
+      .eq('admin_id', profile?.id)
       .order('created_at', { ascending: false })
 
     if (data) {
@@ -784,6 +785,7 @@ export default function AdminDashboard({ profile, onLogout }) {
       memo: memberForm.memo?.trim() || '',
       access_code: (memberForm.access_code || randomCode()).trim().toUpperCase(),
       current_program_id: memberForm.current_program_id || null,
+      admin_id: profile?.id || null,
     }
 
     if (!payload.name) {
