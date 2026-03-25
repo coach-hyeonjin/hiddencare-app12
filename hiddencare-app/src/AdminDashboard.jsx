@@ -4,6 +4,7 @@ import logo from './assets/logo.png'
 
 const TABS = [
   '회원',
+  '회원상세',
   '기록작성',
   '운동DB',
   '식단',
@@ -175,6 +176,7 @@ export default function AdminDashboard({ profile, onLogout }) {
   const [memberForm, setMemberForm] = useState(emptyMemberForm)
   const [editingMemberId, setEditingMemberId] = useState(null)
   const [memberSearch, setMemberSearch] = useState('')
+  const [memberDetailSearch, setMemberDetailSearch] = useState('')
   const [memberProgramFilter, setMemberProgramFilter] = useState('')
   const [memberStatusFilter, setMemberStatusFilter] = useState('all')
 
@@ -317,6 +319,19 @@ export default function AdminDashboard({ profile, onLogout }) {
       return matchesKeyword && matchesProgram && matchesStatus
     })
   }, [memberStats, memberSearch, memberProgramFilter, memberStatusFilter])
+
+  const filteredMemberDetails = useMemo(() => {
+    return memberStats.filter((member) => {
+      return (
+        !memberDetailSearch.trim() ||
+        textIncludes(member.name, memberDetailSearch) ||
+        textIncludes(member.goal, memberDetailSearch) ||
+        textIncludes(member.access_code, memberDetailSearch) ||
+        textIncludes(member.programs?.name, memberDetailSearch) ||
+        textIncludes(member.memo, memberDetailSearch)
+      )
+    })
+  }, [memberStats, memberDetailSearch])
 
   const monthlyStats = useMemo(() => {
     const monthKey = new Date().toISOString().slice(0, 7)
@@ -1112,6 +1127,7 @@ export default function AdminDashboard({ profile, onLogout }) {
             }))
           : [{ ...emptyWorkoutItem }],
     })
+
     setActiveTab('기록작성')
   }
 
@@ -1825,7 +1841,10 @@ export default function AdminDashboard({ profile, onLogout }) {
                   <div
                     key={member.id}
                     className={`list-card ${isSelected ? 'selected' : ''}`}
-                    onClick={() => setSelectedMemberId(member.id)}
+                    onClick={() => {
+                      setSelectedMemberId(member.id)
+                      setActiveTab('회원상세')
+                   }}
                   >
                     <div className="list-card-top">
                       <strong>{member.name}</strong>
@@ -1878,113 +1897,143 @@ export default function AdminDashboard({ profile, onLogout }) {
               })}
             </div>
 
-            {selectedMember ? (
-              <>
-                <div className="sub-card">
-                  <h3>선택 회원 상세 / 루틴 관리</h3>
-                  <div className="detail-box">
-                    <p><strong>이름:</strong> {selectedMember.name}</p>
-                    <p><strong>목표:</strong> {selectedMember.goal || '-'}</p>
-                    <p><strong>프로그램:</strong> {selectedMember.programs?.name || '-'}</p>
-                    <p><strong>기간:</strong> {formatDate(selectedMember.start_date)} ~ {formatDate(selectedMember.end_date)}</p>
-                    <p><strong>회원 메모:</strong> {selectedMember.memo || '-'}</p>
-                    <p><strong>회원 링크:</strong> {window.location.origin}?member={selectedMember.id}</p>
-                  </div>
-
-                  <div className="stack-gap">
-                    <label className="field">
-                      <span>루틴 제목</span>
-                      <input value={routineForm.title} onChange={(e) => setRoutineForm({ ...routineForm, title: e.target.value })} />
-                    </label>
-
-                    <label className="field">
-                      <span>루틴 내용</span>
-                      <textarea rows="6" value={routineForm.content} onChange={(e) => setRoutineForm({ ...routineForm, content: e.target.value })} />
-                    </label>
-
-                    <div className="inline-actions wrap">
-                      <button className="primary-btn" type="button" onClick={handleRoutineSave}>
-                        루틴 저장
-                      </button>
-                      <button className="danger-btn" type="button" onClick={handleRoutineDelete}>
-                        루틴 삭제
-                      </button>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="sub-card">
-                  <h3>관리자 전용 메모</h3>
-                  <label className="field">
-                    <span>비공개 메모 입력</span>
-                    <textarea rows="4" value={adminNoteInput} onChange={(e) => setAdminNoteInput(e.target.value)} />
-                  </label>
-                  <button className="primary-btn" type="button" onClick={handleAdminNoteSave}>
-                    메모 저장
-                  </button>
-
-                  <div className="list-stack">
-                    {adminNotes.map((note) => (
-                      <div key={note.id} className="list-card">
-                        <div className="compact-text">{note.note}</div>
-                        <div className="compact-text">수정일: {note.updated_at?.slice(0, 10) || '-'}</div>
-                        <button className="danger-btn" type="button" onClick={() => handleAdminNoteDelete(note.id)}>
-                          삭제
-                        </button>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-
-                <div className="sub-card">
-                  <h3>회원 건강정보</h3>
-                  <div className="list-stack">
-                    {memberHealthLogs.length === 0 ? <div className="compact-text">등록된 건강정보가 없습니다.</div> : null}
-                    {memberHealthLogs.map((health) => {
-                      const collapsed = collapsedHealthLogs[health.id] ?? true
-                      return (
-                        <div key={health.id} className="list-card">
-                          <div className="list-card-top">
-                            <strong>{health.record_date}</strong>
-                            <span className="pill">체중 {health.weight_kg || '-'}kg</span>
-                          </div>
-                          <div className="compact-text">
-                            간략히보기: 키 {health.height_cm || '-'} / 체지방 {health.body_fat_percent || '-'} / 골격근 {health.skeletal_muscle_mass || '-'}
-                          </div>
-                          <button
-                            type="button"
-                            className="secondary-btn"
-                            onClick={() =>
-                              setCollapsedHealthLogs((prev) => ({
-                                ...prev,
-                                [health.id]: !collapsed,
-                              }))
-                            }
-                          >
-                            {collapsed ? '상세히보기' : '간략히보기'}
-                          </button>
-
-                          {!collapsed ? (
-                            <div className="detail-box">
-                              <p><strong>키:</strong> {health.height_cm || '-'}</p>
-                              <p><strong>체중:</strong> {health.weight_kg || '-'}</p>
-                              <p><strong>체지방:</strong> {health.body_fat_percent || '-'}</p>
-                              <p><strong>골격근량:</strong> {health.skeletal_muscle_mass || '-'}</p>
-                              <p><strong>병력사항:</strong> {health.medical_history || '-'}</p>
-                              <p><strong>회원 메모:</strong> {health.member_note || '-'}</p>
-                              <p><strong>인바디 이미지 URL:</strong> {health.inbody_image_url || '-'}</p>
-                            </div>
-                          ) : null}
-                        </div>
-                      )
-                    })}
-                  </div>
-                </div>
-              </>
-            ) : null}
           </section>
         </div>
       )}
+{activeTab === '회원상세' && selectedMember && (
+  <div className="card">
+    <h2>회원 상세</h2>
+
+    <div className="sub-card">
+      <h3>선택 회원 상세 / 루틴 관리</h3>
+      <div className="detail-box">
+        <p><strong>이름:</strong> {selectedMember.name}</p>
+        <p><strong>목표:</strong> {selectedMember.goal || '-'}</p>
+        <p><strong>프로그램:</strong> {selectedMember.programs?.name || '-'}</p>
+        <p><strong>기간:</strong> {formatDate(selectedMember.start_date)} ~ {formatDate(selectedMember.end_date)}</p>
+        <p><strong>회원 메모:</strong> {selectedMember.memo || '-'}</p>
+        <p><strong>회원 링크:</strong> {window.location.origin}?member={selectedMember.id}</p>
+      </div>
+
+      <div className="stack-gap">
+        <label className="field">
+          <span>루틴 제목</span>
+          <input
+            value={routineForm.title}
+            onChange={(e) => setRoutineForm({ ...routineForm, title: e.target.value })}
+          />
+        </label>
+
+        <label className="field">
+          <span>루틴 내용</span>
+          <textarea
+            rows="6"
+            value={routineForm.content}
+            onChange={(e) => setRoutineForm({ ...routineForm, content: e.target.value })}
+          />
+        </label>
+
+        <div className="inline-actions wrap">
+          <button className="primary-btn" type="button" onClick={handleRoutineSave}>
+            루틴 저장
+          </button>
+          <button className="danger-btn" type="button" onClick={handleRoutineDelete}>
+            루틴 삭제
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <div className="sub-card">
+      <h3>관리자 전용 메모</h3>
+
+      <label className="field">
+        <span>비공개 메모 입력</span>
+        <textarea
+          rows="4"
+          value={adminNoteInput}
+          onChange={(e) => setAdminNoteInput(e.target.value)}
+        />
+      </label>
+
+      <button className="primary-btn" type="button" onClick={handleAdminNoteSave}>
+        메모 저장
+      </button>
+
+      <div className="list-stack">
+        {adminNotes.map((note) => (
+          <div key={note.id} className="list-card">
+            <div className="compact-text">{note.note}</div>
+            <div className="compact-text">
+              수정일: {note.updated_at?.slice(0, 10) || '-'}
+            </div>
+            <button
+              className="danger-btn"
+              type="button"
+              onClick={() => handleAdminNoteDelete(note.id)}
+            >
+              삭제
+            </button>
+          </div>
+        ))}
+      </div>
+    </div>
+
+    <div className="sub-card">
+      <h3>회원 건강정보</h3>
+
+      <div className="list-stack">
+        {memberHealthLogs.length === 0 ? (
+          <div className="compact-text">등록된 건강정보가 없습니다.</div>
+        ) : null}
+
+        {memberHealthLogs.map((health) => {
+          const collapsed = collapsedHealthLogs[health.id] ?? true
+
+          return (
+            <div key={health.id} className="list-card">
+              <div className="list-card-top">
+                <strong>{health.record_date}</strong>
+                <span className="pill">
+                  체중 {health.weight_kg || '-'}kg
+                </span>
+              </div>
+
+              <div className="compact-text">
+                간략히보기: 키 {health.height_cm || '-'} / 체지방 {health.body_fat_percent || '-'} / 골격근 {health.skeletal_muscle_mass || '-'}
+              </div>
+
+              <button
+                type="button"
+                className="secondary-btn"
+                onClick={() =>
+                  setCollapsedHealthLogs((prev) => ({
+                    ...prev,
+                    [health.id]: !collapsed,
+                  }))
+                }
+              >
+                {collapsed ? '상세히보기' : '간략히보기'}
+              </button>
+
+              {!collapsed && (
+                <div className="detail-box">
+                  <p><strong>키:</strong> {health.height_cm || '-'}</p>
+                  <p><strong>체중:</strong> {health.weight_kg || '-'}</p>
+                  <p><strong>체지방:</strong> {health.body_fat_percent || '-'}</p>
+                  <p><strong>골격근량:</strong> {health.skeletal_muscle_mass || '-'}</p>
+                  <p><strong>병력사항:</strong> {health.medical_history || '-'}</p>
+                  <p><strong>회원 메모:</strong> {health.member_note || '-'}</p>
+                  <p><strong>인바디 이미지 URL:</strong> {health.inbody_image_url || '-'}</p>
+                </div>
+              )}
+            </div>
+          )
+        })}
+      </div>
+    </div>
+  </div>
+)}
 
       {activeTab === '기록작성' && (
         <div className="two-col">
