@@ -12,6 +12,7 @@ const TABS = [
   '프로그램',
   '코치스케줄',
   '공지사항',
+  '문의사항',
   '사용방법',
 ]
 
@@ -55,6 +56,12 @@ const emptyHealthForm = {
   medical_history: '',
   member_note: '',
   inbody_image_url: '',
+}
+
+const emptyInquiryForm = {
+  name: '',
+  phone: '',
+  content: '',
 }
 
 function getTotalSetCount(items = []) {
@@ -158,11 +165,15 @@ export default function MemberDashboard({ member, accessCode, onLogout }) {
   const [noticeSearch, setNoticeSearch] = useState('')
   const [noticeCategoryFilter, setNoticeCategoryFilter] = useState('all')
 
+  const [inquiries, setInquiries] = useState([])
+  const [collapsedInquiries, setCollapsedInquiries] = useState({})
+  const [inquiryForm, setInquiryForm] = useState(emptyInquiryForm)
+
   const stats = useMemo(() => {
     const ptCount = workouts.filter((workout) => workout.workout_type === 'pt').length
     const personalCount = workouts.filter((workout) => workout.workout_type === 'personal').length
     const remainingSessions = Math.max(
-      Number(memberInfo.total_sessions || 0) - Number(memberInfo.used_sessions || 0),
+      Number(memberInfo?.total_sessions || 0) - Number(memberInfo?.used_sessions || 0),
       0,
     )
 
@@ -174,8 +185,8 @@ export default function MemberDashboard({ member, accessCode, onLogout }) {
   }, [workouts, memberInfo])
 
   const progressPercent = useMemo(() => {
-    const total = Number(memberInfo.total_sessions || 0)
-    const used = Number(memberInfo.used_sessions || 0)
+    const total = Number(memberInfo?.total_sessions || 0)
+    const used = Number(memberInfo?.used_sessions || 0)
     if (!total) return 0
     return Math.min(Math.round((used / total) * 100), 100)
   }, [memberInfo])
@@ -257,6 +268,13 @@ export default function MemberDashboard({ member, accessCode, onLogout }) {
     loadAll()
   }, [memberInfo?.id])
 
+  useEffect(() => {
+    setInquiryForm((prev) => ({
+      ...prev,
+      name: memberInfo?.name || '',
+    }))
+  }, [memberInfo?.name])
+
   const loadAll = async () => {
     setLoading(true)
     setMessage('')
@@ -273,6 +291,7 @@ export default function MemberDashboard({ member, accessCode, onLogout }) {
       loadCoaches(),
       loadCoachSchedules(),
       loadNotices(),
+      loadInquiries(),
     ])
 
     setLoading(false)
@@ -471,8 +490,41 @@ export default function MemberDashboard({ member, accessCode, onLogout }) {
     }
   }
 
+  const loadInquiries = async () => {
+    const { data } = await supabase
+      .from('inquiries')
+      .select('*')
+      .eq('member_id', member.id)
+      .order('created_at', { ascending: false })
+
+    if (data) {
+      const collapsed = {}
+      data.forEach((item) => {
+        collapsed[item.id] = true
+      })
+      setInquiries(data)
+      setCollapsedInquiries(collapsed)
+    }
+  }
+
   const resetPersonalForm = () => {
     setPersonalForm(emptyPersonalForm)
+  }
+
+  const resetDietForm = () => {
+    setDietForm(emptyDietForm)
+  }
+
+  const resetHealthForm = () => {
+    setHealthForm(emptyHealthForm)
+  }
+
+  const resetInquiryForm = () => {
+    setInquiryForm({
+      name: memberInfo?.name || '',
+      phone: '',
+      content: '',
+    })
   }
 
   const updatePersonalItemSelect = (itemIndex, exerciseId) => {
@@ -644,10 +696,6 @@ export default function MemberDashboard({ member, accessCode, onLogout }) {
     setMessage('개인운동 기록이 삭제되었습니다.')
   }
 
-  const resetDietForm = () => {
-    setDietForm(emptyDietForm)
-  }
-
   const handleDietSubmit = async (e) => {
     e.preventDefault()
 
@@ -710,10 +758,6 @@ export default function MemberDashboard({ member, accessCode, onLogout }) {
     setMessage('식단 기록이 삭제되었습니다.')
   }
 
-  const resetHealthForm = () => {
-    setHealthForm(emptyHealthForm)
-  }
-
   const handleHealthSubmit = async (e) => {
     e.preventDefault()
 
@@ -763,6 +807,40 @@ export default function MemberDashboard({ member, accessCode, onLogout }) {
     setMessage('건강정보 기록이 삭제되었습니다.')
   }
 
+  const handleInquirySubmit = async (e) => {
+    e.preventDefault()
+
+    const payload = {
+      member_id: member.id,
+      name: inquiryForm.name?.trim() || memberInfo?.name || '',
+      phone: inquiryForm.phone?.trim() || '',
+      content: inquiryForm.content?.trim() || '',
+    }
+
+    if (!payload.content) {
+      setMessage('문의 내용을 입력해주세요.')
+      return
+    }
+
+    const { error } = await supabase.from('inquiries').insert(payload)
+
+    if (error) {
+      setMessage(error.message)
+      return
+    }
+
+    setMessage('문의사항이 등록되었습니다.')
+    resetInquiryForm()
+    await loadInquiries()
+  }
+
+  const handleInquiryDelete = async (inquiryId) => {
+    if (!window.confirm('문의사항을 삭제할까요?')) return
+    await supabase.from('inquiries').delete().eq('id', inquiryId)
+    await loadInquiries()
+    setMessage('문의사항이 삭제되었습니다.')
+  }
+
   if (loading) {
     return <div className="loading-card">데이터 불러오는 중...</div>
   }
@@ -774,7 +852,7 @@ export default function MemberDashboard({ member, accessCode, onLogout }) {
           <img src={logo} alt="숨바꼭질케어 로고" className="topbar-logo small" />
           <div>
             <div className="brand-mark">숨바꼭질케어</div>
-            <h1 className="page-title">{memberInfo.name} 회원 화면</h1>
+            <h1 className="page-title">{memberInfo?.name} 회원 화면</h1>
             <p className="sub-text">access code 인증 완료</p>
           </div>
         </div>
@@ -804,19 +882,19 @@ export default function MemberDashboard({ member, accessCode, onLogout }) {
             <section className="card">
               <h2>내 정보</h2>
               <div className="detail-box">
-                <p><strong>이름:</strong> {memberInfo.name}</p>
-                <p><strong>목표:</strong> {memberInfo.goal || '-'}</p>
-                <p><strong>시작일:</strong> {memberInfo.start_date || '-'}</p>
-                <p><strong>종료일:</strong> {memberInfo.end_date || '-'}</p>
-                <p><strong>회원 메모:</strong> {memberInfo.memo || '-'}</p>
+                <p><strong>이름:</strong> {memberInfo?.name}</p>
+                <p><strong>목표:</strong> {memberInfo?.goal || '-'}</p>
+                <p><strong>시작일:</strong> {memberInfo?.start_date || '-'}</p>
+                <p><strong>종료일:</strong> {memberInfo?.end_date || '-'}</p>
+                <p><strong>회원 메모:</strong> {memberInfo?.memo || '-'}</p>
               </div>
             </section>
 
             <section className="card">
               <h2>세션 진행 현황</h2>
               <div className="detail-box">
-                <p><strong>총 세션:</strong> {memberInfo.total_sessions || 0}회</p>
-                <p><strong>사용 세션:</strong> {memberInfo.used_sessions || 0}회</p>
+                <p><strong>총 세션:</strong> {memberInfo?.total_sessions || 0}회</p>
+                <p><strong>사용 세션:</strong> {memberInfo?.used_sessions || 0}회</p>
                 <p><strong>남은 세션:</strong> {stats.remainingSessions}회</p>
               </div>
 
@@ -1628,6 +1706,114 @@ export default function MemberDashboard({ member, accessCode, onLogout }) {
               )
             })}
           </div>
+        </div>
+      )}
+
+      {activeTab === '문의사항' && (
+        <div className="two-col">
+          <section className="card">
+            <h2>문의 작성</h2>
+
+            <form className="stack-gap" onSubmit={handleInquirySubmit}>
+              <label className="field">
+                <span>이름</span>
+                <input
+                  value={inquiryForm.name}
+                  onChange={(e) => setInquiryForm({ ...inquiryForm, name: e.target.value })}
+                />
+              </label>
+
+              <label className="field">
+                <span>연락처</span>
+                <input
+                  value={inquiryForm.phone}
+                  onChange={(e) => setInquiryForm({ ...inquiryForm, phone: e.target.value })}
+                  placeholder="연락 가능한 번호"
+                />
+              </label>
+
+              <label className="field">
+                <span>문의 내용</span>
+                <textarea
+                  rows="8"
+                  value={inquiryForm.content}
+                  onChange={(e) => setInquiryForm({ ...inquiryForm, content: e.target.value })}
+                  placeholder="문의하실 내용을 적어주세요."
+                />
+              </label>
+
+              <div className="inline-actions wrap">
+                <button className="primary-btn" type="submit">
+                  문의 등록
+                </button>
+                <button type="button" className="secondary-btn" onClick={resetInquiryForm}>
+                  초기화
+                </button>
+              </div>
+            </form>
+          </section>
+
+          <section className="card">
+            <h2>내 문의내역</h2>
+
+            <div className="list-stack">
+              {inquiries.length === 0 ? (
+                <div className="detail-box">
+                  <p>등록된 문의가 없습니다.</p>
+                </div>
+              ) : null}
+
+              {inquiries.map((item) => {
+                const collapsed = collapsedInquiries[item.id] ?? true
+
+                return (
+                  <div key={item.id} className="list-card">
+                    <div className="list-card-top">
+                      <strong>{item.created_at?.slice(0, 10) || '문의내역'}</strong>
+                      <span className="pill">{item.answer ? '답변완료' : '답변대기'}</span>
+                    </div>
+
+                    <div className="compact-text">
+                      간략히보기: {(item.content || '').slice(0, 40)}
+                      {(item.content || '').length > 40 ? '...' : ''}
+                    </div>
+
+                    <div className="inline-actions wrap">
+                      <button
+                        type="button"
+                        className="secondary-btn"
+                        onClick={() =>
+                          setCollapsedInquiries((prev) => ({
+                            ...prev,
+                            [item.id]: !collapsed,
+                          }))
+                        }
+                      >
+                        {collapsed ? '상세히보기' : '간략히보기'}
+                      </button>
+
+                      <button
+                        type="button"
+                        className="danger-btn"
+                        onClick={() => handleInquiryDelete(item.id)}
+                      >
+                        삭제
+                      </button>
+                    </div>
+
+                    {!collapsed ? (
+                      <div className="detail-box">
+                        <p><strong>이름:</strong> {item.name || '-'}</p>
+                        <p><strong>연락처:</strong> {item.phone || '-'}</p>
+                        <p><strong>문의 내용:</strong> {item.content || '-'}</p>
+                        <p><strong>답변:</strong> {item.answer || '아직 답변이 없습니다.'}</p>
+                      </div>
+                    ) : null}
+                  </div>
+                )
+              })}
+            </div>
+          </section>
         </div>
       )}
 
