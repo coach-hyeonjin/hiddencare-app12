@@ -33,8 +33,6 @@ const emptyMemberForm = {
 const emptyWorkoutItem = {
   exercise_id: '',
   exercise_name_snapshot: '',
-  is_cardio: false,
-  cardio_minutes: '',
   sets: [{ kg: '', reps: '' }],
 }
 
@@ -963,26 +961,17 @@ export default function AdminDashboard({ profile, onLogout }) {
   }
 
   const updateWorkoutItemSelect = (itemIndex, exerciseId) => {
-  const found = exercises.find((exercise) => String(exercise.id) === String(exerciseId))
-
-  setWorkoutForm((prev) => {
-    const nextItems = [...prev.items]
-    const isCardio =
-      found?.category === '유산소' ||
-      found?.body_part === '유산소'
-
-    nextItems[itemIndex] = {
-      ...nextItems[itemIndex],
-      exercise_id: found?.id || '',
-      exercise_name_snapshot: found?.name || nextItems[itemIndex].exercise_name_snapshot,
-      is_cardio: !!isCardio,
-      cardio_minutes: isCardio ? nextItems[itemIndex].cardio_minutes || '' : '',
-      sets: isCardio ? [{ kg: '', reps: '' }] : nextItems[itemIndex].sets,
-    }
-
-    return { ...prev, items: nextItems }
-  })
-}
+    const found = exercises.find((exercise) => String(exercise.id) === String(exerciseId))
+    setWorkoutForm((prev) => {
+      const nextItems = [...prev.items]
+      nextItems[itemIndex] = {
+        ...nextItems[itemIndex],
+        exercise_id: found?.id || '',
+        exercise_name_snapshot: found?.name || nextItems[itemIndex].exercise_name_snapshot,
+      }
+      return { ...prev, items: nextItems }
+    })
+  }
 
   const updateWorkoutItemName = (itemIndex, value) => {
     setWorkoutForm((prev) => {
@@ -1050,16 +1039,15 @@ export default function AdminDashboard({ profile, onLogout }) {
     }
 
     const cleanedItems = workoutForm.items
-  .filter((item) => item.exercise_name_snapshot?.trim())
-  .map((item, index) => ({
-    workout_id: workoutForm.id || null,
-    exercise_id: item.exercise_id || null,
-    exercise_name_snapshot: item.exercise_name_snapshot.trim(),
-    sort_order: index,
-    is_cardio: !!item.is_cardio,
-    cardio_minutes: item.is_cardio ? Number(item.cardio_minutes || 0) : null,
-    sets: item.is_cardio ? [] : normalizeSets(item.sets),
-  }))
+      .filter((item) => item.exercise_name_snapshot?.trim())
+      .map((item, index) => ({
+        workout_id: workoutForm.id || null,
+        exercise_id: item.exercise_id || null,
+        exercise_name_snapshot: item.exercise_name_snapshot.trim(),
+        sort_order: index,
+        sets: normalizeSets(item.sets),
+      }))
+
     if (cleanedItems.length === 0) {
       setMessage('최소 1개의 운동을 입력해주세요.')
       return
@@ -2145,62 +2133,36 @@ export default function AdminDashboard({ profile, onLogout }) {
                       />
                     </label>
 
-                    {item.is_cardio ? (
-                      <label className="field">
-                        <span>유산소 시간(분)</span>
-                        <input
-                          type="number"
-                          value={item.cardio_minutes || ''}
-                          onChange={(e) => {
-                            const value = e.target.value
-                            setWorkoutForm((prev) => {
-                              const nextItems = [...prev.items]
-                              nextItems[itemIndex] = {
-                                ...nextItems[itemIndex],
-                                cardio_minutes: value,
-                              }
-                              return { ...prev, items: nextItems }
-                            })
-                          }}
-                          placeholder="예: 20"
-                        />
-                      </label>
-                    ) : (
-                      <div className="stack-gap">
-                        {item.sets.map((setRow, setIndex) => (
-                          <div className="set-row" key={setIndex}>
-                            <input
-                              placeholder="kg"
-                              value={setRow.kg}
-                              onChange={(e) => updateSetValue(itemIndex, setIndex, 'kg', e.target.value)}
-                            />
-                            <input
-                              placeholder="reps"
-                              value={setRow.reps}
-                              onChange={(e) => updateSetValue(itemIndex, setIndex, 'reps', e.target.value)}
-                            />
-                            <button
-                              type="button"
-                              className="danger-btn"
-                              onClick={() => removeSet(itemIndex, setIndex)}
-                              disabled={item.sets.length === 1}
-                            >
-                              세트 삭제
-                            </button>
-                          </div>
-                        ))}
+                    <div className="stack-gap">
+                      {item.sets.map((setRow, setIndex) => (
+                        <div className="set-row" key={setIndex}>
+                          <input
+                            placeholder="kg"
+                            value={setRow.kg}
+                            onChange={(e) => updateSetValue(itemIndex, setIndex, 'kg', e.target.value)}
+                          />
+                          <input
+                            placeholder="reps"
+                            value={setRow.reps}
+                            onChange={(e) => updateSetValue(itemIndex, setIndex, 'reps', e.target.value)}
+                          />
+                          <button
+                            type="button"
+                            className="danger-btn"
+                            onClick={() => removeSet(itemIndex, setIndex)}
+                            disabled={item.sets.length === 1}
+                          >
+                            세트 삭제
+                          </button>
+                        </div>
+                      ))}
+                    </div>
 
-    <button type="button" className="secondary-btn" onClick={() => addSet(itemIndex)}>
-      세트 추가
-    </button>
-  </div>
-)}
-
-    <button type="button" className="secondary-btn" onClick={() => addSet(itemIndex)}>
-      세트 추가
-    </button>
-  </div>
-)}
+                    <button type="button" className="secondary-btn" onClick={() => addSet(itemIndex)}>
+                      세트 추가
+                    </button>
+                  </div>
+                ))}
 
                 <button type="button" className="secondary-btn" onClick={addWorkoutItem}>
                   운동 추가
@@ -2272,20 +2234,15 @@ export default function AdminDashboard({ profile, onLogout }) {
                         {workout.items.map((item) => (
                           <div key={item.id} className="record-item-box">
                             <strong>{item.exercise_name_snapshot}</strong>
-
-                           {item.is_cardio ? (
-                              <div className="compact-text">유산소 {item.cardio_minutes || 0}분</div>
-                                ) : (
-      <ul className="set-list">
-        {(item.sets || []).map((setRow, idx) => (
-          <li key={idx}>
-            {idx + 1}세트 - {setRow.kg || '-'}kg / {setRow.reps || '-'}회
-          </li>
-        ))}
-      </ul>
-    )}
-  </div>
-))}
+                            <ul className="set-list">
+                              {(item.sets || []).map((setRow, idx) => (
+                                <li key={idx}>
+                                  {idx + 1}세트 - {setRow.kg || '-'}kg / {setRow.reps || '-'}회
+                                </li>
+                              ))}
+                            </ul>
+                          </div>
+                        ))}
                         <p><strong>잘한점:</strong> {workout.good || '-'}</p>
                         <p><strong>보완점:</strong> {workout.improve || '-'}</p>
                       </div>
