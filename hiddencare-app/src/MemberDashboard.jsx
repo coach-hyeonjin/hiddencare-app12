@@ -16,18 +16,20 @@ const TABS = [
   '사용방법',
 ]
 
+const emptyPersonalItem = {
+  exercise_id: '',
+  exercise_name_snapshot: '',
+  is_cardio: false,
+  cardio_minutes: '',
+  sets: [{ kg: '', reps: '' }],
+}
+
 const emptyPersonalForm = {
   id: null,
   workout_date: new Date().toISOString().slice(0, 10),
   good: '',
   improve: '',
-  items: [
-    {
-      exercise_id: '',
-      exercise_name_snapshot: '',
-      sets: [{ kg: '', reps: '' }],
-    },
-  ],
+  items: [{ ...emptyPersonalItem }],
 }
 
 const emptyDietForm = {
@@ -65,7 +67,10 @@ const emptyInquiryForm = {
 }
 
 function getTotalSetCount(items = []) {
-  return items.reduce((sum, item) => sum + (item.sets?.length || 0), 0)
+  return items.reduce((sum, item) => {
+    if (item.is_cardio) return sum
+    return sum + (item.sets?.length || 0)
+  }, 0)
 }
 
 function normalizeSets(sets = []) {
@@ -120,6 +125,12 @@ function normalizeRoutineData(row) {
     content: row?.content || '',
     entries,
   }
+}
+
+function isCardioExercise(exercise) {
+  const category = String(exercise?.category || '').trim()
+  const bodyPart = String(exercise?.body_part || '').trim()
+  return category === '유산소' || bodyPart === '유산소'
 }
 
 export default function MemberDashboard({ member, accessCode, onLogout }) {
@@ -205,6 +216,7 @@ export default function MemberDashboard({ member, accessCode, onLogout }) {
           workout.good,
           workout.improve,
           ...items.map((item) => item.exercise_name_snapshot),
+          ...items.map((item) => (item.is_cardio ? `유산소 ${item.cardio_minutes || ''}` : '')),
         ].join(' ')
 
         return {
@@ -529,13 +541,20 @@ export default function MemberDashboard({ member, accessCode, onLogout }) {
 
   const updatePersonalItemSelect = (itemIndex, exerciseId) => {
     const found = exercises.find((exercise) => String(exercise.id) === String(exerciseId))
+
     setPersonalForm((prev) => {
       const nextItems = [...prev.items]
+      const isCardio = isCardioExercise(found)
+
       nextItems[itemIndex] = {
         ...nextItems[itemIndex],
         exercise_id: found?.id || '',
         exercise_name_snapshot: found?.name || nextItems[itemIndex].exercise_name_snapshot,
+        is_cardio: isCardio,
+        cardio_minutes: isCardio ? nextItems[itemIndex].cardio_minutes || '' : '',
+        sets: isCardio ? [{ kg: '', reps: '' }] : nextItems[itemIndex].sets,
       }
+
       return { ...prev, items: nextItems }
     })
   }
@@ -551,17 +570,23 @@ export default function MemberDashboard({ member, accessCode, onLogout }) {
     })
   }
 
+  const togglePersonalItemCardio = (itemIndex, checked) => {
+    setPersonalForm((prev) => {
+      const nextItems = [...prev.items]
+      nextItems[itemIndex] = {
+        ...nextItems[itemIndex],
+        is_cardio: checked,
+        cardio_minutes: checked ? nextItems[itemIndex].cardio_minutes || '' : '',
+        sets: checked ? [{ kg: '', reps: '' }] : nextItems[itemIndex].sets?.length ? nextItems[itemIndex].sets : [{ kg: '', reps: '' }],
+      }
+      return { ...prev, items: nextItems }
+    })
+  }
+
   const addPersonalItem = () => {
     setPersonalForm((prev) => ({
       ...prev,
-      items: [
-        ...prev.items,
-        {
-          exercise_id: '',
-          exercise_name_snapshot: '',
-          sets: [{ kg: '', reps: '' }],
-        },
-      ],
+      items: [...prev.items, { ...emptyPersonalItem }],
     }))
   }
 
@@ -619,7 +644,9 @@ export default function MemberDashboard({ member, accessCode, onLogout }) {
         exercise_id: item.exercise_id || null,
         exercise_name_snapshot: item.exercise_name_snapshot.trim(),
         sort_order: index,
-        sets: normalizeSets(item.sets),
+        is_cardio: !!item.is_cardio,
+        cardio_minutes: item.is_cardio ? Number(item.cardio_minutes || 0) : null,
+        sets: item.is_cardio ? [] : normalizeSets(item.sets),
       }))
 
     if (cleanedItems.length === 0) {
@@ -672,18 +699,14 @@ export default function MemberDashboard({ member, accessCode, onLogout }) {
           ? items.map((item) => ({
               exercise_id: item.exercise_id || '',
               exercise_name_snapshot: item.exercise_name_snapshot || '',
+              is_cardio: !!item.is_cardio,
+              cardio_minutes: item.cardio_minutes || '',
               sets:
-                Array.isArray(item.sets) && item.sets.length > 0
+                !item.is_cardio && Array.isArray(item.sets) && item.sets.length > 0
                   ? item.sets
                   : [{ kg: '', reps: '' }],
             }))
-          : [
-              {
-                exercise_id: '',
-                exercise_name_snapshot: '',
-                sets: [{ kg: '', reps: '' }],
-              },
-            ],
+          : [{ ...emptyPersonalItem }],
     })
 
     setActiveTab('개인운동입력')
@@ -1149,13 +1172,18 @@ export default function MemberDashboard({ member, accessCode, onLogout }) {
                       {workout.items.map((item) => (
                         <div key={item.id} className="record-item-box">
                           <strong>{item.exercise_name_snapshot}</strong>
-                          <ul className="set-list">
-                            {(item.sets || []).map((setRow, idx) => (
-                              <li key={idx}>
-                                {idx + 1}세트 - {setRow.kg || '-'}kg / {setRow.reps || '-'}회
-                              </li>
-                            ))}
-                          </ul>
+
+                          {item.is_cardio ? (
+                            <div className="compact-text">유산소 {item.cardio_minutes || 0}분</div>
+                          ) : (
+                            <ul className="set-list">
+                              {(item.sets || []).map((setRow, idx) => (
+                                <li key={idx}>
+                                  {idx + 1}세트 - {setRow.kg || '-'}kg / {setRow.reps || '-'}회
+                                </li>
+                              ))}
+                            </ul>
+                          )}
                         </div>
                       ))}
                       <p><strong>잘한점:</strong> {workout.good || '-'}</p>
@@ -1217,38 +1245,69 @@ export default function MemberDashboard({ member, accessCode, onLogout }) {
                   <input
                     value={item.exercise_name_snapshot}
                     onChange={(e) => updatePersonalItemName(itemIndex, e.target.value)}
-                    placeholder="예: 스쿼트, 힙힌지, 밴드 워크"
+                    placeholder="예: 스쿼트, 힙힌지, 밴드 워크, 천국의 계단"
                   />
                 </label>
 
-                <div className="stack-gap">
-                  {item.sets.map((setRow, setIndex) => (
-                    <div className="set-row" key={setIndex}>
-                      <input
-                        placeholder="kg"
-                        value={setRow.kg}
-                        onChange={(e) => updateSetValue(itemIndex, setIndex, 'kg', e.target.value)}
-                      />
-                      <input
-                        placeholder="reps"
-                        value={setRow.reps}
-                        onChange={(e) => updateSetValue(itemIndex, setIndex, 'reps', e.target.value)}
-                      />
-                      <button
-                        type="button"
-                        className="danger-btn"
-                        onClick={() => removeSet(itemIndex, setIndex)}
-                        disabled={item.sets.length === 1}
-                      >
-                        세트 삭제
-                      </button>
-                    </div>
-                  ))}
-                </div>
+                <label className="checkbox-line">
+                  <input
+                    type="checkbox"
+                    checked={!!item.is_cardio}
+                    onChange={(e) => togglePersonalItemCardio(itemIndex, e.target.checked)}
+                  />
+                  <span>유산소 운동</span>
+                </label>
 
-                <button type="button" className="secondary-btn" onClick={() => addSet(itemIndex)}>
-                  세트 추가
-                </button>
+                {item.is_cardio ? (
+                  <label className="field">
+                    <span>유산소 시간(분)</span>
+                    <input
+                      type="number"
+                      value={item.cardio_minutes || ''}
+                      onChange={(e) => {
+                        const value = e.target.value
+                        setPersonalForm((prev) => {
+                          const nextItems = [...prev.items]
+                          nextItems[itemIndex] = {
+                            ...nextItems[itemIndex],
+                            cardio_minutes: value,
+                          }
+                          return { ...prev, items: nextItems }
+                        })
+                      }}
+                      placeholder="예: 20"
+                    />
+                  </label>
+                ) : (
+                  <div className="stack-gap">
+                    {item.sets.map((setRow, setIndex) => (
+                      <div className="set-row" key={setIndex}>
+                        <input
+                          placeholder="kg"
+                          value={setRow.kg}
+                          onChange={(e) => updateSetValue(itemIndex, setIndex, 'kg', e.target.value)}
+                        />
+                        <input
+                          placeholder="reps"
+                          value={setRow.reps}
+                          onChange={(e) => updateSetValue(itemIndex, setIndex, 'reps', e.target.value)}
+                        />
+                        <button
+                          type="button"
+                          className="danger-btn"
+                          onClick={() => removeSet(itemIndex, setIndex)}
+                          disabled={item.sets.length === 1}
+                        >
+                          세트 삭제
+                        </button>
+                      </div>
+                    ))}
+
+                    <button type="button" className="secondary-btn" onClick={() => addSet(itemIndex)}>
+                      세트 추가
+                    </button>
+                  </div>
+                )}
               </div>
             ))}
 
