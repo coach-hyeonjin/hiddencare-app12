@@ -14,6 +14,7 @@ const TABS = [
   '프로그램',
   '공지사항',
   '사용방법',
+  '문의사항',
 ]
 
 const emptyMemberForm = {
@@ -256,6 +257,9 @@ export default function AdminDashboard({ profile, onLogout }) {
   const [noticeMonthFilter, setNoticeMonthFilter] = useState('')
   const [noticeSearch, setNoticeSearch] = useState('')
   const [noticeCategoryFilter, setNoticeCategoryFilter] = useState('all')
+
+  const [inquiries, setInquiries] = useState([])
+  const [collapsedInquiries, setCollapsedInquiries] = useState({})
 
   const selectedMember = useMemo(
     () => members.find((member) => member.id === selectedMemberId) || null,
@@ -511,6 +515,7 @@ export default function AdminDashboard({ profile, onLogout }) {
       loadSalesRecords(),
       loadSalesLogs(),
       loadNotices(),
+      loadInquiries(),
     ])
 
     setLoading(false)
@@ -762,6 +767,22 @@ export default function AdminDashboard({ profile, onLogout }) {
       })
       setNotices(data)
       setCollapsedNotices(collapsed)
+    }
+  }
+
+  const loadInquiries = async () => {
+    const { data } = await supabase
+      .from('inquiries')
+      .select('*')
+      .order('created_at', { ascending: false })
+
+    if (data) {
+      const collapsed = {}
+      data.forEach((item) => {
+        collapsed[item.id] = true
+      })
+      setInquiries(data)
+      setCollapsedInquiries(collapsed)
     }
   }
 
@@ -3338,6 +3359,82 @@ export default function AdminDashboard({ profile, onLogout }) {
                 삭제
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {activeTab === '문의사항' && (
+        <div className="card">
+          <h2>문의사항 목록</h2>
+
+          <div className="list-stack">
+            {inquiries.map((item) => {
+              const collapsed = collapsedInquiries[item.id] ?? true
+
+              return (
+                <div key={item.id} className="list-card">
+                  <div className="list-card-top">
+                    <strong>{item.name || '익명'}</strong>
+                    <span className="pill">
+                      {item.created_at?.slice(0, 10)}
+                    </span>
+                  </div>
+
+                  <div className="compact-text">
+                    간략히보기: {(item.content || '').slice(0, 40)}
+                  </div>
+
+                  <div className="inline-actions wrap">
+                    <button
+                      type="button"
+                      className="secondary-btn"
+                      onClick={() =>
+                        setCollapsedInquiries((prev) => ({
+                          ...prev,
+                          [item.id]: !collapsed,
+                        }))
+                      }
+                    >
+                      {collapsed ? '상세히보기' : '간략히보기'}
+                    </button>
+
+                    <button
+                      type="button"
+                      className="danger-btn"
+                      onClick={async () => {
+                        if (!window.confirm('삭제할까요?')) return
+                        await supabase.from('inquiries').delete().eq('id', item.id)
+                        await loadInquiries()
+                      }}
+                    >
+                      삭제
+                    </button>
+                  </div>
+
+                  {!collapsed && (
+                    <div className="detail-box">
+                      <p><strong>이름:</strong> {item.name || '-'}</p>
+                      <p><strong>연락처:</strong> {item.phone || '-'}</p>
+                      <p><strong>내용:</strong> {item.content || '-'}</p>
+                      <p><strong>답변:</strong> {item.answer || '미답변'}</p>
+
+                      <textarea
+                        rows="3"
+                        placeholder="답변 입력"
+                        defaultValue={item.answer || ''}
+                        onBlur={async (e) => {
+                          await supabase
+                            .from('inquiries')
+                            .update({ answer: e.target.value })
+                            .eq('id', item.id)
+                          await loadInquiries()
+                        }}
+                      />
+                    </div>
+                  )}
+                </div>
+              )
+            })}
           </div>
         </div>
       )}
