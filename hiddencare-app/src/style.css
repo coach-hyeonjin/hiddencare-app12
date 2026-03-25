@@ -705,3 +705,6 @@ img {
 .answer-status.wait {
   color: var(--warning);
 }
+.search-input {
+  width: 100%;
+}
