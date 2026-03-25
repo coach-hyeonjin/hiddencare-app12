@@ -669,3 +669,39 @@ img {
     align-items: stretch;
   }
 }
+.inquiry-card {
+  border-left: 4px solid var(--primary);
+}
+
+.inquiry-card.answered {
+  border-left-color: var(--success);
+}
+
+.inquiry-card.pending {
+  border-left-color: var(--warning);
+}
+
+.answer-box {
+  margin-top: 10px;
+  padding: 12px;
+  background: var(--primary-soft);
+  border-radius: 12px;
+  border: 1px solid var(--line);
+}
+
+.answer-box textarea {
+  background: #fff;
+}
+
+.answer-status {
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.answer-status.done {
+  color: var(--success);
+}
+
+.answer-status.wait {
+  color: var(--warning);
+}
