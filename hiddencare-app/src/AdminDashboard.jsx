@@ -2904,11 +2904,7 @@ export default function AdminDashboard({ profile, onLogout }) {
             <h2>세일즈 일지 작성 / 수정</h2>
 
             <div className="stack-gap">
-              <input
-                placeholder="세일즈 일지 검색"
-                value={salesLogSearch}
-                onChange={(e) => setSalesLogSearch(e.target.value)}
-              />
+
               <input
                 type="month"
                 value={salesLogMonth}
@@ -3024,6 +3020,15 @@ export default function AdminDashboard({ profile, onLogout }) {
                 CSV
               </button>
             </div>
+
+<div className="stack-gap" style={{ marginBottom: '10px' }}>
+  <input
+    className="search-input"
+    placeholder="날짜 / 내용 검색"
+    value={salesLogSearch}
+    onChange={(e) => setSalesLogSearch(e.target.value)}
+  />
+</div>
 
             <div className="list-stack">
               {filteredSalesLogs.map((log) => {
