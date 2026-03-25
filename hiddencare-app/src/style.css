@@ -708,3 +708,8 @@ img {
 .search-input {
   width: 100%;
 }
+.checkbox-line {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
