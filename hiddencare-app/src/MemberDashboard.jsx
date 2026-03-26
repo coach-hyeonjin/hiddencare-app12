@@ -181,15 +181,8 @@ export default function MemberDashboard({ member, accessCode, onLogout }) {
   const [collapsedInquiries, setCollapsedInquiries] = useState({})
   const [inquiryForm, setInquiryForm] = useState(emptyInquiryForm)
 
-  const currentAdminId = memberInfo?.admin_id || member?.admin_id || null
+   const currentAdminId = memberInfo?.admin_id || member?.admin_id || null
   const currentGymId = memberInfo?.gym_id || member?.gym_id || null
-
-
-console.log('=== MemberDashboard 기본값 확인 ===')
-console.log('member:', member)
-console.log('memberInfo:', memberInfo)
-console.log('currentAdminId:', currentAdminId)
-console.log('currentGymId:', currentGymId)
 
   const stats = useMemo(() => {
     const ptCount = workouts.filter((workout) => workout.workout_type === 'pt').length
@@ -299,81 +292,76 @@ console.log('currentGymId:', currentGymId)
   }, [memberInfo?.name])
 
   const loadAll = async () => {
-  console.log('=== loadAll 시작 ===')
-  console.log('loadAll 시작 시 currentAdminId:', currentAdminId)
-  console.log('loadAll 시작 시 member:', member)
-  console.log('loadAll 시작 시 memberInfo:', memberInfo)
+    setLoading(true)
+    setMessage('')
 
-  setLoading(true)
-  setMessage('')
+    try {
+      const loadedMember = await loadMemberInfo()
+      const adminId = loadedMember?.admin_id || member?.admin_id || null
 
-  await Promise.all([
-    loadMemberInfo(),
-    loadExercises(),
-    loadWorkouts(),
-    loadDietLogs(),
-    loadHealthLogs(),
-    loadRoutine(),
-    loadManual(),
-    loadPrograms(),
-    loadCoaches(),
-    loadCoachSchedules(),
-    loadNotices(),
-    loadInquiries(),
-  ])
-
-  console.log('=== loadAll 종료 ===')
-  setLoading(false)
-}
+      await Promise.all([
+        loadExercises(adminId),
+        loadWorkouts(),
+        loadDietLogs(),
+        loadHealthLogs(),
+        loadRoutine(),
+        loadManual(),
+        loadPrograms(adminId),
+        loadCoaches(adminId),
+        loadCoachSchedules(adminId),
+        loadNotices(adminId),
+        loadInquiries(),
+      ])
+    } catch (error) {
+      console.error('loadAll 전체 오류:', error)
+      setMessage(error?.message || '데이터 불러오기 중 오류가 발생했습니다.')
+    } finally {
+      setLoading(false)
+    }
+  }
 
   const loadMemberInfo = async () => {
-  console.log('=== loadMemberInfo 시작 ===')
-  console.log('member.id:', member?.id)
+    const { data, error } = await supabase
+      .from('members')
+      .select('*, programs(id, name, price, session_count, description, is_vip, is_active)')
+      .eq('id', member.id)
+      .maybeSingle()
 
-  const { data, error } = await supabase
-    .from('members')
-    .select('*, programs(id, name, price, session_count, description, is_vip, is_active)')
-    .eq('id', member.id)
-    .maybeSingle()
+    if (error) throw error
 
-  console.log('loadMemberInfo data:', data)
-  console.log('loadMemberInfo error:', error)
+    if (data) {
+      setMemberInfo(data)
+      setCurrentProgram(data.programs || null)
+      localStorage.setItem(
+        'hiddencare_member_session_v1',
+        JSON.stringify({
+          member: data,
+          accessCode,
+        }),
+      )
+    }
 
-  if (data) {
-    setMemberInfo(data)
-    setCurrentProgram(data.programs || null)
-    localStorage.setItem(
-      'hiddencare_member_session_v1',
-      JSON.stringify({
-        member: data,
-        accessCode,
-      }),
-    )
-  }
-}
-const loadExercises = async () => {
-  console.log('=== loadExercises 시작 ===')
-  console.log('loadExercises currentAdminId:', currentAdminId)
-
-  if (!currentAdminId) {
-    console.log('currentAdminId가 없어서 exercises를 빈 배열로 처리함')
-    setExercises([])
-    return
+    return data || null
   }
 
-  const { data, error } = await supabase
-    .from('exercises')
-    .select('*, brands(id, name)')
-    .eq('admin_id', currentAdminId)
-    .order('created_at', { ascending: false })
+  const loadExercises = async (adminIdParam = null) => {
+    const adminId = adminIdParam || currentAdminId || member?.admin_id || null
 
-  console.log('loadExercises data:', data)
-  console.log('loadExercises error:', error)
+    if (!adminId) {
+      setExercises([])
+      return
+    }
 
-  if (data) {
-    setExercises(data)
+    const { data, error } = await supabase
+      .from('exercises')
+      .select('*, brands(id, name)')
+      .eq('admin_id', adminId)
+      .order('created_at', { ascending: false })
+
+    if (error) throw error
+    if (data) setExercises(data)
   }
-}
+
   const loadWorkouts = async () => {
     const { data: workoutData } = await supabase
       .from('workouts')
@@ -467,8 +455,10 @@ const loadExercises = async () => {
     setManual(data || null)
   }
 
-  const loadPrograms = async () => {
-    if (!currentAdminId) {
+  const loadPrograms = async (adminIdParam = null) => {
+    const adminId = adminIdParam || currentAdminId || member?.admin_id || null
+
+    if (!adminId) {
       setPrograms([])
       return
     }
@@ -476,15 +466,17 @@ const loadExercises = async () => {
     const { data } = await supabase
       .from('programs')
       .select('*')
-      .eq('admin_id', currentAdminId)
+      .eq('admin_id', adminId)
       .eq('is_active', true)
       .order('created_at', { ascending: false })
 
     if (data) setPrograms(data)
   }
 
-  const loadCoaches = async () => {
-    if (!currentAdminId) {
+  const loadCoaches = async (adminIdParam = null) => {
+    const adminId = adminIdParam || currentAdminId || member?.admin_id || null
+
+    if (!adminId) {
       setCoaches([])
       return
     }
@@ -492,15 +484,17 @@ const loadExercises = async () => {
     const { data } = await supabase
       .from('coaches')
       .select('*')
-      .eq('admin_id', currentAdminId)
+      .eq('admin_id', adminId)
       .eq('is_active', true)
       .order('created_at', { ascending: true })
 
     if (data) setCoaches(data)
   }
 
-  const loadCoachSchedules = async () => {
-    if (!currentAdminId) {
+  const loadCoachSchedules = async (adminIdParam = null) => {
+    const adminId = adminIdParam || currentAdminId || member?.admin_id || null
+
+    if (!adminId) {
       setCoachSchedules([])
       setCoachScheduleSlotsMap({})
       return
@@ -509,7 +503,7 @@ const loadExercises = async () => {
     const { data: scheduleData } = await supabase
       .from('coach_schedules')
       .select('*')
-      .eq('admin_id', currentAdminId)
+      .eq('admin_id', adminId)
       .order('schedule_date', { ascending: false })
 
     if (!scheduleData) return
@@ -541,8 +535,10 @@ const loadExercises = async () => {
     setCollapsedSchedules(collapsed)
   }
 
-  const loadNotices = async () => {
-    if (!currentAdminId) {
+  const loadNotices = async (adminIdParam = null) => {
+    const adminId = adminIdParam || currentAdminId || member?.admin_id || null
+
+    if (!adminId) {
       setNotices([])
       return
     }
@@ -550,7 +546,7 @@ const loadExercises = async () => {
     const { data } = await supabase
       .from('notices')
       .select('*')
-      .eq('admin_id', currentAdminId)
+      .eq('admin_id', adminId)
       .order('created_at', { ascending: false })
 
     if (data) {
