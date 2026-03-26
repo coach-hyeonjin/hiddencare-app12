@@ -2247,8 +2247,8 @@ const loadSalesSummary = async (month) => {
               </div>
 
               <div className="compact-text">
-                간략히보기: 키 {health.height_cm || '-'} / 체지방 {health.body_fat_percent || '-'} / 골격근 {health.skeletal_muscle_mass || '-'}
-              </div>
+  간략히보기: 키 {health.height_cm || '-'} / 체지방 {health.body_fat_percent || '-'} / 골격근 {health.skeletal_muscle_mass || '-'} / BMR {health.bmr || '-'} / 권장열량 {health.recommended_kcal || '-'}
+</div>
 
               <button
                 type="button"
@@ -2265,14 +2265,23 @@ const loadSalesSummary = async (month) => {
 
               {!collapsed && (
                 <div className="detail-box">
-                  <p><strong>키:</strong> {health.height_cm || '-'}</p>
-                  <p><strong>체중:</strong> {health.weight_kg || '-'}</p>
-                  <p><strong>체지방:</strong> {health.body_fat_percent || '-'}</p>
-                  <p><strong>골격근량:</strong> {health.skeletal_muscle_mass || '-'}</p>
-                  <p><strong>병력사항:</strong> {health.medical_history || '-'}</p>
-                  <p><strong>회원 메모:</strong> {health.member_note || '-'}</p>
-                  <p><strong>인바디 이미지 URL:</strong> {health.inbody_image_url || '-'}</p>
-                </div>
+  <p><strong>성별:</strong> {health.sex === 'female' ? '여성' : health.sex === 'male' ? '남성' : '-'}</p>
+  <p><strong>나이:</strong> {health.age || '-'}</p>
+  <p><strong>키:</strong> {health.height_cm || '-'}</p>
+  <p><strong>체중:</strong> {health.weight_kg || '-'}</p>
+  <p><strong>체지방률:</strong> {health.body_fat_percent || '-'}</p>
+  <p><strong>골격근량:</strong> {health.skeletal_muscle_mass || '-'}</p>
+  <p><strong>체지방량:</strong> {health.body_fat_mass || '-'}</p>
+  <p><strong>내장지방레벨:</strong> {health.visceral_fat_level || '-'}</p>
+  <p><strong>내장지방면적:</strong> {health.visceral_fat_area || '-'}</p>
+  <p><strong>WHR:</strong> {health.whr || '-'}</p>
+  <p><strong>기초대사량:</strong> {health.bmr || '-'}</p>
+  <p><strong>하루 권장 섭취열량:</strong> {health.recommended_kcal || '-'}</p>
+  <p><strong>인바디점수:</strong> {health.inbody_score || '-'}</p>
+  <p><strong>병력사항:</strong> {health.medical_history || '-'}</p>
+  <p><strong>회원 메모:</strong> {health.member_note || '-'}</p>
+  <p><strong>인바디 이미지 URL:</strong> {health.inbody_image_url || '-'}</p>
+</div>
               )}
             </div>
           )
