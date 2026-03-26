@@ -831,28 +831,11 @@ export default function AdminDashboard({ profile, currentAdminId, currentGymId, 
   }
 }
 
- const loadSalesLogs = async () => {
+ const loadSalesSummary = async (month) => {
   if (!currentAdminId) {
-    setSalesLogs([])
+    setSalesSummary(null)
     return
   }
-
-  const { data } = await supabase
-    .from('sales_logs')
-    .select('*')
-    .eq('admin_id', currentAdminId)
-    .order('log_date', { ascending: false })
-    .order('created_at', { ascending: false })
-
-  if (data) {
-    const collapsed = {}
-    data.forEach((log) => {
-      collapsed[log.id] = true
-    })
-    setSalesLogs(data)
-    setCollapsedSalesLogs(collapsed)
-  }
-}
 
   const { data } = await supabase
     .from('sales_records')
