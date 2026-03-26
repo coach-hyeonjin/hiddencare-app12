@@ -880,22 +880,22 @@ const loadSalesSummary = async (month) => {
   const rows = data || []
 
   const summary = {
-    total_sales: rows.reduce((sum, row) => sum + Number(row.amount || 0), 0),
-    total_count: rows.length,
-    vip_sales_count: rows.filter((row) => row.is_vip).length,
-    cash_sales: rows
-      .filter((row) => row.payment_method === '현금')
-      .reduce((sum, row) => sum + Number(row.amount || 0), 0),
-    card_sales: rows
-      .filter((row) => row.payment_method === '카드')
-      .reduce((sum, row) => sum + Number(row.amount || 0), 0),
-    transfer_sales: rows
-      .filter((row) => row.payment_method === '이체')
-      .reduce((sum, row) => sum + Number(row.amount || 0), 0),
-    installment_sales: rows
-      .filter((row) => row.payment_method === '할부')
-      .reduce((sum, row) => sum + Number(row.amount || 0), 0),
-  }
+  total_sales: rows.reduce((sum, row) => sum + Number(row.amount || 0), 0),
+  total_count: rows.length,
+  vip_sales_count: rows.filter((row) => row.is_vip).length,
+  cash_sales: rows
+    .filter((row) => row.payment_method === '현금')
+    .reduce((sum, row) => sum + Number(row.amount || 0), 0),
+  card_sales: rows
+    .filter((row) => row.payment_method === '카드')
+    .reduce((sum, row) => sum + Number(row.amount || 0), 0),
+  transfer_sales: rows
+    .filter((row) => row.payment_method === '이체')
+    .reduce((sum, row) => sum + Number(row.amount || 0), 0),
+  installment_sales: rows
+    .filter((row) => row.payment_method === '할부')
+    .reduce((sum, row) => sum + Number(row.amount || 0), 0),
+}
 
   setSalesSummary(summary)
 }
@@ -3111,19 +3111,19 @@ const loadSalesSummary = async (month) => {
               </div>
 
               <div className="stats-grid">
-                <div className="stat-card">
-                  <span>총 매출</span>
-                  <strong>{Number(salesStatsExtended.totalSales || 0).toLocaleString()}</strong>
-                </div>
-                <div className="stat-card">
-                  <span>등록 건수</span>
-                  <strong>{Number(salesStatsExtended.totalSales || 0).toLocaleString()}</strong>
-                </div>
-                <div className="stat-card">
-                  <span>VIP 결제 수</span>
-                  <strong>{Number(salesStatsExtended.totalSales || 0).toLocaleString()}</strong>
-                </div>
-              </div>
+  <div className="stat-card">
+    <span>총 매출</span>
+    <strong>{Number(salesStatsExtended.totalSales || 0).toLocaleString()}</strong>
+  </div>
+  <div className="stat-card">
+    <span>등록 건수</span>
+    <strong>{Number(salesStatsExtended.totalCount || 0).toLocaleString()}</strong>
+  </div>
+  <div className="stat-card">
+    <span>VIP 결제 수</span>
+    <strong>{Number(salesStatsExtended.vipCount || 0).toLocaleString()}</strong>
+  </div>
+</div>
 
               <div className="detail-box">
                 <p><strong>현금:</strong> {Number(salesSummary?.cash_sales || 0).toLocaleString()}</p>
