@@ -51,15 +51,24 @@ const emptyDietForm = {
 const emptyHealthForm = {
   id: null,
   record_date: new Date().toISOString().slice(0, 10),
+  sex: 'male',
+  age: '',
   height_cm: '',
   weight_kg: '',
   body_fat_percent: '',
   skeletal_muscle_mass: '',
+  body_fat_mass: '',
+  visceral_fat_level: '',
+  visceral_fat_area: '',
+  whr: '',
+  bmr: '',
+  activity_factor: '1.375',
+  recommended_kcal: '',
+  inbody_score: '',
   medical_history: '',
   member_note: '',
   inbody_image_url: '',
 }
-
 const emptyInquiryForm = {
   name: '',
   phone: '',
@@ -133,7 +142,25 @@ function isCardioExercise(exercise) {
   const bodyPart = String(exercise?.body_part || '').trim()
   return category === '유산소' || bodyPart === '유산소'
 }
+function calcBmr({ sex, age, heightCm, weightKg, manualBmr }) {
+  if (manualBmr && Number(manualBmr) > 0) {
+    return Math.round(Number(manualBmr))
+  }
 
+  if (!sex || !age || !heightCm || !weightKg) return ''
+
+  const base =
+    10 * Number(weightKg) +
+    6.25 * Number(heightCm) -
+    5 * Number(age)
+
+  return Math.round(sex === 'male' ? base + 5 : base - 161)
+}
+
+function calcRecommendedKcal({ bmr, activityFactor }) {
+  if (!bmr || !activityFactor) return ''
+  return Math.round(Number(bmr) * Number(activityFactor))
+}
 export default function MemberDashboard({ member, accessCode, onLogout }) {
   const [activeTab, setActiveTab] = useState('내정보')
   const [loading, setLoading] = useState(true)
@@ -183,7 +210,28 @@ export default function MemberDashboard({ member, accessCode, onLogout }) {
 
    const currentAdminId = memberInfo?.admin_id || member?.admin_id || null
   const currentGymId = memberInfo?.gym_id || member?.gym_id || null
+const calculatedBmr = useMemo(() => {
+  return calcBmr({
+    sex: healthForm.sex,
+    age: healthForm.age,
+    heightCm: healthForm.height_cm,
+    weightKg: healthForm.weight_kg,
+    manualBmr: healthForm.bmr,
+  })
+}, [
+  healthForm.sex,
+  healthForm.age,
+  healthForm.height_cm,
+  healthForm.weight_kg,
+  healthForm.bmr,
+])
 
+const calculatedRecommendedKcal = useMemo(() => {
+  return calcRecommendedKcal({
+    bmr: calculatedBmr,
+    activityFactor: healthForm.activity_factor,
+  })
+}, [calculatedBmr, healthForm.activity_factor])
   const stats = useMemo(() => {
     const ptCount = workouts.filter((workout) => workout.workout_type === 'pt').length
     const personalCount = workouts.filter((workout) => workout.workout_type === 'personal').length
@@ -850,49 +898,81 @@ export default function MemberDashboard({ member, accessCode, onLogout }) {
   }
 
   const handleHealthSubmit = async (e) => {
-    e.preventDefault()
+  e.preventDefault()
 
-    const payload = {
-      member_id: member.id,
-      record_date: healthForm.record_date,
-      height_cm: Number(healthForm.height_cm) || null,
-      weight_kg: Number(healthForm.weight_kg) || null,
-      body_fat_percent: Number(healthForm.body_fat_percent) || null,
-      skeletal_muscle_mass: Number(healthForm.skeletal_muscle_mass) || null,
-      medical_history: healthForm.medical_history?.trim() || '',
-      member_note: healthForm.member_note?.trim() || '',
-      inbody_image_url: healthForm.inbody_image_url?.trim() || '',
-      admin_id: currentAdminId || null,
-      gym_id: currentGymId || null,
-    }
+  const finalBmr = calcBmr({
+    sex: healthForm.sex,
+    age: healthForm.age,
+    heightCm: healthForm.height_cm,
+    weightKg: healthForm.weight_kg,
+    manualBmr: healthForm.bmr,
+  })
 
-    if (healthForm.id) {
-      await supabase.from('member_health_logs').update(payload).eq('id', healthForm.id)
-      setMessage('건강정보가 수정되었습니다.')
-    } else {
-      await supabase.from('member_health_logs').insert(payload)
-      setMessage('건강정보가 저장되었습니다.')
-    }
+  const finalRecommendedKcal = calcRecommendedKcal({
+    bmr: finalBmr,
+    activityFactor: healthForm.activity_factor,
+  })
 
-    resetHealthForm()
-    await loadHealthLogs()
+  const payload = {
+    member_id: member.id,
+    record_date: healthForm.record_date,
+    sex: healthForm.sex || null,
+    age: Number(healthForm.age) || null,
+    height_cm: Number(healthForm.height_cm) || null,
+    weight_kg: Number(healthForm.weight_kg) || null,
+    body_fat_percent: Number(healthForm.body_fat_percent) || null,
+    skeletal_muscle_mass: Number(healthForm.skeletal_muscle_mass) || null,
+    body_fat_mass: Number(healthForm.body_fat_mass) || null,
+    visceral_fat_level: Number(healthForm.visceral_fat_level) || null,
+    visceral_fat_area: Number(healthForm.visceral_fat_area) || null,
+    whr: Number(healthForm.whr) || null,
+    bmr: finalBmr ? Number(finalBmr) : null,
+    activity_factor: Number(healthForm.activity_factor) || null,
+    recommended_kcal: finalRecommendedKcal ? Number(finalRecommendedKcal) : null,
+    inbody_score: Number(healthForm.inbody_score) || null,
+    medical_history: healthForm.medical_history?.trim() || '',
+    member_note: healthForm.member_note?.trim() || '',
+    inbody_image_url: healthForm.inbody_image_url?.trim() || '',
+    admin_id: currentAdminId || null,
+    gym_id: currentGymId || null,
   }
+
+  if (healthForm.id) {
+    await supabase.from('member_health_logs').update(payload).eq('id', healthForm.id)
+    setMessage('건강정보가 수정되었습니다.')
+  } else {
+    await supabase.from('member_health_logs').insert(payload)
+    setMessage('건강정보가 저장되었습니다.')
+  }
+
+  resetHealthForm()
+  await loadHealthLogs()
+}
 
   const handleHealthEdit = (health) => {
-    setHealthForm({
-      id: health.id,
-      record_date: health.record_date || new Date().toISOString().slice(0, 10),
-      height_cm: health.height_cm || '',
-      weight_kg: health.weight_kg || '',
-      body_fat_percent: health.body_fat_percent || '',
-      skeletal_muscle_mass: health.skeletal_muscle_mass || '',
-      medical_history: health.medical_history || '',
-      member_note: health.member_note || '',
-      inbody_image_url: health.inbody_image_url || '',
-    })
-    setActiveTab('건강정보')
-  }
-
+  setHealthForm({
+    id: health.id,
+    record_date: health.record_date || new Date().toISOString().slice(0, 10),
+    sex: health.sex || 'male',
+    age: health.age || '',
+    height_cm: health.height_cm || '',
+    weight_kg: health.weight_kg || '',
+    body_fat_percent: health.body_fat_percent || '',
+    skeletal_muscle_mass: health.skeletal_muscle_mass || '',
+    body_fat_mass: health.body_fat_mass || '',
+    visceral_fat_level: health.visceral_fat_level || '',
+    visceral_fat_area: health.visceral_fat_area || '',
+    whr: health.whr || '',
+    bmr: health.bmr || '',
+    activity_factor: health.activity_factor || '1.375',
+    recommended_kcal: health.recommended_kcal || '',
+    inbody_score: health.inbody_score || '',
+    medical_history: health.medical_history || '',
+    member_note: health.member_note || '',
+    inbody_image_url: health.inbody_image_url || '',
+  })
+  setActiveTab('건강정보')
+}
   const handleHealthDelete = async (healthId) => {
     if (!window.confirm('건강정보 기록을 삭제할까요?')) return
     await supabase.from('member_health_logs').delete().eq('id', healthId)
@@ -1026,91 +1106,200 @@ export default function MemberDashboard({ member, accessCode, onLogout }) {
             <h2>건강정보 입력 / 수정</h2>
 
             <form className="stack-gap" onSubmit={handleHealthSubmit}>
-              <label className="field">
-                <span>기록일</span>
-                <input
-                  type="date"
-                  value={healthForm.record_date}
-                  onChange={(e) => setHealthForm({ ...healthForm, record_date: e.target.value })}
-                />
-              </label>
+  <label className="field">
+    <span>기록일</span>
+    <input
+      type="date"
+      value={healthForm.record_date}
+      onChange={(e) => setHealthForm({ ...healthForm, record_date: e.target.value })}
+    />
+  </label>
 
-              <div className="grid-2">
-                <label className="field">
-                  <span>키(cm)</span>
-                  <input
-                    type="number"
-                    value={healthForm.height_cm}
-                    onChange={(e) => setHealthForm({ ...healthForm, height_cm: e.target.value })}
-                  />
-                </label>
+  <div className="grid-2">
+    <label className="field">
+      <span>성별</span>
+      <select
+        value={healthForm.sex}
+        onChange={(e) => setHealthForm({ ...healthForm, sex: e.target.value })}
+      >
+        <option value="male">남성</option>
+        <option value="female">여성</option>
+      </select>
+    </label>
 
-                <label className="field">
-                  <span>체중(kg)</span>
-                  <input
-                    type="number"
-                    value={healthForm.weight_kg}
-                    onChange={(e) => setHealthForm({ ...healthForm, weight_kg: e.target.value })}
-                  />
-                </label>
-              </div>
+    <label className="field">
+      <span>나이</span>
+      <input
+        type="number"
+        value={healthForm.age}
+        onChange={(e) => setHealthForm({ ...healthForm, age: e.target.value })}
+      />
+    </label>
+  </div>
 
-              <div className="grid-2">
-                <label className="field">
-                  <span>체지방률(%)</span>
-                  <input
-                    type="number"
-                    value={healthForm.body_fat_percent}
-                    onChange={(e) => setHealthForm({ ...healthForm, body_fat_percent: e.target.value })}
-                  />
-                </label>
+  <div className="grid-2">
+    <label className="field">
+      <span>키(cm)</span>
+      <input
+        type="number"
+        value={healthForm.height_cm}
+        onChange={(e) => setHealthForm({ ...healthForm, height_cm: e.target.value })}
+      />
+    </label>
 
-                <label className="field">
-                  <span>골격근량</span>
-                  <input
-                    type="number"
-                    value={healthForm.skeletal_muscle_mass}
-                    onChange={(e) => setHealthForm({ ...healthForm, skeletal_muscle_mass: e.target.value })}
-                  />
-                </label>
-              </div>
+    <label className="field">
+      <span>체중(kg)</span>
+      <input
+        type="number"
+        value={healthForm.weight_kg}
+        onChange={(e) => setHealthForm({ ...healthForm, weight_kg: e.target.value })}
+      />
+    </label>
+  </div>
 
-              <label className="field">
-                <span>병력사항</span>
-                <textarea
-                  rows="4"
-                  value={healthForm.medical_history}
-                  onChange={(e) => setHealthForm({ ...healthForm, medical_history: e.target.value })}
-                />
-              </label>
+  <div className="grid-2">
+    <label className="field">
+      <span>체지방률(%)</span>
+      <input
+        type="number"
+        value={healthForm.body_fat_percent}
+        onChange={(e) => setHealthForm({ ...healthForm, body_fat_percent: e.target.value })}
+      />
+    </label>
 
-              <label className="field">
-                <span>개인 메모</span>
-                <textarea
-                  rows="4"
-                  value={healthForm.member_note}
-                  onChange={(e) => setHealthForm({ ...healthForm, member_note: e.target.value })}
-                />
-              </label>
+    <label className="field">
+      <span>골격근량(kg)</span>
+      <input
+        type="number"
+        value={healthForm.skeletal_muscle_mass}
+        onChange={(e) => setHealthForm({ ...healthForm, skeletal_muscle_mass: e.target.value })}
+      />
+    </label>
+  </div>
 
-              <label className="field">
-                <span>인바디 이미지 URL</span>
-                <input
-                  value={healthForm.inbody_image_url}
-                  onChange={(e) => setHealthForm({ ...healthForm, inbody_image_url: e.target.value })}
-                  placeholder="이미지 링크를 넣어주세요"
-                />
-              </label>
+  <div className="grid-2">
+    <label className="field">
+      <span>체지방량(kg)</span>
+      <input
+        type="number"
+        value={healthForm.body_fat_mass}
+        onChange={(e) => setHealthForm({ ...healthForm, body_fat_mass: e.target.value })}
+      />
+    </label>
 
-              <div className="inline-actions wrap">
-                <button className="primary-btn" type="submit">
-                  {healthForm.id ? '건강정보 수정' : '건강정보 저장'}
-                </button>
-                <button type="button" className="secondary-btn" onClick={resetHealthForm}>
-                  초기화
-                </button>
-              </div>
-            </form>
+    <label className="field">
+      <span>인바디점수</span>
+      <input
+        type="number"
+        value={healthForm.inbody_score}
+        onChange={(e) => setHealthForm({ ...healthForm, inbody_score: e.target.value })}
+      />
+    </label>
+  </div>
+
+  <div className="grid-2">
+    <label className="field">
+      <span>내장지방레벨</span>
+      <input
+        type="number"
+        value={healthForm.visceral_fat_level}
+        onChange={(e) => setHealthForm({ ...healthForm, visceral_fat_level: e.target.value })}
+      />
+    </label>
+
+    <label className="field">
+      <span>내장지방면적(cm²)</span>
+      <input
+        type="number"
+        value={healthForm.visceral_fat_area}
+        onChange={(e) => setHealthForm({ ...healthForm, visceral_fat_area: e.target.value })}
+      />
+    </label>
+  </div>
+
+  <div className="grid-2">
+    <label className="field">
+      <span>WHR(허리엉덩이비율)</span>
+      <input
+        type="number"
+        step="0.01"
+        value={healthForm.whr}
+        onChange={(e) => setHealthForm({ ...healthForm, whr: e.target.value })}
+      />
+    </label>
+
+    <label className="field">
+      <span>활동계수</span>
+      <select
+        value={healthForm.activity_factor}
+        onChange={(e) => setHealthForm({ ...healthForm, activity_factor: e.target.value })}
+      >
+        <option value="1.2">좌식 / 거의 운동 안함</option>
+        <option value="1.375">가벼운 활동 / 주 1~3회</option>
+        <option value="1.55">보통 활동 / 주 3~5회</option>
+        <option value="1.725">높은 활동 / 주 6~7회</option>
+        <option value="1.9">매우 높은 활동</option>
+      </select>
+    </label>
+  </div>
+
+  <div className="grid-2">
+    <label className="field">
+      <span>기초대사량(kcal)</span>
+      <input
+        type="number"
+        value={healthForm.bmr}
+        onChange={(e) => setHealthForm({ ...healthForm, bmr: e.target.value })}
+        placeholder="비워두면 자동 계산"
+      />
+    </label>
+
+    <label className="field">
+      <span>하루 권장 섭취열량(kcal)</span>
+      <input
+        type="number"
+        value={calculatedRecommendedKcal}
+        readOnly
+      />
+    </label>
+  </div>
+
+  <label className="field">
+    <span>병력사항</span>
+    <textarea
+      rows="4"
+      value={healthForm.medical_history}
+      onChange={(e) => setHealthForm({ ...healthForm, medical_history: e.target.value })}
+    />
+  </label>
+
+  <label className="field">
+    <span>개인 메모</span>
+    <textarea
+      rows="4"
+      value={healthForm.member_note}
+      onChange={(e) => setHealthForm({ ...healthForm, member_note: e.target.value })}
+    />
+  </label>
+
+  <label className="field">
+    <span>인바디 이미지 URL</span>
+    <input
+      value={healthForm.inbody_image_url}
+      onChange={(e) => setHealthForm({ ...healthForm, inbody_image_url: e.target.value })}
+      placeholder="이미지 링크를 넣어주세요"
+    />
+  </label>
+
+  <div className="inline-actions wrap">
+    <button className="primary-btn" type="submit">
+      {healthForm.id ? '건강정보 수정' : '건강정보 저장'}
+    </button>
+    <button type="button" className="secondary-btn" onClick={resetHealthForm}>
+      초기화
+    </button>
+  </div>
+</form>
           </section>
 
           <section className="card">
@@ -1127,7 +1316,7 @@ export default function MemberDashboard({ member, accessCode, onLogout }) {
                     </div>
 
                     <div className="compact-text">
-                      간략히보기: 키 {health.height_cm || '-'} / 체지방 {health.body_fat_percent || '-'} / 골격근 {health.skeletal_muscle_mass || '-'}
+                      간략히보기: 키 {health.height_cm || '-'} / 체지방 {health.body_fat_percent || '-'} / 골격근 {health.skeletal_muscle_mass || '-'} / BMR {health.bmr || '-'} / 권장열량 {health.recommended_kcal || '-'}
                     </div>
 
                     <div className="inline-actions wrap">
@@ -1155,14 +1344,23 @@ export default function MemberDashboard({ member, accessCode, onLogout }) {
 
                     {!collapsed ? (
                       <div className="detail-box">
-                        <p><strong>키:</strong> {health.height_cm || '-'}</p>
-                        <p><strong>체중:</strong> {health.weight_kg || '-'}</p>
-                        <p><strong>체지방률:</strong> {health.body_fat_percent || '-'}</p>
-                        <p><strong>골격근량:</strong> {health.skeletal_muscle_mass || '-'}</p>
-                        <p><strong>병력사항:</strong> {health.medical_history || '-'}</p>
-                        <p><strong>개인 메모:</strong> {health.member_note || '-'}</p>
-                        <p><strong>인바디 이미지 URL:</strong> {health.inbody_image_url || '-'}</p>
-                      </div>
+  <p><strong>성별:</strong> {health.sex === 'female' ? '여성' : health.sex === 'male' ? '남성' : '-'}</p>
+  <p><strong>나이:</strong> {health.age || '-'}</p>
+  <p><strong>키:</strong> {health.height_cm || '-'}</p>
+  <p><strong>체중:</strong> {health.weight_kg || '-'}</p>
+  <p><strong>체지방률:</strong> {health.body_fat_percent || '-'}</p>
+  <p><strong>골격근량:</strong> {health.skeletal_muscle_mass || '-'}</p>
+  <p><strong>체지방량:</strong> {health.body_fat_mass || '-'}</p>
+  <p><strong>내장지방레벨:</strong> {health.visceral_fat_level || '-'}</p>
+  <p><strong>내장지방면적:</strong> {health.visceral_fat_area || '-'}</p>
+  <p><strong>WHR:</strong> {health.whr || '-'}</p>
+  <p><strong>기초대사량:</strong> {health.bmr || '-'}</p>
+  <p><strong>하루 권장 섭취열량:</strong> {health.recommended_kcal || '-'}</p>
+  <p><strong>인바디점수:</strong> {health.inbody_score || '-'}</p>
+  <p><strong>병력사항:</strong> {health.medical_history || '-'}</p>
+  <p><strong>개인 메모:</strong> {health.member_note || '-'}</p>
+  <p><strong>인바디 이미지 URL:</strong> {health.inbody_image_url || '-'}</p>
+</div>
                     ) : null}
                   </div>
                 )
