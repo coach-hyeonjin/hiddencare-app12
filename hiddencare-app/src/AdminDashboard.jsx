@@ -418,26 +418,50 @@ export default function AdminDashboard({ profile, currentAdminId, currentGymId, 
       })
   }, [salesRecords, saleMonth, saleSearch, salePaymentFilter])
 
-  const salesStatsExtended = useMemo(() => {
-    const totalCount = filteredSales.length
-    const vipCount = filteredSales.filter((sale) => sale.is_vip).length
-    const vipRatio = totalCount > 0 ? Math.round((vipCount / totalCount) * 100) : 0
+ const salesStatsExtended = useMemo(() => {
+  const totalSales = filteredSales.reduce((sum, sale) => sum + Number(sale.amount || 0), 0)
+  const totalCount = filteredSales.length
+  const vipCount = filteredSales.filter((sale) => sale.is_vip).length
+  const vipRatio = totalCount > 0 ? Math.round((vipCount / totalCount) * 100) : 0
 
-    const programTotals = filteredSales.reduce((acc, sale) => {
-      const key = sale.programs?.name || '미지정'
-      acc[key] = (acc[key] || 0) + Number(sale.amount || 0)
-      return acc
-    }, {})
+  const cashSales = filteredSales
+    .filter((sale) => sale.payment_method === '현금')
+    .reduce((sum, sale) => sum + Number(sale.amount || 0), 0)
 
-    const chartSource = Object.entries(programTotals)
-      .map(([label, value]) => ({ label, value }))
-      .sort((a, b) => b.value - a.value)
+  const cardSales = filteredSales
+    .filter((sale) => sale.payment_method === '카드')
+    .reduce((sum, sale) => sum + Number(sale.amount || 0), 0)
 
-    return {
-      vipRatio,
-      chartSource,
-    }
-  }, [filteredSales])
+  const transferSales = filteredSales
+    .filter((sale) => sale.payment_method === '이체')
+    .reduce((sum, sale) => sum + Number(sale.amount || 0), 0)
+
+  const installmentSales = filteredSales
+    .filter((sale) => sale.payment_method === '할부')
+    .reduce((sum, sale) => sum + Number(sale.amount || 0), 0)
+
+  const programTotals = filteredSales.reduce((acc, sale) => {
+    const key = sale.programs?.name || '미지정'
+    acc[key] = (acc[key] || 0) + Number(sale.amount || 0)
+    return acc
+  }, {})
+
+  const chartSource = Object.entries(programTotals)
+    .map(([label, value]) => ({ label, value }))
+    .sort((a, b) => b.value - a.value)
+
+  return {
+    totalSales,
+    totalCount,
+    vipCount,
+    vipRatio,
+    cashSales,
+    cardSales,
+    transferSales,
+    installmentSales,
+    chartSource,
+  }
+}, [filteredSales])
 
   const filteredSalesLogs = useMemo(() => {
     return salesLogs.filter((log) => {
@@ -829,12 +853,6 @@ export default function AdminDashboard({ profile, currentAdminId, currentGymId, 
     setCollapsedSalesLogs(collapsed)
   }
 }
-
-  const loadSalesSummary = async (month) => {
-  if (!currentAdminId) {
-    setSalesSummary(null)
-    return
-  }
 
   const { data } = await supabase
     .from('sales_records')
@@ -1754,18 +1772,17 @@ export default function AdminDashboard({ profile, currentAdminId, currentGymId, 
     setMessage('세일즈 일지가 삭제되었습니다.')
   }
 
-  const getSalesAutoFeedback = () => {
-    if (!salesSummary) return '매출 데이터가 없습니다.'
-    const total = Number(salesSummary.total_sales || 0)
-    const count = Number(salesSummary.total_count || 0)
-    const vip = Number(salesSummary.vip_sales_count || 0)
+ const getSalesAutoFeedback = () => {
+  const total = Number(salesStatsExtended.totalSales || 0)
+  const count = Number(salesStatsExtended.totalCount || 0)
+  const vip = Number(salesStatsExtended.vipCount || 0)
 
-    if (count === 0) return '이번 달 등록된 매출 기록이 없습니다.'
-    if (total >= 3000000) return '좋습니다. 이번 달 매출 흐름이 안정적입니다.'
-    if (vip >= 3) return 'VIP 전환이 잘 이루어지고 있습니다.'
-    if (total < 1000000) return '이번 달은 신규 등록/재등록 전환 전략 점검이 필요합니다.'
-    return '현재 매출 흐름은 보통 수준입니다. 결제수단과 프로그램 전환율을 함께 보세요.'
-  }
+  if (count === 0) return '이번 달 등록된 매출 기록이 없습니다.'
+  if (total >= 3000000) return '좋습니다. 이번 달 매출 흐름이 안정적입니다.'
+  if (vip >= 3) return 'VIP 전환이 잘 이루어지고 있습니다.'
+  if (total < 1000000) return '이번 달은 신규 등록/재등록 전환 전략 점검이 필요합니다.'
+  return '현재 매출 흐름은 보통 수준입니다. 결제수단과 프로그램 전환율을 함께 보세요.'
+}
 
   const resetNoticeForm = () => {
     setNoticeForm(emptyNoticeForm)
@@ -3052,15 +3069,15 @@ export default function AdminDashboard({ profile, currentAdminId, currentGymId, 
               <div className="stats-grid">
                 <div className="stat-card">
                   <span>총 매출</span>
-                  <strong>{Number(salesSummary?.total_sales || 0).toLocaleString()}</strong>
+                  <strong>{Number(salesStatsExtended.totalSales || 0).toLocaleString()}</strong>
                 </div>
                 <div className="stat-card">
                   <span>등록 건수</span>
-                  <strong>{Number(salesSummary?.total_count || 0)}</strong>
+                  <strong>{Number(salesStatsExtended.totalSales || 0).toLocaleString()}</strong>
                 </div>
                 <div className="stat-card">
                   <span>VIP 결제 수</span>
-                  <strong>{Number(salesSummary?.vip_sales_count || 0)}</strong>
+                  <strong>{Number(salesStatsExtended.totalSales || 0).toLocaleString()}</strong>
                 </div>
               </div>
 
