@@ -437,10 +437,12 @@ export default function App() {
     return (
       <div className="app-shell">
         <MemberDashboard
-          member={memberSession.member}
-          accessCode={memberSession.accessCode}
-          onLogout={handleMemberLogout}
-        />
+  member={memberSession.member}
+  accessCode={memberSession.accessCode}
+  currentAdminId={memberSession.member?.admin_id || null}
+  currentGymId={memberSession.member?.gym_id || null}
+  onLogout={handleMemberLogout}
+/>
       </div>
     )
   }
