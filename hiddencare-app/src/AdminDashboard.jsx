@@ -786,6 +786,7 @@ export default function AdminDashboard({ profile, currentAdminId, currentGymId, 
  const loadSalesRecords = async () => {
   if (!currentAdminId) {
     setSalesRecords([])
+    setCollapsedSales({})
     return
   }
 
@@ -830,13 +831,40 @@ export default function AdminDashboard({ profile, currentAdminId, currentGymId, 
 }
 
   const loadSalesSummary = async (month) => {
-    const { data } = await supabase.rpc('get_sales_summary', { target_month: month })
-    if (data && data[0]) {
-      setSalesSummary(data[0])
-    } else {
-      setSalesSummary(null)
-    }
+  if (!currentAdminId) {
+    setSalesSummary(null)
+    return
   }
+
+  const { data } = await supabase
+    .from('sales_records')
+    .select('*')
+    .eq('admin_id', currentAdminId)
+    .gte('sale_date', `${month}-01`)
+    .lt('sale_date', `${month}-32`)
+
+  const rows = data || []
+
+  const summary = {
+    total_sales: rows.reduce((sum, row) => sum + Number(row.amount || 0), 0),
+    total_count: rows.length,
+    vip_sales_count: rows.filter((row) => row.is_vip).length,
+    cash_sales: rows
+      .filter((row) => row.payment_method === '현금')
+      .reduce((sum, row) => sum + Number(row.amount || 0), 0),
+    card_sales: rows
+      .filter((row) => row.payment_method === '카드')
+      .reduce((sum, row) => sum + Number(row.amount || 0), 0),
+    transfer_sales: rows
+      .filter((row) => row.payment_method === '이체')
+      .reduce((sum, row) => sum + Number(row.amount || 0), 0),
+    installment_sales: rows
+      .filter((row) => row.payment_method === '할부')
+      .reduce((sum, row) => sum + Number(row.amount || 0), 0),
+  }
+
+  setSalesSummary(summary)
+}
 
   const loadNotices = async () => {
   if (!currentAdminId) {
@@ -861,20 +889,27 @@ export default function AdminDashboard({ profile, currentAdminId, currentGymId, 
 }
 
   const loadInquiries = async () => {
-    const { data } = await supabase
-      .from('inquiries')
-      .select('*')
-      .order('created_at', { ascending: false })
-
-    if (data) {
-      const collapsed = {}
-      data.forEach((item) => {
-        collapsed[item.id] = true
-      })
-      setInquiries(data)
-      setCollapsedInquiries(collapsed)
-    }
+  if (!currentAdminId) {
+    setInquiries([])
+    setCollapsedInquiries({})
+    return
   }
+
+  const { data } = await supabase
+    .from('inquiries')
+    .select('*')
+    .eq('admin_id', currentAdminId)
+    .order('created_at', { ascending: false })
+
+  if (data) {
+    const collapsed = {}
+    data.forEach((item) => {
+      collapsed[item.id] = true
+    })
+    setInquiries(data)
+    setCollapsedInquiries(collapsed)
+  }
+}
 
   const resetMemberForm = () => {
     setMemberForm(emptyMemberForm)
