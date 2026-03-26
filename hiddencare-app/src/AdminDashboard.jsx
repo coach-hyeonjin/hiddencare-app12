@@ -858,12 +858,20 @@ const loadSalesSummary = async (month) => {
     return
   }
 
+  const [year, monthNumber] = month.split('-').map(Number)
+  const startDate = `${month}-01`
+
+  const nextMonthDate = new Date(year, monthNumber, 1)
+  const nextYear = nextMonthDate.getFullYear()
+  const nextMonth = String(nextMonthDate.getMonth() + 1).padStart(2, '0')
+  const endDate = `${nextYear}-${nextMonth}-01`
+
   const { data, error } = await supabase
     .from('sales_records')
     .select('*')
     .eq('admin_id', currentAdminId)
-    .gte('sale_date', `${month}-01`)
-    .lt('sale_date', `${month}-32`)
+    .gte('sale_date', startDate)
+    .lt('sale_date', endDate)
 
   if (error) {
     throw error
