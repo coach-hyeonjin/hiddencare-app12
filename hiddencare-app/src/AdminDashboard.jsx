@@ -3478,7 +3478,9 @@ export default function AdminDashboard({ profile, onLogout }) {
                   <div className="compact-text">
                     간략히보기: {(item.content || '').slice(0, 40)}
                   </div>
-
+<div className="compact-text">
+  {item.is_private ? '코치님만 보기 문의' : '일반 문의'} / {item.is_secret_reply ? '비밀답변 설정' : '일반답변'}
+</div>
                   <div className="inline-actions wrap">
                     <button
                       type="button"
@@ -3511,8 +3513,23 @@ export default function AdminDashboard({ profile, onLogout }) {
                       <p><strong>이름:</strong> {item.name || '-'}</p>
                       <p><strong>연락처:</strong> {item.phone || '-'}</p>
                       <p><strong>내용:</strong> {item.content || '-'}</p>
+                      <p><strong>문의유형:</strong> {item.is_private ? '코치님만 보기' : '일반 문의'}</p>
+                      <p><strong>답변유형:</strong> {item.is_secret_reply ? '비밀답변' : '일반답변'}</p>
                       <p><strong>답변:</strong> {item.answer || '미답변'}</p>
-
+<label className="checkbox-line">
+  <input
+    type="checkbox"
+    checked={!!item.is_secret_reply}
+    onChange={async (e) => {
+      await supabase
+        .from('inquiries')
+        .update({ is_secret_reply: e.target.checked })
+        .eq('id', item.id)
+      await loadInquiries()
+    }}
+  />
+  <span>비밀답변</span>
+</label>
                       <textarea
                         rows="3"
                         placeholder="답변 입력"
