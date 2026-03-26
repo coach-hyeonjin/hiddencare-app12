@@ -540,10 +540,11 @@ export default function AdminDashboard({ profile, currentAdminId, currentGymId, 
   }, [saleMonth])
 
   const loadAll = async () => {
-    setLoading(true)
-    setMessage('')
+  setLoading(true)
+  setMessage('')
 
-    await Promise.all([
+  try {
+    const results = await Promise.allSettled([
       loadMembers(),
       loadBrands(),
       loadExercises(),
@@ -555,12 +556,23 @@ export default function AdminDashboard({ profile, currentAdminId, currentGymId, 
       loadPrograms(),
       loadSalesRecords(),
       loadSalesLogs(),
+      loadSalesSummary(saleMonth),
       loadNotices(),
       loadInquiries(),
     ])
 
+    const failed = results.filter((result) => result.status === 'rejected')
+    if (failed.length > 0) {
+      console.error('loadAll 실패:', failed)
+      setMessage('일부 데이터를 불러오지 못했습니다. 콘솔을 확인해주세요.')
+    }
+  } catch (error) {
+    console.error('loadAll 전체 오류:', error)
+    setMessage('데이터 불러오기 중 오류가 발생했습니다.')
+  } finally {
     setLoading(false)
   }
+}
 
  const loadMembers = async () => {
   if (!currentAdminId) {
