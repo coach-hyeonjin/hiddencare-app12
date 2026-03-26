@@ -423,7 +423,12 @@ export default function App() {
   if (mode === 'admin' && adminProfile) {
     return (
       <div className="app-shell">
-        <AdminDashboard profile={adminProfile} onLogout={handleAdminLogout} />
+        <AdminDashboard
+  profile={adminProfile}
+  currentAdminId={adminProfile?.id || null}
+  currentGymId={adminProfile?.gym_id || null}
+  onLogout={handleAdminLogout}
+/>
       </div>
     )
   }
