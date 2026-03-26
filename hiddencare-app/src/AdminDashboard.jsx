@@ -882,6 +882,7 @@ const loadSalesSummary = async (month) => {
   setSalesSummary(summary)
 }
  const loadSalesLogs = async () => {
+   console.log('🔥 adminId 확인:', currentAdminId)
   if (!currentAdminId) {
     setSalesLogs([])
     setCollapsedSalesLogs({})
