@@ -183,8 +183,7 @@ export default function MemberDashboard({ member, accessCode, onLogout }) {
 
   const currentAdminId = memberInfo?.admin_id || member?.admin_id || null
   const currentGymId = memberInfo?.gym_id || member?.gym_id || null
-  const currentAdminId = memberInfo?.admin_id || member?.admin_id || null
-const currentGymId = memberInfo?.gym_id || member?.gym_id || null
+
 
 console.log('=== MemberDashboard 기본값 확인 ===')
 console.log('member:', member)
