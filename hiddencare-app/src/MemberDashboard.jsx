@@ -64,6 +64,7 @@ const emptyInquiryForm = {
   name: '',
   phone: '',
   content: '',
+  is_private: false,
 }
 
 function getTotalSetCount(items = []) {
@@ -536,6 +537,7 @@ export default function MemberDashboard({ member, accessCode, onLogout }) {
       name: memberInfo?.name || '',
       phone: '',
       content: '',
+      is_private: false,
     })
   }
 
@@ -577,7 +579,11 @@ export default function MemberDashboard({ member, accessCode, onLogout }) {
         ...nextItems[itemIndex],
         is_cardio: checked,
         cardio_minutes: checked ? nextItems[itemIndex].cardio_minutes || '' : '',
-        sets: checked ? [{ kg: '', reps: '' }] : nextItems[itemIndex].sets?.length ? nextItems[itemIndex].sets : [{ kg: '', reps: '' }],
+        sets: checked
+          ? [{ kg: '', reps: '' }]
+          : nextItems[itemIndex].sets?.length
+          ? nextItems[itemIndex].sets
+          : [{ kg: '', reps: '' }],
       }
       return { ...prev, items: nextItems }
     })
@@ -838,6 +844,7 @@ export default function MemberDashboard({ member, accessCode, onLogout }) {
       name: inquiryForm.name?.trim() || memberInfo?.name || '',
       phone: inquiryForm.phone?.trim() || '',
       content: inquiryForm.content?.trim() || '',
+      is_private: !!inquiryForm.is_private,
     }
 
     if (!payload.content) {
@@ -1801,6 +1808,15 @@ export default function MemberDashboard({ member, accessCode, onLogout }) {
                 />
               </label>
 
+              <label className="checkbox-line">
+                <input
+                  type="checkbox"
+                  checked={!!inquiryForm.is_private}
+                  onChange={(e) => setInquiryForm({ ...inquiryForm, is_private: e.target.checked })}
+                />
+                <span>코치님만 보이게</span>
+              </label>
+
               <div className="inline-actions wrap">
                 <button className="primary-btn" type="submit">
                   문의 등록
@@ -1837,6 +1853,10 @@ export default function MemberDashboard({ member, accessCode, onLogout }) {
                       {(item.content || '').length > 40 ? '...' : ''}
                     </div>
 
+                    <div className="compact-text">
+                      {item.is_private ? '코치님만 보기 문의' : '일반 문의'} / {item.is_secret_reply ? '비밀답변' : '일반답변'}
+                    </div>
+
                     <div className="inline-actions wrap">
                       <button
                         type="button"
@@ -1865,6 +1885,8 @@ export default function MemberDashboard({ member, accessCode, onLogout }) {
                         <p><strong>이름:</strong> {item.name || '-'}</p>
                         <p><strong>연락처:</strong> {item.phone || '-'}</p>
                         <p><strong>문의 내용:</strong> {item.content || '-'}</p>
+                        <p><strong>문의유형:</strong> {item.is_private ? '코치님만 보기' : '일반 문의'}</p>
+                        <p><strong>답변유형:</strong> {item.is_secret_reply ? '비밀답변' : '일반답변'}</p>
                         <p><strong>답변:</strong> {item.answer || '아직 답변이 없습니다.'}</p>
                       </div>
                     ) : null}
