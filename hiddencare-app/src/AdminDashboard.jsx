@@ -843,40 +843,32 @@ export default function AdminDashboard({ profile, currentAdminId, currentGymId, 
   }
 }
 
- const loadSalesSummary = async (month) => {
+ const loadSalesLogs = async () => {
   if (!currentAdminId) {
-    setSalesSummary(null)
+    setSalesLogs([])
+    setCollapsedSalesLogs({})
     return
   }
 
-  const { data } = await supabase
-    .from('sales_records')
+  const { data, error } = await supabase
+    .from('sales_logs')
     .select('*')
     .eq('admin_id', currentAdminId)
-    .gte('sale_date', `${month}-01`)
-    .lt('sale_date', `${month}-32`)
+    .order('log_date', { ascending: false })
+    .order('created_at', { ascending: false })
 
-  const rows = data || []
-
-  const summary = {
-    total_sales: rows.reduce((sum, row) => sum + Number(row.amount || 0), 0),
-    total_count: rows.length,
-    vip_sales_count: rows.filter((row) => row.is_vip).length,
-    cash_sales: rows
-      .filter((row) => row.payment_method === '현금')
-      .reduce((sum, row) => sum + Number(row.amount || 0), 0),
-    card_sales: rows
-      .filter((row) => row.payment_method === '카드')
-      .reduce((sum, row) => sum + Number(row.amount || 0), 0),
-    transfer_sales: rows
-      .filter((row) => row.payment_method === '이체')
-      .reduce((sum, row) => sum + Number(row.amount || 0), 0),
-    installment_sales: rows
-      .filter((row) => row.payment_method === '할부')
-      .reduce((sum, row) => sum + Number(row.amount || 0), 0),
+  if (error) {
+    throw error
   }
 
-  setSalesSummary(summary)
+  if (data) {
+    const collapsed = {}
+    data.forEach((log) => {
+      collapsed[log.id] = true
+    })
+    setSalesLogs(data)
+    setCollapsedSalesLogs(collapsed)
+  }
 }
 
   const loadNotices = async () => {
