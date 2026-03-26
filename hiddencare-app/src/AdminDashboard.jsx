@@ -544,26 +544,36 @@ export default function AdminDashboard({ profile, currentAdminId, currentGymId, 
   setMessage('')
 
   try {
-    const results = await Promise.allSettled([
-      loadMembers(),
-      loadBrands(),
-      loadExercises(),
-      loadWorkouts(),
-      loadDietLogs(),
-      loadManuals(),
-      loadCoaches(),
-      loadCoachSchedules(),
-      loadPrograms(),
-      loadSalesRecords(),
-      loadSalesLogs(),
-      loadSalesSummary(saleMonth),
-      loadNotices(),
-      loadInquiries(),
-    ])
+    const loaders = [
+      ['loadMembers', () => loadMembers()],
+      ['loadBrands', () => loadBrands()],
+      ['loadExercises', () => loadExercises()],
+      ['loadWorkouts', () => loadWorkouts()],
+      ['loadDietLogs', () => loadDietLogs()],
+      ['loadManuals', () => loadManuals()],
+      ['loadCoaches', () => loadCoaches()],
+      ['loadCoachSchedules', () => loadCoachSchedules()],
+      ['loadPrograms', () => loadPrograms()],
+      ['loadSalesRecords', () => loadSalesRecords()],
+      ['loadSalesLogs', () => loadSalesLogs()],
+      ['loadSalesSummary', () => loadSalesSummary(saleMonth)],
+      ['loadNotices', () => loadNotices()],
+      ['loadInquiries', () => loadInquiries()],
+    ]
 
-    const failed = results.filter((result) => result.status === 'rejected')
+    const results = await Promise.allSettled(
+      loaders.map(([_, fn]) => fn())
+    )
+
+    const failed = results
+      .map((result, index) => ({
+        result,
+        name: loaders[index][0],
+      }))
+      .filter((item) => item.result.status === 'rejected')
+
     if (failed.length > 0) {
-      console.error('loadAll 실패:', failed)
+      console.error('loadAll 실패 상세:', failed)
       setMessage('일부 데이터를 불러오지 못했습니다. 콘솔을 확인해주세요.')
     }
   } catch (error) {
