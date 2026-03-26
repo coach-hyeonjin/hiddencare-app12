@@ -168,7 +168,7 @@ function downloadCsv(filename, rows) {
   URL.revokeObjectURL(url)
 }
 
-export default function AdminDashboard({ profile, onLogout }) {
+export default function AdminDashboard({ profile, currentAdminId, currentGymId, onLogout }) {
   const [activeTab, setActiveTab] = useState('회원')
   const [loading, setLoading] = useState(true)
   const [message, setMessage] = useState('')
@@ -538,17 +538,23 @@ export default function AdminDashboard({ profile, onLogout }) {
     setLoading(false)
   }
 
-  const loadMembers = async () => {
-    const { data } = await supabase
-      .from('members')
-      .select('*, programs(id, name)')
-      .order('created_at', { ascending: false })
-
-    if (data) {
-      setMembers(data)
-      if (!selectedMemberId && data[0]) setSelectedMemberId(data[0].id)
-    }
+ const loadMembers = async () => {
+  if (!currentAdminId) {
+    setMembers([])
+    return
   }
+
+  const { data } = await supabase
+    .from('members')
+    .select('*, programs(id, name)')
+    .eq('admin_id', currentAdminId)
+    .order('created_at', { ascending: false })
+
+  if (data) {
+    setMembers(data)
+    if (!selectedMemberId && data[0]) setSelectedMemberId(data[0].id)
+  }
+}
 
   const loadHealthLogs = async (memberId) => {
     const { data } = await supabase
@@ -578,51 +584,84 @@ export default function AdminDashboard({ profile, onLogout }) {
   }
 
   const loadBrands = async () => {
-    const { data } = await supabase.from('brands').select('*').order('name', { ascending: true })
-    if (data) setBrands(data)
+  if (!currentAdminId) {
+    setBrands([])
+    return
   }
+
+  const { data } = await supabase
+    .from('brands')
+    .select('*')
+    .eq('admin_id', currentAdminId)
+    .order('name', { ascending: true })
+
+  if (data) setBrands(data)
+}
 
   const loadExercises = async () => {
-    const { data } = await supabase
-      .from('exercises')
-      .select('*, brands(id, name)')
-      .order('created_at', { ascending: false })
-
-    if (data) {
-      const collapsed = {}
-      data.forEach((exercise) => {
-        collapsed[exercise.id] = true
-      })
-      setExercises(data)
-      setCollapsedExercises(collapsed)
-    }
+  if (!currentAdminId) {
+    setExercises([])
+    return
   }
 
-  const loadWorkouts = async () => {
-    const { data: workoutData } = await supabase
-      .from('workouts')
+  const { data } = await supabase
+    .from('exercises')
+    .select('*, brands(id, name)')
+    .eq('admin_id', currentAdminId)
+    .order('created_at', { ascending: false })
+
+  if (data) {
+    const collapsed = {}
+    data.forEach((exercise) => {
+      collapsed[exercise.id] = true
+    })
+    setExercises(data)
+    setCollapsedExercises(collapsed)
+  }
+}
+
+ const loadWorkouts = async () => {
+  if (!currentAdminId) {
+    setWorkouts([])
+    setWorkoutItemsMap({})
+    return
+  }
+
+  const { data: workoutData } = await supabase
+    .from('workouts')
+    .select('*')
+    .eq('admin_id', currentAdminId)
+    .order('workout_date', { ascending: false })
+    .order('created_at', { ascending: false })
+
+  if (!workoutData) return
+
+  let itemMap = {}
+  const workoutIds = workoutData.map((workout) => workout.id)
+
+  if (workoutIds.length > 0) {
+    const { data: itemData } = await supabase
+      .from('workout_items')
       .select('*')
-      .order('workout_date', { ascending: false })
-      .order('created_at', { ascending: false })
+      .in('workout_id', workoutIds)
+      .order('sort_order', { ascending: true })
 
-    if (!workoutData) return
+    itemMap = (itemData || []).reduce((acc, item) => {
+      if (!acc[item.workout_id]) acc[item.workout_id] = []
+      acc[item.workout_id].push(item)
+      return acc
+    }, {})
+  }
 
-    let itemMap = {}
-    const workoutIds = workoutData.map((workout) => workout.id)
+  const collapsed = {}
+  workoutData.forEach((workout) => {
+    collapsed[workout.id] = true
+  })
 
-    if (workoutIds.length > 0) {
-      const { data: itemData } = await supabase
-        .from('workout_items')
-        .select('*')
-        .in('workout_id', workoutIds)
-        .order('sort_order', { ascending: true })
-
-      itemMap = (itemData || []).reduce((acc, item) => {
-        if (!acc[item.workout_id]) acc[item.workout_id] = []
-        acc[item.workout_id].push(item)
-        return acc
-      }, {})
-    }
+  setWorkouts(workoutData)
+  setWorkoutItemsMap(itemMap)
+  setCollapsedWorkouts(collapsed)
+}
 
     const collapsed = {}
     workoutData.forEach((workout) => {
@@ -635,21 +674,27 @@ export default function AdminDashboard({ profile, onLogout }) {
   }
 
   const loadDietLogs = async () => {
-    const { data } = await supabase
-      .from('diet_logs')
-      .select('*')
-      .order('log_date', { ascending: false })
-      .order('created_at', { ascending: false })
-
-    if (data) {
-      const collapsed = {}
-      data.forEach((diet) => {
-        collapsed[diet.id] = true
-      })
-      setDietLogs(data)
-      setCollapsedDiets(collapsed)
-    }
+  if (!currentAdminId) {
+    setDietLogs([])
+    return
   }
+
+  const { data } = await supabase
+    .from('diet_logs')
+    .select('*')
+    .eq('admin_id', currentAdminId)
+    .order('log_date', { ascending: false })
+    .order('created_at', { ascending: false })
+
+  if (data) {
+    const collapsed = {}
+    data.forEach((diet) => {
+      collapsed[diet.id] = true
+    })
+    setDietLogs(data)
+    setCollapsedDiets(collapsed)
+  }
+}
 
   const loadRoutine = async (memberId) => {
     const { data } = await supabase
@@ -674,93 +719,125 @@ export default function AdminDashboard({ profile, onLogout }) {
   }
 
   const loadCoaches = async () => {
-    const { data } = await supabase
-      .from('coaches')
-      .select('*')
-      .order('created_at', { ascending: true })
-
-    if (data) {
-      setCoaches(data)
-      if (!selectedCoachId && data[0]) setSelectedCoachId(data[0].id)
-    }
+  if (!currentAdminId) {
+    setCoaches([])
+    return
   }
+
+  const { data } = await supabase
+    .from('coaches')
+    .select('*')
+    .eq('admin_id', currentAdminId)
+    .order('created_at', { ascending: true })
+
+  if (data) {
+    setCoaches(data)
+    if (!selectedCoachId && data[0]) setSelectedCoachId(data[0].id)
+  }
+}
 
   const loadCoachSchedules = async () => {
-    const { data: scheduleData } = await supabase
-      .from('coach_schedules')
-      .select('*')
-      .order('schedule_date', { ascending: false })
-
-    if (!scheduleData) return
-
-    let slotMap = {}
-    const scheduleIds = scheduleData.map((schedule) => schedule.id)
-
-    if (scheduleIds.length > 0) {
-      const { data: slotData } = await supabase
-        .from('coach_schedule_slots')
-        .select('*')
-        .in('schedule_id', scheduleIds)
-        .order('slot_time', { ascending: true })
-
-      slotMap = (slotData || []).reduce((acc, slot) => {
-        if (!acc[slot.schedule_id]) acc[slot.schedule_id] = []
-        acc[slot.schedule_id].push(slot)
-        return acc
-      }, {})
-    }
-
-    const collapsed = {}
-    scheduleData.forEach((schedule) => {
-      collapsed[schedule.id] = true
-    })
-
-    setCoachSchedules(scheduleData)
-    setCoachScheduleSlotsMap(slotMap)
-    setCollapsedSchedules(collapsed)
+  if (!currentAdminId) {
+    setCoachSchedules([])
+    setCoachScheduleSlotsMap({})
+    return
   }
+
+  const { data: scheduleData } = await supabase
+    .from('coach_schedules')
+    .select('*')
+    .eq('admin_id', currentAdminId)
+    .order('schedule_date', { ascending: false })
+
+  if (!scheduleData) return
+
+  let slotMap = {}
+  const scheduleIds = scheduleData.map((schedule) => schedule.id)
+
+  if (scheduleIds.length > 0) {
+    const { data: slotData } = await supabase
+      .from('coach_schedule_slots')
+      .select('*')
+      .in('schedule_id', scheduleIds)
+      .order('slot_time', { ascending: true })
+
+    slotMap = (slotData || []).reduce((acc, slot) => {
+      if (!acc[slot.schedule_id]) acc[slot.schedule_id] = []
+      acc[slot.schedule_id].push(slot)
+      return acc
+    }, {})
+  }
+
+  const collapsed = {}
+  scheduleData.forEach((schedule) => {
+    collapsed[schedule.id] = true
+  })
+
+  setCoachSchedules(scheduleData)
+  setCoachScheduleSlotsMap(slotMap)
+  setCollapsedSchedules(collapsed)
+}
 
   const loadPrograms = async () => {
-    const { data } = await supabase
-      .from('programs')
-      .select('*')
-      .order('created_at', { ascending: false })
-    if (data) setPrograms(data)
+  if (!currentAdminId) {
+    setPrograms([])
+    return
   }
 
-  const loadSalesRecords = async () => {
-    const { data } = await supabase
-      .from('sales_records')
-      .select('*, members(id, name), programs(id, name)')
-      .order('sale_date', { ascending: false })
-      .order('created_at', { ascending: false })
+  const { data } = await supabase
+    .from('programs')
+    .select('*')
+    .eq('admin_id', currentAdminId)
+    .order('created_at', { ascending: false })
 
-    if (data) {
-      const collapsed = {}
-      data.forEach((sale) => {
-        collapsed[sale.id] = true
-      })
-      setSalesRecords(data)
-      setCollapsedSales(collapsed)
-    }
+  if (data) setPrograms(data)
+}
+
+ const loadSalesRecords = async () => {
+  if (!currentAdminId) {
+    setSalesRecords([])
+    return
   }
 
-  const loadSalesLogs = async () => {
-    const { data } = await supabase
-      .from('sales_logs')
-      .select('*')
-      .order('log_date', { ascending: false })
-      .order('created_at', { ascending: false })
+  const { data } = await supabase
+    .from('sales_records')
+    .select('*, members(id, name), programs(id, name)')
+    .eq('admin_id', currentAdminId)
+    .order('sale_date', { ascending: false })
+    .order('created_at', { ascending: false })
 
-    if (data) {
-      const collapsed = {}
-      data.forEach((log) => {
-        collapsed[log.id] = true
-      })
-      setSalesLogs(data)
-      setCollapsedSalesLogs(collapsed)
-    }
+  if (data) {
+    const collapsed = {}
+    data.forEach((sale) => {
+      collapsed[sale.id] = true
+    })
+    setSalesRecords(data)
+    setCollapsedSales(collapsed)
   }
+}
+
+ const loadSalesLogs = async () => {
+  if (!currentAdminId) {
+    setSalesLogs([])
+    return
+  }
+
+  const { data } = await supabase
+    .from('sales_logs')
+    .select('*')
+    .eq('admin_id', currentAdminId)
+    .order('log_date', { ascending: false })
+    .order('created_at', { ascending: false })
+
+  if (data) {
+    const collapsed = {}
+    data.forEach((log) => {
+      collapsed[log.id] = true
+    })
+    setSalesLogs(data)
+    setCollapsedSalesLogs(collapsed)
+  }
+}
 
   const loadSalesSummary = async (month) => {
     const { data } = await supabase.rpc('get_sales_summary', { target_month: month })
@@ -772,20 +849,26 @@ export default function AdminDashboard({ profile, onLogout }) {
   }
 
   const loadNotices = async () => {
-    const { data } = await supabase
-      .from('notices')
-      .select('*')
-      .order('created_at', { ascending: false })
-
-    if (data) {
-      const collapsed = {}
-      data.forEach((notice) => {
-        collapsed[notice.id] = true
-      })
-      setNotices(data)
-      setCollapsedNotices(collapsed)
-    }
+  if (!currentAdminId) {
+    setNotices([])
+    return
   }
+
+  const { data } = await supabase
+    .from('notices')
+    .select('*')
+    .eq('admin_id', currentAdminId)
+    .order('created_at', { ascending: false })
+
+  if (data) {
+    const collapsed = {}
+    data.forEach((notice) => {
+      collapsed[notice.id] = true
+    })
+    setNotices(data)
+    setCollapsedNotices(collapsed)
+  }
+}
 
   const loadInquiries = async () => {
     const { data } = await supabase
@@ -813,16 +896,18 @@ export default function AdminDashboard({ profile, onLogout }) {
     setMessage('')
 
     const payload = {
-      name: memberForm.name?.trim() || '',
-      goal: memberForm.goal?.trim() || '',
-      total_sessions: Number(memberForm.total_sessions) || 0,
-      used_sessions: Number(memberForm.used_sessions) || 0,
-      start_date: memberForm.start_date || null,
-      end_date: memberForm.end_date || null,
-      memo: memberForm.memo?.trim() || '',
-      access_code: (memberForm.access_code || randomCode()).trim().toUpperCase(),
-      current_program_id: memberForm.current_program_id || null,
-    }
+  name: memberForm.name?.trim() || '',
+  goal: memberForm.goal?.trim() || '',
+  total_sessions: Number(memberForm.total_sessions) || 0,
+  used_sessions: Number(memberForm.used_sessions) || 0,
+  start_date: memberForm.start_date || null,
+  end_date: memberForm.end_date || null,
+  memo: memberForm.memo?.trim() || '',
+  access_code: (memberForm.access_code || randomCode()).trim().toUpperCase(),
+  current_program_id: memberForm.current_program_id || null,
+  admin_id: currentAdminId || null,
+  gym_id: currentGymId || null,
+}
 
     if (!payload.name) {
       setMessage('회원 이름을 입력해주세요.')
@@ -897,7 +982,7 @@ export default function AdminDashboard({ profile, onLogout }) {
 
     const { error } = await supabase.from('member_admin_notes').insert({
       member_id: selectedMemberId,
-      admin_id: profile?.id || null,
+      admin_id: currentAdminId || null,
       note: adminNoteInput.trim(),
     })
 
@@ -1064,14 +1149,16 @@ export default function AdminDashboard({ profile, onLogout }) {
       return
     }
 
-    const payload = {
-      member_id: workoutForm.member_id,
-      workout_date: workoutForm.workout_date,
-      workout_type: workoutForm.workout_type,
-      good: workoutForm.good?.trim() || '',
-      improve: workoutForm.improve?.trim() || '',
-      created_by: profile?.id || null,
-    }
+   const payload = {
+  member_id: workoutForm.member_id,
+  workout_date: workoutForm.workout_date,
+  workout_type: workoutForm.workout_type,
+  good: workoutForm.good?.trim() || '',
+  improve: workoutForm.improve?.trim() || '',
+  created_by: profile?.id || null,
+  admin_id: currentAdminId || null,
+  gym_id: currentGymId || null,
+}
 
     let targetWorkoutId = workoutForm.id
 
@@ -1169,21 +1256,36 @@ export default function AdminDashboard({ profile, onLogout }) {
   }
 
   const handleBrandSubmit = async (e) => {
-    e.preventDefault()
-    if (!brandForm.name.trim()) return
+  e.preventDefault()
+  if (!brandForm.name.trim()) return
 
-    if (editingBrandId) {
-      await supabase.from('brands').update({ name: brandForm.name.trim() }).eq('id', editingBrandId)
-      setMessage('브랜드가 수정되었습니다.')
-    } else {
-      await supabase.from('brands').insert({ name: brandForm.name.trim() })
-      setMessage('브랜드가 추가되었습니다.')
-    }
+  if (editingBrandId) {
+    // ✅ 수정 (update)
+    await supabase
+      .from('brands')
+      .update({
+        name: brandForm.name.trim(),
+      })
+      .eq('id', editingBrandId)
 
-    setBrandForm(emptyBrandForm)
-    setEditingBrandId(null)
-    await loadBrands()
+    setMessage('브랜드가 수정되었습니다.')
+  } else {
+    // ✅ 신규 추가 (insert)
+    await supabase
+      .from('brands')
+      .insert({
+        name: brandForm.name.trim(),
+        admin_id: currentAdminId || null,
+        gym_id: currentGymId || null,
+      })
+
+    setMessage('브랜드가 추가되었습니다.')
   }
+
+  setBrandForm({ name: '' })
+  setEditingBrandId(null)
+  loadBrands()
+}
 
   const handleBrandDelete = async (brandId) => {
     if (!window.confirm('브랜드를 삭제할까요?')) return
@@ -1197,11 +1299,13 @@ export default function AdminDashboard({ profile, onLogout }) {
     e.preventDefault()
 
     const payload = {
-      name: exerciseForm.name?.trim() || '',
-      body_part: exerciseForm.body_part?.trim() || '',
-      category: exerciseForm.category?.trim() || '',
-      brand_id: exerciseForm.brand_id || null,
-    }
+  name: exerciseForm.name?.trim() || '',
+  body_part: exerciseForm.body_part?.trim() || '',
+  category: exerciseForm.category?.trim() || '',
+  brand_id: exerciseForm.brand_id || null,
+  admin_id: currentAdminId || null,
+  gym_id: currentGymId || null,
+}
 
     if (!payload.name) {
       setMessage('운동명을 입력해주세요.')
@@ -1252,7 +1356,11 @@ export default function AdminDashboard({ profile, onLogout }) {
         if (!brandMap.has(brandName)) {
           const { data: newBrand, error } = await supabase
             .from('brands')
-            .insert({ name: brandName })
+            .insert({
+  name: brandName,
+  admin_id: currentAdminId || null,
+  gym_id: currentGymId || null,
+})
             .select()
             .single()
 
@@ -1263,12 +1371,14 @@ export default function AdminDashboard({ profile, onLogout }) {
         brandId = brandMap.get(brandName) || null
       }
 
-      rowsToInsert.push({
-        name,
-        body_part,
-        category,
-        brand_id: brandId,
-      })
+     rowsToInsert.push({
+  name,
+  body_part,
+  category,
+  brand_id: brandId,
+  admin_id: currentAdminId || null,
+  gym_id: currentGymId || null,
+})
     }
 
     if (rowsToInsert.length === 0) {
@@ -1366,14 +1476,16 @@ export default function AdminDashboard({ profile, onLogout }) {
     }
 
     const payload = {
-      coach_id: selectedCoachId,
-      schedule_date: scheduleForm.schedule_date,
-      is_working: scheduleForm.is_working,
-      is_weekend_work: scheduleForm.is_weekend_work,
-      work_start: scheduleForm.is_working ? scheduleForm.work_start || null : null,
-      work_end: scheduleForm.is_working ? scheduleForm.work_end || null : null,
-      memo: scheduleForm.memo?.trim() || '',
-    }
+  coach_id: selectedCoachId,
+  schedule_date: scheduleForm.schedule_date,
+  is_working: scheduleForm.is_working,
+  is_weekend_work: scheduleForm.is_weekend_work,
+  work_start: scheduleForm.is_working ? scheduleForm.work_start || null : null,
+  work_end: scheduleForm.is_working ? scheduleForm.work_end || null : null,
+  memo: scheduleForm.memo?.trim() || '',
+  admin_id: currentAdminId || null,
+  gym_id: currentGymId || null,
+}
 
     const { data: existing } = await supabase
       .from('coach_schedules')
@@ -1439,13 +1551,15 @@ export default function AdminDashboard({ profile, onLogout }) {
     e.preventDefault()
 
     const payload = {
-      name: programForm.name?.trim() || '',
-      price: Number(programForm.price) || 0,
-      session_count: Number(programForm.session_count) || 0,
-      description: programForm.description?.trim() || '',
-      is_vip: !!programForm.is_vip,
-      is_active: !!programForm.is_active,
-    }
+  name: programForm.name?.trim() || '',
+  price: Number(programForm.price) || 0,
+  session_count: Number(programForm.session_count) || 0,
+  description: programForm.description?.trim() || '',
+  is_vip: !!programForm.is_vip,
+  is_active: !!programForm.is_active,
+  admin_id: currentAdminId || null,
+  gym_id: currentGymId || null,
+}
 
     if (!payload.name) {
       setMessage('프로그램명을 입력해주세요.')
@@ -1493,19 +1607,21 @@ export default function AdminDashboard({ profile, onLogout }) {
   const handleSaleSubmit = async (e) => {
     e.preventDefault()
 
-    const payload = {
-      member_id: saleForm.member_id || null,
-      program_id: saleForm.program_id || null,
-      sale_date: saleForm.sale_date,
-      amount: Number(saleForm.amount) || 0,
-      payment_method: saleForm.payment_method,
-      installment_months: Number(saleForm.installment_months) || 0,
-      cash_receipt_issued: !!saleForm.cash_receipt_issued,
-      purchased_session_count: Number(saleForm.purchased_session_count) || 0,
-      service_session_count: Number(saleForm.service_session_count) || 0,
-      is_vip: !!saleForm.is_vip,
-      memo: saleForm.memo?.trim() || '',
-    }
+   const payload = {
+  member_id: saleForm.member_id || null,
+  program_id: saleForm.program_id || null,
+  sale_date: saleForm.sale_date,
+  amount: Number(saleForm.amount) || 0,
+  payment_method: saleForm.payment_method,
+  installment_months: Number(saleForm.installment_months) || 0,
+  cash_receipt_issued: !!saleForm.cash_receipt_issued,
+  purchased_session_count: Number(saleForm.purchased_session_count) || 0,
+  service_session_count: Number(saleForm.service_session_count) || 0,
+  is_vip: !!saleForm.is_vip,
+  memo: saleForm.memo?.trim() || '',
+  admin_id: currentAdminId || null,
+  gym_id: currentGymId || null,
+}
 
     if (editingSaleId) {
       await supabase.from('sales_records').update(payload).eq('id', editingSaleId)
@@ -1556,7 +1672,7 @@ export default function AdminDashboard({ profile, onLogout }) {
 
     const payload = {
       log_date: salesLogForm.log_date,
-      admin_id: profile?.id || null,
+      admin_id: currentAdminId || null,
       ot_count: Number(salesLogForm.ot_count) || 0,
       greeting_count: Number(salesLogForm.greeting_count) || 0,
       greeted_to: salesLogForm.greeted_to?.trim() || '',
@@ -1635,16 +1751,18 @@ export default function AdminDashboard({ profile, onLogout }) {
     e.preventDefault()
 
     const payload = {
-      title: noticeForm.title?.trim() || '',
-      content: noticeForm.content?.trim() || '',
-      category: noticeForm.category,
-      image_url: noticeForm.image_url?.trim() || '',
-      video_url: noticeForm.video_url?.trim() || '',
-      is_published: !!noticeForm.is_published,
-      starts_at: noticeForm.starts_at || null,
-      ends_at: noticeForm.ends_at || null,
-      created_by: profile?.id || null,
-    }
+  title: noticeForm.title?.trim() || '',
+  content: noticeForm.content?.trim() || '',
+  category: noticeForm.category,
+  image_url: noticeForm.image_url?.trim() || '',
+  video_url: noticeForm.video_url?.trim() || '',
+  is_published: !!noticeForm.is_published,
+  starts_at: noticeForm.starts_at || null,
+  ends_at: noticeForm.ends_at || null,
+  created_by: profile?.id || null,
+  admin_id: currentAdminId || null,
+  gym_id: currentGymId || null,
+}
 
     if (!payload.title) {
       setMessage('공지 제목을 입력해주세요.')
