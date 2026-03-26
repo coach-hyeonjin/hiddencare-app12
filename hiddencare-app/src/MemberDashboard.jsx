@@ -716,11 +716,13 @@ export default function MemberDashboard({ member, accessCode, onLogout }) {
     }
 
     await supabase.from('workout_items').insert(
-      cleanedItems.map((item) => ({
-        ...item,
-        workout_id: workoutId,
-      })),
-    )
+  cleanedItems.map((item) => ({
+    ...item,
+    workout_id: workoutId,
+    admin_id: currentAdminId || null,
+    gym_id: currentGymId || null,
+  })),
+)
 
     setMessage(personalForm.id ? '개인운동이 수정되었습니다.' : '개인운동이 저장되었습니다.')
     resetPersonalForm()
