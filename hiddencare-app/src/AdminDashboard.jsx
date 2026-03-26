@@ -629,17 +629,25 @@ export default function AdminDashboard({ profile, currentAdminId, currentGymId, 
     setAdminNotes(data || [])
   }
 
-  const loadBrands = async () => {
+const loadBrands = async () => {
   if (!currentAdminId) {
     setBrands([])
     return
   }
 
-  const { data } = await supabase
+  const { data, error } = await supabase
     .from('brands')
     .select('*')
     .eq('admin_id', currentAdminId)
     .order('name', { ascending: true })
+
+  console.log('loadBrands data:', data)
+  console.log('loadBrands error:', error)
+
+  if (error) {
+    setMessage(`브랜드 목록 불러오기 실패: ${error.message}`)
+    return
+  }
 
   if (data) setBrands(data)
 }
@@ -1344,34 +1352,53 @@ const loadSalesSummary = async (month) => {
 
   const handleBrandSubmit = async (e) => {
   e.preventDefault()
-  if (!brandForm.name.trim()) return
+  setMessage('')
+
+  const trimmedName = brandForm.name.trim()
+  if (!trimmedName) {
+    setMessage('브랜드명을 입력해주세요.')
+    return
+  }
 
   if (editingBrandId) {
-    // ✅ 수정 (update)
-    await supabase
+    const { error } = await supabase
       .from('brands')
       .update({
-        name: brandForm.name.trim(),
+        name: trimmedName,
       })
       .eq('id', editingBrandId)
 
+    if (error) {
+      console.error('브랜드 수정 error:', error)
+      setMessage(`브랜드 수정 실패: ${error.message}`)
+      return
+    }
+
     setMessage('브랜드가 수정되었습니다.')
   } else {
-    // ✅ 신규 추가 (insert)
-    await supabase
+    const { data, error } = await supabase
       .from('brands')
       .insert({
-        name: brandForm.name.trim(),
+        name: trimmedName,
         admin_id: currentAdminId || null,
         gym_id: currentGymId || null,
       })
+      .select()
+
+    console.log('브랜드 추가 data:', data)
+    console.log('브랜드 추가 error:', error)
+
+    if (error) {
+      setMessage(`브랜드 추가 실패: ${error.message}`)
+      return
+    }
 
     setMessage('브랜드가 추가되었습니다.')
   }
 
   setBrandForm({ name: '' })
   setEditingBrandId(null)
-  loadBrands()
+  await loadBrands()
 }
 
   const handleBrandDelete = async (brandId) => {
