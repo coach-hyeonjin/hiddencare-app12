@@ -663,16 +663,6 @@ export default function AdminDashboard({ profile, currentAdminId, currentGymId, 
   setCollapsedWorkouts(collapsed)
 }
 
-    const collapsed = {}
-    workoutData.forEach((workout) => {
-      collapsed[workout.id] = true
-    })
-
-    setWorkouts(workoutData)
-    setWorkoutItemsMap(itemMap)
-    setCollapsedWorkouts(collapsed)
-  }
-
   const loadDietLogs = async () => {
   if (!currentAdminId) {
     setDietLogs([])
