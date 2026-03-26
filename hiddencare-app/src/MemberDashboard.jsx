@@ -183,6 +183,14 @@ export default function MemberDashboard({ member, accessCode, onLogout }) {
 
   const currentAdminId = memberInfo?.admin_id || member?.admin_id || null
   const currentGymId = memberInfo?.gym_id || member?.gym_id || null
+  const currentAdminId = memberInfo?.admin_id || member?.admin_id || null
+const currentGymId = memberInfo?.gym_id || member?.gym_id || null
+
+console.log('=== MemberDashboard 기본값 확인 ===')
+console.log('member:', member)
+console.log('memberInfo:', memberInfo)
+console.log('currentAdminId:', currentAdminId)
+console.log('currentGymId:', currentGymId)
 
   const stats = useMemo(() => {
     const ptCount = workouts.filter((workout) => workout.workout_type === 'pt').length
@@ -292,58 +300,76 @@ export default function MemberDashboard({ member, accessCode, onLogout }) {
   }, [memberInfo?.name])
 
   const loadAll = async () => {
-    setLoading(true)
-    setMessage('')
+  console.log('=== loadAll 시작 ===')
+  console.log('loadAll 시작 시 currentAdminId:', currentAdminId)
+  console.log('loadAll 시작 시 member:', member)
+  console.log('loadAll 시작 시 memberInfo:', memberInfo)
 
-    await Promise.all([
-      loadMemberInfo(),
-      loadExercises(),
-      loadWorkouts(),
-      loadDietLogs(),
-      loadHealthLogs(),
-      loadRoutine(),
-      loadManual(),
-      loadPrograms(),
-      loadCoaches(),
-      loadCoachSchedules(),
-      loadNotices(),
-      loadInquiries(),
-    ])
+  setLoading(true)
+  setMessage('')
 
-    setLoading(false)
-  }
+  await Promise.all([
+    loadMemberInfo(),
+    loadExercises(),
+    loadWorkouts(),
+    loadDietLogs(),
+    loadHealthLogs(),
+    loadRoutine(),
+    loadManual(),
+    loadPrograms(),
+    loadCoaches(),
+    loadCoachSchedules(),
+    loadNotices(),
+    loadInquiries(),
+  ])
+
+  console.log('=== loadAll 종료 ===')
+  setLoading(false)
+}
 
   const loadMemberInfo = async () => {
-    const { data } = await supabase
-      .from('members')
-      .select('*, programs(id, name, price, session_count, description, is_vip, is_active)')
-      .eq('id', member.id)
-      .maybeSingle()
+  console.log('=== loadMemberInfo 시작 ===')
+  console.log('member.id:', member?.id)
 
-    if (data) {
-      setMemberInfo(data)
-      setCurrentProgram(data.programs || null)
-      localStorage.setItem(
-        'hiddencare_member_session_v1',
-        JSON.stringify({
-          member: data,
-          accessCode,
-        }),
-      )
-    }
+  const { data, error } = await supabase
+    .from('members')
+    .select('*, programs(id, name, price, session_count, description, is_vip, is_active)')
+    .eq('id', member.id)
+    .maybeSingle()
+
+  console.log('loadMemberInfo data:', data)
+  console.log('loadMemberInfo error:', error)
+
+  if (data) {
+    setMemberInfo(data)
+    setCurrentProgram(data.programs || null)
+    localStorage.setItem(
+      'hiddencare_member_session_v1',
+      JSON.stringify({
+        member: data,
+        accessCode,
+      }),
+    )
   }
+}
+const loadExercises = async () => {
+  console.log('=== loadExercises 시작 ===')
+  console.log('loadExercises currentAdminId:', currentAdminId)
 
- const loadExercises = async () => {
   if (!currentAdminId) {
+    console.log('currentAdminId가 없어서 exercises를 빈 배열로 처리함')
     setExercises([])
     return
   }
 
-  const { data } = await supabase
+  const { data, error } = await supabase
     .from('exercises')
     .select('*, brands(id, name)')
     .eq('admin_id', currentAdminId)
     .order('created_at', { ascending: false })
+
+  console.log('loadExercises data:', data)
+  console.log('loadExercises error:', error)
 
   if (data) {
     setExercises(data)
