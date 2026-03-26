@@ -181,6 +181,9 @@ export default function MemberDashboard({ member, accessCode, onLogout }) {
   const [collapsedInquiries, setCollapsedInquiries] = useState({})
   const [inquiryForm, setInquiryForm] = useState(emptyInquiryForm)
 
+  const currentAdminId = memberInfo?.admin_id || member?.admin_id || null
+  const currentGymId = memberInfo?.gym_id || member?.gym_id || null
+
   const stats = useMemo(() => {
     const ptCount = workouts.filter((workout) => workout.workout_type === 'pt').length
     const personalCount = workouts.filter((workout) => workout.workout_type === 'personal').length
@@ -279,7 +282,7 @@ export default function MemberDashboard({ member, accessCode, onLogout }) {
 
   useEffect(() => {
     loadAll()
-  }, [memberInfo?.id])
+  }, [member?.id])
 
   useEffect(() => {
     setInquiryForm((prev) => ({
@@ -331,9 +334,15 @@ export default function MemberDashboard({ member, accessCode, onLogout }) {
   }
 
   const loadExercises = async () => {
+    if (!currentAdminId) {
+      setExercises([])
+      return
+    }
+
     const { data } = await supabase
       .from('exercises')
       .select('*, brands(id, name)')
+      .eq('admin_id', currentAdminId)
       .order('created_at', { ascending: false })
 
     if (data) setExercises(data)
@@ -433,9 +442,15 @@ export default function MemberDashboard({ member, accessCode, onLogout }) {
   }
 
   const loadPrograms = async () => {
+    if (!currentAdminId) {
+      setPrograms([])
+      return
+    }
+
     const { data } = await supabase
       .from('programs')
       .select('*')
+      .eq('admin_id', currentAdminId)
       .eq('is_active', true)
       .order('created_at', { ascending: false })
 
@@ -443,9 +458,15 @@ export default function MemberDashboard({ member, accessCode, onLogout }) {
   }
 
   const loadCoaches = async () => {
+    if (!currentAdminId) {
+      setCoaches([])
+      return
+    }
+
     const { data } = await supabase
       .from('coaches')
       .select('*')
+      .eq('admin_id', currentAdminId)
       .eq('is_active', true)
       .order('created_at', { ascending: true })
 
@@ -453,9 +474,16 @@ export default function MemberDashboard({ member, accessCode, onLogout }) {
   }
 
   const loadCoachSchedules = async () => {
+    if (!currentAdminId) {
+      setCoachSchedules([])
+      setCoachScheduleSlotsMap({})
+      return
+    }
+
     const { data: scheduleData } = await supabase
       .from('coach_schedules')
       .select('*')
+      .eq('admin_id', currentAdminId)
       .order('schedule_date', { ascending: false })
 
     if (!scheduleData) return
@@ -488,9 +516,15 @@ export default function MemberDashboard({ member, accessCode, onLogout }) {
   }
 
   const loadNotices = async () => {
+    if (!currentAdminId) {
+      setNotices([])
+      return
+    }
+
     const { data } = await supabase
       .from('notices')
       .select('*')
+      .eq('admin_id', currentAdminId)
       .order('created_at', { ascending: false })
 
     if (data) {
@@ -667,6 +701,8 @@ export default function MemberDashboard({ member, accessCode, onLogout }) {
       good: personalForm.good?.trim() || '',
       improve: personalForm.improve?.trim() || '',
       created_by: null,
+      admin_id: currentAdminId || null,
+      gym_id: currentGymId || null,
     }
 
     let workoutId = personalForm.id
@@ -742,6 +778,8 @@ export default function MemberDashboard({ member, accessCode, onLogout }) {
       meal_category: dietForm.meal_category?.trim() || '일반식',
       hunger_level: Number(dietForm.hunger_level) || 0,
       member_note: dietForm.member_note?.trim() || '',
+      admin_id: currentAdminId || null,
+      gym_id: currentGymId || null,
     }
 
     if (!payload.content) {
@@ -800,6 +838,8 @@ export default function MemberDashboard({ member, accessCode, onLogout }) {
       medical_history: healthForm.medical_history?.trim() || '',
       member_note: healthForm.member_note?.trim() || '',
       inbody_image_url: healthForm.inbody_image_url?.trim() || '',
+      admin_id: currentAdminId || null,
+      gym_id: currentGymId || null,
     }
 
     if (healthForm.id) {
@@ -845,6 +885,8 @@ export default function MemberDashboard({ member, accessCode, onLogout }) {
       phone: inquiryForm.phone?.trim() || '',
       content: inquiryForm.content?.trim() || '',
       is_private: !!inquiryForm.is_private,
+      admin_id: currentAdminId || null,
+      gym_id: currentGymId || null,
     }
 
     if (!payload.content) {
