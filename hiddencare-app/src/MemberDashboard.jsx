@@ -333,21 +333,22 @@ export default function MemberDashboard({ member, accessCode, onLogout }) {
     }
   }
 
-  const loadExercises = async () => {
-    if (!currentAdminId) {
-      setExercises([])
-      return
-    }
-
-    const { data } = await supabase
-      .from('exercises')
-      .select('*, brands(id, name)')
-      .eq('admin_id', currentAdminId)
-      .order('created_at', { ascending: false })
-
-    if (data) setExercises(data)
+ const loadExercises = async () => {
+  if (!currentAdminId) {
+    setExercises([])
+    return
   }
 
+  const { data } = await supabase
+    .from('exercises')
+    .select('*, brands(id, name)')
+    .eq('admin_id', currentAdminId)
+    .order('created_at', { ascending: false })
+
+  if (data) {
+    setExercises(data)
+  }
+}
   const loadWorkouts = async () => {
     const { data: workoutData } = await supabase
       .from('workouts')
