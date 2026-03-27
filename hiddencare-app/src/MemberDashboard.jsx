@@ -12,6 +12,7 @@ const TABS = [
   '프로그램',
   '코치스케줄',
   '공지사항',
+  '제휴업체',
   '문의사항',
   '사용방법',
 ]
@@ -75,7 +76,10 @@ const emptyInquiryForm = {
   content: '',
   is_private: false,
 }
-
+const emptyPartnerUsageForm = {
+  partner_id: '',
+  note: '',
+}
 function getTotalSetCount(items = []) {
   return items.reduce((sum, item) => {
     if (item.is_cardio) return sum
@@ -217,6 +221,12 @@ export default function MemberDashboard({ member, accessCode, onLogout }) {
   const [inquiries, setInquiries] = useState([])
   const [collapsedInquiries, setCollapsedInquiries] = useState({})
   const [inquiryForm, setInquiryForm] = useState(emptyInquiryForm)
+    const [partners, setPartners] = useState([])
+  const [partnerUsages, setPartnerUsages] = useState([])
+  const [partnerSearch, setPartnerSearch] = useState('')
+  const [partnerCategoryFilter, setPartnerCategoryFilter] = useState('all')
+  const [selectedPartnerId, setSelectedPartnerId] = useState('')
+  const [partnerUsageForm, setPartnerUsageForm] = useState(emptyPartnerUsageForm)
 const [memberAlertSettings, setMemberAlertSettings] = useState({
   inquiryAnswer: true,
   notice: true,
@@ -335,7 +345,73 @@ const calculatedRecommendedKcal = useMemo(() => {
     })
     .sort((a, b) => (a.name || '').localeCompare(b.name || '', 'ko-KR'))
 }, [programs, programSearch])
+  const filteredPartners = useMemo(() => {
+    return partners
+      .filter((partner) => {
+        const matchesKeyword =
+          !partnerSearch.trim() ||
+          textIncludes(partner.name, partnerSearch) ||
+          textIncludes(partner.category, partnerSearch) ||
+          textIncludes(partner.description, partnerSearch) ||
+          textIncludes(partner.benefit, partnerSearch) ||
+          textIncludes(partner.address, partnerSearch)
 
+        const matchesCategory =
+          partnerCategoryFilter === 'all' || partner.category === partnerCategoryFilter
+
+        return partner.is_active && matchesKeyword && matchesCategory
+      })
+      .sort((a, b) => (a.name || '').localeCompare(b.name || '', 'ko-KR'))
+  }, [partners, partnerSearch, partnerCategoryFilter])
+
+  const selectedPartner = useMemo(
+    () => partners.find((partner) => partner.id === selectedPartnerId) || null,
+    [partners, selectedPartnerId],
+  )
+
+  const selectedPartnerUsageSummary = useMemo(() => {
+    if (!selectedPartner) {
+      return {
+        approvedCountThisMonth: 0,
+        extraLimit: 0,
+        totalLimit: 0,
+        remainingCount: 0,
+        recentUsedAt: '',
+      }
+    }
+
+    const nowMonth = new Date().toISOString().slice(0, 7)
+
+    const approvedRows = partnerUsages.filter(
+      (usage) =>
+        usage.partner_id === selectedPartner.id &&
+        usage.status === 'approved' &&
+        String(usage.requested_at || usage.approved_at || '').slice(0, 7) === nowMonth,
+    )
+
+    const recentApproved = partnerUsages
+      .filter((usage) => usage.partner_id === selectedPartner.id && usage.status === 'approved')
+      .sort((a, b) =>
+        String(b.approved_at || b.requested_at || '').localeCompare(
+          String(a.approved_at || a.requested_at || ''),
+        ),
+      )[0]
+
+    const extraLimit = Number(selectedPartner.member_extra_limit || 0)
+    const baseLimit = Number(selectedPartner.monthly_limit || 0)
+    const totalLimit = baseLimit + extraLimit
+    const approvedCountThisMonth = approvedRows.length
+    const remainingCount =
+      totalLimit > 0 ? Math.max(totalLimit - approvedCountThisMonth, 0) : 0
+
+    return {
+      approvedCountThisMonth,
+      extraLimit,
+      totalLimit,
+      remainingCount,
+      recentUsedAt: recentApproved?.approved_at || recentApproved?.requested_at || '',
+    }
+  }, [selectedPartner, partnerUsages])
   const publishedNotices = useMemo(() => {
     return notices
       .filter((notice) => notice.is_published)
@@ -467,6 +543,7 @@ useEffect(() => {
     loadNotices()
     loadInquiries()
     loadWorkouts()
+    loadPartnerUsages()
   }, 10000)
 
   return () => clearInterval(interval)
@@ -504,6 +581,8 @@ useEffect(() => {
         loadRoutine(),
         loadManual(),
         loadPrograms(adminId),
+        loadPartners(adminId),
+        loadPartnerUsages(),
         loadCoaches(adminId),
         loadCoachSchedules(adminId),
         loadNotices(adminId),
@@ -669,7 +748,51 @@ useEffect(() => {
 
     if (data) setPrograms(data)
   }
+  const loadPartners = async (adminIdParam = null) => {
+    const adminId = adminIdParam || currentAdminId || member?.admin_id || null
 
+    if (!adminId) {
+      setPartners([])
+      setSelectedPartnerId('')
+      return
+    }
+
+    const { data, error } = await supabase
+      .from('partners')
+      .select('*')
+      .eq('admin_id', adminId)
+      .eq('is_active', true)
+      .order('created_at', { ascending: false })
+
+    if (error) {
+      console.error('제휴업체 불러오기 실패:', error)
+      setMessage(`제휴업체 불러오기 실패: ${error.message}`)
+      return
+    }
+
+    const rows = data || []
+    setPartners(rows)
+
+    if (!selectedPartnerId && rows[0]) {
+      setSelectedPartnerId(rows[0].id)
+    }
+  }
+
+  const loadPartnerUsages = async () => {
+    const { data, error } = await supabase
+      .from('partner_usage')
+      .select('*')
+      .eq('member_id', member.id)
+      .order('requested_at', { ascending: false })
+
+    if (error) {
+      console.error('제휴 사용기록 불러오기 실패:', error)
+      setMessage(`제휴 사용기록 불러오기 실패: ${error.message}`)
+      return
+    }
+
+    setPartnerUsages(data || [])
+  }
   const loadCoaches = async (adminIdParam = null) => {
     const adminId = adminIdParam || currentAdminId || member?.admin_id || null
 
@@ -1182,7 +1305,54 @@ const clearMemberAlerts = () => {
     await loadInquiries()
     setMessage('문의사항이 삭제되었습니다.')
   }
+  const handlePartnerUsageSubmit = async () => {
+    if (!selectedPartner) {
+      setMessage('제휴업체를 선택해주세요.')
+      return
+    }
 
+    const pendingExists = partnerUsages.some(
+      (usage) => usage.partner_id === selectedPartner.id && usage.status === 'pending',
+    )
+
+    if (pendingExists) {
+      setMessage('이미 사용 요청이 접수된 제휴업체입니다. 관리자 승인을 기다려주세요.')
+      return
+    }
+
+    const totalLimit = Number(selectedPartnerUsageSummary.totalLimit || 0)
+    const approvedCount = Number(selectedPartnerUsageSummary.approvedCountThisMonth || 0)
+
+    if (totalLimit > 0 && approvedCount >= totalLimit) {
+      setMessage('이번 달 사용 가능한 횟수를 모두 사용했습니다.')
+      return
+    }
+
+    const payload = {
+      member_id: member.id,
+      partner_id: selectedPartner.id,
+      status: selectedPartner.approval_required ? 'pending' : 'approved',
+      requested_at: new Date().toISOString(),
+      approved_at: selectedPartner.approval_required ? null : new Date().toISOString(),
+      note: partnerUsageForm.note?.trim() || '',
+    }
+
+    const { error } = await supabase.from('partner_usage').insert(payload)
+
+    if (error) {
+      setMessage(`제휴 사용 요청 실패: ${error.message}`)
+      return
+    }
+
+    setMessage(
+      selectedPartner.approval_required
+        ? '제휴 사용 요청이 등록되었습니다. 관리자 승인을 기다려주세요.'
+        : '제휴 사용이 바로 등록되었습니다.',
+    )
+
+    setPartnerUsageForm(emptyPartnerUsageForm)
+    await loadPartnerUsages()
+  }
   if (loading) {
     return <div className="loading-card">데이터 불러오는 중...</div>
   }
@@ -2280,7 +2450,163 @@ const clearMemberAlerts = () => {
           </div>
         </div>
       )}
+      {activeTab === '제휴업체' && (
+        <div className="stack-gap">
+          <section className="card">
+            <h2>제휴업체</h2>
 
+            <div className="stack-gap">
+              <input
+                placeholder="업체명 / 카테고리 / 혜택 / 주소 검색"
+                value={partnerSearch}
+                onChange={(e) => setPartnerSearch(e.target.value)}
+              />
+
+              <select
+                value={partnerCategoryFilter}
+                onChange={(e) => setPartnerCategoryFilter(e.target.value)}
+              >
+                <option value="all">전체 카테고리</option>
+                <option value="카페">카페</option>
+                <option value="병원">병원</option>
+                <option value="마사지">마사지</option>
+                <option value="식당">식당</option>
+                <option value="기타">기타</option>
+              </select>
+            </div>
+
+            <div className="list-stack">
+              {filteredPartners.length === 0 ? (
+                <div className="workout-list-empty">이용 가능한 제휴업체가 없습니다.</div>
+              ) : null}
+
+              {filteredPartners.map((partner) => (
+                <div key={partner.id} className="list-card">
+                  <div className="list-card-top">
+                    <div>
+                      <strong>{partner.name || '-'}</strong>
+                      <div className="compact-text">
+                        {partner.category || '-'} / {partner.phone || '-'}
+                      </div>
+                    </div>
+
+                    <button
+                      type="button"
+                      className="secondary-btn"
+                      onClick={() => setSelectedPartnerId(partner.id)}
+                    >
+                      자세히보기
+                    </button>
+                  </div>
+
+                  <div className="compact-text">
+                    {(partner.benefit || '').slice(0, 60)}
+                    {(partner.benefit || '').length > 60 ? '...' : ''}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </section>
+
+          {selectedPartner ? (
+            <section className="card">
+              <h2>{selectedPartner.name || '제휴업체 상세'}</h2>
+
+              <div className="detail-box stack-gap">
+                <p><strong>카테고리:</strong> {selectedPartner.category || '-'}</p>
+                <p><strong>한줄 소개:</strong> {selectedPartner.description || '-'}</p>
+                <p><strong>혜택:</strong> {selectedPartner.benefit || '-'}</p>
+                <p><strong>사용 조건:</strong> {selectedPartner.usage_condition || '-'}</p>
+                <p><strong>사용 방법:</strong> {selectedPartner.usage_guide || '-'}</p>
+                <p><strong>주의사항:</strong> {selectedPartner.caution || '-'}</p>
+                <p><strong>주소:</strong> {selectedPartner.address || '-'}</p>
+                <p><strong>연락처:</strong> {selectedPartner.phone || '-'}</p>
+                <p><strong>운영시간:</strong> {selectedPartner.business_hours || '-'}</p>
+                <p><strong>내 인증코드:</strong> {accessCode || '-'}</p>
+                <p><strong>이번 달 사용:</strong> {selectedPartnerUsageSummary.approvedCountThisMonth}회</p>
+                <p><strong>기본 가능 횟수:</strong> {selectedPartner.monthly_limit ?? 0}회</p>
+                <p><strong>추가 혜택 횟수:</strong> {selectedPartnerUsageSummary.extraLimit}회</p>
+                <p><strong>이번 달 총 가능 횟수:</strong> {selectedPartnerUsageSummary.totalLimit}회</p>
+                <p><strong>남은 횟수:</strong> {selectedPartnerUsageSummary.remainingCount}회</p>
+                <p>
+                  <strong>최근 사용일:</strong>{' '}
+                  {selectedPartnerUsageSummary.recentUsedAt
+                    ? String(selectedPartnerUsageSummary.recentUsedAt).slice(0, 10)
+                    : '-'}
+                </p>
+                <p><strong>승인 방식:</strong> {selectedPartner.approval_required ? '관리자 승인 필요' : '즉시 사용 처리'}</p>
+              </div>
+
+              <div className="sub-card stack-gap">
+                <h3>제휴 혜택 사용 요청</h3>
+
+                <label className="field">
+                  <span>메모 (선택)</span>
+                  <textarea
+                    rows="3"
+                    value={partnerUsageForm.note}
+                    onChange={(e) =>
+                      setPartnerUsageForm({ ...partnerUsageForm, note: e.target.value })
+                    }
+                    placeholder="예: 3월 혜택 사용 요청"
+                  />
+                </label>
+
+                <div className="inline-actions wrap">
+                  <button
+                    type="button"
+                    className="primary-btn"
+                    onClick={handlePartnerUsageSubmit}
+                  >
+                    혜택 사용 요청
+                  </button>
+                </div>
+              </div>
+
+              <div className="sub-card stack-gap">
+                <h3>내 제휴 사용 기록</h3>
+
+                <div className="list-stack">
+                  {partnerUsages.filter((usage) => usage.partner_id === selectedPartner.id).length === 0 ? (
+                    <div className="detail-box">
+                      <p>아직 이 업체 사용 기록이 없습니다.</p>
+                    </div>
+                  ) : null}
+
+                  {partnerUsages
+                    .filter((usage) => usage.partner_id === selectedPartner.id)
+                    .map((usage) => (
+                      <div key={usage.id} className="list-card">
+                        <div className="list-card-top">
+                          <strong>{String(usage.requested_at || '').slice(0, 10) || '-'}</strong>
+                          <span className="pill">
+                            {usage.status === 'approved'
+                              ? '승인완료'
+                              : usage.status === 'rejected'
+                              ? '반려'
+                              : '승인대기'}
+                          </span>
+                        </div>
+
+                        <div className="compact-text">
+                          요청일시: {usage.requested_at || '-'}
+                        </div>
+
+                        <div className="compact-text">
+                          승인일시: {usage.approved_at || '-'}
+                        </div>
+
+                        <div className="compact-text">
+                          메모: {usage.note || '-'}
+                        </div>
+                      </div>
+                    ))}
+                </div>
+              </div>
+            </section>
+          ) : null}
+        </div>
+      )}
       {activeTab === '문의사항' && (
         <div className="two-col">
           <section className="card">
