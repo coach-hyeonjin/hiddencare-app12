@@ -339,6 +339,7 @@ const [salesLogConversionFilter, setSalesLogConversionFilter] = useState('all')
   const [noticeCategoryFilter, setNoticeCategoryFilter] = useState('all')
  const [partners, setPartners] = useState([])
   const [partnerForm, setPartnerForm] = useState(emptyPartnerForm)
+  const [partnerCategoryCustom, setPartnerCategoryCustom] = useState('')
   const [editingPartnerId, setEditingPartnerId] = useState(null)
   const [partnerSearch, setPartnerSearch] = useState('')
   const [partnerCategoryFilter, setPartnerCategoryFilter] = useState('all')
@@ -2118,7 +2119,9 @@ const handlePartnerEdit = (partner) => {
   setPartnerForm({
     id: partner.id,
     name: partner.name || '',
-    category: partner.category || '카페',
+    category: ['카페', '병원', '마사지', '식당', '기타'].includes(partner.category)
+  ? partner.category
+  : '기타',
     description: partner.description || '',
     benefit: partner.benefit || '',
     usage_condition: partner.usage_condition || '',
@@ -2134,6 +2137,11 @@ const handlePartnerEdit = (partner) => {
     approval_required: !!partner.approval_required,
     is_active: !!partner.is_active,
   })
+  setPartnerCategoryCustom(
+  ['카페', '병원', '마사지', '식당', '기타'].includes(partner.category)
+    ? ''
+    : partner.category || ''
+)
   setCollapsedPartnerDetail(false)
   setActiveTab('제휴업체')
 }
@@ -4745,18 +4753,28 @@ const toggleSalesArrayValue = (field, value) => {
                 </label>
 
                 <label className="field">
-                  <span>카테고리</span>
-                  <select
-                    value={partnerForm.category}
-                    onChange={(e) => setPartnerForm({ ...partnerForm, category: e.target.value })}
-                  >
-                    <option value="카페">카페</option>
-                    <option value="병원">병원</option>
-                    <option value="마사지">마사지</option>
-                    <option value="식당">식당</option>
-                    <option value="기타">기타</option>
-                  </select>
-                </label>
+  <span>카테고리</span>
+
+  <select
+    value={partnerForm.category}
+    onChange={(e) => setPartnerForm({ ...partnerForm, category: e.target.value })}
+  >
+    <option value="카페">카페</option>
+    <option value="병원">병원</option>
+    <option value="마사지">마사지</option>
+    <option value="식당">식당</option>
+    <option value="기타">기타</option>
+  </select>
+
+  {partnerForm.category === '기타' && (
+    <input
+      type="text"
+      value={partnerCategoryCustom}
+      onChange={(e) => setPartnerCategoryCustom(e.target.value)}
+      placeholder="직접 카테고리 입력 (예: 필라테스, 한의원, 스포츠용품)"
+    />
+  )}
+</label>
               </div>
 
               <label className="field">
@@ -4899,6 +4917,7 @@ const toggleSalesArrayValue = (field, value) => {
                   onClick={() => {
                     setPartnerForm(emptyPartnerForm)
                     setEditingPartnerId(null)
+                    setPartnerCategoryCustom('')
                   }}
                 >
                   초기화
