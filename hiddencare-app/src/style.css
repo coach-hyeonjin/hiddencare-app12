@@ -836,3 +836,46 @@ img {
     align-items: flex-start;
   }
 }
+.member-list-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.member-list-header h2 {
+  margin: 0;
+  flex-shrink: 0;
+}
+
+.member-list-search-area {
+  width: 100%;
+  max-width: 360px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-left: auto;
+}
+
+.member-list-search-area input,
+.member-list-search-area select {
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.member-list-filter-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.workout-list-empty {
+  padding: 18px 16px;
+  border: 1px dashed #cfd8e3;
+  border-radius: 14px;
+  background: #f8fafc;
+  color: #6b7280;
+  font-size: 14px;
+  text-align: center;
+}
