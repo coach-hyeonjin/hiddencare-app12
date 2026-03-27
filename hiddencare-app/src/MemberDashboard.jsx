@@ -301,8 +301,9 @@ const calculatedRecommendedKcal = useMemo(() => {
     })
   }, [dietLogs, dietMealFilter, dietSearch])
 
-  const filteredPrograms = useMemo(() => {
-    return programs.filter((program) => {
+ const filteredPrograms = useMemo(() => {
+  return programs
+    .filter((program) => {
       return (
         !programSearch.trim() ||
         textIncludes(program.name, programSearch) ||
@@ -311,7 +312,8 @@ const calculatedRecommendedKcal = useMemo(() => {
         textIncludes(program.price, programSearch)
       )
     })
-  }, [programs, programSearch])
+    .sort((a, b) => (a.name || '').localeCompare(b.name || '', 'ko-KR'))
+}, [programs, programSearch])
 
   const publishedNotices = useMemo(() => {
     return notices
