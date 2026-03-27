@@ -116,14 +116,59 @@ const emptySaleForm = {
 const emptySalesLogForm = {
   id: null,
   log_date: new Date().toISOString().slice(0, 10),
-  ot_count: 0,
-  greeting_count: 0,
-  greeted_to: '',
-  greeted_three_plus: false,
+  activity_time: '12:00',
+  coach_name: '',
+  lead_name: '',
+  phone: '',
+  age_group: '',
+  gender: '',
+  member_type: '신규',
+  source_channel: '',
+  ot_reason: '',
+  contact_reason: '',
+  main_need: '',
+  pain_point: '',
+  consultation_flow: '',
+  consultation_method: [],
+  sales_method: [],
+  reaction_summary: '',
+  emotion_status: '보통',
+  current_stage: '첫접점',
   sales_result: 'pending',
+  proposal_product: '',
+  proposal_price: '',
+  conversion_score: 'middle',
+  fail_reason: '',
+  follow_up_action: '',
+  next_contact_date: '',
+  expected_close_date: '',
+  greeted_to: '',
+  greeting_count: 0,
+  greeted_three_plus: false,
+  ot_count: 0,
   diary: '',
 }
-
+const salesMemberTypeOptions = ['신규', '기존회원', '휴면회원', '지인소개', '워크인']
+const salesSourceOptions = ['워크인', '블로그', '인스타', '지인소개', '회원소개', '재문의', '전화문의', '기타']
+const salesOtReasonOptions = ['체형교정', '통증관리', '다이어트', '근력증가', '재활운동', '운동배우기', '기구사용법', '라인관리', '기타']
+const salesConsultationMethodOptions = ['센터소개', '목표질문', '체형평가', '움직임평가', '인바디', '간단운동체험', '통증체크', '프로그램설명', '가격안내']
+const salesMethodOptions = ['친근한인사', '불편부위질문', '운동목적질문', '공감위주대화', '체형평가중심', '통증해결중심', '운동시연중심', '후기사례설명', '필요성먼저설명', '장기플랜제안', '단기체험제안', '이벤트안내', '기록관리차별점설명']
+const salesStageOptions = ['첫접점', '상담진행', 'OT진행', '제안완료', '고민중', '결제완료', '이탈']
+const salesResultOptions = [
+  { value: 'pending', label: '진행중' },
+  { value: 'consulted', label: '상담완료' },
+  { value: 'proposal', label: '제안완료' },
+  { value: 'followup', label: '후속관리중' },
+  { value: 'closed', label: '결제완료' },
+  { value: 'lost', label: '이탈' },
+]
+const salesEmotionOptions = ['적극적', '보통', '고민많음', '반신반의', '가격민감', '의지낮음']
+const salesConversionOptions = [
+  { value: 'high', label: '높음' },
+  { value: 'middle', label: '중간' },
+  { value: 'low', label: '낮음' },
+]
+const salesFailReasonOptions = ['가격부담', '시간부족', '거리문제', '필요성부족', '비교중', '보호자/배우자상의', '운동의지부족', '기타']
 function randomCode() {
   return Math.random().toString(36).slice(2, 10).toUpperCase()
 }
@@ -254,6 +299,9 @@ export default function AdminDashboard({ profile, currentAdminId, currentGymId, 
   const [collapsedSalesLogs, setCollapsedSalesLogs] = useState({})
   const [salesLogSearch, setSalesLogSearch] = useState('')
   const [salesLogMonth, setSalesLogMonth] = useState(new Date().toISOString().slice(0, 7))
+  const [salesLogStageFilter, setSalesLogStageFilter] = useState('all')
+const [salesLogResultFilter, setSalesLogResultFilter] = useState('all')
+const [salesLogConversionFilter, setSalesLogConversionFilter] = useState('all')
 
   const [notices, setNotices] = useState([])
   const [noticeForm, setNoticeForm] = useState(emptyNoticeForm)
@@ -480,20 +528,62 @@ const groupedWorkoutCards = useMemo(() => {
 }, [filteredSales])
 
   const filteredSalesLogs = useMemo(() => {
-    return salesLogs.filter((log) => {
+  return salesLogs
+    .filter((log) => {
       const matchesMonth = !salesLogMonth || getMonthKey(log.log_date) === salesLogMonth
+      const matchesStage = salesLogStageFilter === 'all' || (log.current_stage || '') === salesLogStageFilter
+      const matchesResult = salesLogResultFilter === 'all' || (log.sales_result || '') === salesLogResultFilter
+      const matchesConversion =
+        salesLogConversionFilter === 'all' || (log.conversion_score || '') === salesLogConversionFilter
+
       const matchesKeyword =
         !salesLogSearch.trim() ||
-        textIncludes(log.greeted_to, salesLogSearch) ||
-        textIncludes(log.diary, salesLogSearch) ||
+        textIncludes(log.lead_name, salesLogSearch) ||
+        textIncludes(log.phone, salesLogSearch) ||
+        textIncludes(log.main_need, salesLogSearch) ||
+        textIncludes(log.source_channel, salesLogSearch) ||
+        textIncludes(log.current_stage, salesLogSearch) ||
         textIncludes(log.sales_result, salesLogSearch) ||
-        textIncludes(log.log_date, salesLogSearch) ||
-        textIncludes(log.ot_count, salesLogSearch) ||
-        textIncludes(log.greeting_count, salesLogSearch)
+        textIncludes(log.coach_name, salesLogSearch) ||
+        textIncludes(log.diary, salesLogSearch) ||
+        textIncludes(log.follow_up_action, salesLogSearch)
 
-      return matchesMonth && matchesKeyword
+      return matchesMonth && matchesStage && matchesResult && matchesConversion && matchesKeyword
     })
-  }, [salesLogs, salesLogMonth, salesLogSearch])
+    .sort((a, b) => {
+      const aKey = `${a.log_date || ''} ${a.activity_time || '00:00'}`
+      const bKey = `${b.log_date || ''} ${b.activity_time || '00:00'}`
+      return bKey.localeCompare(aKey)
+    })
+}, [
+  salesLogs,
+  salesLogMonth,
+  salesLogSearch,
+  salesLogStageFilter,
+  salesLogResultFilter,
+  salesLogConversionFilter,
+])
+
+const groupedSalesLogs = useMemo(() => {
+  const grouped = filteredSalesLogs.reduce((acc, log) => {
+    const key = log.log_date || '날짜 없음'
+    if (!acc[key]) acc[key] = []
+    acc[key].push(log)
+    return acc
+  }, {})
+
+  return Object.entries(grouped).sort((a, b) => b[0].localeCompare(a[0]))
+}, [filteredSalesLogs])
+
+const salesLogSummary = useMemo(() => {
+  return {
+    total: filteredSalesLogs.length,
+    high: filteredSalesLogs.filter((log) => log.conversion_score === 'high').length,
+    closed: filteredSalesLogs.filter((log) => log.sales_result === 'closed').length,
+    followup: filteredSalesLogs.filter((log) => log.sales_result === 'followup').length,
+    lost: filteredSalesLogs.filter((log) => log.sales_result === 'lost').length,
+  }
+}, [filteredSalesLogs])
 
   const filteredPrograms = useMemo(() => {
     return programs.filter((program) => {
@@ -1791,60 +1881,128 @@ const loadSalesSummary = async (month) => {
     await loadSalesSummary(saleMonth)
     setMessage('매출 기록이 삭제되었습니다.')
   }
+const toggleSalesArrayValue = (field, value) => {
+  setSalesLogForm((prev) => {
+    const current = Array.isArray(prev[field]) ? prev[field] : []
+    const exists = current.includes(value)
 
+    return {
+      ...prev,
+      [field]: exists ? current.filter((item) => item !== value) : [...current, value],
+    }
+  })
+}
   const resetSalesLogForm = () => {
     setSalesLogForm(emptySalesLogForm)
     setEditingSalesLogId(null)
   }
 
   const handleSalesLogSubmit = async (e) => {
-    e.preventDefault()
+  e.preventDefault()
 
-    const payload = {
-      log_date: salesLogForm.log_date,
-      admin_id: currentAdminId || null,
-      ot_count: Number(salesLogForm.ot_count) || 0,
-      greeting_count: Number(salesLogForm.greeting_count) || 0,
-      greeted_to: salesLogForm.greeted_to?.trim() || '',
-      greeted_three_plus: !!salesLogForm.greeted_three_plus,
-      sales_result: salesLogForm.sales_result || 'pending',
-      diary: salesLogForm.diary?.trim() || '',
-    }
-
-    if (editingSalesLogId) {
-      const { error } = await supabase.from('sales_logs').update(payload).eq('id', editingSalesLogId)
-      if (error) {
-        setMessage(error.message)
-        return
-      }
-      setMessage('세일즈 일지가 수정되었습니다.')
-    } else {
-      const { error } = await supabase.from('sales_logs').insert(payload)
-      if (error) {
-        setMessage(error.message)
-        return
-      }
-      setMessage('세일즈 일지가 저장되었습니다.')
-    }
-
-    resetSalesLogForm()
-    await loadSalesLogs()
+  const payload = {
+    log_date: salesLogForm.log_date || null,
+    activity_time: salesLogForm.activity_time || null,
+    coach_name: salesLogForm.coach_name?.trim() || '',
+    lead_name: salesLogForm.lead_name?.trim() || '',
+    phone: salesLogForm.phone?.trim() || '',
+    age_group: salesLogForm.age_group?.trim() || '',
+    gender: salesLogForm.gender || '',
+    member_type: salesLogForm.member_type || '신규',
+    source_channel: salesLogForm.source_channel || '',
+    ot_reason: salesLogForm.ot_reason || '',
+    contact_reason: salesLogForm.contact_reason?.trim() || '',
+    main_need: salesLogForm.main_need?.trim() || '',
+    pain_point: salesLogForm.pain_point?.trim() || '',
+    consultation_flow: salesLogForm.consultation_flow?.trim() || '',
+    consultation_method: Array.isArray(salesLogForm.consultation_method)
+      ? salesLogForm.consultation_method
+      : [],
+    sales_method: Array.isArray(salesLogForm.sales_method) ? salesLogForm.sales_method : [],
+    reaction_summary: salesLogForm.reaction_summary?.trim() || '',
+    emotion_status: salesLogForm.emotion_status || '보통',
+    current_stage: salesLogForm.current_stage || '첫접점',
+    sales_result: salesLogForm.sales_result || 'pending',
+    proposal_product: salesLogForm.proposal_product?.trim() || '',
+    proposal_price: salesLogForm.proposal_price?.trim() || '',
+    conversion_score: salesLogForm.conversion_score || 'middle',
+    fail_reason: salesLogForm.fail_reason || '',
+    follow_up_action: salesLogForm.follow_up_action?.trim() || '',
+    next_contact_date: salesLogForm.next_contact_date || null,
+    expected_close_date: salesLogForm.expected_close_date || null,
+    greeted_to: salesLogForm.greeted_to?.trim() || '',
+    greeting_count: Number(salesLogForm.greeting_count) || 0,
+    greeted_three_plus: !!salesLogForm.greeted_three_plus,
+    ot_count: Number(salesLogForm.ot_count) || 0,
+    diary: salesLogForm.diary?.trim() || '',
+    admin_id: currentAdminId || null,
+    gym_id: currentGymId || null,
   }
+
+  if (!payload.lead_name) {
+    setMessage('상담 대상 이름을 입력해주세요.')
+    return
+  }
+
+  if (editingSalesLogId) {
+    const { error } = await supabase.from('sales_logs').update(payload).eq('id', editingSalesLogId)
+    if (error) {
+      setMessage(error.message)
+      return
+    }
+    setMessage('세일즈 일지가 수정되었습니다.')
+  } else {
+    const { error } = await supabase.from('sales_logs').insert(payload)
+    if (error) {
+      setMessage(error.message)
+      return
+    }
+    setMessage('세일즈 일지가 저장되었습니다.')
+  }
+
+  resetSalesLogForm()
+  await loadSalesLogs()
+}
 
   const handleSalesLogEdit = (log) => {
-    setEditingSalesLogId(log.id)
-    setSalesLogForm({
-      id: log.id,
-      log_date: log.log_date || new Date().toISOString().slice(0, 10),
-      ot_count: log.ot_count || 0,
-      greeting_count: log.greeting_count || 0,
-      greeted_to: log.greeted_to || '',
-      greeted_three_plus: !!log.greeted_three_plus,
-      sales_result: log.sales_result || 'pending',
-      diary: log.diary || '',
-    })
-    setActiveTab('세일즈일지')
-  }
+  setEditingSalesLogId(log.id)
+  setSalesLogForm({
+    id: log.id,
+    log_date: log.log_date || new Date().toISOString().slice(0, 10),
+    activity_time: log.activity_time || '12:00',
+    coach_name: log.coach_name || '',
+    lead_name: log.lead_name || '',
+    phone: log.phone || '',
+    age_group: log.age_group || '',
+    gender: log.gender || '',
+    member_type: log.member_type || '신규',
+    source_channel: log.source_channel || '',
+    ot_reason: log.ot_reason || '',
+    contact_reason: log.contact_reason || '',
+    main_need: log.main_need || '',
+    pain_point: log.pain_point || '',
+    consultation_flow: log.consultation_flow || '',
+    consultation_method: Array.isArray(log.consultation_method) ? log.consultation_method : [],
+    sales_method: Array.isArray(log.sales_method) ? log.sales_method : [],
+    reaction_summary: log.reaction_summary || '',
+    emotion_status: log.emotion_status || '보통',
+    current_stage: log.current_stage || '첫접점',
+    sales_result: log.sales_result || 'pending',
+    proposal_product: log.proposal_product || '',
+    proposal_price: log.proposal_price || '',
+    conversion_score: log.conversion_score || 'middle',
+    fail_reason: log.fail_reason || '',
+    follow_up_action: log.follow_up_action || '',
+    next_contact_date: log.next_contact_date || '',
+    expected_close_date: log.expected_close_date || '',
+    greeted_to: log.greeted_to || '',
+    greeting_count: log.greeting_count || 0,
+    greeted_three_plus: !!log.greeted_three_plus,
+    ot_count: log.ot_count || 0,
+    diary: log.diary || '',
+  })
+  setActiveTab('세일즈일지')
+}
 
   const handleSalesLogDelete = async (logId) => {
     if (!window.confirm('세일즈 일지를 삭제할까요?')) return
@@ -3295,155 +3453,512 @@ const loadSalesSummary = async (month) => {
       )}
 
       {activeTab === '세일즈일지' && (
-        <div className="two-col">
-          <section className="card">
-            <h2>세일즈 일지 작성 / 수정</h2>
+  <div className="two-col sales-log-layout">
+    <section className="card">
+      <h2>세일즈 일지 작성 / 수정</h2>
 
-            <div className="stack-gap">
+      <form className="stack-gap" onSubmit={handleSalesLogSubmit}>
+        <div className="sales-form-section">
+          <h3>기본 정보</h3>
 
+          <div className="grid-2">
+            <label className="field">
+              <span>날짜</span>
               <input
-                type="month"
-                value={salesLogMonth}
-                onChange={(e) => setSalesLogMonth(e.target.value)}
+                type="date"
+                value={salesLogForm.log_date}
+                onChange={(e) => setSalesLogForm({ ...salesLogForm, log_date: e.target.value })}
               />
-            </div>
+            </label>
 
-            <form className="stack-gap" onSubmit={handleSalesLogSubmit}>
-              <label className="field">
-                <span>날짜</span>
-                <input
-                  type="date"
-                  value={salesLogForm.log_date}
-                  onChange={(e) => setSalesLogForm({ ...salesLogForm, log_date: e.target.value })}
-                />
-              </label>
+            <label className="field">
+              <span>시간</span>
+              <input
+                type="time"
+                value={salesLogForm.activity_time}
+                onChange={(e) => setSalesLogForm({ ...salesLogForm, activity_time: e.target.value })}
+              />
+            </label>
+          </div>
 
-              <div className="grid-2">
-                <label className="field">
-                  <span>OT 진행 인원</span>
-                  <input
-                    type="number"
-                    value={salesLogForm.ot_count}
-                    onChange={(e) => setSalesLogForm({ ...salesLogForm, ot_count: e.target.value })}
-                  />
-                </label>
+          <div className="grid-2">
+            <label className="field">
+              <span>담당 코치</span>
+              <input
+                value={salesLogForm.coach_name}
+                onChange={(e) => setSalesLogForm({ ...salesLogForm, coach_name: e.target.value })}
+                placeholder="예: 임현진"
+              />
+            </label>
 
-                <label className="field">
-                  <span>인사 횟수</span>
-                  <input
-                    type="number"
-                    value={salesLogForm.greeting_count}
-                    onChange={(e) => setSalesLogForm({ ...salesLogForm, greeting_count: e.target.value })}
-                  />
-                </label>
-              </div>
+            <label className="field">
+              <span>상담 대상 이름</span>
+              <input
+                value={salesLogForm.lead_name}
+                onChange={(e) => setSalesLogForm({ ...salesLogForm, lead_name: e.target.value })}
+                placeholder="예: 김OO"
+              />
+            </label>
+          </div>
 
-              <label className="field">
-                <span>누구에게 인사했는지</span>
-                <textarea
-                  rows="3"
-                  value={salesLogForm.greeted_to}
-                  onChange={(e) => setSalesLogForm({ ...salesLogForm, greeted_to: e.target.value })}
-                  placeholder="예: 신규 상담 1명, 워크인 2명, 기존회원 3명"
-                />
-              </label>
+          <div className="grid-2">
+            <label className="field">
+              <span>연락처</span>
+              <input
+                value={salesLogForm.phone}
+                onChange={(e) => setSalesLogForm({ ...salesLogForm, phone: e.target.value })}
+                placeholder="010-0000-0000"
+              />
+            </label>
 
-              <label className="checkbox-line">
+            <label className="field">
+              <span>연령대</span>
+              <input
+                value={salesLogForm.age_group}
+                onChange={(e) => setSalesLogForm({ ...salesLogForm, age_group: e.target.value })}
+                placeholder="예: 30대"
+              />
+            </label>
+          </div>
+
+          <div className="grid-3">
+            <label className="field">
+              <span>성별</span>
+              <select
+                value={salesLogForm.gender}
+                onChange={(e) => setSalesLogForm({ ...salesLogForm, gender: e.target.value })}
+              >
+                <option value="">선택</option>
+                <option value="여성">여성</option>
+                <option value="남성">남성</option>
+              </select>
+            </label>
+
+            <label className="field">
+              <span>구분</span>
+              <select
+                value={salesLogForm.member_type}
+                onChange={(e) => setSalesLogForm({ ...salesLogForm, member_type: e.target.value })}
+              >
+                {salesMemberTypeOptions.map((option) => (
+                  <option key={option} value={option}>
+                    {option}
+                  </option>
+                ))}
+              </select>
+            </label>
+
+            <label className="field">
+              <span>유입경로</span>
+              <select
+                value={salesLogForm.source_channel}
+                onChange={(e) => setSalesLogForm({ ...salesLogForm, source_channel: e.target.value })}
+              >
+                <option value="">선택</option>
+                {salesSourceOptions.map((option) => (
+                  <option key={option} value={option}>
+                    {option}
+                  </option>
+                ))}
+              </select>
+            </label>
+          </div>
+        </div>
+
+        <div className="sales-form-section">
+          <h3>유입 / 니즈</h3>
+
+          <div className="grid-2">
+            <label className="field">
+              <span>OT 진행 이유</span>
+              <select
+                value={salesLogForm.ot_reason}
+                onChange={(e) => setSalesLogForm({ ...salesLogForm, ot_reason: e.target.value })}
+              >
+                <option value="">선택</option>
+                {salesOtReasonOptions.map((option) => (
+                  <option key={option} value={option}>
+                    {option}
+                  </option>
+                ))}
+              </select>
+            </label>
+
+            <label className="field">
+              <span>상담 시작 계기</span>
+              <input
+                value={salesLogForm.contact_reason}
+                onChange={(e) => setSalesLogForm({ ...salesLogForm, contact_reason: e.target.value })}
+                placeholder="예: 코치가 먼저 인사 후 대화 시작"
+              />
+            </label>
+          </div>
+
+          <label className="field">
+            <span>핵심 니즈</span>
+            <input
+              value={salesLogForm.main_need}
+              onChange={(e) => setSalesLogForm({ ...salesLogForm, main_need: e.target.value })}
+              placeholder="예: 어깨 통증 + 체형 스트레스"
+            />
+          </label>
+
+          <label className="field">
+            <span>불편부위 / 문제 포인트</span>
+            <textarea
+              rows="3"
+              value={salesLogForm.pain_point}
+              onChange={(e) => setSalesLogForm({ ...salesLogForm, pain_point: e.target.value })}
+            />
+          </label>
+        </div>
+
+        <div className="sales-form-section">
+          <h3>상담 / OT 진행</h3>
+
+          <div className="check-grid">
+            {salesConsultationMethodOptions.map((option) => (
+              <label key={option} className="checkbox-chip">
                 <input
                   type="checkbox"
-                  checked={salesLogForm.greeted_three_plus}
-                  onChange={(e) =>
-                    setSalesLogForm({ ...salesLogForm, greeted_three_plus: e.target.checked })
-                  }
+                  checked={salesLogForm.consultation_method.includes(option)}
+                  onChange={() => toggleSalesArrayValue('consultation_method', option)}
                 />
-                <span>하루 3명 이상 인사함</span>
+                <span>{option}</span>
               </label>
+            ))}
+          </div>
 
-              <label className="field">
-                <span>세일즈 결과</span>
-                <select
-                  value={salesLogForm.sales_result}
-                  onChange={(e) => setSalesLogForm({ ...salesLogForm, sales_result: e.target.value })}
-                >
-                  <option value="pending">진행중</option>
-                  <option value="success">성공</option>
-                  <option value="fail">실패</option>
-                </select>
-              </label>
+          <label className="field">
+            <span>실제 진행 흐름</span>
+            <textarea
+              rows="4"
+              value={salesLogForm.consultation_flow}
+              onChange={(e) => setSalesLogForm({ ...salesLogForm, consultation_flow: e.target.value })}
+              placeholder="예: 인사 → 니즈 질문 → 체형 평가 → 운동 체험 → 프로그램 설명"
+            />
+          </label>
 
-              <label className="field">
-                <span>세일즈 일지</span>
-                <textarea
-                  rows="6"
-                  value={salesLogForm.diary}
-                  onChange={(e) => setSalesLogForm({ ...salesLogForm, diary: e.target.value })}
-                  placeholder="오늘 OT/상담/인사/등록 흐름을 일기처럼 적어주세요."
-                />
-              </label>
+          <div className="grid-2">
+            <label className="field">
+              <span>회원 반응</span>
+              <input
+                value={salesLogForm.reaction_summary}
+                onChange={(e) => setSalesLogForm({ ...salesLogForm, reaction_summary: e.target.value })}
+                placeholder="예: 질문 많았고 통증개선 니즈 높음"
+              />
+            </label>
 
-              <div className="inline-actions wrap">
-                <button className="primary-btn" type="submit">
-                  {editingSalesLogId ? '세일즈 일지 수정' : '세일즈 일지 저장'}
-                </button>
-                <button type="button" className="secondary-btn" onClick={resetSalesLogForm}>
-                  초기화
-                </button>
-              </div>
-            </form>
-          </section>
-
-          <section className="card">
-            <div className="section-head">
-              <h2>세일즈 일지 목록</h2>
-              <button
-                type="button"
-                className="secondary-btn"
-                onClick={() =>
-                  downloadCsv(`sales_logs_${salesLogMonth || 'all'}.csv`, [
-                    ['날짜', 'OT인원', '인사횟수', '3명이상인사', '결과', '인사대상', '일지'],
-                    ...filteredSalesLogs.map((log) => [
-                      log.log_date || '',
-                      log.ot_count || 0,
-                      log.greeting_count || 0,
-                      log.greeted_three_plus ? 'Y' : 'N',
-                      log.sales_result || '',
-                      log.greeted_to || '',
-                      log.diary || '',
-                    ]),
-                  ])
-                }
+            <label className="field">
+              <span>감정 상태</span>
+              <select
+                value={salesLogForm.emotion_status}
+                onChange={(e) => setSalesLogForm({ ...salesLogForm, emotion_status: e.target.value })}
               >
-                CSV
-              </button>
-            </div>
+                {salesEmotionOptions.map((option) => (
+                  <option key={option} value={option}>
+                    {option}
+                  </option>
+                ))}
+              </select>
+            </label>
+          </div>
+        </div>
 
-<div className="stack-gap" style={{ marginBottom: '10px' }}>
-  <input
-    className="search-input"
-    placeholder="날짜 / 내용 검색"
-    value={salesLogSearch}
-    onChange={(e) => setSalesLogSearch(e.target.value)}
-  />
-</div>
+        <div className="sales-form-section">
+          <h3>세일즈 방식</h3>
+
+          <div className="check-grid">
+            {salesMethodOptions.map((option) => (
+              <label key={option} className="checkbox-chip">
+                <input
+                  type="checkbox"
+                  checked={salesLogForm.sales_method.includes(option)}
+                  onChange={() => toggleSalesArrayValue('sales_method', option)}
+                />
+                <span>{option}</span>
+              </label>
+            ))}
+          </div>
+        </div>
+
+        <div className="sales-form-section">
+          <h3>결과 / 전환</h3>
+
+          <div className="grid-3">
+            <label className="field">
+              <span>현재 단계</span>
+              <select
+                value={salesLogForm.current_stage}
+                onChange={(e) => setSalesLogForm({ ...salesLogForm, current_stage: e.target.value })}
+              >
+                {salesStageOptions.map((option) => (
+                  <option key={option} value={option}>
+                    {option}
+                  </option>
+                ))}
+              </select>
+            </label>
+
+            <label className="field">
+              <span>세일즈 결과</span>
+              <select
+                value={salesLogForm.sales_result}
+                onChange={(e) => setSalesLogForm({ ...salesLogForm, sales_result: e.target.value })}
+              >
+                {salesResultOptions.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
+            </label>
+
+            <label className="field">
+              <span>전환 가능성</span>
+              <select
+                value={salesLogForm.conversion_score}
+                onChange={(e) => setSalesLogForm({ ...salesLogForm, conversion_score: e.target.value })}
+              >
+                {salesConversionOptions.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
+            </label>
+          </div>
+
+          <div className="grid-2">
+            <label className="field">
+              <span>제안 상품</span>
+              <input
+                value={salesLogForm.proposal_product}
+                onChange={(e) => setSalesLogForm({ ...salesLogForm, proposal_product: e.target.value })}
+                placeholder="예: PT 20회 / 체형교정 프로그램"
+              />
+            </label>
+
+            <label className="field">
+              <span>안내 가격</span>
+              <input
+                value={salesLogForm.proposal_price}
+                onChange={(e) => setSalesLogForm({ ...salesLogForm, proposal_price: e.target.value })}
+                placeholder="예: 55만원"
+              />
+            </label>
+          </div>
+
+          <label className="field">
+            <span>결제 실패 / 보류 이유</span>
+            <select
+              value={salesLogForm.fail_reason}
+              onChange={(e) => setSalesLogForm({ ...salesLogForm, fail_reason: e.target.value })}
+            >
+              <option value="">선택</option>
+              {salesFailReasonOptions.map((option) => (
+                <option key={option} value={option}>
+                  {option}
+                </option>
+              ))}
+            </select>
+          </label>
+        </div>
+
+        <div className="sales-form-section">
+          <h3>후속 관리</h3>
+
+          <div className="grid-2">
+            <label className="field">
+              <span>다음 연락일</span>
+              <input
+                type="date"
+                value={salesLogForm.next_contact_date}
+                onChange={(e) => setSalesLogForm({ ...salesLogForm, next_contact_date: e.target.value })}
+              />
+            </label>
+
+            <label className="field">
+              <span>결제 예상일</span>
+              <input
+                type="date"
+                value={salesLogForm.expected_close_date}
+                onChange={(e) => setSalesLogForm({ ...salesLogForm, expected_close_date: e.target.value })}
+              />
+            </label>
+          </div>
+
+          <label className="field">
+            <span>후속 액션</span>
+            <textarea
+              rows="3"
+              value={salesLogForm.follow_up_action}
+              onChange={(e) => setSalesLogForm({ ...salesLogForm, follow_up_action: e.target.value })}
+              placeholder="예: 내일 문자 발송 / 운동영상 전달 / 재상담 예약"
+            />
+          </label>
+        </div>
+
+        <div className="sales-form-section">
+          <h3>기존 일지 항목</h3>
+
+          <div className="grid-2">
+            <label className="field">
+              <span>OT 진행 인원</span>
+              <input
+                type="number"
+                value={salesLogForm.ot_count}
+                onChange={(e) => setSalesLogForm({ ...salesLogForm, ot_count: e.target.value })}
+              />
+            </label>
+
+            <label className="field">
+              <span>인사 횟수</span>
+              <input
+                type="number"
+                value={salesLogForm.greeting_count}
+                onChange={(e) => setSalesLogForm({ ...salesLogForm, greeting_count: e.target.value })}
+              />
+            </label>
+          </div>
+
+          <label className="field">
+            <span>누구에게 인사했는지</span>
+            <textarea
+              rows="3"
+              value={salesLogForm.greeted_to}
+              onChange={(e) => setSalesLogForm({ ...salesLogForm, greeted_to: e.target.value })}
+              placeholder="예: 신규 상담 1명, 워크인 2명, 기존회원 3명"
+            />
+          </label>
+
+          <label className="checkbox-line">
+            <input
+              type="checkbox"
+              checked={salesLogForm.greeted_three_plus}
+              onChange={(e) => setSalesLogForm({ ...salesLogForm, greeted_three_plus: e.target.checked })}
+            />
+            <span>하루 3명 이상 인사함</span>
+          </label>
+
+          <label className="field">
+            <span>세일즈 메모</span>
+            <textarea
+              rows="5"
+              value={salesLogForm.diary}
+              onChange={(e) => setSalesLogForm({ ...salesLogForm, diary: e.target.value })}
+              placeholder="오늘 상담 흐름, 걸렸던 포인트, 다음에 보완할 점"
+            />
+          </label>
+        </div>
+
+        <div className="inline-actions wrap">
+          <button className="primary-btn" type="submit">
+            {editingSalesLogId ? '세일즈 일지 수정' : '세일즈 일지 저장'}
+          </button>
+          <button type="button" className="secondary-btn" onClick={resetSalesLogForm}>
+            초기화
+          </button>
+        </div>
+      </form>
+    </section>
+
+    <section className="card">
+      <div className="member-list-header">
+        <h2>세일즈 일지 목록</h2>
+
+        <div className="member-list-search-area">
+          <input
+            placeholder="이름 / 연락처 / 니즈 / 메모 검색"
+            value={salesLogSearch}
+            onChange={(e) => setSalesLogSearch(e.target.value)}
+          />
+
+          <div className="member-list-filter-row">
+            <input
+              type="month"
+              value={salesLogMonth}
+              onChange={(e) => setSalesLogMonth(e.target.value)}
+            />
+
+            <select
+              value={salesLogStageFilter}
+              onChange={(e) => setSalesLogStageFilter(e.target.value)}
+            >
+              <option value="all">전체 단계</option>
+              {salesStageOptions.map((option) => (
+                <option key={option} value={option}>
+                  {option}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div className="member-list-filter-row">
+            <select
+              value={salesLogResultFilter}
+              onChange={(e) => setSalesLogResultFilter(e.target.value)}
+            >
+              <option value="all">전체 결과</option>
+              {salesResultOptions.map((option) => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
+            </select>
+
+            <select
+              value={salesLogConversionFilter}
+              onChange={(e) => setSalesLogConversionFilter(e.target.value)}
+            >
+              <option value="all">전체 가능성</option>
+              {salesConversionOptions.map((option) => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <div className="grid-4">
+        <div className="mini-stat-card">
+          <strong>{salesLogSummary.total}</strong>
+          <span>전체 리드</span>
+        </div>
+        <div className="mini-stat-card">
+          <strong>{salesLogSummary.high}</strong>
+          <span>전환 높음</span>
+        </div>
+        <div className="mini-stat-card">
+          <strong>{salesLogSummary.closed}</strong>
+          <span>결제완료</span>
+        </div>
+        <div className="mini-stat-card">
+          <strong>{salesLogSummary.followup}</strong>
+          <span>후속관리중</span>
+        </div>
+      </div>
+
+      <div className="list-stack">
+        {groupedSalesLogs.length === 0 ? (
+          <div className="workout-list-empty">세일즈 일지가 없습니다.</div>
+        ) : null}
+
+        {groupedSalesLogs.map(([date, logs]) => (
+          <div key={date} className="sales-log-date-group">
+            <div className="sales-log-date-title">{date}</div>
 
             <div className="list-stack">
-              {filteredSalesLogs.map((log) => {
-                const collapsed = collapsedSalesLogs[log.id] ?? true
-                return (
-                  <div key={log.id} className="list-card">
-                    <div className="list-card-top">
-                      <strong>{log.log_date}</strong>
-                      <span className="pill">
-                        {log.sales_result === 'success'
-                          ? '성공'
-                          : log.sales_result === 'fail'
-                          ? '실패'
-                          : '진행중'}
-                      </span>
-                    </div>
-
-                    <div className="compact-text">
-                      간략히보기: OT {log.ot_count || 0}명 / 인사 {log.greeting_count || 0}회 / {log.greeted_three_plus ? '3명이상 인사함' : '3명 미만'}
+              {logs.map((log) => (
+                <div key={log.id} className="list-card">
+                  <div className="list-card-head">
+                    <div>
+                      <strong>{log.activity_time || '시간없음'} · {log.lead_name || '이름없음'}</strong>
+                      <p className="sub-text">
+                        {log.phone || '-'} / {log.source_channel || '-'} / {log.coach_name || '-'}
+                      </p>
                     </div>
 
                     <div className="inline-actions wrap">
@@ -3451,49 +3966,55 @@ const loadSalesSummary = async (month) => {
                         type="button"
                         className="secondary-btn"
                         onClick={() =>
-                          setCollapsedSalesLogs((prev) => ({
-                            ...prev,
-                            [log.id]: !collapsed,
-                          }))
+                          setCollapsedSalesLogs((prev) => ({ ...prev, [log.id]: !prev[log.id] }))
                         }
                       >
-                        {collapsed ? '상세히보기' : '간략히보기'}
+                        {collapsedSalesLogs[log.id] ? '상세보기' : '간략보기'}
                       </button>
-
-                      <button
-                        type="button"
-                        className="secondary-btn"
-                        onClick={() => handleSalesLogEdit(log)}
-                      >
+                      <button type="button" className="secondary-btn" onClick={() => handleSalesLogEdit(log)}>
                         수정
                       </button>
-
-                      <button
-                        type="button"
-                        className="danger-btn"
-                        onClick={() => handleSalesLogDelete(log.id)}
-                      >
+                      <button type="button" className="danger-btn" onClick={() => handleSalesLogDelete(log.id)}>
                         삭제
                       </button>
                     </div>
-
-                    {!collapsed ? (
-                      <div className="detail-box">
-                        <p><strong>OT 진행 인원:</strong> {log.ot_count || 0}명</p>
-                        <p><strong>인사 횟수:</strong> {log.greeting_count || 0}회</p>
-                        <p><strong>3명 이상 인사:</strong> {log.greeted_three_plus ? '예' : '아니오'}</p>
-                        <p><strong>인사 대상:</strong> {log.greeted_to || '-'}</p>
-                        <p><strong>세일즈 결과:</strong> {log.sales_result || '-'}</p>
-                        <p><strong>일지:</strong> {log.diary || '-'}</p>
-                      </div>
-                    ) : null}
                   </div>
-                )
-              })}
+
+                  <p className="sub-text">
+                    핵심니즈: {log.main_need || '-'} / 단계: {log.current_stage || '-'} / 결과: {log.sales_result || '-'} / 전환: {log.conversion_score || '-'}
+                  </p>
+
+                  {!collapsedSalesLogs[log.id] ? (
+                    <div className="detail-box">
+                      <p><strong>상담 계기:</strong> {log.contact_reason || '-'}</p>
+                      <p><strong>OT 이유:</strong> {log.ot_reason || '-'}</p>
+                      <p><strong>불편부위:</strong> {log.pain_point || '-'}</p>
+                      <p><strong>회원 반응:</strong> {log.reaction_summary || '-'}</p>
+                      <p><strong>감정 상태:</strong> {log.emotion_status || '-'}</p>
+                      <p><strong>제안 상품:</strong> {log.proposal_product || '-'}</p>
+                      <p><strong>안내 가격:</strong> {log.proposal_price || '-'}</p>
+                      <p><strong>보류 이유:</strong> {log.fail_reason || '-'}</p>
+                      <p><strong>다음 연락일:</strong> {log.next_contact_date || '-'}</p>
+                      <p><strong>결제 예상일:</strong> {log.expected_close_date || '-'}</p>
+                      <p><strong>후속 액션:</strong> {log.follow_up_action || '-'}</p>
+                      <p><strong>진행 흐름:</strong> {log.consultation_flow || '-'}</p>
+                      <p><strong>상담 방식:</strong> {Array.isArray(log.consultation_method) ? log.consultation_method.join(', ') : '-'}</p>
+                      <p><strong>세일즈 방식:</strong> {Array.isArray(log.sales_method) ? log.sales_method.join(', ') : '-'}</p>
+                      <p><strong>OT 인원:</strong> {log.ot_count || 0}</p>
+                      <p><strong>인사 횟수:</strong> {log.greeting_count || 0}</p>
+                      <p><strong>인사 대상:</strong> {log.greeted_to || '-'}</p>
+                      <p><strong>메모:</strong> {log.diary || '-'}</p>
+                    </div>
+                  ) : null}
+                </div>
+              ))}
             </div>
-          </section>
-        </div>
-      )}
+          </div>
+        ))}
+      </div>
+    </section>
+  </div>
+)}
 
       {activeTab === '프로그램' && (
         <div className="two-col">
