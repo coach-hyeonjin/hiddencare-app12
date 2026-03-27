@@ -161,6 +161,16 @@ function calcRecommendedKcal({ bmr, activityFactor }) {
   if (!bmr || !activityFactor) return ''
   return Math.round(Number(bmr) * Number(activityFactor))
 }
+function playMemberAlertSound() {
+  try {
+    const audio = new Audio(
+      'data:audio/wav;base64,UklGRlQAAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YTAAAAAA////AAAA////AAAA////AAAA////AAAA'
+    )
+    audio.play().catch(() => {})
+  } catch (error) {
+    console.error('회원 알림음 재생 실패:', error)
+  }
+}
 export default function MemberDashboard({ member, accessCode, onLogout }) {
   const [activeTab, setActiveTab] = useState('내정보')
   const [loading, setLoading] = useState(true)
@@ -207,7 +217,18 @@ export default function MemberDashboard({ member, accessCode, onLogout }) {
   const [inquiries, setInquiries] = useState([])
   const [collapsedInquiries, setCollapsedInquiries] = useState({})
   const [inquiryForm, setInquiryForm] = useState(emptyInquiryForm)
+const [memberAlertSettings, setMemberAlertSettings] = useState({
+  inquiryAnswer: true,
+  notice: true,
+  workout: true,
+  sound: true,
+  popup: true,
+})
 
+const [memberAlerts, setMemberAlerts] = useState([])
+const [unreadMemberNoticeCount, setUnreadMemberNoticeCount] = useState(0)
+const [unreadMemberInquiryCount, setUnreadMemberInquiryCount] = useState(0)
+const [unreadMemberWorkoutCount, setUnreadMemberWorkoutCount] = useState(0)
    const currentAdminId = memberInfo?.admin_id || member?.admin_id || null
   const currentGymId = memberInfo?.gym_id || member?.gym_id || null
 const calculatedBmr = useMemo(() => {
@@ -333,7 +354,133 @@ const calculatedRecommendedKcal = useMemo(() => {
   useEffect(() => {
     loadAll()
   }, [member?.id])
+useEffect(() => {
+  const latestNotice = notices[0]
+  const storageKey = `member_last_notice_${member?.id || 'default'}`
 
+  if (!latestNotice?.id) return
+
+  const savedNoticeId = localStorage.getItem(storageKey)
+
+  if (!savedNoticeId) {
+    localStorage.setItem(storageKey, latestNotice.id)
+    return
+  }
+
+  if (savedNoticeId !== latestNotice.id && memberAlertSettings.notice) {
+    setUnreadMemberNoticeCount((prev) => prev + 1)
+
+    const nextAlert = {
+      id: `member-notice-${latestNotice.id}`,
+      type: 'notice',
+      text: `새 공지사항이 등록되었습니다. (${latestNotice.title || '제목 없음'})`,
+      createdAt: Date.now(),
+    }
+
+    setMemberAlerts((prev) => [nextAlert, ...prev].slice(0, 20))
+
+    if (memberAlertSettings.popup) {
+      setMessage(`📢 새 공지사항이 등록되었습니다. (${latestNotice.title || '제목 없음'})`)
+    }
+
+    if (memberAlertSettings.sound) {
+      playMemberAlertSound()
+    }
+
+    localStorage.setItem(storageKey, latestNotice.id)
+  }
+}, [notices, memberAlertSettings, member?.id])
+  useEffect(() => {
+  const answeredInquiry = inquiries.find((item) => String(item.answer || '').trim().length > 0)
+  const storageKey = `member_last_answered_inquiry_${member?.id || 'default'}`
+
+  if (!answeredInquiry?.id) return
+
+  const savedInquiryId = localStorage.getItem(storageKey)
+
+  if (!savedInquiryId) {
+    localStorage.setItem(storageKey, answeredInquiry.id)
+    return
+  }
+
+  if (savedInquiryId !== answeredInquiry.id && memberAlertSettings.inquiryAnswer) {
+    setUnreadMemberInquiryCount((prev) => prev + 1)
+
+    const nextAlert = {
+      id: `member-inquiry-${answeredInquiry.id}`,
+      type: 'inquiry',
+      text: '문의에 답변이 등록되었습니다.',
+      createdAt: Date.now(),
+    }
+
+    setMemberAlerts((prev) => [nextAlert, ...prev].slice(0, 20))
+
+    if (memberAlertSettings.popup) {
+      setMessage('📩 문의에 답변이 등록되었습니다.')
+    }
+
+    if (memberAlertSettings.sound) {
+      playMemberAlertSound()
+    }
+
+    localStorage.setItem(storageKey, answeredInquiry.id)
+  }
+}, [inquiries, memberAlertSettings, member?.id])
+  useEffect(() => {
+  const latestWorkout = workouts[0]
+  const storageKey = `member_last_workout_${member?.id || 'default'}`
+
+  if (!latestWorkout?.id) return
+
+  const savedWorkoutId = localStorage.getItem(storageKey)
+
+  if (!savedWorkoutId) {
+    localStorage.setItem(storageKey, latestWorkout.id)
+    return
+  }
+
+  if (savedWorkoutId !== latestWorkout.id && memberAlertSettings.workout) {
+    setUnreadMemberWorkoutCount((prev) => prev + 1)
+
+    const nextAlert = {
+      id: `member-workout-${latestWorkout.id}`,
+      type: 'workout',
+      text: `새 운동기록이 등록되었습니다. (${latestWorkout.workout_date || '-'})`,
+      createdAt: Date.now(),
+    }
+
+    setMemberAlerts((prev) => [nextAlert, ...prev].slice(0, 20))
+
+    if (memberAlertSettings.popup) {
+      setMessage(`🏋️ 새 운동기록이 등록되었습니다. (${latestWorkout.workout_date || '-'})`)
+    }
+
+    if (memberAlertSettings.sound) {
+      playMemberAlertSound()
+    }
+
+    localStorage.setItem(storageKey, latestWorkout.id)
+  }
+}, [workouts, memberAlertSettings, member?.id])
+  useEffect(() => {
+  const interval = setInterval(() => {
+    loadNotices()
+    loadInquiries()
+    loadWorkouts()
+  }, 10000)
+
+  return () => clearInterval(interval)
+}, [member?.id, currentAdminId])
+  useEffect(() => {
+  const saved = localStorage.getItem(`member_alert_settings_${member?.id || 'default'}`)
+  if (saved) {
+    try {
+      setMemberAlertSettings(JSON.parse(saved))
+    } catch (error) {
+      console.error('회원 알림 설정 불러오기 실패:', error)
+    }
+  }
+}, [member?.id])
   useEffect(() => {
     setInquiryForm((prev) => ({
       ...prev,
@@ -625,7 +772,24 @@ const calculatedRecommendedKcal = useMemo(() => {
       setCollapsedInquiries(collapsed)
     }
   }
+const updateMemberAlertSetting = (key, value) => {
+  setMemberAlertSettings((prev) => {
+    const next = { ...prev, [key]: value }
+    localStorage.setItem(`member_alert_settings_${member?.id || 'default'}`, JSON.stringify(next))
+    return next
+  })
+}
 
+const removeMemberAlert = (alertId) => {
+  setMemberAlerts((prev) => prev.filter((item) => item.id !== alertId))
+}
+
+const clearMemberAlerts = () => {
+  setMemberAlerts([])
+  setUnreadMemberNoticeCount(0)
+  setUnreadMemberInquiryCount(0)
+  setUnreadMemberWorkoutCount(0)
+}
   const resetPersonalForm = () => {
     setPersonalForm(emptyPersonalForm)
   }
@@ -1025,6 +1189,82 @@ const calculatedRecommendedKcal = useMemo(() => {
 
   return (
     <div className="dashboard-shell">
+      <div className="admin-alert-bar">
+  <div className="admin-alert-summary">
+    <strong>알림</strong>
+    <span>
+      공지 {unreadMemberNoticeCount}건 / 답변 {unreadMemberInquiryCount}건 / 운동 {unreadMemberWorkoutCount}건
+    </span>
+  </div>
+
+  <div className="admin-alert-settings">
+    <label className="checkbox-line">
+      <input
+        type="checkbox"
+        checked={memberAlertSettings.notice}
+        onChange={(e) => updateMemberAlertSetting('notice', e.target.checked)}
+      />
+      <span>공지 알림</span>
+    </label>
+
+    <label className="checkbox-line">
+      <input
+        type="checkbox"
+        checked={memberAlertSettings.inquiryAnswer}
+        onChange={(e) => updateMemberAlertSetting('inquiryAnswer', e.target.checked)}
+      />
+      <span>문의 답변 알림</span>
+    </label>
+
+    <label className="checkbox-line">
+      <input
+        type="checkbox"
+        checked={memberAlertSettings.workout}
+        onChange={(e) => updateMemberAlertSetting('workout', e.target.checked)}
+      />
+      <span>운동기록 알림</span>
+    </label>
+
+    <label className="checkbox-line">
+      <input
+        type="checkbox"
+        checked={memberAlertSettings.sound}
+        onChange={(e) => updateMemberAlertSetting('sound', e.target.checked)}
+      />
+      <span>소리</span>
+    </label>
+
+    <label className="checkbox-line">
+      <input
+        type="checkbox"
+        checked={memberAlertSettings.popup}
+        onChange={(e) => updateMemberAlertSetting('popup', e.target.checked)}
+      />
+      <span>팝업</span>
+    </label>
+
+    <button type="button" className="secondary-btn" onClick={clearMemberAlerts}>
+      알림 초기화
+    </button>
+  </div>
+
+  {memberAlerts.length > 0 && (
+    <div className="admin-alert-list">
+      {memberAlerts.map((alert) => (
+        <div key={alert.id} className={`admin-alert-item ${alert.type}`}>
+          <span>{alert.text}</span>
+          <button
+            type="button"
+            className="secondary-btn"
+            onClick={() => removeMemberAlert(alert.id)}
+          >
+            닫기
+          </button>
+        </div>
+      ))}
+    </div>
+  )}
+</div>
       <header className="topbar">
         <div className="topbar-brand">
           <img src={logo} alt="숨바꼭질케어 로고" className="topbar-logo small" />
