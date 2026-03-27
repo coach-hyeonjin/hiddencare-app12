@@ -1032,3 +1032,126 @@ img {
   font-weight: 600;
   white-space: nowrap;
 }
+/* =========================
+   관리자 / 회원 알림 바
+========================= */
+.admin-alert-bar {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-bottom: 18px;
+  padding: 16px;
+  border: 1px solid #e5e7eb;
+  border-radius: 16px;
+  background: #ffffff;
+  box-shadow: 0 6px 18px rgba(15, 23, 42, 0.04);
+}
+
+.admin-alert-summary {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.admin-alert-summary strong {
+  font-size: 16px;
+  color: #111827;
+}
+
+.admin-alert-summary span {
+  font-size: 13px;
+  color: #6b7280;
+}
+
+.admin-alert-settings {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px 14px;
+  align-items: center;
+}
+
+.admin-alert-settings .checkbox-line {
+  margin: 0;
+  padding: 6px 10px;
+  border-radius: 999px;
+  background: #f8fafc;
+  border: 1px solid #e5e7eb;
+}
+
+.admin-alert-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.admin-alert-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 12px 14px;
+  border-radius: 12px;
+  border: 1px solid #e5e7eb;
+  background: #f9fafb;
+}
+
+.admin-alert-item span {
+  flex: 1;
+  font-size: 14px;
+  line-height: 1.5;
+  color: #111827;
+  word-break: break-word;
+}
+
+.admin-alert-item.inquiry {
+  background: #eff6ff;
+  border-color: #bfdbfe;
+}
+
+.admin-alert-item.notice {
+  background: #f5f3ff;
+  border-color: #ddd6fe;
+}
+
+.admin-alert-item.workout {
+  background: #ecfeff;
+  border-color: #a5f3fc;
+}
+
+/* =========================
+   반응형
+========================= */
+@media (max-width: 900px) {
+  .admin-alert-summary {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .admin-alert-item {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .admin-alert-item .secondary-btn {
+    align-self: flex-end;
+  }
+}
+
+@media (max-width: 640px) {
+  .admin-alert-bar {
+    padding: 14px;
+    border-radius: 14px;
+  }
+
+  .admin-alert-settings {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .admin-alert-settings .checkbox-line {
+    width: 100%;
+    justify-content: flex-start;
+  }
+}
