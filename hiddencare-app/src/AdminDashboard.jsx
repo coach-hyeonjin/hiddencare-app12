@@ -1143,14 +1143,7 @@ const loadPartners = async () => {
     setSelectedPartnerId(rows[0].id)
   }
 }
-  const { data } = await supabase
-    .from('programs')
-    .select('*')
-    .eq('admin_id', currentAdminId)
-    .order('created_at', { ascending: false })
-
-  if (data) setPrograms(data)
-}
+ 
 
  const loadSalesRecords = async () => {
   if (!currentAdminId) {
