@@ -1336,3 +1336,12 @@ img {
   flex-direction: column;
   gap: 16px;
 }
+.list-card.active {
+  border-color: #6366f1;
+  background: #eef2ff;
+}
+.partner-layout {
+  display: grid;
+  grid-template-columns: 1fr 2fr;
+  gap: 20px;
+}
