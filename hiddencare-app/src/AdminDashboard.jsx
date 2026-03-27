@@ -303,8 +303,9 @@ export default function AdminDashboard({ profile, currentAdminId, currentGymId, 
     })
   }, [members, workouts])
 
-  const filteredMemberStats = useMemo(() => {
-    return memberStats.filter((member) => {
+ const filteredMemberStats = useMemo(() => {
+  return memberStats
+    .filter((member) => {
       const matchesKeyword =
         !memberSearch.trim() ||
         textIncludes(member.name, memberSearch) ||
@@ -321,7 +322,8 @@ export default function AdminDashboard({ profile, currentAdminId, currentGymId, 
 
       return matchesKeyword && matchesProgram && matchesStatus
     })
-  }, [memberStats, memberSearch, memberProgramFilter, memberStatusFilter])
+    .sort((a, b) => (a.name || '').localeCompare(b.name || '', 'ko-KR'))
+}, [memberStats, memberSearch, memberProgramFilter, memberStatusFilter])
 
   const filteredMemberDetails = useMemo(() => {
     return memberStats.filter((member) => {
@@ -1968,32 +1970,6 @@ const loadSalesSummary = async (month) => {
         <div className="two-col">
           <section className="card">
             <h2>회원 등록 / 수정</h2>
-
-            <div className="workout-list-tools">
-              <input
-                placeholder="이름 / 목표 / 프로그램 검색"
-                value={memberSearch}
-                onChange={(e) => setMemberSearch(e.target.value)}
-              />
-
-              <div className="grid-2">
-                <select value={memberProgramFilter} onChange={(e) => setMemberProgramFilter(e.target.value)}>
-                  <option value="">전체 프로그램</option>
-                  {programs.map((p) => (
-                    <option key={p.id} value={p.id}>
-                      {p.name}
-                    </option>
-                  ))}
-                </select>
-
-                <select value={memberStatusFilter} onChange={(e) => setMemberStatusFilter(e.target.value)}>
-                  <option value="all">전체</option>
-                  <option value="remaining">잔여 있음</option>
-                  <option value="ended">소진</option>
-                </select>
-              </div>
-            </div>
-
             <form className="stack-gap" onSubmit={handleMemberSubmit}>
               <label className="field">
                 <span>이름</span>
@@ -2094,9 +2070,42 @@ const loadSalesSummary = async (month) => {
           </section>
 
           <section className="card">
-            <h2>회원 목록</h2>
-            <div className="list-stack">
-              {filteredMemberStats.map((member) => {
+  <div className="member-list-header">
+    <h2>회원 목록</h2>
+
+    <div className="member-list-search-area">
+      <input
+        placeholder="이름 / 목표 / 프로그램 검색"
+        value={memberSearch}
+        onChange={(e) => setMemberSearch(e.target.value)}
+      />
+
+      <div className="member-list-filter-row">
+        <select value={memberProgramFilter} onChange={(e) => setMemberProgramFilter(e.target.value)}>
+          <option value="">전체 프로그램</option>
+          {programs.map((p) => (
+            <option key={p.id} value={p.id}>
+              {p.name}
+            </option>
+          ))}
+        </select>
+
+        <select value={memberStatusFilter} onChange={(e) => setMemberStatusFilter(e.target.value)}>
+          <option value="all">전체</option>
+          <option value="remaining">잔여 있음</option>
+          <option value="ended">소진</option>
+        </select>
+      </div>
+    </div>
+  </div>
+
+ <div className="list-stack">
+
+  {filteredMemberStats.length === 0 ? (
+    <div className="workout-list-empty">검색 결과가 없습니다.</div>
+  ) : null}
+
+  {filteredMemberStats.map((member) => {
                 const isSelected = selectedMemberId === member.id
                 return (
                   <div
