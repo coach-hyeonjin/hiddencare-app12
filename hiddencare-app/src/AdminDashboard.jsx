@@ -616,7 +616,20 @@ const salesLogSummary = useMemo(() => {
     })
     .sort((a, b) => (a.name || '').localeCompare(b.name || '', 'ko-KR'))
 }, [programs, programSearch])
+const filteredNotices = useMemo(() => {
+  return notices.filter((notice) => {
+    const monthSource = getMonthKey(notice.starts_at || notice.created_at || '')
+    const matchesMonth = !noticeMonthFilter || monthSource === noticeMonthFilter
+    const matchesCategory = noticeCategoryFilter === 'all' || notice.category === noticeCategoryFilter
+    const matchesKeyword =
+      !noticeSearch.trim() ||
+      textIncludes(notice.title, noticeSearch) ||
+      textIncludes(notice.content, noticeSearch) ||
+      textIncludes(notice.category, noticeSearch)
 
+    return matchesMonth && matchesCategory && matchesKeyword
+  })
+}, [notices, noticeMonthFilter, noticeCategoryFilter, noticeSearch])
   const filteredInquiries = useMemo(() => {
   return inquiries.filter((item) => {
     const createdDate = (item.created_at || '').slice(0, 10)
