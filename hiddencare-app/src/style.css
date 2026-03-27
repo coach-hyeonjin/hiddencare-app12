@@ -1155,3 +1155,184 @@ img {
     justify-content: flex-start;
   }
 }
+/* =========================
+   제휴업체 리스트 / 상세
+========================= */
+
+.list-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.list-card {
+  border: 1px solid #e5e7eb;
+  border-radius: 14px;
+  padding: 16px;
+  background: #fff;
+  transition: all 0.2s ease;
+}
+
+.list-card:hover {
+  border-color: #6366f1;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.06);
+}
+
+.list-card-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+}
+
+.compact-text {
+  font-size: 13px;
+  color: #6b7280;
+  margin-top: 6px;
+}
+
+/* =========================
+   상세 영역 크게 보이게
+========================= */
+
+.detail-box {
+  background: #f9fafb;
+  padding: 18px;
+  border-radius: 14px;
+  line-height: 1.6;
+  font-size: 14px;
+}
+
+.detail-box p {
+  margin-bottom: 6px;
+}
+
+/* =========================
+   카드 확장 느낌
+========================= */
+
+.card {
+  border-radius: 18px;
+  padding: 20px;
+  background: #ffffff;
+  box-shadow: 0 6px 18px rgba(0,0,0,0.05);
+}
+
+/* =========================
+   버튼 스타일
+========================= */
+
+.primary-btn {
+  background: #6366f1;
+  color: #fff;
+  padding: 10px 16px;
+  border-radius: 10px;
+  border: none;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.primary-btn:hover {
+  background: #4f46e5;
+}
+
+.secondary-btn {
+  background: #f3f4f6;
+  color: #111827;
+  padding: 8px 14px;
+  border-radius: 10px;
+  border: none;
+  cursor: pointer;
+}
+
+.secondary-btn:hover {
+  background: #e5e7eb;
+}
+
+.danger-btn {
+  background: #ef4444;
+  color: #fff;
+  padding: 8px 14px;
+  border-radius: 10px;
+  border: none;
+  cursor: pointer;
+}
+
+.danger-btn:hover {
+  background: #dc2626;
+}
+
+/* =========================
+   상태 뱃지
+========================= */
+
+.pill {
+  font-size: 12px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: #e0e7ff;
+  color: #4338ca;
+}
+
+/* =========================
+   서브 카드 (사용기록 / 요청)
+========================= */
+
+.sub-card {
+  border: 1px solid #e5e7eb;
+  border-radius: 14px;
+  padding: 16px;
+  background: #ffffff;
+}
+
+/* =========================
+   입력 필드
+========================= */
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 13px;
+}
+
+.field input,
+.field textarea,
+.field select {
+  padding: 10px;
+  border-radius: 10px;
+  border: 1px solid #e5e7eb;
+  font-size: 14px;
+}
+
+.field input:focus,
+.field textarea:focus,
+.field select:focus {
+  outline: none;
+  border-color: #6366f1;
+}
+
+/* =========================
+   레이아웃
+========================= */
+
+.grid-2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.inline-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.wrap {
+  flex-wrap: wrap;
+}
+
+.stack-gap {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
