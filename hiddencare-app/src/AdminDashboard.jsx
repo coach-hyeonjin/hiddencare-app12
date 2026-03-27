@@ -194,6 +194,7 @@ export default function AdminDashboard({ profile, currentAdminId, currentGymId, 
   const [workoutSearch, setWorkoutSearch] = useState('')
   const [workoutMemberFilter, setWorkoutMemberFilter] = useState('')
   const [workoutTypeFilter, setWorkoutTypeFilter] = useState('all')
+  const [workoutDateFilter, setWorkoutDateFilter] = useState('')
 
   const [brands, setBrands] = useState([])
   const [brandForm, setBrandForm] = useState(emptyBrandForm)
@@ -382,7 +383,20 @@ export default function AdminDashboard({ profile, currentAdminId, currentGymId, 
         return matchesKeyword && matchesMember && matchesType
       })
   }, [workouts, members, workoutItemsMap, workoutSearch, workoutMemberFilter, workoutTypeFilter])
+const groupedWorkoutCards = useMemo(() => {
+  const filteredByDate = workoutCards.filter((workout) => {
+    return !workoutDateFilter || workout.workout_date === workoutDateFilter
+  })
 
+  const grouped = filteredByDate.reduce((acc, workout) => {
+    const key = workout.workout_date || '날짜 없음'
+    if (!acc[key]) acc[key] = []
+    acc[key].push(workout)
+    return acc
+  }, {})
+
+  return Object.entries(grouped).sort((a, b) => b[0].localeCompare(a[0]))
+}, [workoutCards, workoutDateFilter])
   const displayedDietLogs = useMemo(() => {
     return dietLogs.filter((diet) => {
       const member = members.find((item) => item.id === diet.member_id)
@@ -2296,31 +2310,6 @@ const loadSalesSummary = async (month) => {
           <section className="card">
             <h2>운동 기록 작성 / 수정</h2>
 
-            <div className="stack-gap">
-              <input
-                placeholder="운동기록 검색"
-                value={workoutSearch}
-                onChange={(e) => setWorkoutSearch(e.target.value)}
-              />
-
-              <div className="grid-2">
-                <select value={workoutMemberFilter} onChange={(e) => setWorkoutMemberFilter(e.target.value)}>
-                  <option value="">전체 회원</option>
-                  {members.map((member) => (
-                    <option key={member.id} value={member.id}>
-                      {member.name}
-                    </option>
-                  ))}
-                </select>
-
-                <select value={workoutTypeFilter} onChange={(e) => setWorkoutTypeFilter(e.target.value)}>
-                  <option value="all">전체 타입</option>
-                  <option value="pt">PT</option>
-                  <option value="personal">개인운동</option>
-                </select>
-              </div>
-            </div>
-
             <form className="stack-gap" onSubmit={handleWorkoutSubmit}>
               <div className="grid-2">
                 <label className="field">
@@ -2467,72 +2456,135 @@ const loadSalesSummary = async (month) => {
           </section>
 
           <section className="card">
-            <h2>운동 기록 목록</h2>
-            <div className="list-stack">
-              {workoutCards.map((workout) => {
-                const collapsed = collapsedWorkouts[workout.id] ?? true
-                return (
-                  <div key={workout.id} className="list-card">
-                    <div className="list-card-top">
-                      <strong>{workout.member?.name || '회원없음'} / {workout.workout_type === 'pt' ? 'PT' : '개인운동'}</strong>
-                      <span className="pill">{workout.workout_date}</span>
-                    </div>
+  <h2>운동 기록 목록</h2>
 
-                    <div className="compact-text">
-                      간략히보기: 운동 {workout.items.length}개 / 총세트 {getTotalSetCount(workout.items)}세트
-                    </div>
+  <div className="stack-gap">
+    <div className="grid-2">
+      <label className="field">
+        <span>회원 검색</span>
+        <select value={workoutMemberFilter} onChange={(e) => setWorkoutMemberFilter(e.target.value)}>
+          <option value="">전체 회원</option>
+          {members.map((member) => (
+            <option key={member.id} value={member.id}>
+              {member.name}
+            </option>
+          ))}
+        </select>
+      </label>
 
-                    <div className="inline-actions wrap">
-                      <button
-                        type="button"
-                        className="secondary-btn"
-                        onClick={() =>
-                          setCollapsedWorkouts((prev) => ({
-                            ...prev,
-                            [workout.id]: !collapsed,
-                          }))
-                        }
-                      >
-                        {collapsed ? '상세히보기' : '간략히보기'}
-                      </button>
+      <label className="field">
+        <span>기록 타입</span>
+        <select value={workoutTypeFilter} onChange={(e) => setWorkoutTypeFilter(e.target.value)}>
+          <option value="all">전체 타입</option>
+          <option value="pt">PT</option>
+          <option value="personal">개인운동</option>
+        </select>
+      </label>
+    </div>
 
-                      <button type="button" className="secondary-btn" onClick={() => handleWorkoutEdit(workout)}>
-                        수정
-                      </button>
+    <div className="grid-2">
+      <label className="field">
+        <span>운동기록 검색</span>
+        <input
+          placeholder="회원명 / 운동명 / 잘한점 / 보완점 검색"
+          value={workoutSearch}
+          onChange={(e) => setWorkoutSearch(e.target.value)}
+        />
+      </label>
 
-                      <button type="button" className="danger-btn" onClick={() => handleWorkoutDelete(workout)}>
-                        삭제
-                      </button>
-                    </div>
-
-                    {!collapsed ? (
-                      <div className="detail-box">
-                       {workout.items.map((item) => (
-  <div key={item.id} className="record-item-box">
-    <strong>{item.exercise_name_snapshot}</strong>
-
-    {item.is_cardio ? (
-      <div className="compact-text">유산소 {item.cardio_minutes || 0}분</div>
-    ) : (
-      <ul className="set-list">
-        {(item.sets || []).map((setRow, idx) => (
-          <li key={idx}>
-            {idx + 1}세트 - {setRow.kg || '-'}kg / {setRow.reps || '-'}회
-          </li>
-        ))}
-      </ul>
-    )}
+      <label className="field">
+        <span>날짜 찾기</span>
+        <input
+          type="date"
+          value={workoutDateFilter}
+          onChange={(e) => setWorkoutDateFilter(e.target.value)}
+        />
+      </label>
+    </div>
   </div>
-))}
-                        <p><strong>잘한점:</strong> {workout.good || '-'}</p>
-                        <p><strong>보완점:</strong> {workout.improve || '-'}</p>
+
+  <div className="list-stack">
+    {groupedWorkoutCards.length === 0 ? (
+      <div className="compact-text">검색 결과가 없습니다.</div>
+    ) : null}
+
+    {groupedWorkoutCards.map(([date, workoutsByDate]) => (
+      <div key={date} className="stack-gap">
+        <div className="section-head">
+          <h3>{date}</h3>
+          <span className="pill">{workoutsByDate.length}개 기록</span>
+        </div>
+
+        <div className="list-stack">
+          {workoutsByDate.map((workout) => {
+            const collapsed = collapsedWorkouts[workout.id] ?? true
+            return (
+              <div key={workout.id} className="list-card">
+                <div className="list-card-top">
+                  <strong>
+                    {workout.member?.name || '회원없음'} / {workout.workout_type === 'pt' ? 'PT' : '개인운동'}
+                  </strong>
+                  <span className="pill">{workout.workout_date}</span>
+                </div>
+
+                <div className="compact-text">
+                  간략히보기: 운동 {workout.items.length}개 / 총세트 {getTotalSetCount(workout.items)}세트
+                </div>
+
+                <div className="inline-actions wrap">
+                  <button
+                    type="button"
+                    className="secondary-btn"
+                    onClick={() =>
+                      setCollapsedWorkouts((prev) => ({
+                        ...prev,
+                        [workout.id]: !collapsed,
+                      }))
+                    }
+                  >
+                    {collapsed ? '상세히보기' : '간략히보기'}
+                  </button>
+
+                  <button type="button" className="secondary-btn" onClick={() => handleWorkoutEdit(workout)}>
+                    수정
+                  </button>
+
+                  <button type="button" className="danger-btn" onClick={() => handleWorkoutDelete(workout)}>
+                    삭제
+                  </button>
+                </div>
+
+                {!collapsed ? (
+                  <div className="detail-box">
+                    {workout.items.map((item) => (
+                      <div key={item.id} className="record-item-box">
+                        <strong>{item.exercise_name_snapshot}</strong>
+
+                        {item.is_cardio ? (
+                          <div className="compact-text">유산소 {item.cardio_minutes || 0}분</div>
+                        ) : (
+                          <ul className="set-list">
+                            {(item.sets || []).map((setRow, idx) => (
+                              <li key={idx}>
+                                {idx + 1}세트 - {setRow.kg || '-'}kg / {setRow.reps || '-'}회
+                              </li>
+                            ))}
+                          </ul>
+                        )}
                       </div>
-                    ) : null}
+                    ))}
+                    <p><strong>잘한점:</strong> {workout.good || '-'}</p>
+                    <p><strong>보완점:</strong> {workout.improve || '-'}</p>
                   </div>
-                )
-              })}
-            </div>
-          </section>
+                ) : null}
+              </div>
+            )
+          })}
+        </div>
+      </div>
+    ))}
+  </div>
+</section>
         </div>
       )}
 
