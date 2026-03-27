@@ -338,6 +338,7 @@ const [salesLogConversionFilter, setSalesLogConversionFilter] = useState('all')
   const [noticeSearch, setNoticeSearch] = useState('')
   const [noticeCategoryFilter, setNoticeCategoryFilter] = useState('all')
  const [partners, setPartners] = useState([])
+  const [partnerCategories, setPartnerCategories] = useState([])
   const [partnerForm, setPartnerForm] = useState(emptyPartnerForm)
   const [partnerCategoryCustom, setPartnerCategoryCustom] = useState('')
   const [editingPartnerId, setEditingPartnerId] = useState(null)
@@ -1142,6 +1143,8 @@ const loadPartners = async () => {
 
   const rows = data || []
   setPartners(rows)
+  const uniqueCategories = [...new Set(rows.map((p) => p.category).filter(Boolean))]
+setPartnerCategories(uniqueCategories)
 
   if (!selectedPartnerId && rows[0]) {
     setSelectedPartnerId(rows[0].id)
@@ -4756,15 +4759,19 @@ const toggleSalesArrayValue = (field, value) => {
   <span>카테고리</span>
 
   <select
-    value={partnerForm.category}
-    onChange={(e) => setPartnerForm({ ...partnerForm, category: e.target.value })}
-  >
-    <option value="카페">카페</option>
-    <option value="병원">병원</option>
-    <option value="마사지">마사지</option>
-    <option value="식당">식당</option>
-    <option value="기타">기타</option>
-  </select>
+  value={partnerForm.category}
+  onChange={(e) => setPartnerForm({ ...partnerForm, category: e.target.value })}
+>
+  <option value="">카테고리 선택</option>
+
+  {partnerCategories.map((cat) => (
+    <option key={cat} value={cat}>
+      {cat}
+    </option>
+  ))}
+
+  <option value="기타">직접 입력</option>
+</select>
 
   {partnerForm.category === '기타' && (
     <input
