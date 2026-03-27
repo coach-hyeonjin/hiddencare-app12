@@ -1969,7 +1969,7 @@ const loadSalesSummary = async (month) => {
           <section className="card">
             <h2>회원 등록 / 수정</h2>
 
-            <div className="stack-gap">
+            <div className="workout-list-tools">
               <input
                 placeholder="이름 / 목표 / 프로그램 검색"
                 value={memberSearch}
@@ -2459,7 +2459,7 @@ const loadSalesSummary = async (month) => {
   <h2>운동 기록 목록</h2>
 
   <div className="stack-gap">
-    <div className="grid-2">
+    <div className="workout-filter-grid">
       <label className="field">
         <span>회원 검색</span>
         <select value={workoutMemberFilter} onChange={(e) => setWorkoutMemberFilter(e.target.value)}>
@@ -2482,7 +2482,7 @@ const loadSalesSummary = async (month) => {
       </label>
     </div>
 
-    <div className="grid-2">
+    <div className="workout-filter-grid">
       <label className="field">
         <span>운동기록 검색</span>
         <input
@@ -2505,12 +2505,12 @@ const loadSalesSummary = async (month) => {
 
   <div className="list-stack">
     {groupedWorkoutCards.length === 0 ? (
-      <div className="compact-text">검색 결과가 없습니다.</div>
+      <div className="workout-list-empty">검색 결과가 없습니다.</div>
     ) : null}
 
     {groupedWorkoutCards.map(([date, workoutsByDate]) => (
-      <div key={date} className="stack-gap">
-        <div className="section-head">
+      <div key={date} className="workout-group">
+        <div className="workout-group-head">
           <h3>{date}</h3>
           <span className="pill">{workoutsByDate.length}개 기록</span>
         </div>
@@ -2519,12 +2519,12 @@ const loadSalesSummary = async (month) => {
           {workoutsByDate.map((workout) => {
             const collapsed = collapsedWorkouts[workout.id] ?? true
             return (
-              <div key={workout.id} className="list-card">
+             <div key={workout.id} className="list-card workout-list-card">
                 <div className="list-card-top">
                   <strong>
                     {workout.member?.name || '회원없음'} / {workout.workout_type === 'pt' ? 'PT' : '개인운동'}
                   </strong>
-                  <span className="pill">{workout.workout_date}</span>
+                  <span className="pill workout-date-chip">{workout.workout_date}</span>
                 </div>
 
                 <div className="compact-text">
@@ -2556,26 +2556,31 @@ const loadSalesSummary = async (month) => {
 
                 {!collapsed ? (
                   <div className="detail-box">
-                    {workout.items.map((item) => (
-                      <div key={item.id} className="record-item-box">
-                        <strong>{item.exercise_name_snapshot}</strong>
+  <div className="workout-detail-items">
+    {workout.items.map((item) => (
+      <div key={item.id} className="record-item-box">
+        <strong>{item.exercise_name_snapshot}</strong>
 
-                        {item.is_cardio ? (
-                          <div className="compact-text">유산소 {item.cardio_minutes || 0}분</div>
-                        ) : (
-                          <ul className="set-list">
-                            {(item.sets || []).map((setRow, idx) => (
-                              <li key={idx}>
-                                {idx + 1}세트 - {setRow.kg || '-'}kg / {setRow.reps || '-'}회
-                              </li>
-                            ))}
-                          </ul>
-                        )}
-                      </div>
-                    ))}
-                    <p><strong>잘한점:</strong> {workout.good || '-'}</p>
-                    <p><strong>보완점:</strong> {workout.improve || '-'}</p>
-                  </div>
+        {item.is_cardio ? (
+          <div className="compact-text">유산소 {item.cardio_minutes || 0}분</div>
+        ) : (
+          <ul className="set-list">
+            {(item.sets || []).map((setRow, idx) => (
+              <li key={idx}>
+                {idx + 1}세트 - {setRow.kg || '-'}kg / {setRow.reps || '-'}회
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
+    ))}
+  </div>
+
+  <div className="workout-detail-summary">
+    <p><strong>잘한점:</strong> {workout.good || '-'}</p>
+    <p><strong>보완점:</strong> {workout.improve || '-'}</p>
+  </div>
+</div>
                 ) : null}
               </div>
             )
