@@ -15,9 +15,9 @@ const TABS = [
   '프로그램',
   '공지사항',
   '사용방법',
+  '제휴업체',
   '문의사항',
 ]
-
 const emptyMemberForm = {
   name: '',
   goal: '',
@@ -97,7 +97,25 @@ const emptyNoticeForm = {
   starts_at: '',
   ends_at: '',
 }
-
+const emptyPartnerForm = {
+  id: null,
+  name: '',
+  category: '카페',
+  description: '',
+  benefit: '',
+  usage_condition: '',
+  usage_guide: '',
+  caution: '',
+  address: '',
+  phone: '',
+  business_hours: '',
+  manager_name: '',
+  manager_phone: '',
+  monthly_limit: 1,
+  vip_extra_limit: 0,
+  approval_required: true,
+  is_active: true,
+}
 const emptySaleForm = {
   id: null,
   member_id: '',
@@ -319,7 +337,13 @@ const [salesLogConversionFilter, setSalesLogConversionFilter] = useState('all')
   const [noticeMonthFilter, setNoticeMonthFilter] = useState('')
   const [noticeSearch, setNoticeSearch] = useState('')
   const [noticeCategoryFilter, setNoticeCategoryFilter] = useState('all')
-
+ const [partners, setPartners] = useState([])
+  const [partnerForm, setPartnerForm] = useState(emptyPartnerForm)
+  const [editingPartnerId, setEditingPartnerId] = useState(null)
+  const [partnerSearch, setPartnerSearch] = useState('')
+  const [partnerCategoryFilter, setPartnerCategoryFilter] = useState('all')
+  const [selectedPartnerId, setSelectedPartnerId] = useState('')
+  const [partnerUsages, setPartnerUsages] = useState([])
  const [inquiries, setInquiries] = useState([])
 const [collapsedInquiries, setCollapsedInquiries] = useState({})
 const [inquirySearch, setInquirySearch] = useState('')
@@ -339,7 +363,10 @@ const [unreadNoticeCount, setUnreadNoticeCount] = useState(0)
     () => members.find((member) => member.id === selectedMemberId) || null,
     [members, selectedMemberId],
   )
-
+const selectedPartner = useMemo(
+    () => partners.find((partner) => partner.id === selectedPartnerId) || null,
+    [partners, selectedPartnerId],
+  )
   const filteredExercises = useMemo(() => {
     const keyword = exerciseSearch.trim().toLowerCase()
     if (!keyword) return exercises
@@ -616,6 +643,24 @@ const salesLogSummary = useMemo(() => {
     })
     .sort((a, b) => (a.name || '').localeCompare(b.name || '', 'ko-KR'))
 }, [programs, programSearch])
+  const filteredPartners = useMemo(() => {
+  return partners
+    .filter((partner) => {
+      const matchesKeyword =
+        !partnerSearch.trim() ||
+        textIncludes(partner.name, partnerSearch) ||
+        textIncludes(partner.category, partnerSearch) ||
+        textIncludes(partner.description, partnerSearch) ||
+        textIncludes(partner.benefit, partnerSearch) ||
+        textIncludes(partner.address, partnerSearch)
+
+      const matchesCategory =
+        partnerCategoryFilter === 'all' || partner.category === partnerCategoryFilter
+
+      return matchesKeyword && matchesCategory
+    })
+    .sort((a, b) => (a.name || '').localeCompare(b.name || '', 'ko-KR'))
+}, [partners, partnerSearch, partnerCategoryFilter])
 const filteredNotices = useMemo(() => {
   return notices.filter((notice) => {
     const monthSource = getMonthKey(notice.starts_at || notice.created_at || '')
@@ -782,6 +827,7 @@ useEffect(() => {
       ['loadCoaches', () => loadCoaches()],
       ['loadCoachSchedules', () => loadCoachSchedules()],
       ['loadPrograms', () => loadPrograms()],
+      ['loadPartners', () => loadPartners()],
       ['loadSalesRecords', () => loadSalesRecords()],
       ['loadSalesLogs', () => loadSalesLogs()],
       ['loadSalesSummary', () => loadSalesSummary(saleMonth)],
@@ -1055,7 +1101,32 @@ const loadBrands = async () => {
     setPrograms([])
     return
   }
+const loadPartners = async () => {
+  if (!currentAdminId) {
+    setPartners([])
+    setSelectedPartnerId('')
+    return
+  }
 
+  const { data, error } = await supabase
+    .from('partners')
+    .select('*')
+    .eq('admin_id', currentAdminId)
+    .order('created_at', { ascending: false })
+
+  if (error) {
+    console.error('제휴업체 불러오기 실패:', error)
+    setMessage(`제휴업체 불러오기 실패: ${error.message}`)
+    return
+  }
+
+  const rows = data || []
+  setPartners(rows)
+
+  if (!selectedPartnerId && rows[0]) {
+    setSelectedPartnerId(rows[0].id)
+  }
+}
   const { data } = await supabase
     .from('programs')
     .select('*')
@@ -1936,7 +2007,65 @@ const clearAdminAlerts = () => {
     await loadPrograms()
     await loadMembers()
   }
+const handlePartnerSubmit = async (e) => {
+  e.preventDefault()
+  setMessage('')
 
+  const payload = {
+    name: partnerForm.name?.trim() || '',
+    category: partnerForm.category || '카페',
+    description: partnerForm.description?.trim() || '',
+    benefit: partnerForm.benefit?.trim() || '',
+    usage_condition: partnerForm.usage_condition?.trim() || '',
+    usage_guide: partnerForm.usage_guide?.trim() || '',
+    caution: partnerForm.caution?.trim() || '',
+    address: partnerForm.address?.trim() || '',
+    phone: partnerForm.phone?.trim() || '',
+    business_hours: partnerForm.business_hours?.trim() || '',
+    manager_name: partnerForm.manager_name?.trim() || '',
+    manager_phone: partnerForm.manager_phone?.trim() || '',
+    monthly_limit: Number(partnerForm.monthly_limit) || 0,
+    vip_extra_limit: Number(partnerForm.vip_extra_limit) || 0,
+    approval_required: !!partnerForm.approval_required,
+    is_active: !!partnerForm.is_active,
+    admin_id: currentAdminId || null,
+    gym_id: currentGymId || null,
+  }
+
+  if (!payload.name) {
+    setMessage('제휴업체명을 입력해주세요.')
+    return
+  }
+
+  if (editingPartnerId) {
+    const { error } = await supabase
+      .from('partners')
+      .update(payload)
+      .eq('id', editingPartnerId)
+
+    if (error) {
+      setMessage(`제휴업체 수정 실패: ${error.message}`)
+      return
+    }
+
+    setMessage('제휴업체가 수정되었습니다.')
+  } else {
+    const { error } = await supabase
+      .from('partners')
+      .insert(payload)
+
+    if (error) {
+      setMessage(`제휴업체 추가 실패: ${error.message}`)
+      return
+    }
+
+    setMessage('제휴업체가 추가되었습니다.')
+  }
+
+  setPartnerForm(emptyPartnerForm)
+  setEditingPartnerId(null)
+  await loadPartners()
+}
   const handleProgramEdit = (program) => {
     setEditingProgramId(program.id)
     setProgramForm({
@@ -1949,14 +2078,56 @@ const clearAdminAlerts = () => {
       is_active: !!program.is_active,
     })
   }
-
+const handlePartnerEdit = (partner) => {
+  setEditingPartnerId(partner.id)
+  setSelectedPartnerId(partner.id)
+  setPartnerForm({
+    id: partner.id,
+    name: partner.name || '',
+    category: partner.category || '카페',
+    description: partner.description || '',
+    benefit: partner.benefit || '',
+    usage_condition: partner.usage_condition || '',
+    usage_guide: partner.usage_guide || '',
+    caution: partner.caution || '',
+    address: partner.address || '',
+    phone: partner.phone || '',
+    business_hours: partner.business_hours || '',
+    manager_name: partner.manager_name || '',
+    manager_phone: partner.manager_phone || '',
+    monthly_limit: partner.monthly_limit || 0,
+    vip_extra_limit: partner.vip_extra_limit || 0,
+    approval_required: !!partner.approval_required,
+    is_active: !!partner.is_active,
+  })
+  setActiveTab('제휴업체')
+}
   const handleProgramDelete = async (programId) => {
     if (!window.confirm('프로그램을 삭제할까요?')) return
     await supabase.from('programs').delete().eq('id', programId)
     await loadPrograms()
     setMessage('프로그램이 삭제되었습니다.')
   }
+const handlePartnerDelete = async (partnerId) => {
+  if (!window.confirm('제휴업체를 삭제할까요?')) return
 
+  const { error } = await supabase
+    .from('partners')
+    .delete()
+    .eq('id', partnerId)
+
+  if (error) {
+    setMessage(`제휴업체 삭제 실패: ${error.message}`)
+    return
+  }
+
+  if (selectedPartnerId === partnerId) {
+    setSelectedPartnerId('')
+  }
+
+  setMessage('제휴업체가 삭제되었습니다.')
+  await loadPartners()
+}
   const resetSaleForm = () => {
     setSaleForm(emptySaleForm)
     setEditingSaleId(null)
@@ -4487,7 +4658,286 @@ const toggleSalesArrayValue = (field, value) => {
           </div>
         </div>
       )}
+      {activeTab === '제휴업체' && (
+        <div className="stack-gap">
+          <div className="card">
+            <h2>{editingPartnerId ? '제휴업체 수정' : '제휴업체 등록'}</h2>
 
+            <form className="stack-gap" onSubmit={handlePartnerSubmit}>
+              <div className="grid-2">
+                <label className="field">
+                  <span>업체명</span>
+                  <input
+                    value={partnerForm.name}
+                    onChange={(e) => setPartnerForm({ ...partnerForm, name: e.target.value })}
+                    placeholder="예: 화정카페"
+                  />
+                </label>
+
+                <label className="field">
+                  <span>카테고리</span>
+                  <select
+                    value={partnerForm.category}
+                    onChange={(e) => setPartnerForm({ ...partnerForm, category: e.target.value })}
+                  >
+                    <option value="카페">카페</option>
+                    <option value="병원">병원</option>
+                    <option value="마사지">마사지</option>
+                    <option value="식당">식당</option>
+                    <option value="기타">기타</option>
+                  </select>
+                </label>
+              </div>
+
+              <label className="field">
+                <span>한줄 소개</span>
+                <input
+                  value={partnerForm.description}
+                  onChange={(e) => setPartnerForm({ ...partnerForm, description: e.target.value })}
+                  placeholder="회원에게 보여질 간단 소개"
+                />
+              </label>
+
+              <label className="field">
+                <span>혜택 내용</span>
+                <textarea
+                  rows="3"
+                  value={partnerForm.benefit}
+                  onChange={(e) => setPartnerForm({ ...partnerForm, benefit: e.target.value })}
+                  placeholder="예: PT 회원 음료 10% 할인"
+                />
+              </label>
+
+              <label className="field">
+                <span>사용 조건</span>
+                <textarea
+                  rows="3"
+                  value={partnerForm.usage_condition}
+                  onChange={(e) => setPartnerForm({ ...partnerForm, usage_condition: e.target.value })}
+                  placeholder="예: PT 등록 회원만 / 월 2회 가능"
+                />
+              </label>
+
+              <label className="field">
+                <span>사용 방법</span>
+                <textarea
+                  rows="3"
+                  value={partnerForm.usage_guide}
+                  onChange={(e) => setPartnerForm({ ...partnerForm, usage_guide: e.target.value })}
+                  placeholder="예: 직원에게 인증코드 제시 후 사용"
+                />
+              </label>
+
+              <label className="field">
+                <span>주의사항</span>
+                <textarea
+                  rows="3"
+                  value={partnerForm.caution}
+                  onChange={(e) => setPartnerForm({ ...partnerForm, caution: e.target.value })}
+                  placeholder="예: 타 할인 중복 불가"
+                />
+              </label>
+
+              <div className="grid-2">
+                <label className="field">
+                  <span>주소</span>
+                  <input
+                    value={partnerForm.address}
+                    onChange={(e) => setPartnerForm({ ...partnerForm, address: e.target.value })}
+                  />
+                </label>
+
+                <label className="field">
+                  <span>연락처</span>
+                  <input
+                    value={partnerForm.phone}
+                    onChange={(e) => setPartnerForm({ ...partnerForm, phone: e.target.value })}
+                  />
+                </label>
+              </div>
+
+              <div className="grid-2">
+                <label className="field">
+                  <span>운영시간</span>
+                  <input
+                    value={partnerForm.business_hours}
+                    onChange={(e) => setPartnerForm({ ...partnerForm, business_hours: e.target.value })}
+                    placeholder="예: 09:00 - 22:00"
+                  />
+                </label>
+
+                <label className="field">
+                  <span>월 사용 가능 횟수</span>
+                  <input
+                    type="number"
+                    value={partnerForm.monthly_limit}
+                    onChange={(e) => setPartnerForm({ ...partnerForm, monthly_limit: e.target.value })}
+                  />
+                </label>
+              </div>
+
+              <div className="grid-2">
+                <label className="field">
+                  <span>담당자명</span>
+                  <input
+                    value={partnerForm.manager_name}
+                    onChange={(e) => setPartnerForm({ ...partnerForm, manager_name: e.target.value })}
+                  />
+                </label>
+
+                <label className="field">
+                  <span>담당자 연락처</span>
+                  <input
+                    value={partnerForm.manager_phone}
+                    onChange={(e) => setPartnerForm({ ...partnerForm, manager_phone: e.target.value })}
+                  />
+                </label>
+              </div>
+
+              <div className="grid-2">
+                <label className="checkbox-line">
+                  <input
+                    type="checkbox"
+                    checked={partnerForm.approval_required}
+                    onChange={(e) =>
+                      setPartnerForm({ ...partnerForm, approval_required: e.target.checked })
+                    }
+                  />
+                  <span>관리자 승인 필요</span>
+                </label>
+
+                <label className="checkbox-line">
+                  <input
+                    type="checkbox"
+                    checked={partnerForm.is_active}
+                    onChange={(e) =>
+                      setPartnerForm({ ...partnerForm, is_active: e.target.checked })
+                    }
+                  />
+                  <span>노출 활성화</span>
+                </label>
+              </div>
+
+              <div className="inline-actions wrap">
+                <button className="primary-btn" type="submit">
+                  {editingPartnerId ? '수정 저장' : '업체 추가'}
+                </button>
+
+                <button
+                  className="secondary-btn"
+                  type="button"
+                  onClick={() => {
+                    setPartnerForm(emptyPartnerForm)
+                    setEditingPartnerId(null)
+                  }}
+                >
+                  초기화
+                </button>
+              </div>
+            </form>
+          </div>
+
+          <div className="card">
+            <div className="member-list-header">
+              <h2>제휴업체 목록</h2>
+
+              <div className="member-list-search-area">
+                <input
+                  placeholder="업체명 / 카테고리 / 혜택 / 주소 검색"
+                  value={partnerSearch}
+                  onChange={(e) => setPartnerSearch(e.target.value)}
+                />
+
+                <div className="member-list-filter-row">
+                  <select
+                    value={partnerCategoryFilter}
+                    onChange={(e) => setPartnerCategoryFilter(e.target.value)}
+                  >
+                    <option value="all">전체</option>
+                    <option value="카페">카페</option>
+                    <option value="병원">병원</option>
+                    <option value="마사지">마사지</option>
+                    <option value="식당">식당</option>
+                    <option value="기타">기타</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+
+            <div className="list-stack">
+              {filteredPartners.length === 0 ? (
+                <div className="workout-list-empty">등록된 제휴업체가 없습니다.</div>
+              ) : null}
+
+              {filteredPartners.map((partner) => (
+                <div key={partner.id} className="list-card">
+                  <div className="list-card-top">
+                    <div>
+                      <strong>{partner.name || '-'}</strong>
+                      <div className="compact-text">
+                        {partner.category || '-'} / {partner.phone || '-'}
+                      </div>
+                    </div>
+
+                    <div className="inline-actions wrap">
+                      <span className="pill">{partner.is_active ? '활성' : '비활성'}</span>
+                      <button
+                        type="button"
+                        className="secondary-btn"
+                        onClick={() => setSelectedPartnerId(partner.id)}
+                      >
+                        상세보기
+                      </button>
+                      <button
+                        type="button"
+                        className="secondary-btn"
+                        onClick={() => handlePartnerEdit(partner)}
+                      >
+                        수정
+                      </button>
+                      <button
+                        type="button"
+                        className="danger-btn"
+                        onClick={() => handlePartnerDelete(partner.id)}
+                      >
+                        삭제
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="compact-text">
+                    {(partner.benefit || '').slice(0, 60)}
+                    {(partner.benefit || '').length > 60 ? '...' : ''}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {selectedPartner ? (
+            <div className="card">
+              <h2>제휴업체 상세</h2>
+              <div className="detail-box stack-gap">
+                <p><strong>업체명:</strong> {selectedPartner.name || '-'}</p>
+                <p><strong>카테고리:</strong> {selectedPartner.category || '-'}</p>
+                <p><strong>한줄 소개:</strong> {selectedPartner.description || '-'}</p>
+                <p><strong>혜택:</strong> {selectedPartner.benefit || '-'}</p>
+                <p><strong>사용 조건:</strong> {selectedPartner.usage_condition || '-'}</p>
+                <p><strong>사용 방법:</strong> {selectedPartner.usage_guide || '-'}</p>
+                <p><strong>주의사항:</strong> {selectedPartner.caution || '-'}</p>
+                <p><strong>주소:</strong> {selectedPartner.address || '-'}</p>
+                <p><strong>연락처:</strong> {selectedPartner.phone || '-'}</p>
+                <p><strong>운영시간:</strong> {selectedPartner.business_hours || '-'}</p>
+                <p><strong>담당자:</strong> {selectedPartner.manager_name || '-'} / {selectedPartner.manager_phone || '-'}</p>
+                <p><strong>월 사용 가능 횟수:</strong> {selectedPartner.monthly_limit ?? 0}회</p>
+                <p><strong>VIP 추가 횟수:</strong> {selectedPartner.vip_extra_limit ?? 0}회</p>
+                <p><strong>승인 필요:</strong> {selectedPartner.approval_required ? '예' : '아니오'}</p>
+                <p><strong>상태:</strong> {selectedPartner.is_active ? '활성' : '비활성'}</p>
+              </div>
+            </div>
+          ) : null}
+        </div>
+      )}
       {activeTab === '문의사항' && (
   <div className="card">
     <div className="member-list-header">
