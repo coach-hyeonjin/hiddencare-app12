@@ -4766,7 +4766,12 @@ function DietAdminCard({ diet, memberName, collapsed, onToggle, onSave, onDelete
       </div>
 
       {!collapsed ? (
-        <DietFeedbackEditor diet={diet} feedback={feedback} setFeedback={setFeedback} onSave={onSave} />
+        <DietFeedbackEditor
+          diet={diet}
+          feedback={feedback}
+          setFeedback={setFeedback}
+          onSave={onSave}
+        />
       ) : null}
     </div>
   )
@@ -4816,7 +4821,11 @@ function DietFeedbackEditor({ diet, feedback, setFeedback, onSave }) {
 
       <label className="field">
         <span>코치 피드백</span>
-        <textarea rows="4" value={feedback} onChange={(e) => setFeedback(e.target.value)} />
+        <textarea
+          rows="4"
+          value={feedback}
+          onChange={(e) => setFeedback(e.target.value)}
+        />
       </label>
 
       <button
