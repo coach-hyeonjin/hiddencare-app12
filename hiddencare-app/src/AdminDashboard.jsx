@@ -212,7 +212,16 @@ function downloadCsv(filename, rows) {
   document.body.removeChild(link)
   URL.revokeObjectURL(url)
 }
-
+function playAdminAlertSound() {
+  try {
+    const audio = new Audio(
+      'data:audio/wav;base64,UklGRlQAAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YTAAAAAA////AAAA////AAAA////AAAA////AAAA'
+    )
+    audio.play().catch(() => {})
+  } catch (error) {
+    console.error('알림음 재생 실패:', error)
+  }
+}
 export default function AdminDashboard({ profile, currentAdminId, currentGymId, onLogout }) {
   const [activeTab, setActiveTab] = useState('회원')
   const [loading, setLoading] = useState(true)
@@ -316,6 +325,16 @@ const [collapsedInquiries, setCollapsedInquiries] = useState({})
 const [inquirySearch, setInquirySearch] = useState('')
 const [inquiryDateFilter, setInquiryDateFilter] = useState('')
 const [inquiryStatusFilter, setInquiryStatusFilter] = useState('all')
+  const [adminAlertSettings, setAdminAlertSettings] = useState({
+  inquiry: true,
+  notice: true,
+  sound: true,
+  popup: true,
+})
+
+const [adminAlerts, setAdminAlerts] = useState([])
+const [unreadInquiryCount, setUnreadInquiryCount] = useState(0)
+const [unreadNoticeCount, setUnreadNoticeCount] = useState(0)
   const selectedMember = useMemo(
     () => members.find((member) => member.id === selectedMemberId) || null,
     [members, selectedMemberId],
@@ -627,7 +646,85 @@ const salesLogSummary = useMemo(() => {
   useEffect(() => {
     loadAll()
   }, [])
+useEffect(() => {
+  const latestInquiry = inquiries[0]
+  const latestNotice = notices[0]
 
+  const savedInquiryId = localStorage.getItem(`admin_last_inquiry_${currentAdminId || 'default'}`)
+  const savedNoticeId = localStorage.getItem(`admin_last_notice_${currentAdminId || 'default'}`)
+
+  if (latestInquiry?.id) {
+    if (!savedInquiryId) {
+      localStorage.setItem(`admin_last_inquiry_${currentAdminId || 'default'}`, latestInquiry.id)
+    } else if (savedInquiryId !== latestInquiry.id && adminAlertSettings.inquiry) {
+      setUnreadInquiryCount((prev) => prev + 1)
+
+      const nextAlert = {
+        id: `inquiry-${latestInquiry.id}`,
+        type: 'inquiry',
+        text: `새 문의가 등록되었습니다. (${latestInquiry.name || '익명'})`,
+        createdAt: Date.now(),
+      }
+
+      setAdminAlerts((prev) => [nextAlert, ...prev].slice(0, 20))
+
+      if (adminAlertSettings.popup) {
+        setMessage(`📩 새 문의가 들어왔습니다. (${latestInquiry.name || '익명'})`)
+      }
+
+      if (adminAlertSettings.sound) {
+        playAdminAlertSound()
+      }
+
+      localStorage.setItem(`admin_last_inquiry_${currentAdminId || 'default'}`, latestInquiry.id)
+    }
+  }
+
+  if (latestNotice?.id) {
+    if (!savedNoticeId) {
+      localStorage.setItem(`admin_last_notice_${currentAdminId || 'default'}`, latestNotice.id)
+   } else if (savedNoticeId !== latestNotice.id && adminAlertSettings.notice) {
+      setUnreadNoticeCount((prev) => prev + 1)
+
+      const nextAlert = {
+        id: `notice-${latestNotice.id}`,
+        type: 'notice',
+        text: `새 공지사항이 등록되었습니다. (${latestNotice.title || '제목 없음'})`,
+        createdAt: Date.now(),
+      }
+
+      setAdminAlerts((prev) => [nextAlert, ...prev].slice(0, 20))
+
+      if (adminAlertSettings.popup) {
+        setMessage(`📢 새 공지사항이 등록되었습니다. (${latestNotice.title || '제목 없음'})`)
+      }
+
+      if (adminAlertSettings.sound) {
+        playAdminAlertSound()
+      }
+
+      localStorage.setItem(`admin_last_notice_${currentAdminId || 'default'}`, latestNotice.id)
+    }
+  }
+}, [inquiries, notices, adminAlertSettings, currentAdminId])
+  useEffect(() => {
+  const interval = setInterval(() => {
+    loadInquiries()
+    loadNotices()
+  }, 10000)
+
+  return () => clearInterval(interval)
+}, [currentAdminId])
+  useEffect(() => {
+  const saved = localStorage.getItem(`admin_alert_settings_${currentAdminId || 'default'}`)
+  if (saved) {
+    try {
+      setAdminAlertSettings(JSON.parse(saved))
+    } catch (error) {
+      console.error('알림 설정 불러오기 실패:', error)
+    }
+  }
+}, [currentAdminId])
   useEffect(() => {
     const found = manuals.find((manual) => manual.target_role === manualTarget)
     if (found) {
@@ -1098,7 +1195,23 @@ const loadSalesSummary = async (month) => {
     setCollapsedInquiries(collapsed)
   }
 }
+const updateAdminAlertSetting = (key, value) => {
+  setAdminAlertSettings((prev) => {
+    const next = { ...prev, [key]: value }
+    localStorage.setItem(`admin_alert_settings_${currentAdminId || 'default'}`, JSON.stringify(next))
+    return next
+  })
+}
 
+const removeAdminAlert = (alertId) => {
+  setAdminAlerts((prev) => prev.filter((item) => item.id !== alertId))
+}
+
+const clearAdminAlerts = () => {
+  setAdminAlerts([])
+  setUnreadInquiryCount(0)
+  setUnreadNoticeCount(0)
+}
   const resetMemberForm = () => {
     setMemberForm(emptyMemberForm)
     setEditingMemberId(null)
@@ -2108,6 +2221,71 @@ const toggleSalesArrayValue = (field, value) => {
 
   return (
     <div className="dashboard-shell">
+      <div className="admin-alert-bar">
+  <div className="admin-alert-summary">
+    <strong>알림</strong>
+    <span>문의 {unreadInquiryCount}건 / 공지 {unreadNoticeCount}건</span>
+  </div>
+
+  <div className="admin-alert-settings">
+    <label className="checkbox-line">
+      <input
+        type="checkbox"
+        checked={adminAlertSettings.inquiry}
+        onChange={(e) => updateAdminAlertSetting('inquiry', e.target.checked)}
+      />
+      <span>문의 알림</span>
+    </label>
+
+    <label className="checkbox-line">
+      <input
+        type="checkbox"
+        checked={adminAlertSettings.notice}
+        onChange={(e) => updateAdminAlertSetting('notice', e.target.checked)}
+      />
+      <span>공지 알림</span>
+    </label>
+
+    <label className="checkbox-line">
+      <input
+        type="checkbox"
+        checked={adminAlertSettings.sound}
+        onChange={(e) => updateAdminAlertSetting('sound', e.target.checked)}
+      />
+      <span>소리</span>
+    </label>
+
+    <label className="checkbox-line">
+      <input
+        type="checkbox"
+        checked={adminAlertSettings.popup}
+        onChange={(e) => updateAdminAlertSetting('popup', e.target.checked)}
+      />
+      <span>팝업</span>
+    </label>
+
+    <button type="button" className="secondary-btn" onClick={clearAdminAlerts}>
+      알림 초기화
+    </button>
+  </div>
+
+  {adminAlerts.length > 0 && (
+    <div className="admin-alert-list">
+      {adminAlerts.map((alert) => (
+        <div key={alert.id} className={`admin-alert-item ${alert.type}`}>
+          <span>{alert.text}</span>
+          <button
+            type="button"
+            className="secondary-btn"
+            onClick={() => removeAdminAlert(alert.id)}
+          >
+            닫기
+          </button>
+        </div>
+      ))}
+    </div>
+  )}
+</div>
       <header className="topbar">
         <div className="topbar-brand">
           <img src={logo} alt="숨바꼭질케어 로고" className="topbar-logo small" />
