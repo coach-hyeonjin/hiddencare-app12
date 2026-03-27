@@ -586,16 +586,15 @@ const salesLogSummary = useMemo(() => {
 }, [filteredSalesLogs])
 
   const filteredPrograms = useMemo(() => {
-    return programs.filter((program) => {
+  return programs
+    .filter((p) => {
       return (
         !programSearch.trim() ||
-        textIncludes(program.name, programSearch) ||
-        textIncludes(program.description, programSearch) ||
-        textIncludes(program.session_count, programSearch) ||
-        textIncludes(program.price, programSearch)
+        textIncludes(p.name, programSearch)
       )
     })
-  }, [programs, programSearch])
+    .sort((a, b) => (a.name || '').localeCompare(b.name || '', 'ko-KR'))
+}, [programs, programSearch])
 
   const filteredNotices = useMemo(() => {
     return notices.filter((notice) => {
