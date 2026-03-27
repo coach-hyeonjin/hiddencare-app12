@@ -1096,11 +1096,27 @@ const loadBrands = async () => {
   setCollapsedSchedules(collapsed)
 }
 
-  const loadPrograms = async () => {
+ const loadPrograms = async () => {
   if (!currentAdminId) {
     setPrograms([])
     return
   }
+
+  const { data, error } = await supabase
+    .from('programs')
+    .select('*')
+    .eq('admin_id', currentAdminId)
+    .order('created_at', { ascending: false })
+
+  if (error) {
+    console.error('프로그램 불러오기 실패:', error)
+    setMessage(`프로그램 불러오기 실패: ${error.message}`)
+    return
+  }
+
+  setPrograms(data || [])
+}
+
 const loadPartners = async () => {
   if (!currentAdminId) {
     setPartners([])
