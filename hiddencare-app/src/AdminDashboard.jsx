@@ -5,6 +5,7 @@ import logo from './assets/logo.png'
 const TABS = [
   '회원',
   '회원상세',
+  '루틴',
   '기록작성',
   '운동DB',
   '식단',
@@ -2546,35 +2547,7 @@ const toggleSalesArrayValue = (field, value) => {
         <p><strong>회원 링크:</strong> {window.location.origin}?member={selectedMember.id}</p>
       </div>
 
-      <div className="stack-gap">
-        <label className="field">
-          <span>루틴 제목</span>
-          <input
-            value={routineForm.title}
-            onChange={(e) => setRoutineForm({ ...routineForm, title: e.target.value })}
-          />
-        </label>
-
-        <label className="field">
-          <span>루틴 내용</span>
-          <textarea
-            rows="6"
-            value={routineForm.content}
-            onChange={(e) => setRoutineForm({ ...routineForm, content: e.target.value })}
-          />
-        </label>
-
-        <div className="inline-actions wrap">
-          <button className="primary-btn" type="button" onClick={handleRoutineSave}>
-            루틴 저장
-          </button>
-          <button className="danger-btn" type="button" onClick={handleRoutineDelete}>
-            루틴 삭제
-          </button>
-        </div>
-      </div>
-    </div>
-
+      
     <div className="sub-card">
       <h3>관리자 전용 메모</h3>
 
@@ -2674,7 +2647,120 @@ const toggleSalesArrayValue = (field, value) => {
     </div>
   </div>
 )}
+{activeTab === '루틴' && (
+  <div className="two-col routine-layout">
+    <section className="card">
+      <div className="member-list-header">
+        <h2>회원 선택</h2>
 
+        <div className="member-list-search-area">
+          <input
+            placeholder="이름 / 목표 / 프로그램 검색"
+            value={memberDetailSearch}
+            onChange={(e) => setMemberDetailSearch(e.target.value)}
+          />
+        </div>
+      </div>
+
+      <div className="list-stack">
+        {filteredMemberDetails.length === 0 ? (
+          <div className="workout-list-empty">검색 결과가 없습니다.</div>
+        ) : null}
+
+        {filteredMemberDetails.map((member) => {
+          const isSelected = selectedMemberId === member.id
+
+          return (
+            <div
+              key={member.id}
+              className={`list-card ${isSelected ? 'selected' : ''}`}
+              onClick={() => setSelectedMemberId(member.id)}
+            >
+              <div className="list-card-top">
+                <strong>{member.name}</strong>
+                <span className="pill">{member.programs?.name || '프로그램 없음'}</span>
+              </div>
+
+              <div className="compact-text">
+                목표: {member.goal || '-'} / 남은 세션: {member.remainingSessions}회
+              </div>
+
+              <div className="compact-text">
+                기간: {formatDate(member.start_date)} ~ {formatDate(member.end_date)}
+              </div>
+            </div>
+          )
+        })}
+      </div>
+    </section>
+
+    <section className="card">
+      <h2>루틴 관리</h2>
+
+      {!selectedMember ? (
+        <div className="workout-list-empty">왼쪽에서 회원을 선택해주세요.</div>
+      ) : (
+        <>
+          <div className="sub-card">
+            <h3>선택 회원 정보</h3>
+            <div className="detail-box">
+              <p><strong>이름:</strong> {selectedMember.name}</p>
+              <p><strong>목표:</strong> {selectedMember.goal || '-'}</p>
+              <p><strong>프로그램:</strong> {selectedMember.programs?.name || '-'}</p>
+              <p><strong>기간:</strong> {formatDate(selectedMember.start_date)} ~ {formatDate(selectedMember.end_date)}</p>
+              <p><strong>회원 메모:</strong> {selectedMember.memo || '-'}</p>
+              <p><strong>회원 링크:</strong> {window.location.origin}?member={selectedMember.id}</p>
+            </div>
+          </div>
+
+          <div className="sub-card">
+            <h3>루틴 작성 / 수정</h3>
+
+            <div className="stack-gap">
+              <label className="field">
+                <span>루틴 제목</span>
+                <input
+                  value={routineForm.title}
+                  onChange={(e) =>
+                    setRoutineForm((prev) => ({ ...prev, title: e.target.value }))
+                  }
+                />
+              </label>
+
+              <label className="field">
+                <span>루틴 내용</span>
+                <textarea
+                  rows="10"
+                  value={routineForm.content}
+                  onChange={(e) =>
+                    setRoutineForm((prev) => ({ ...prev, content: e.target.value }))
+                  }
+                />
+              </label>
+
+              <div className="inline-actions wrap">
+                <button className="primary-btn" type="button" onClick={handleRoutineSave}>
+                  루틴 저장
+                </button>
+                <button className="danger-btn" type="button" onClick={handleRoutineDelete}>
+                  루틴 삭제
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <div className="sub-card">
+            <h3>루틴 자동화 준비</h3>
+            <div className="detail-box">
+              <p>여기에 나중에 자동 분석 결과, 다음 주 추천, 주간 수행률, 휴식일 추천 기능을 붙일 수 있습니다.</p>
+              <p>즉, 이 탭을 루틴 전용 작업 공간으로 확장하면 됩니다.</p>
+            </div>
+          </div>
+        </>
+      )}
+    </section>
+  </div>
+)}
       {activeTab === '기록작성' && (
         <div className="two-col">
           <section className="card">
