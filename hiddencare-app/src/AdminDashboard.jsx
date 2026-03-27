@@ -344,6 +344,8 @@ const [salesLogConversionFilter, setSalesLogConversionFilter] = useState('all')
   const [partnerCategoryFilter, setPartnerCategoryFilter] = useState('all')
   const [selectedPartnerId, setSelectedPartnerId] = useState('')
   const [partnerUsages, setPartnerUsages] = useState([])
+  const [collapsedPartnerDetail, setCollapsedPartnerDetail] = useState(true)
+const [partnerUsageStatusFilter, setPartnerUsageStatusFilter] = useState('pending')
  const [inquiries, setInquiries] = useState([])
 const [collapsedInquiries, setCollapsedInquiries] = useState({})
 const [inquirySearch, setInquirySearch] = useState('')
@@ -828,6 +830,7 @@ useEffect(() => {
       ['loadCoachSchedules', () => loadCoachSchedules()],
       ['loadPrograms', () => loadPrograms()],
       ['loadPartners', () => loadPartners()],
+      ['loadPartnerUsages', () => loadPartnerUsages()],
       ['loadSalesRecords', () => loadSalesRecords()],
       ['loadSalesLogs', () => loadSalesLogs()],
       ['loadSalesSummary', () => loadSalesSummary(saleMonth)],
@@ -1143,7 +1146,29 @@ const loadPartners = async () => {
     setSelectedPartnerId(rows[0].id)
   }
 }
- 
+ const loadPartnerUsages = async () => {
+  if (!currentAdminId) {
+    setPartnerUsages([])
+    return
+  }
+
+  const { data, error } = await supabase
+    .from('partner_usage')
+    .select(`
+      *,
+      members(id, name, access_code),
+      partners(id, name)
+    `)
+    .order('requested_at', { ascending: false })
+
+  if (error) {
+    console.error('제휴 사용요청 불러오기 실패:', error)
+    setMessage(`제휴 사용요청 불러오기 실패: ${error.message}`)
+    return
+  }
+
+  setPartnerUsages(data || [])
+}
 
  const loadSalesRecords = async () => {
   if (!currentAdminId) {
@@ -2109,6 +2134,7 @@ const handlePartnerEdit = (partner) => {
     approval_required: !!partner.approval_required,
     is_active: !!partner.is_active,
   })
+  setCollapsedPartnerDetail(false)
   setActiveTab('제휴업체')
 }
   const handleProgramDelete = async (programId) => {
@@ -2131,11 +2157,46 @@ const handlePartnerDelete = async (partnerId) => {
   }
 
   if (selectedPartnerId === partnerId) {
-    setSelectedPartnerId('')
-  }
+  setSelectedPartnerId('')
+  setCollapsedPartnerDetail(true)
+}
 
   setMessage('제휴업체가 삭제되었습니다.')
   await loadPartners()
+}
+  const handlePartnerUsageApprove = async (usageId) => {
+  const { error } = await supabase
+    .from('partner_usage')
+    .update({
+      status: 'approved',
+      approved_at: new Date().toISOString(),
+    })
+    .eq('id', usageId)
+
+  if (error) {
+    setMessage(`승인 처리 실패: ${error.message}`)
+    return
+  }
+
+  setMessage('제휴 사용 요청이 승인되었습니다.')
+  await loadPartnerUsages()
+}
+
+const handlePartnerUsageReject = async (usageId) => {
+  const { error } = await supabase
+    .from('partner_usage')
+    .update({
+      status: 'rejected',
+    })
+    .eq('id', usageId)
+
+  if (error) {
+    setMessage(`반려 처리 실패: ${error.message}`)
+    return
+  }
+
+  setMessage('제휴 사용 요청이 반려되었습니다.')
+  await loadPartnerUsages()
 }
   const resetSaleForm = () => {
     setSaleForm(emptySaleForm)
@@ -4891,12 +4952,19 @@ const toggleSalesArrayValue = (field, value) => {
                     <div className="inline-actions wrap">
                       <span className="pill">{partner.is_active ? '활성' : '비활성'}</span>
                       <button
-                        type="button"
-                        className="secondary-btn"
-                        onClick={() => setSelectedPartnerId(partner.id)}
-                      >
-                        상세보기
-                      </button>
+  type="button"
+  className="secondary-btn"
+  onClick={() => {
+    if (selectedPartnerId === partner.id) {
+      setCollapsedPartnerDetail((prev) => !prev)
+    } else {
+      setSelectedPartnerId(partner.id)
+      setCollapsedPartnerDetail(false)
+    }
+  }}
+>
+  {selectedPartnerId === partner.id && !collapsedPartnerDetail ? '상세 접기' : '상세보기'}
+</button>
                       <button
                         type="button"
                         className="secondary-btn"
@@ -4923,26 +4991,133 @@ const toggleSalesArrayValue = (field, value) => {
             </div>
           </div>
 
-          {selectedPartner ? (
+                    {selectedPartner ? (
             <div className="card">
-              <h2>제휴업체 상세</h2>
-              <div className="detail-box stack-gap">
-                <p><strong>업체명:</strong> {selectedPartner.name || '-'}</p>
-                <p><strong>카테고리:</strong> {selectedPartner.category || '-'}</p>
-                <p><strong>한줄 소개:</strong> {selectedPartner.description || '-'}</p>
-                <p><strong>혜택:</strong> {selectedPartner.benefit || '-'}</p>
-                <p><strong>사용 조건:</strong> {selectedPartner.usage_condition || '-'}</p>
-                <p><strong>사용 방법:</strong> {selectedPartner.usage_guide || '-'}</p>
-                <p><strong>주의사항:</strong> {selectedPartner.caution || '-'}</p>
-                <p><strong>주소:</strong> {selectedPartner.address || '-'}</p>
-                <p><strong>연락처:</strong> {selectedPartner.phone || '-'}</p>
-                <p><strong>운영시간:</strong> {selectedPartner.business_hours || '-'}</p>
-                <p><strong>담당자:</strong> {selectedPartner.manager_name || '-'} / {selectedPartner.manager_phone || '-'}</p>
-                <p><strong>월 사용 가능 횟수:</strong> {selectedPartner.monthly_limit ?? 0}회</p>
-                <p><strong>VIP 추가 횟수:</strong> {selectedPartner.vip_extra_limit ?? 0}회</p>
-                <p><strong>승인 필요:</strong> {selectedPartner.approval_required ? '예' : '아니오'}</p>
-                <p><strong>상태:</strong> {selectedPartner.is_active ? '활성' : '비활성'}</p>
+              <div className="list-card-top">
+                <h2>제휴업체 상세</h2>
+
+                <div className="inline-actions wrap">
+                  <button
+                    type="button"
+                    className="secondary-btn"
+                    onClick={() => setCollapsedPartnerDetail((prev) => !prev)}
+                  >
+                    {collapsedPartnerDetail ? '상세 펼치기' : '상세 접기'}
+                  </button>
+                </div>
               </div>
+
+              {!collapsedPartnerDetail ? (
+                <>
+                  <div className="detail-box stack-gap">
+                    <p><strong>업체명:</strong> {selectedPartner.name || '-'}</p>
+                    <p><strong>카테고리:</strong> {selectedPartner.category || '-'}</p>
+                    <p><strong>한줄 소개:</strong> {selectedPartner.description || '-'}</p>
+                    <p><strong>혜택:</strong> {selectedPartner.benefit || '-'}</p>
+                    <p><strong>사용 조건:</strong> {selectedPartner.usage_condition || '-'}</p>
+                    <p><strong>사용 방법:</strong> {selectedPartner.usage_guide || '-'}</p>
+                    <p><strong>주의사항:</strong> {selectedPartner.caution || '-'}</p>
+                    <p><strong>주소:</strong> {selectedPartner.address || '-'}</p>
+                    <p><strong>연락처:</strong> {selectedPartner.phone || '-'}</p>
+                    <p><strong>운영시간:</strong> {selectedPartner.business_hours || '-'}</p>
+                    <p><strong>담당자:</strong> {selectedPartner.manager_name || '-'} / {selectedPartner.manager_phone || '-'}</p>
+                    <p><strong>월 사용 가능 횟수:</strong> {selectedPartner.monthly_limit ?? 0}회</p>
+                    <p><strong>VIP 추가 횟수:</strong> {selectedPartner.vip_extra_limit ?? 0}회</p>
+                    <p><strong>승인 필요:</strong> {selectedPartner.approval_required ? '예' : '아니오'}</p>
+                    <p><strong>상태:</strong> {selectedPartner.is_active ? '활성' : '비활성'}</p>
+                  </div>
+
+                  <div className="sub-card stack-gap">
+                    <div className="list-card-top">
+                      <h3>제휴 사용 요청 목록</h3>
+
+                      <select
+                        value={partnerUsageStatusFilter}
+                        onChange={(e) => setPartnerUsageStatusFilter(e.target.value)}
+                      >
+                        <option value="all">전체</option>
+                        <option value="pending">승인대기</option>
+                        <option value="approved">승인완료</option>
+                        <option value="rejected">반려</option>
+                      </select>
+                    </div>
+
+                    <div className="list-stack">
+                      {partnerUsages
+                        .filter((usage) => usage.partner_id === selectedPartner.id)
+                        .filter((usage) =>
+                          partnerUsageStatusFilter === 'all'
+                            ? true
+                            : usage.status === partnerUsageStatusFilter,
+                        )
+                        .length === 0 ? (
+                        <div className="detail-box">
+                          <p>해당 업체에 대한 사용 요청이 없습니다.</p>
+                        </div>
+                      ) : null}
+
+                      {partnerUsages
+                        .filter((usage) => usage.partner_id === selectedPartner.id)
+                        .filter((usage) =>
+                          partnerUsageStatusFilter === 'all'
+                            ? true
+                            : usage.status === partnerUsageStatusFilter,
+                        )
+                        .map((usage) => (
+                          <div key={usage.id} className="list-card">
+                            <div className="list-card-top">
+                              <div>
+                                <strong>{usage.members?.name || '회원없음'}</strong>
+                                <div className="compact-text">
+                                  요청일: {String(usage.requested_at || '').slice(0, 16).replace('T', ' ')}
+                                </div>
+                              </div>
+
+                              <span className="pill">
+                                {usage.status === 'approved'
+                                  ? '승인완료'
+                                  : usage.status === 'rejected'
+                                  ? '반려'
+                                  : '승인대기'}
+                              </span>
+                            </div>
+
+                            <div className="compact-text">
+                              Access Code: {usage.members?.access_code || '-'}
+                            </div>
+                            <div className="compact-text">
+                              메모: {usage.note || '-'}
+                            </div>
+                            <div className="compact-text">
+                              승인일: {usage.approved_at ? String(usage.approved_at).slice(0, 16).replace('T', ' ') : '-'}
+                            </div>
+
+                            <div className="inline-actions wrap">
+                              {usage.status === 'pending' ? (
+                                <>
+                                  <button
+                                    type="button"
+                                    className="primary-btn"
+                                    onClick={() => handlePartnerUsageApprove(usage.id)}
+                                  >
+                                    승인
+                                  </button>
+                                  <button
+                                    type="button"
+                                    className="danger-btn"
+                                    onClick={() => handlePartnerUsageReject(usage.id)}
+                                  >
+                                    반려
+                                  </button>
+                                </>
+                              ) : null}
+                            </div>
+                          </div>
+                        ))}
+                    </div>
+                  </div>
+                </>
+              ) : null}
             </div>
           ) : null}
         </div>
