@@ -3977,215 +3977,148 @@ const getSalesAutoFeedback = () => {
       )}
 {activeTab === '운영대시보드' && (
   <div className="stack-gap">
+    <div className="section-head">
+      <div>
+        <h2>운영 대시보드</h2>
+        <p className="sub-text">숫자만 보는 화면이 아니라, 지금 무엇을 먼저 봐야 하는지 정리하는 화면입니다.</p>
+      </div>
+    </div>
+
     <div className="coach-summary-grid">
       <div className="coach-summary-card">
-        <span>총 매출</span>
+        <span>이번달 총 매출</span>
         <strong>{Number(salesStatsExtended.totalSales || 0).toLocaleString()}원</strong>
+        <div className="compact-text">
+          결제 {salesStatsExtended.totalCount || 0}건 / VIP {salesStatsExtended.vipCount || 0}건
+        </div>
       </div>
 
       <div className="coach-summary-card">
-        <span>결제 건수</span>
-        <strong>{salesStatsExtended.totalCount || 0}</strong>
+        <span>신규 전환 현황</span>
+        <strong>{salesLogSummary.closed || 0}건</strong>
+        <div className="compact-text">
+          세일즈일지 {salesLogSummary.total || 0}건 중 결제완료 {salesLogSummary.closed || 0}건
+        </div>
       </div>
 
       <div className="coach-summary-card">
-        <span>VIP 수</span>
-        <strong>{salesStatsExtended.vipCount || 0}</strong>
+        <span>후속관리 필요</span>
+        <strong>{salesLogSummary.followup || 0}건</strong>
+        <div className="compact-text">
+          지금 바로 다시 확인해야 할 잠재 결제 고객 수
+        </div>
       </div>
 
       <div className="coach-summary-card">
-        <span>평균 컨디션</span>
+        <span>코치 상태</span>
         <strong>{Number(coachConditionSummary.avgCondition || 0).toFixed(1)}</strong>
+        <div className="compact-text">
+          평균 피로도 {Number(coachConditionSummary.avgFatigue || 0).toFixed(1)} / 스트레스 {Number(coachConditionSummary.avgStress || 0).toFixed(1)}
+        </div>
       </div>
     </div>
 
-    <div className="report-feedback-card">
-      {getSalesAutoFeedback()}
+    <div className="report-grid">
+      <div className="card">
+        <h2>지금 확인할 것</h2>
+        <div className="list-stack">
+          <div className="list-card">
+            <div className="list-card-top">
+              <strong>후속관리 대상</strong>
+              <span className="pill">{salesLogSummary.followup || 0}건</span>
+            </div>
+            <div className="compact-text">
+              결제 직전이거나 추가 설득이 필요한 리드입니다. 세일즈일지에서 후속관리중 항목 먼저 확인하세요.
+            </div>
+          </div>
+
+          <div className="list-card">
+            <div className="list-card-top">
+              <strong>이탈 고객</strong>
+              <span className="pill">{salesLogSummary.lost || 0}건</span>
+            </div>
+            <div className="compact-text">
+              가격, 시간, 필요성 부족 등 이탈 사유를 확인해서 다음 상담 방식에 반영해야 합니다.
+            </div>
+          </div>
+
+          <div className="list-card">
+            <div className="list-card-top">
+              <strong>컨디션 기록 수</strong>
+              <span className="pill">{filteredCoachConditions.length || 0}건</span>
+            </div>
+            <div className="compact-text">
+              이번달 코치 컨디션 기록이 적으면 평균값만 보고 판단하기 어렵습니다.
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div className="card">
+        <h2>자동 판단</h2>
+        <div className="list-stack">
+          <div className="report-feedback-card">
+            {getSalesAutoFeedback()}
+          </div>
+
+          <div className="report-feedback-card">
+            {!filteredCoachConditions.length
+              ? '이번 달 코치 컨디션 기록이 없습니다. 최소 주 1회 이상 입력해야 판단이 가능합니다.'
+              : Number(coachConditionSummary.avgFatigue || 0) >= 4
+                ? '코치 피로도가 높은 상태입니다. 스케줄 분산이나 휴식 조정이 먼저 필요합니다.'
+                : Number(coachConditionSummary.avgStress || 0) >= 4
+                  ? '업무 스트레스가 높습니다. 운영 방식이나 역할 분배를 점검하세요.'
+                  : Number(coachConditionSummary.avgCondition || 0) >= 4
+                    ? '전반적인 코치 컨디션은 안정적입니다.'
+                    : '코치 컨디션은 보통 수준입니다. 피로도와 스트레스 기록을 계속 누적해서 보세요.'}
+          </div>
+
+          <div className="report-feedback-card">
+            {salesLogSummary.followup > salesLogSummary.closed
+              ? '지금은 신규 유입보다 후속관리 정리가 더 우선입니다.'
+              : salesLogSummary.closed === 0
+                ? '세일즈일지 대비 결제완료가 없습니다. 상담 흐름과 제안 방식 점검이 필요합니다.'
+                : '현재는 결제 흐름이 완전히 나쁘지 않습니다. 후속관리와 재등록 제안을 같이 보세요.'}
+          </div>
+        </div>
+      </div>
     </div>
 
-    <div className="report-feedback-card">
-      {!filteredCoachConditions.length
-        ? '이번 달 코치 컨디션 기록이 없습니다.'
-        : Number(coachConditionSummary.avgFatigue || 0) >= 4
-          ? '코치 피로도가 높은 상태입니다. 스케줄 조정이 필요합니다.'
-          : Number(coachConditionSummary.avgStress || 0) >= 4
-            ? '업무 스트레스가 높은 상태입니다. 운영 점검이 필요합니다.'
-            : Number(coachConditionSummary.avgCondition || 0) >= 4
-              ? '전반적인 코치 컨디션은 안정적입니다.'
-              : '코치 컨디션은 보통 수준입니다.'}
+    <div className="card">
+      <h2>코치별 컨디션 기록</h2>
+      {filteredCoachConditions.length === 0 ? (
+        <div className="workout-list-empty">
+          아직 등록된 코치 컨디션 기록이 없습니다.
+        </div>
+      ) : (
+        <div className="list-stack">
+          {filteredCoachConditions.map((item) => {
+            const coachName =
+              coaches.find((coach) => coach.id === item.coach_id)?.name || '코치없음'
+
+            return (
+              <div key={item.id} className="list-card">
+                <div className="list-card-top">
+                  <strong>{coachName}</strong>
+                  <span className="pill">{item.check_month || '-'}</span>
+                </div>
+                <div className="compact-text">
+                  컨디션 {item.condition_score || 0} / 피로도 {item.fatigue_score || 0} / 집중도 {item.focus_score || 0} / 스트레스 {item.stress_score || 0}
+                </div>
+                <div className="compact-text">
+                  지원 필요: {item.support_needed || '-'}
+                </div>
+                <div className="compact-text">
+                  메모: {item.issue_note || '-'}
+                </div>
+              </div>
+            )
+          })}
+        </div>
+      )}
     </div>
   </div>
 )}
-      {activeTab === '코치스케줄' && (
-        <div className="two-col">
-          <section className="card">
-            <h2>코치 스케줄 등록 / 수정</h2>
-
-            <div className="stack-gap">
-              <label className="field">
-                <span>코치 선택</span>
-                <select value={selectedCoachId} onChange={(e) => setSelectedCoachId(e.target.value)}>
-                  <option value="">코치 선택</option>
-                  {coaches.map((coach) => (
-                    <option key={coach.id} value={coach.id}>
-                      {coach.name}
-                    </option>
-                  ))}
-                </select>
-              </label>
-
-              <label className="field">
-                <span>날짜</span>
-                <input
-                  type="date"
-                  value={scheduleForm.schedule_date}
-                  onChange={(e) => setScheduleForm({ ...scheduleForm, schedule_date: e.target.value })}
-                />
-              </label>
-
-              <div className="grid-2">
-                <label className="checkbox-line">
-                  <input
-                    type="checkbox"
-                    checked={scheduleForm.is_working}
-                    onChange={(e) => setScheduleForm({ ...scheduleForm, is_working: e.target.checked })}
-                  />
-                  <span>근무일</span>
-                </label>
-
-                <label className="checkbox-line">
-                  <input
-                    type="checkbox"
-                    checked={scheduleForm.is_weekend_work}
-                    onChange={(e) => setScheduleForm({ ...scheduleForm, is_weekend_work: e.target.checked })}
-                  />
-                  <span>주말 근무</span>
-                </label>
-              </div>
-
-              <div className="grid-2">
-                <label className="field">
-                  <span>근무 시작</span>
-                  <input
-                    type="time"
-                    value={scheduleForm.work_start}
-                    onChange={(e) => setScheduleForm({ ...scheduleForm, work_start: e.target.value })}
-                    disabled={!scheduleForm.is_working}
-                  />
-                </label>
-
-                <label className="field">
-                  <span>근무 종료</span>
-                  <input
-                    type="time"
-                    value={scheduleForm.work_end}
-                    onChange={(e) => setScheduleForm({ ...scheduleForm, work_end: e.target.value })}
-                    disabled={!scheduleForm.is_working}
-                  />
-                </label>
-              </div>
-
-              <div className="field">
-                <span>한가한 시간 체크</span>
-                <div className="slot-grid">
-                  {timeSlotOptions.map((slot) => {
-                    const checked = scheduleForm.selectedSlots.includes(slot)
-                    return (
-                      <label key={slot} className={`slot-chip ${checked ? 'active' : ''}`}>
-                        <input
-                          type="checkbox"
-                          checked={checked}
-                          onChange={() => toggleScheduleSlot(slot)}
-                          disabled={!scheduleForm.is_working}
-                        />
-                        <span>{slot}</span>
-                      </label>
-                    )
-                  })}
-                </div>
-              </div>
-
-              <label className="field">
-                <span>메모</span>
-                <textarea rows="4" value={scheduleForm.memo} onChange={(e) => setScheduleForm({ ...scheduleForm, memo: e.target.value })} />
-              </label>
-
-              <div className="inline-actions wrap">
-                <button type="button" className="primary-btn" onClick={handleScheduleSave}>
-                  스케줄 저장
-                </button>
-                <button type="button" className="secondary-btn" onClick={resetScheduleForm}>
-                  초기화
-                </button>
-              </div>
-            </div>
-          </section>
-
-          <section className="card">
-            <div className="section-head">
-              <h2>월별 코치 스케줄</h2>
-              <input type="month" value={scheduleMonth} onChange={(e) => setScheduleMonth(e.target.value)} />
-            </div>
-
-            <div className="list-stack">
-              {filteredSchedules.map((schedule) => {
-                const coach = coaches.find((item) => item.id === schedule.coach_id)
-                const collapsed = collapsedSchedules[schedule.id] ?? true
-                const slots = coachScheduleSlotsMap[schedule.id] || []
-
-                return (
-                  <div key={schedule.id} className="list-card">
-                    <div className="list-card-top">
-                      <strong>{coach?.name || '코치없음'} / {schedule.schedule_date}</strong>
-                      <span className="pill">
-                        {schedule.is_working ? '근무' : '휴무'}
-                        {schedule.is_weekend_work ? ' / 주말근무' : ''}
-                      </span>
-                    </div>
-
-                    <div className="compact-text">
-                      간략히보기: {schedule.is_working ? `${schedule.work_start || '-'} ~ ${schedule.work_end || '-'}` : '휴무'} / 가능시간 {slots.length}개
-                    </div>
-
-                    <div className="inline-actions wrap">
-                      <button
-                        type="button"
-                        className="secondary-btn"
-                        onClick={() =>
-                          setCollapsedSchedules((prev) => ({
-                            ...prev,
-                            [schedule.id]: !collapsed,
-                          }))
-                        }
-                      >
-                        {collapsed ? '상세히보기' : '간략히보기'}
-                      </button>
-
-                      <button type="button" className="secondary-btn" onClick={() => handleScheduleEdit(schedule)}>
-                        수정
-                      </button>
-
-                      <button type="button" className="danger-btn" onClick={() => handleScheduleDelete(schedule.id)}>
-                        삭제
-                      </button>
-                    </div>
-
-                    {!collapsed ? (
-                      <div className="detail-box">
-                        <p><strong>근무상태:</strong> {schedule.is_working ? '근무' : '휴무'}</p>
-                        <p><strong>주말근무:</strong> {schedule.is_weekend_work ? '예' : '아니오'}</p>
-                        <p><strong>근무시간:</strong> {schedule.work_start || '-'} ~ {schedule.work_end || '-'}</p>
-                        <p><strong>메모:</strong> {schedule.memo || '-'}</p>
-                        <p><strong>가능시간:</strong> {slots.length > 0 ? slots.map((slot) => slot.slot_time).join(', ') : '없음'}</p>
-                      </div>
-                    ) : null}
-                  </div>
-                )
-              })}
-            </div>
-          </section>
-        </div>
-      )}
 
       {activeTab === '매출기록' && (
         <div className="stack-gap">
