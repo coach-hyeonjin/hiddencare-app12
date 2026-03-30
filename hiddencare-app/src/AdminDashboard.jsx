@@ -2886,7 +2886,6 @@ const handleCoachReviewDelete = async (id) => {
   await loadCoachReviews()
   setMessage('코치 평가가 삭제되었습니다.')
 }
- const getSalesAutoFeedback = () => {
  const getCoachConditionAutoFeedback = () => {
   if (!filteredCoachConditions.length) return '이번 달 코치 컨디션 기록이 없습니다.'
   if (coachConditionSummary.avgFatigue >= 4) return '코치 피로도가 높은 상태입니다. 스케줄 조정이 필요합니다.'
@@ -2906,7 +2905,6 @@ const getSalesAutoFeedback = () => {
   if (total < 1000000) return '이번 달은 신규 등록/재등록 전환 전략 점검이 필요합니다.'
   return '현재 매출 흐름은 보통 수준입니다. 결제수단과 프로그램 전환율을 함께 보세요.'
 }
-
   const resetNoticeForm = () => {
     setNoticeForm(emptyNoticeForm)
     setEditingNoticeId(null)
