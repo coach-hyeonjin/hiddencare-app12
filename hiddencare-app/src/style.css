@@ -1026,13 +1026,55 @@ img {
   gap: 20px;
 }
 
+/* 병의원·약국 소개 */
+.medical-layout {
+  display: grid;
+  grid-template-columns: 1fr 1.1fr;
+  gap: 20px;
+}
+
+.medical-list-card {
+  cursor: pointer;
+}
+
+.medical-list-card .pill {
+  background: #eef4ff;
+  color: #3659c9;
+}
+
+.medical-empty {
+  padding: 18px 16px;
+  border: 1px dashed #cfd8e3;
+  border-radius: 14px;
+  background: #f8fafc;
+  color: #6b7280;
+  font-size: 14px;
+  text-align: center;
+  font-weight: 600;
+}
+
+.medical-detail-box {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.medical-detail-box p {
+  margin: 0;
+}
+
+.medical-detail-box strong {
+  color: #111827;
+}
+
 /* 반응형 */
 @media (max-width: 1024px) {
   .choice-grid,
   .two-col,
   .stats-grid,
   .grid-3,
-  .partner-layout {
+  .partner-layout,
+  .medical-layout {
     grid-template-columns: 1fr;
   }
 
