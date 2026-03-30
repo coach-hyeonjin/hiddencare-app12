@@ -9,7 +9,10 @@ const TABS = [
   '운동DB',
   '식단',
   '통계',
-  '코치스케줄',
+'운영대시보드',
+'코치관리',
+'리포트',
+'코치스케',
   '매출기록',
   '세일즈일지',
   '프로그램',
@@ -186,6 +189,31 @@ const emptySalesLogForm = {
   ot_count: 0,
   diary: '',
 }
+const emptyCoachConditionForm = {
+  id: null,
+  coach_id: '',
+  check_month: new Date().toISOString().slice(0, 7),
+  condition_score: 3,
+  fatigue_score: 3,
+  focus_score: 3,
+  stress_score: 3,
+  work_satisfaction_score: 3,
+  environment_satisfaction_score: 3,
+  support_needed: '',
+  issue_note: '',
+}
+
+const emptyCoachReviewForm = {
+  id: null,
+  coach_id: '',
+  review_month: new Date().toISOString().slice(0, 7),
+  revenue_score: 0,
+  activity_score: 0,
+  sales_score: 0,
+  attitude_score: 0,
+  total_score: 0,
+  manager_comment: '',
+}
 const salesMemberTypeOptions = ['신규', '기존회원', '휴면회원', '지인소개', '워크인']
 const salesSourceOptions = ['워크인', '블로그', '인스타', '지인소개', '회원소개', '재문의', '전화문의', '기타']
 const salesOtReasonOptions = ['체형교정', '통증관리', '다이어트', '근력증가', '재활운동', '운동배우기', '기구사용법', '라인관리', '기타']
@@ -349,7 +377,17 @@ export default function AdminDashboard({ profile, currentAdminId, currentGymId, 
   const [salesLogStageFilter, setSalesLogStageFilter] = useState('all')
 const [salesLogResultFilter, setSalesLogResultFilter] = useState('all')
 const [salesLogConversionFilter, setSalesLogConversionFilter] = useState('all')
+const [coachConditions, setCoachConditions] = useState([])
+const [coachConditionForm, setCoachConditionForm] = useState(emptyCoachConditionForm)
+const [editingCoachConditionId, setEditingCoachConditionId] = useState(null)
+const [coachConditionMonth, setCoachConditionMonth] = useState(new Date().toISOString().slice(0, 7))
+const [coachConditionCoachFilter, setCoachConditionCoachFilter] = useState('')
 
+const [coachReviews, setCoachReviews] = useState([])
+const [coachReviewForm, setCoachReviewForm] = useState(emptyCoachReviewForm)
+const [editingCoachReviewId, setEditingCoachReviewId] = useState(null)
+const [coachReviewMonth, setCoachReviewMonth] = useState(new Date().toISOString().slice(0, 7))
+const [coachReviewCoachFilter, setCoachReviewCoachFilter] = useState('')
   const [notices, setNotices] = useState([])
   const [noticeForm, setNoticeForm] = useState(emptyNoticeForm)
   const [editingNoticeId, setEditingNoticeId] = useState(null)
@@ -668,7 +706,33 @@ const salesLogSummary = useMemo(() => {
     lost: filteredSalesLogs.filter((log) => log.sales_result === 'lost').length,
   }
 }, [filteredSalesLogs])
+const filteredCoachConditions = useMemo(() => {
+  return coachConditions.filter((item) => {
+    const matchesMonth = !coachConditionMonth || item.check_month === coachConditionMonth
+    const matchesCoach = !coachConditionCoachFilter || item.coach_id === coachConditionCoachFilter
+    return matchesMonth && matchesCoach
+  })
+}, [coachConditions, coachConditionMonth, coachConditionCoachFilter])
 
+const coachConditionSummary = useMemo(() => {
+  if (!filteredCoachConditions.length) {
+    return {
+      avgCondition: 0,
+      avgFatigue: 0,
+      avgFocus: 0,
+      avgStress: 0,
+    }
+  }
+
+  const total = filteredCoachConditions.length
+
+  return {
+    avgCondition: filteredCoachConditions.reduce((sum, item) => sum + Number(item.condition_score || 0), 0) / total,
+    avgFatigue: filteredCoachConditions.reduce((sum, item) => sum + Number(item.fatigue_score || 0), 0) / total,
+    avgFocus: filteredCoachConditions.reduce((sum, item) => sum + Number(item.focus_score || 0), 0) / total,
+    avgStress: filteredCoachConditions.reduce((sum, item) => sum + Number(item.stress_score || 0), 0) / total,
+  }
+}, [filteredCoachConditions])
   const filteredPrograms = useMemo(() => {
   return programs
     .filter((p) => {
@@ -881,6 +945,8 @@ useEffect(() => {
       ['loadManuals', () => loadManuals()],
       ['loadCoaches', () => loadCoaches()],
       ['loadCoachSchedules', () => loadCoachSchedules()],
+      ['loadCoachConditions', () => loadCoachConditions()],
+['loadCoachReviews', () => loadCoachReviews()],
       ['loadPrograms', () => loadPrograms()],
       ['loadPartners', () => loadPartners()],
       ['loadMedicalPartners', () => loadMedicalPartners()],
@@ -1325,6 +1391,49 @@ const loadSalesSummary = async (month) => {
 }
 
   setSalesSummary(summary)
+}
+  const loadCoachConditions = async () => {
+  if (!currentAdminId) {
+    setCoachConditions([])
+    return
+  }
+
+  const { data, error } = await supabase
+    .from('coach_condition_logs')
+    .select('*, coaches(id, name)')
+    .eq('admin_id', currentAdminId)
+    .order('check_month', { ascending: false })
+    .order('created_at', { ascending: false })
+
+  if (error) {
+    console.error('코치 컨디션 불러오기 실패:', error)
+    setMessage(`코치 컨디션 불러오기 실패: ${error.message}`)
+    return
+  }
+
+  setCoachConditions(data || [])
+}
+
+const loadCoachReviews = async () => {
+  if (!currentAdminId) {
+    setCoachReviews([])
+    return
+  }
+
+  const { data, error } = await supabase
+    .from('coach_monthly_reviews')
+    .select('*, coaches(id, name)')
+    .eq('admin_id', currentAdminId)
+    .order('review_month', { ascending: false })
+    .order('created_at', { ascending: false })
+
+  if (error) {
+    console.error('코치 평가 불러오기 실패:', error)
+    setMessage(`코치 평가 불러오기 실패: ${error.message}`)
+    return
+  }
+
+  setCoachReviews(data || [])
 }
  const loadSalesLogs = async () => {
    console.log('🔥 adminId 확인:', currentAdminId)
@@ -2596,8 +2705,23 @@ const toggleSalesArrayValue = (field, value) => {
     await loadSalesLogs()
     setMessage('세일즈 일지가 삭제되었습니다.')
   }
+const resetCoachConditionForm = () => { ... }
+const handleCoachConditionSubmit = async (e) => { ... }
+const handleCoachConditionEdit = (item) => { ... }
+const handleCoachConditionDelete = async (id) => { ... }
 
+const resetCoachReviewForm = () => { ... }
+const handleCoachReviewSubmit = async (e) => { ... }
+const handleCoachReviewEdit = (item) => { ... }
+const handleCoachReviewDelete = async (id) => { ... }
  const getSalesAutoFeedback = () => {
+   const getCoachConditionAutoFeedback = () => {
+  if (!filteredCoachConditions.length) return '이번 달 코치 컨디션 기록이 없습니다.'
+  if (coachConditionSummary.avgFatigue >= 4) return '코치 피로도가 높은 상태입니다. 스케줄 조정이 필요합니다.'
+  if (coachConditionSummary.avgStress >= 4) return '업무 스트레스가 높은 상태입니다. 운영 점검이 필요합니다.'
+  if (coachConditionSummary.avgCondition >= 4) return '전반적인 코치 컨디션은 안정적입니다.'
+  return '코치 컨디션은 보통 수준입니다.'
+}
   const total = Number(salesStatsExtended.totalSales || 0)
   const count = Number(salesStatsExtended.totalCount || 0)
   const vip = Number(salesStatsExtended.vipCount || 0)
@@ -4660,7 +4784,112 @@ const toggleSalesArrayValue = (field, value) => {
     </section>
   </div>
 )}
+{activeTab === '코치관리' && (
+  <section className="admin-section">
+    <h2>코치관리</h2>
 
+    {/* 코치 선택 */}
+    <div className="form-row">
+      <select
+        value={coachConditionForm.coach_id}
+        onChange={(e) =>
+          setCoachConditionForm({
+            ...coachConditionForm,
+            coach_id: e.target.value,
+          })
+        }
+      >
+        <option value="">코치 선택</option>
+        {coaches.map((coach) => (
+          <option key={coach.id} value={coach.id}>
+            {coach.name}
+          </option>
+        ))}
+      </select>
+    </div>
+
+    {/* 점수 입력 */}
+    <div className="form-row">
+      <label>컨디션</label>
+      <input
+        type="number"
+        value={coachConditionForm.condition_score}
+        onChange={(e) =>
+          setCoachConditionForm({
+            ...coachConditionForm,
+            condition_score: Number(e.target.value),
+          })
+        }
+      />
+
+      <label>피로도</label>
+      <input
+        type="number"
+        value={coachConditionForm.fatigue_score}
+        onChange={(e) =>
+          setCoachConditionForm({
+            ...coachConditionForm,
+            fatigue_score: Number(e.target.value),
+          })
+        }
+      />
+    </div>
+
+    {/* 메모 */}
+    <div className="form-row">
+      <textarea
+        placeholder="메모"
+        value={coachConditionForm.issue_note}
+        onChange={(e) =>
+          setCoachConditionForm({
+            ...coachConditionForm,
+            issue_note: e.target.value,
+          })
+        }
+      />
+    </div>
+
+    {/* 버튼 */}
+    <div className="form-row">
+      <button onClick={handleCoachConditionSubmit}>저장</button>
+      <button onClick={resetCoachConditionForm}>초기화</button>
+    </div>
+
+    {/* 리스트 */}
+    <div className="list-section">
+      {coachConditions.map((item) => (
+        <div key={item.id} className="card">
+          <div>
+            코치: {item.coaches?.name || '-'} / 컨디션: {item.condition_score}
+          </div>
+
+          <div>
+            피로도: {item.fatigue_score} / 메모: {item.issue_note}
+          </div>
+
+          <button onClick={() => handleCoachConditionEdit(item)}>수정</button>
+          <button onClick={() => handleCoachConditionDelete(item.id)}>삭제</button>
+        </div>
+      ))}
+    </div>
+  </section>
+)}
+
+{activeTab === '리포트' && (
+  <section className="admin-section">
+    <h2>리포트</h2>
+
+    <div className="card">
+      <p>평균 컨디션: {coachConditionSummary.avgCondition?.toFixed(1)}</p>
+      <p>평균 피로도: {coachConditionSummary.avgFatigue?.toFixed(1)}</p>
+      <p>평균 스트레스: {coachConditionSummary.avgStress?.toFixed(1)}</p>
+    </div>
+
+    <div className="card">
+      <p>{getCoachConditionAutoFeedback()}</p>
+    </div>
+  </section>
+)}
       {activeTab === '프로그램' && (
         <div className="two-col">
           <section className="card">
