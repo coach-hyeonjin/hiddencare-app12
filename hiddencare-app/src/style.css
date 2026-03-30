@@ -402,9 +402,11 @@ img {
 .compact-text {
   font-size: 13px;
   color: #6b7280;
-  line-height: 1.5;
+  line-height: 1.7;
   margin-top: 6px;
-  word-break: break-word;
+  white-space: pre-line;
+  word-break: keep-all;
+  overflow-wrap: break-word;
 }
 
 .pill {
@@ -432,7 +434,11 @@ img {
 }
 
 .detail-box p {
-  margin: 0 0 8px;
+  margin: 0 0 10px;
+  line-height: 1.7;
+  white-space: pre-line;
+  word-break: keep-all;
+  overflow-wrap: break-word;
 }
 
 .detail-box p:last-child {
@@ -1060,7 +1066,15 @@ img {
 }
 
 .medical-detail-box p {
-  margin: 0;
+  margin: 0 0 10px;
+  line-height: 1.7;
+  white-space: pre-line;
+  word-break: keep-all;
+  overflow-wrap: break-word;
+}
+
+.medical-detail-box p:last-child {
+  margin-bottom: 0;
 }
 
 .medical-detail-box strong {
