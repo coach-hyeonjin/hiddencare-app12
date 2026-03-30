@@ -12,7 +12,7 @@ const TABS = [
 '운영대시보드',
 '코치관리',
 '리포트',
-'코치스케',
+'코치스케줄',
   '매출기록',
   '세일즈일지',
   '프로그램',
@@ -2705,23 +2705,197 @@ const toggleSalesArrayValue = (field, value) => {
     await loadSalesLogs()
     setMessage('세일즈 일지가 삭제되었습니다.')
   }
-const resetCoachConditionForm = () => { ... }
-const handleCoachConditionSubmit = async (e) => { ... }
-const handleCoachConditionEdit = (item) => { ... }
-const handleCoachConditionDelete = async (id) => { ... }
+const resetCoachConditionForm = () => {
+  setCoachConditionForm(emptyCoachConditionForm)
+  setEditingCoachConditionId(null)
+}
 
-const resetCoachReviewForm = () => { ... }
-const handleCoachReviewSubmit = async (e) => { ... }
-const handleCoachReviewEdit = (item) => { ... }
-const handleCoachReviewDelete = async (id) => { ... }
+const handleCoachConditionSubmit = async (e) => {
+  e.preventDefault()
+
+  if (!coachConditionForm.coach_id) {
+    setMessage('코치를 선택해주세요.')
+    return
+  }
+
+  const payload = {
+    coach_id: coachConditionForm.coach_id,
+    check_month: coachConditionForm.check_month,
+    condition_score: Number(coachConditionForm.condition_score) || 0,
+    fatigue_score: Number(coachConditionForm.fatigue_score) || 0,
+    focus_score: Number(coachConditionForm.focus_score) || 0,
+    stress_score: Number(coachConditionForm.stress_score) || 0,
+    work_satisfaction_score: Number(coachConditionForm.work_satisfaction_score) || 0,
+    environment_satisfaction_score: Number(coachConditionForm.environment_satisfaction_score) || 0,
+    support_needed: coachConditionForm.support_needed?.trim() || '',
+    issue_note: coachConditionForm.issue_note?.trim() || '',
+    admin_id: currentAdminId || null,
+    gym_id: currentGymId || null,
+  }
+
+  let error = null
+
+  if (editingCoachConditionId) {
+    const { error: updateError } = await supabase
+      .from('coach_condition_logs')
+      .update(payload)
+      .eq('id', editingCoachConditionId)
+    error = updateError
+  } else {
+    const { error: insertError } = await supabase
+      .from('coach_condition_logs')
+      .insert(payload)
+    error = insertError
+  }
+
+  if (error) {
+    console.error('코치 컨디션 저장 실패:', error)
+    setMessage(`코치 컨디션 저장 실패: ${error.message}`)
+    return
+  }
+
+  await loadCoachConditions()
+  resetCoachConditionForm()
+  setMessage('코치 컨디션이 저장되었습니다.')
+}
+
+const handleCoachConditionEdit = (item) => {
+  setCoachConditionForm({
+    id: item.id,
+    coach_id: item.coach_id || '',
+    check_month: item.check_month || new Date().toISOString().slice(0, 7),
+    condition_score: item.condition_score ?? 3,
+    fatigue_score: item.fatigue_score ?? 3,
+    focus_score: item.focus_score ?? 3,
+    stress_score: item.stress_score ?? 3,
+    work_satisfaction_score: item.work_satisfaction_score ?? 3,
+    environment_satisfaction_score: item.environment_satisfaction_score ?? 3,
+    support_needed: item.support_needed || '',
+    issue_note: item.issue_note || '',
+  })
+  setEditingCoachConditionId(item.id)
+  setActiveTab('코치관리')
+}
+
+const handleCoachConditionDelete = async (id) => {
+  if (!window.confirm('이 코치 컨디션 기록을 삭제할까요?')) return
+
+  const { error } = await supabase
+    .from('coach_condition_logs')
+    .delete()
+    .eq('id', id)
+
+  if (error) {
+    console.error('코치 컨디션 삭제 실패:', error)
+    setMessage(`코치 컨디션 삭제 실패: ${error.message}`)
+    return
+  }
+
+  await loadCoachConditions()
+  setMessage('코치 컨디션이 삭제되었습니다.')
+}
+
+const resetCoachReviewForm = () => {
+  setCoachReviewForm(emptyCoachReviewForm)
+  setEditingCoachReviewId(null)
+}
+
+const handleCoachReviewSubmit = async (e) => {
+  e.preventDefault()
+
+  if (!coachReviewForm.coach_id) {
+    setMessage('코치를 선택해주세요.')
+    return
+  }
+
+  const totalScore =
+    (Number(coachReviewForm.revenue_score) || 0) +
+    (Number(coachReviewForm.activity_score) || 0) +
+    (Number(coachReviewForm.sales_score) || 0) +
+    (Number(coachReviewForm.attitude_score) || 0)
+
+  const payload = {
+    coach_id: coachReviewForm.coach_id,
+    review_month: coachReviewForm.review_month,
+    revenue_score: Number(coachReviewForm.revenue_score) || 0,
+    activity_score: Number(coachReviewForm.activity_score) || 0,
+    sales_score: Number(coachReviewForm.sales_score) || 0,
+    attitude_score: Number(coachReviewForm.attitude_score) || 0,
+    total_score: totalScore,
+    manager_comment: coachReviewForm.manager_comment?.trim() || '',
+    admin_id: currentAdminId || null,
+    gym_id: currentGymId || null,
+  }
+
+  let error = null
+
+  if (editingCoachReviewId) {
+    const { error: updateError } = await supabase
+      .from('coach_monthly_reviews')
+      .update(payload)
+      .eq('id', editingCoachReviewId)
+    error = updateError
+  } else {
+    const { error: insertError } = await supabase
+      .from('coach_monthly_reviews')
+      .insert(payload)
+    error = insertError
+  }
+
+  if (error) {
+    console.error('코치 평가 저장 실패:', error)
+    setMessage(`코치 평가 저장 실패: ${error.message}`)
+    return
+  }
+
+  await loadCoachReviews()
+  resetCoachReviewForm()
+  setMessage('코치 평가가 저장되었습니다.')
+}
+
+const handleCoachReviewEdit = (item) => {
+  setCoachReviewForm({
+    id: item.id,
+    coach_id: item.coach_id || '',
+    review_month: item.review_month || new Date().toISOString().slice(0, 7),
+    revenue_score: item.revenue_score ?? 0,
+    activity_score: item.activity_score ?? 0,
+    sales_score: item.sales_score ?? 0,
+    attitude_score: item.attitude_score ?? 0,
+    total_score: item.total_score ?? 0,
+    manager_comment: item.manager_comment || '',
+  })
+  setEditingCoachReviewId(item.id)
+  setActiveTab('리포트')
+}
+
+const handleCoachReviewDelete = async (id) => {
+  if (!window.confirm('이 코치 평가를 삭제할까요?')) return
+
+  const { error } = await supabase
+    .from('coach_monthly_reviews')
+    .delete()
+    .eq('id', id)
+
+  if (error) {
+    console.error('코치 평가 삭제 실패:', error)
+    setMessage(`코치 평가 삭제 실패: ${error.message}`)
+    return
+  }
+
+  await loadCoachReviews()
+  setMessage('코치 평가가 삭제되었습니다.')
+}
  const getSalesAutoFeedback = () => {
-   const getCoachConditionAutoFeedback = () => {
+ const getCoachConditionAutoFeedback = () => {
   if (!filteredCoachConditions.length) return '이번 달 코치 컨디션 기록이 없습니다.'
   if (coachConditionSummary.avgFatigue >= 4) return '코치 피로도가 높은 상태입니다. 스케줄 조정이 필요합니다.'
   if (coachConditionSummary.avgStress >= 4) return '업무 스트레스가 높은 상태입니다. 운영 점검이 필요합니다.'
   if (coachConditionSummary.avgCondition >= 4) return '전반적인 코치 컨디션은 안정적입니다.'
   return '코치 컨디션은 보통 수준입니다.'
 }
+
+const getSalesAutoFeedback = () => {
   const total = Number(salesStatsExtended.totalSales || 0)
   const count = Number(salesStatsExtended.totalCount || 0)
   const vip = Number(salesStatsExtended.vipCount || 0)
