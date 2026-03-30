@@ -3975,7 +3975,47 @@ const getSalesAutoFeedback = () => {
           </div>
         </div>
       )}
+{activeTab === '운영대시보드' && (
+  <div className="stack-gap">
+    <div className="coach-summary-grid">
+      <div className="coach-summary-card">
+        <span>총 매출</span>
+        <strong>{Number(salesStatsExtended.totalSales || 0).toLocaleString()}원</strong>
+      </div>
 
+      <div className="coach-summary-card">
+        <span>결제 건수</span>
+        <strong>{salesStatsExtended.totalCount || 0}</strong>
+      </div>
+
+      <div className="coach-summary-card">
+        <span>VIP 수</span>
+        <strong>{salesStatsExtended.vipCount || 0}</strong>
+      </div>
+
+      <div className="coach-summary-card">
+        <span>평균 컨디션</span>
+        <strong>{Number(coachConditionSummary.avgCondition || 0).toFixed(1)}</strong>
+      </div>
+    </div>
+
+    <div className="report-feedback-card">
+      {getSalesAutoFeedback()}
+    </div>
+
+    <div className="report-feedback-card">
+      {!filteredCoachConditions.length
+        ? '이번 달 코치 컨디션 기록이 없습니다.'
+        : Number(coachConditionSummary.avgFatigue || 0) >= 4
+          ? '코치 피로도가 높은 상태입니다. 스케줄 조정이 필요합니다.'
+          : Number(coachConditionSummary.avgStress || 0) >= 4
+            ? '업무 스트레스가 높은 상태입니다. 운영 점검이 필요합니다.'
+            : Number(coachConditionSummary.avgCondition || 0) >= 4
+              ? '전반적인 코치 컨디션은 안정적입니다.'
+              : '코치 컨디션은 보통 수준입니다.'}
+    </div>
+  </div>
+)}
       {activeTab === '코치스케줄' && (
         <div className="two-col">
           <section className="card">
@@ -4956,6 +4996,7 @@ const getSalesAutoFeedback = () => {
     </section>
   </div>
 )}
+      
 {activeTab === '코치관리' && (
   <section className="admin-section">
     <h2>코치관리</h2>
