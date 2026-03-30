@@ -2663,7 +2663,7 @@ const clearMemberAlerts = () => {
         </div>
       )}
             {activeTab === '병의원·약국 소개' && (
-        <div className="two-col">
+        <div className="medical-layout">
           <section className="card">
             <div className="section-head">
               <div>
@@ -2703,7 +2703,7 @@ const clearMemberAlerts = () => {
               {filteredMedicalPartners.map((item) => (
                 <div
                   key={item.id}
-                  className={`list-card ${selectedMedicalPartnerId === item.id ? 'selected' : ''}`}
+                 className={`list-card medical-list-card ${selectedMedicalPartnerId === item.id ? 'selected' : ''}`}
                   onClick={() => setSelectedMedicalPartnerId(item.id)}
                 >
                   <div className="list-card-top">
@@ -2720,9 +2720,9 @@ const clearMemberAlerts = () => {
               ))}
 
               {filteredMedicalPartners.length === 0 && (
-                <div className="list-card">
-                  <p className="compact-text">안내 가능한 병의원·약국 정보가 없습니다.</p>
-                </div>
+                <div className="medical-empty">
+  안내 가능한 병의원·약국 정보가 없습니다.
+</div>
               )}
             </div>
           </section>
@@ -2736,7 +2736,7 @@ const clearMemberAlerts = () => {
             </div>
 
             {selectedMedicalPartner ? (
-              <div className="detail-box">
+              <div className="detail-box medical-detail-box">
                 <p><strong>이름:</strong> {selectedMedicalPartner.name || '-'}</p>
                 <p><strong>구분:</strong> {selectedMedicalPartner.place_type || '-'}</p>
                 <p><strong>카테고리:</strong> {selectedMedicalPartner.category || '-'}</p>
