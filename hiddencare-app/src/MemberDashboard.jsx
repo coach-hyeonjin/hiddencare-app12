@@ -13,6 +13,7 @@ const TABS = [
   '코치스케줄',
   '공지사항',
   '제휴업체',
+  '병의원·약국 소개',
   '문의사항',
   '사용방법',
 ]
@@ -227,6 +228,10 @@ export default function MemberDashboard({ member, accessCode, onLogout }) {
   const [partnerCategoryFilter, setPartnerCategoryFilter] = useState('all')
   const [selectedPartnerId, setSelectedPartnerId] = useState('')
   const [partnerUsageForm, setPartnerUsageForm] = useState(emptyPartnerUsageForm)
+    const [medicalPartners, setMedicalPartners] = useState([])
+  const [medicalPartnerSearch, setMedicalPartnerSearch] = useState('')
+  const [medicalPartnerCategoryFilter, setMedicalPartnerCategoryFilter] = useState('all')
+  const [selectedMedicalPartnerId, setSelectedMedicalPartnerId] = useState('')
 const [memberAlertSettings, setMemberAlertSettings] = useState({
   inquiryAnswer: true,
   notice: true,
@@ -363,12 +368,33 @@ const calculatedRecommendedKcal = useMemo(() => {
       })
       .sort((a, b) => (a.name || '').localeCompare(b.name || '', 'ko-KR'))
   }, [partners, partnerSearch, partnerCategoryFilter])
+    const filteredMedicalPartners = useMemo(() => {
+    return medicalPartners
+      .filter((item) => {
+        const matchesKeyword =
+          !medicalPartnerSearch.trim() ||
+          textIncludes(item.name, medicalPartnerSearch) ||
+          textIncludes(item.category, medicalPartnerSearch) ||
+          textIncludes(item.place_type, medicalPartnerSearch) ||
+          textIncludes(item.short_description, medicalPartnerSearch) ||
+          textIncludes(item.recommended_for, medicalPartnerSearch) ||
+          textIncludes(item.address, medicalPartnerSearch)
 
+        const matchesCategory =
+          medicalPartnerCategoryFilter === 'all' || item.category === medicalPartnerCategoryFilter
+
+        return item.is_active && matchesKeyword && matchesCategory
+      })
+      .sort((a, b) => (a.name || '').localeCompare(b.name || '', 'ko-KR'))
+  }, [medicalPartners, medicalPartnerSearch, medicalPartnerCategoryFilter])
   const selectedPartner = useMemo(
     () => partners.find((partner) => partner.id === selectedPartnerId) || null,
     [partners, selectedPartnerId],
   )
-
+  const selectedMedicalPartner = useMemo(
+    () => medicalPartners.find((item) => item.id === selectedMedicalPartnerId) || null,
+    [medicalPartners, selectedMedicalPartnerId],
+  )
   const selectedPartnerUsageSummary = useMemo(() => {
     if (!selectedPartner) {
       return {
@@ -582,6 +608,7 @@ useEffect(() => {
         loadManual(),
         loadPrograms(adminId),
         loadPartners(adminId),
+        loadMedicalPartners(adminId),
         loadPartnerUsages(),
         loadCoaches(adminId),
         loadCoachSchedules(adminId),
@@ -777,7 +804,35 @@ useEffect(() => {
       setSelectedPartnerId(rows[0].id)
     }
   }
+  const loadMedicalPartners = async (adminIdParam = null) => {
+    const adminId = adminIdParam || currentAdminId || member?.admin_id || null
 
+    if (!adminId) {
+      setMedicalPartners([])
+      setSelectedMedicalPartnerId('')
+      return
+    }
+
+    const { data, error } = await supabase
+      .from('medical_partners')
+      .select('*')
+      .eq('admin_id', adminId)
+      .eq('is_active', true)
+      .order('created_at', { ascending: false })
+
+    if (error) {
+      console.error('병의원·약국 소개 불러오기 실패:', error)
+      setMessage(`병의원·약국 소개 불러오기 실패: ${error.message}`)
+      return
+    }
+
+    const rows = data || []
+    setMedicalPartners(rows)
+
+    if (!selectedMedicalPartnerId && rows[0]) {
+      setSelectedMedicalPartnerId(rows[0].id)
+    }
+  }
   const loadPartnerUsages = async () => {
     const { data, error } = await supabase
       .from('partner_usage')
@@ -2605,6 +2660,102 @@ const clearMemberAlerts = () => {
               </div>
             </section>
           ) : null}
+        </div>
+      )}
+            {activeTab === '병의원·약국 소개' && (
+        <div className="two-col">
+          <section className="card">
+            <div className="section-head">
+              <div>
+                <h2>병의원·약국 소개</h2>
+                <p className="sub-text">운동 중 통증, 검사, 처방 상담이 필요할 때 참고할 수 있는 안내입니다.</p>
+              </div>
+            </div>
+
+            <div className="grid-2">
+              <label className="field">
+                <span>검색</span>
+                <input
+                  value={medicalPartnerSearch}
+                  onChange={(e) => setMedicalPartnerSearch(e.target.value)}
+                  placeholder="이름, 카테고리, 주소 검색"
+                />
+              </label>
+
+              <label className="field">
+                <span>카테고리</span>
+                <select
+                  value={medicalPartnerCategoryFilter}
+                  onChange={(e) => setMedicalPartnerCategoryFilter(e.target.value)}
+                >
+                  <option value="all">전체</option>
+                  <option value="정형외과">정형외과</option>
+                  <option value="재활의학과">재활의학과</option>
+                  <option value="한의원">한의원</option>
+                  <option value="약국">약국</option>
+                  <option value="영상검사">영상검사</option>
+                  <option value="기타">기타</option>
+                </select>
+              </label>
+            </div>
+
+            <div className="list-stack">
+              {filteredMedicalPartners.map((item) => (
+                <div
+                  key={item.id}
+                  className={`list-card ${selectedMedicalPartnerId === item.id ? 'selected' : ''}`}
+                  onClick={() => setSelectedMedicalPartnerId(item.id)}
+                >
+                  <div className="list-card-top">
+                    <div>
+                      <strong>{item.name}</strong>
+                      <div className="compact-text">
+                        {item.place_type} · {item.category}
+                      </div>
+                      <div className="compact-text">{item.short_description || '-'}</div>
+                    </div>
+                    <span className="pill">안내</span>
+                  </div>
+                </div>
+              ))}
+
+              {filteredMedicalPartners.length === 0 && (
+                <div className="list-card">
+                  <p className="compact-text">안내 가능한 병의원·약국 정보가 없습니다.</p>
+                </div>
+              )}
+            </div>
+          </section>
+
+          <section className="card">
+            <div className="section-head">
+              <div>
+                <h2>상세 안내</h2>
+                <p className="sub-text">회원님의 상태에 따라 참고용으로 확인해주세요.</p>
+              </div>
+            </div>
+
+            {selectedMedicalPartner ? (
+              <div className="detail-box">
+                <p><strong>이름:</strong> {selectedMedicalPartner.name || '-'}</p>
+                <p><strong>구분:</strong> {selectedMedicalPartner.place_type || '-'}</p>
+                <p><strong>카테고리:</strong> {selectedMedicalPartner.category || '-'}</p>
+                <p><strong>한줄 소개:</strong> {selectedMedicalPartner.short_description || '-'}</p>
+                <p><strong>추천 이유:</strong> {selectedMedicalPartner.recommend_reason || '-'}</p>
+                <p><strong>이런 분께 추천:</strong> {selectedMedicalPartner.recommended_for || '-'}</p>
+                <p><strong>주소:</strong> {selectedMedicalPartner.address || '-'}</p>
+                <p><strong>전화번호:</strong> {selectedMedicalPartner.phone || '-'}</p>
+                <p><strong>운영/진료 시간:</strong> {selectedMedicalPartner.business_hours || '-'}</p>
+                <p><strong>주차 안내:</strong> {selectedMedicalPartner.parking_info || '-'}</p>
+                <p><strong>예약 방법:</strong> {selectedMedicalPartner.reservation_guide || '-'}</p>
+                <p><strong>주의사항:</strong> {selectedMedicalPartner.caution || '-'}</p>
+              </div>
+            ) : (
+              <div className="detail-box">
+                <p>왼쪽에서 병의원·약국 항목을 선택해주세요.</p>
+              </div>
+            )}
+          </section>
         </div>
       )}
       {activeTab === '문의사항' && (
