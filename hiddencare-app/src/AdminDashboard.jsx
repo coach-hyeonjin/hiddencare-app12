@@ -16,8 +16,10 @@ const TABS = [
   '공지사항',
   '사용방법',
   '제휴업체',
+  '병의원·약국 소개',
   '문의사항',
 ]
+
 const emptyMemberForm = {
   name: '',
   goal: '',
@@ -114,6 +116,24 @@ const emptyPartnerForm = {
   monthly_limit: 1,
   vip_extra_limit: 0,
   approval_required: true,
+  is_active: true,
+}
+const emptyMedicalPartnerForm = {
+  id: null,
+  name: '',
+  category: '정형외과',
+  place_type: '병원',
+  short_description: '',
+  recommend_reason: '',
+  recommended_for: '',
+  address: '',
+  phone: '',
+  business_hours: '',
+  parking_info: '',
+  reservation_guide: '',
+  caution: '',
+  manager_name: '',
+  manager_phone: '',
   is_active: true,
 }
 const emptySaleForm = {
@@ -348,6 +368,14 @@ const [salesLogConversionFilter, setSalesLogConversionFilter] = useState('all')
   const [partnerUsages, setPartnerUsages] = useState([])
   const [collapsedPartnerDetail, setCollapsedPartnerDetail] = useState(true)
 const [partnerUsageStatusFilter, setPartnerUsageStatusFilter] = useState('pending')
+    const [medicalPartners, setMedicalPartners] = useState([])
+  const [medicalPartnerCategories, setMedicalPartnerCategories] = useState([])
+  const [medicalPartnerForm, setMedicalPartnerForm] = useState(emptyMedicalPartnerForm)
+  const [editingMedicalPartnerId, setEditingMedicalPartnerId] = useState(null)
+  const [medicalPartnerSearch, setMedicalPartnerSearch] = useState('')
+  const [medicalPartnerCategoryFilter, setMedicalPartnerCategoryFilter] = useState('all')
+  const [selectedMedicalPartnerId, setSelectedMedicalPartnerId] = useState('')
+  const [collapsedMedicalPartnerDetail, setCollapsedMedicalPartnerDetail] = useState(true)
  const [inquiries, setInquiries] = useState([])
 const [collapsedInquiries, setCollapsedInquiries] = useState({})
 const [inquirySearch, setInquirySearch] = useState('')
@@ -371,6 +399,10 @@ const selectedPartner = useMemo(
     () => partners.find((partner) => partner.id === selectedPartnerId) || null,
     [partners, selectedPartnerId],
   )
+  const selectedMedicalPartner = useMemo(
+  () => medicalPartners.find((item) => item.id === selectedMedicalPartnerId) || null,
+  [medicalPartners, selectedMedicalPartnerId],
+)
   const filteredExercises = useMemo(() => {
     const keyword = exerciseSearch.trim().toLowerCase()
     if (!keyword) return exercises
@@ -665,6 +697,25 @@ const salesLogSummary = useMemo(() => {
     })
     .sort((a, b) => (a.name || '').localeCompare(b.name || '', 'ko-KR'))
 }, [partners, partnerSearch, partnerCategoryFilter])
+  const filteredMedicalPartners = useMemo(() => {
+  return medicalPartners
+    .filter((item) => {
+      const matchesKeyword =
+        !medicalPartnerSearch.trim() ||
+        textIncludes(item.name, medicalPartnerSearch) ||
+        textIncludes(item.category, medicalPartnerSearch) ||
+        textIncludes(item.place_type, medicalPartnerSearch) ||
+        textIncludes(item.short_description, medicalPartnerSearch) ||
+        textIncludes(item.recommended_for, medicalPartnerSearch) ||
+        textIncludes(item.address, medicalPartnerSearch)
+
+      const matchesCategory =
+        medicalPartnerCategoryFilter === 'all' || item.category === medicalPartnerCategoryFilter
+
+      return matchesKeyword && matchesCategory
+    })
+    .sort((a, b) => (a.name || '').localeCompare(b.name || '', 'ko-KR'))
+}, [medicalPartners, medicalPartnerSearch, medicalPartnerCategoryFilter])
 const filteredNotices = useMemo(() => {
   return notices.filter((notice) => {
     const monthSource = getMonthKey(notice.starts_at || notice.created_at || '')
@@ -832,6 +883,7 @@ useEffect(() => {
       ['loadCoachSchedules', () => loadCoachSchedules()],
       ['loadPrograms', () => loadPrograms()],
       ['loadPartners', () => loadPartners()],
+      ['loadMedicalPartners', () => loadMedicalPartners()],
       ['loadPartnerUsages', () => loadPartnerUsages()],
       ['loadSalesRecords', () => loadSalesRecords()],
       ['loadSalesLogs', () => loadSalesLogs()],
@@ -1148,6 +1200,36 @@ setPartnerCategories(uniqueCategories)
 
   if (!selectedPartnerId && rows[0]) {
     setSelectedPartnerId(rows[0].id)
+  }
+}
+  const loadMedicalPartners = async () => {
+  if (!currentAdminId) {
+    setMedicalPartners([])
+    setMedicalPartnerCategories([])
+    setSelectedMedicalPartnerId('')
+    return
+  }
+
+  const { data, error } = await supabase
+    .from('medical_partners')
+    .select('*')
+    .eq('admin_id', currentAdminId)
+    .order('created_at', { ascending: false })
+
+  if (error) {
+    console.error('병의원·약국 소개 불러오기 실패:', error)
+    setMessage(`병의원·약국 소개 불러오기 실패: ${error.message}`)
+    return
+  }
+
+  const rows = data || []
+  setMedicalPartners(rows)
+
+  const uniqueCategories = [...new Set(rows.map((item) => item.category).filter(Boolean))]
+  setMedicalPartnerCategories(uniqueCategories)
+
+  if (!selectedMedicalPartnerId && rows[0]) {
+    setSelectedMedicalPartnerId(rows[0].id)
   }
 }
  const loadPartnerUsages = async () => {
@@ -2116,6 +2198,68 @@ const handlePartnerSubmit = async (e) => {
       is_active: !!program.is_active,
     })
   }
+  const handleMedicalPartnerSubmit = async (e) => {
+  e.preventDefault()
+
+  const payload = {
+    name: medicalPartnerForm.name?.trim() || '',
+    category: medicalPartnerForm.category?.trim() || '',
+    place_type: medicalPartnerForm.place_type?.trim() || '',
+    short_description: medicalPartnerForm.short_description?.trim() || '',
+    recommend_reason: medicalPartnerForm.recommend_reason?.trim() || '',
+    recommended_for: medicalPartnerForm.recommended_for?.trim() || '',
+    address: medicalPartnerForm.address?.trim() || '',
+    phone: medicalPartnerForm.phone?.trim() || '',
+    business_hours: medicalPartnerForm.business_hours?.trim() || '',
+    parking_info: medicalPartnerForm.parking_info?.trim() || '',
+    reservation_guide: medicalPartnerForm.reservation_guide?.trim() || '',
+    caution: medicalPartnerForm.caution?.trim() || '',
+    manager_name: medicalPartnerForm.manager_name?.trim() || '',
+    manager_phone: medicalPartnerForm.manager_phone?.trim() || '',
+    is_active: !!medicalPartnerForm.is_active,
+    admin_id: currentAdminId || null,
+    gym_id: currentGymId || null,
+  }
+
+  if (!payload.name) {
+    setMessage('병의원/약국 이름을 입력해주세요.')
+    return
+  }
+
+  if (!payload.category) {
+    setMessage('카테고리를 선택해주세요.')
+    return
+  }
+
+  if (editingMedicalPartnerId) {
+    const { error } = await supabase
+      .from('medical_partners')
+      .update(payload)
+      .eq('id', editingMedicalPartnerId)
+
+    if (error) {
+      setMessage(`병의원·약국 소개 수정 실패: ${error.message}`)
+      return
+    }
+
+    setMessage('병의원·약국 소개가 수정되었습니다.')
+  } else {
+    const { error } = await supabase
+      .from('medical_partners')
+      .insert(payload)
+
+    if (error) {
+      setMessage(`병의원·약국 소개 추가 실패: ${error.message}`)
+      return
+    }
+
+    setMessage('병의원·약국 소개가 추가되었습니다.')
+  }
+
+  setMedicalPartnerForm(emptyMedicalPartnerForm)
+  setEditingMedicalPartnerId(null)
+  await loadMedicalPartners()
+}
 const handlePartnerEdit = (partner) => {
   setEditingPartnerId(partner.id)
   setSelectedPartnerId(partner.id)
@@ -2147,6 +2291,52 @@ const handlePartnerEdit = (partner) => {
 )
   setCollapsedPartnerDetail(false)
   setActiveTab('제휴업체')
+}
+  const handleMedicalPartnerEdit = (item) => {
+  setEditingMedicalPartnerId(item.id)
+  setSelectedMedicalPartnerId(item.id)
+  setMedicalPartnerForm({
+    id: item.id,
+    name: item.name || '',
+    category: item.category || '정형외과',
+    place_type: item.place_type || '병원',
+    short_description: item.short_description || '',
+    recommend_reason: item.recommend_reason || '',
+    recommended_for: item.recommended_for || '',
+    address: item.address || '',
+    phone: item.phone || '',
+    business_hours: item.business_hours || '',
+    parking_info: item.parking_info || '',
+    reservation_guide: item.reservation_guide || '',
+    caution: item.caution || '',
+    manager_name: item.manager_name || '',
+    manager_phone: item.manager_phone || '',
+    is_active: !!item.is_active,
+  })
+  setCollapsedMedicalPartnerDetail(false)
+  setActiveTab('병의원·약국 소개')
+}
+
+const handleMedicalPartnerDelete = async (id) => {
+  if (!window.confirm('병의원·약국 소개 항목을 삭제할까요?')) return
+
+  const { error } = await supabase
+    .from('medical_partners')
+    .delete()
+    .eq('id', id)
+
+  if (error) {
+    setMessage(`병의원·약국 소개 삭제 실패: ${error.message}`)
+    return
+  }
+
+  if (selectedMedicalPartnerId === id) {
+    setSelectedMedicalPartnerId('')
+    setCollapsedMedicalPartnerDetail(true)
+  }
+
+  setMessage('병의원·약국 소개 항목이 삭제되었습니다.')
+  await loadMedicalPartners()
 }
   const handleProgramDelete = async (programId) => {
     if (!window.confirm('프로그램을 삭제할까요?')) return
@@ -5146,6 +5336,300 @@ const toggleSalesArrayValue = (field, value) => {
               ) : null}
             </div>
           ) : null}
+        </div>
+      )}
+            {activeTab === '병의원·약국 소개' && (
+        <div className="two-col">
+          <section className="card">
+            <div className="section-head">
+              <div>
+                <h2>{editingMedicalPartnerId ? '병의원·약국 소개 수정' : '병의원·약국 소개 등록'}</h2>
+                <p className="sub-text">회원에게 보여줄 병의원/약국 안내 정보를 등록합니다.</p>
+              </div>
+            </div>
+
+            <form className="stack-gap" onSubmit={handleMedicalPartnerSubmit}>
+              <div className="grid-2">
+                <label className="field">
+                  <span>이름</span>
+                  <input
+                    value={medicalPartnerForm.name}
+                    onChange={(e) => setMedicalPartnerForm({ ...medicalPartnerForm, name: e.target.value })}
+                    placeholder="예: 화정정형외과 / 건강약국"
+                  />
+                </label>
+
+                <label className="field">
+                  <span>구분</span>
+                  <select
+                    value={medicalPartnerForm.place_type}
+                    onChange={(e) => setMedicalPartnerForm({ ...medicalPartnerForm, place_type: e.target.value })}
+                  >
+                    <option value="병원">병원</option>
+                    <option value="의원">의원</option>
+                    <option value="한의원">한의원</option>
+                    <option value="약국">약국</option>
+                    <option value="검사센터">검사센터</option>
+                    <option value="기타">기타</option>
+                  </select>
+                </label>
+              </div>
+
+              <div className="grid-2">
+                <label className="field">
+                  <span>카테고리</span>
+                  <select
+                    value={medicalPartnerForm.category}
+                    onChange={(e) => setMedicalPartnerForm({ ...medicalPartnerForm, category: e.target.value })}
+                  >
+                    <option value="정형외과">정형외과</option>
+                    <option value="재활의학과">재활의학과</option>
+                    <option value="한의원">한의원</option>
+                    <option value="약국">약국</option>
+                    <option value="영상검사">영상검사</option>
+                    <option value="기타">기타</option>
+                  </select>
+                </label>
+
+                <label className="field">
+                  <span>노출 여부</span>
+                  <select
+                    value={medicalPartnerForm.is_active ? 'Y' : 'N'}
+                    onChange={(e) =>
+                      setMedicalPartnerForm({
+                        ...medicalPartnerForm,
+                        is_active: e.target.value === 'Y',
+                      })
+                    }
+                  >
+                    <option value="Y">노출</option>
+                    <option value="N">숨김</option>
+                  </select>
+                </label>
+              </div>
+
+              <label className="field">
+                <span>한줄 소개</span>
+                <input
+                  value={medicalPartnerForm.short_description}
+                  onChange={(e) => setMedicalPartnerForm({ ...medicalPartnerForm, short_description: e.target.value })}
+                  placeholder="예: 무릎/허리/어깨 통증 상담이 필요한 분께"
+                />
+              </label>
+
+              <label className="field">
+                <span>추천 이유</span>
+                <textarea
+                  rows="3"
+                  value={medicalPartnerForm.recommend_reason}
+                  onChange={(e) => setMedicalPartnerForm({ ...medicalPartnerForm, recommend_reason: e.target.value })}
+                  placeholder="왜 이 병의원/약국을 안내하는지"
+                />
+              </label>
+
+              <label className="field">
+                <span>이런 분께 추천</span>
+                <textarea
+                  rows="3"
+                  value={medicalPartnerForm.recommended_for}
+                  onChange={(e) => setMedicalPartnerForm({ ...medicalPartnerForm, recommended_for: e.target.value })}
+                  placeholder="예: 어깨 통증, 허리 통증, 검사 필요, 처방 상담 필요"
+                />
+              </label>
+
+              <div className="grid-2">
+                <label className="field">
+                  <span>주소</span>
+                  <input
+                    value={medicalPartnerForm.address}
+                    onChange={(e) => setMedicalPartnerForm({ ...medicalPartnerForm, address: e.target.value })}
+                  />
+                </label>
+
+                <label className="field">
+                  <span>전화번호</span>
+                  <input
+                    value={medicalPartnerForm.phone}
+                    onChange={(e) => setMedicalPartnerForm({ ...medicalPartnerForm, phone: e.target.value })}
+                  />
+                </label>
+              </div>
+
+              <div className="grid-2">
+                <label className="field">
+                  <span>운영/진료 시간</span>
+                  <input
+                    value={medicalPartnerForm.business_hours}
+                    onChange={(e) => setMedicalPartnerForm({ ...medicalPartnerForm, business_hours: e.target.value })}
+                  />
+                </label>
+
+                <label className="field">
+                  <span>주차 안내</span>
+                  <input
+                    value={medicalPartnerForm.parking_info}
+                    onChange={(e) => setMedicalPartnerForm({ ...medicalPartnerForm, parking_info: e.target.value })}
+                  />
+                </label>
+              </div>
+
+              <label className="field">
+                <span>예약 방법</span>
+                <textarea
+                  rows="2"
+                  value={medicalPartnerForm.reservation_guide}
+                  onChange={(e) => setMedicalPartnerForm({ ...medicalPartnerForm, reservation_guide: e.target.value })}
+                />
+              </label>
+
+              <label className="field">
+                <span>주의사항</span>
+                <textarea
+                  rows="2"
+                  value={medicalPartnerForm.caution}
+                  onChange={(e) => setMedicalPartnerForm({ ...medicalPartnerForm, caution: e.target.value })}
+                />
+              </label>
+
+              <div className="grid-2">
+                <label className="field">
+                  <span>담당자명</span>
+                  <input
+                    value={medicalPartnerForm.manager_name}
+                    onChange={(e) => setMedicalPartnerForm({ ...medicalPartnerForm, manager_name: e.target.value })}
+                  />
+                </label>
+
+                <label className="field">
+                  <span>담당자 연락처</span>
+                  <input
+                    value={medicalPartnerForm.manager_phone}
+                    onChange={(e) => setMedicalPartnerForm({ ...medicalPartnerForm, manager_phone: e.target.value })}
+                  />
+                </label>
+              </div>
+
+              <div className="inline-actions wrap">
+                <button type="submit" className="primary-btn">
+                  {editingMedicalPartnerId ? '수정 저장' : '등록하기'}
+                </button>
+
+                <button
+                  type="button"
+                  className="secondary-btn"
+                  onClick={() => {
+                    setMedicalPartnerForm(emptyMedicalPartnerForm)
+                    setEditingMedicalPartnerId(null)
+                  }}
+                >
+                  초기화
+                </button>
+              </div>
+            </form>
+          </section>
+
+          <section className="card">
+            <div className="section-head">
+              <div>
+                <h2>등록된 병의원·약국 소개</h2>
+                <p className="sub-text">회원에게 보여줄 안내 목록입니다.</p>
+              </div>
+            </div>
+
+            <div className="grid-2">
+              <label className="field">
+                <span>검색</span>
+                <input
+                  value={medicalPartnerSearch}
+                  onChange={(e) => setMedicalPartnerSearch(e.target.value)}
+                  placeholder="이름, 카테고리, 주소 검색"
+                />
+              </label>
+
+              <label className="field">
+                <span>카테고리 필터</span>
+                <select
+                  value={medicalPartnerCategoryFilter}
+                  onChange={(e) => setMedicalPartnerCategoryFilter(e.target.value)}
+                >
+                  <option value="all">전체</option>
+                  {medicalPartnerCategories.map((cat) => (
+                    <option key={cat} value={cat}>
+                      {cat}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            </div>
+
+            <div className="list-stack">
+              {filteredMedicalPartners.map((item) => (
+                <div
+                  key={item.id}
+                  className={`list-card ${selectedMedicalPartnerId === item.id ? 'selected' : ''}`}
+                >
+                  <div className="list-card-top">
+                    <div>
+                      <strong>{item.name}</strong>
+                      <div className="compact-text">
+                        {item.place_type} · {item.category}
+                      </div>
+                      <div className="compact-text">{item.short_description || '-'}</div>
+                    </div>
+
+                    <div className="inline-actions wrap">
+                      <span className="pill">{item.is_active ? '노출중' : '숨김'}</span>
+                      <button
+                        type="button"
+                        className="secondary-btn"
+                        onClick={() => {
+                          setSelectedMedicalPartnerId(item.id)
+                          setCollapsedMedicalPartnerDetail((prev) =>
+                            selectedMedicalPartnerId === item.id ? !prev : false
+                          )
+                        }}
+                      >
+                        상세보기
+                      </button>
+                      <button
+                        type="button"
+                        className="secondary-btn"
+                        onClick={() => handleMedicalPartnerEdit(item)}
+                      >
+                        수정
+                      </button>
+                      <button
+                        type="button"
+                        className="danger-btn"
+                        onClick={() => handleMedicalPartnerDelete(item.id)}
+                      >
+                        삭제
+                      </button>
+                    </div>
+                  </div>
+
+                  {selectedMedicalPartnerId === item.id && !collapsedMedicalPartnerDetail && (
+                    <div className="detail-box">
+                      <p><strong>추천 이유:</strong> {item.recommend_reason || '-'}</p>
+                      <p><strong>이런 분께 추천:</strong> {item.recommended_for || '-'}</p>
+                      <p><strong>주소:</strong> {item.address || '-'}</p>
+                      <p><strong>전화번호:</strong> {item.phone || '-'}</p>
+                      <p><strong>운영/진료 시간:</strong> {item.business_hours || '-'}</p>
+                      <p><strong>주차 안내:</strong> {item.parking_info || '-'}</p>
+                      <p><strong>예약 방법:</strong> {item.reservation_guide || '-'}</p>
+                      <p><strong>주의사항:</strong> {item.caution || '-'}</p>
+                    </div>
+                  )}
+                </div>
+              ))}
+
+              {filteredMedicalPartners.length === 0 && (
+                <div className="list-card">
+                  <p className="compact-text">등록된 병의원·약국 소개 항목이 없습니다.</p>
+                </div>
+              )}
+            </div>
+          </section>
         </div>
       )}
       {activeTab === '문의사항' && (
