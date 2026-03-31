@@ -3290,7 +3290,9 @@ const handleCoachConditionEdit = (item) => {
   support_needed: item.support_needed || '',
   issue_note: item.issue_note || '',
 })
-
+ setEditingCoachConditionId(item.id)
+  setActiveTab('코치관리')
+}
 const handleCoachConditionDelete = async (id) => {
   if (!window.confirm('이 코치 컨디션 기록을 삭제할까요?')) return
 
