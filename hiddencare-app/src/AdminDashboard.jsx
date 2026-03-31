@@ -38,21 +38,31 @@ const emptyMemberForm = {
 const emptyWorkoutItem = {
   exercise_id: '',
   exercise_name_snapshot: '',
-  is_cardio: false,
-  cardio_minutes: '',
-  sets: [{ kg: '', reps: '' }],
+  record_mode: 'reps',
+  sets: [{ kg: '', reps: '', duration_seconds: '' }],
 }
-
 const emptyWorkoutForm = {
   id: null,
   member_id: '',
   workout_date: new Date().toISOString().slice(0, 10),
   workout_type: 'pt',
+
+  log_category: 'strength', // 'strength' | 'activity'
+
+  // 웨이트
+  items: [{ ...emptyWorkoutItem }],
+
+  // 활동기록
+  activity_name: '',
+  activity_duration_minutes: '',
+  activity_good: '',
+  activity_improve: '',
+  activity_feedback: '',
+  activity_memo: '',
+
   good: '',
   improve: '',
-  items: [{ ...emptyWorkoutItem }],
 }
-
 const emptyBrandForm = { name: '' }
 
 const emptyExerciseForm = {
@@ -371,15 +381,23 @@ function formatDate(value) {
 }
 
 function getTotalSetCount(items = []) {
-  return items.reduce((sum, item) => sum + (item.sets?.length || 0), 0)
+  return items.reduce((sum, item) => {
+    return sum + (item.sets?.length || 0)
+  }, 0)
 }
 
 function normalizeSets(sets = []) {
   return sets
-    .filter((setRow) => setRow.kg !== '' || setRow.reps !== '')
+    .filter(
+      (setRow) =>
+        setRow.kg !== '' ||
+        setRow.reps !== '' ||
+        setRow.duration_seconds !== ''
+    )
     .map((setRow) => ({
       kg: String(setRow.kg ?? ''),
       reps: String(setRow.reps ?? ''),
+      duration_seconds: setRow.duration_seconds || '',
     }))
 }
 
@@ -2000,15 +2018,22 @@ const clearAdminAlerts = () => {
 
   setWorkoutForm((prev) => {
     const nextItems = [...prev.items]
-    const isCardio = found?.category === '유산소'
+    const updateWorkoutItemSelect = (itemIndex, exerciseId) => {
+  const found = exercises.find((exercise) => String(exercise.id) === String(exerciseId))
+
+  setWorkoutForm((prev) => {
+    const nextItems = [...prev.items]
 
     nextItems[itemIndex] = {
       ...nextItems[itemIndex],
       exercise_id: found?.id || '',
-      exercise_name_snapshot: found?.name || nextItems[itemIndex].exercise_name_snapshot,
-      is_cardio: !!isCardio,
-      cardio_minutes: isCardio ? nextItems[itemIndex].cardio_minutes || '' : '',
-      sets: isCardio ? [{ kg: '', reps: '' }] : nextItems[itemIndex].sets,
+      exercise_name_snapshot:
+        found?.name || nextItems[itemIndex].exercise_name_snapshot,
+      record_mode: nextItems[itemIndex].record_mode || 'reps',
+      sets:
+        Array.isArray(nextItems[itemIndex].sets) && nextItems[itemIndex].sets.length > 0
+          ? nextItems[itemIndex].sets
+          : [{ kg: '', reps: '', duration_seconds: '' }],
     }
 
     return { ...prev, items: nextItems }
@@ -2045,8 +2070,10 @@ const addSet = (itemIndex) => {
     const nextItems = [...prev.items]
     nextItems[itemIndex] = {
       ...nextItems[itemIndex],
-      sets: [...nextItems[itemIndex].sets, { kg: '', reps: '' }],
-    }
+     sets: [
+  ...nextItems[itemIndex].sets,
+  { kg: '', reps: '', duration_seconds: '' },
+],
     return { ...prev, items: nextItems }
   })
 }
@@ -2087,9 +2114,8 @@ const updateSetValue = (itemIndex, setIndex, field, value) => {
     exercise_id: item.exercise_id || null,
     exercise_name_snapshot: item.exercise_name_snapshot.trim(),
     sort_order: index,
-    is_cardio: !!item.is_cardio,
-    cardio_minutes: item.is_cardio ? Number(item.cardio_minutes || 0) : null,
-    sets: item.is_cardio ? [] : normalizeSets(item.sets),
+    record_mode: item.record_mode || 'reps',
+    sets: normalizeSets(item.sets),
   }))
     if (cleanedItems.length === 0) {
       setMessage('최소 1개의 운동을 입력해주세요.')
@@ -2168,12 +2194,15 @@ const updateSetValue = (itemIndex, setIndex, field, value) => {
     ? items.map((item) => ({
         exercise_id: item.exercise_id || '',
         exercise_name_snapshot: item.exercise_name_snapshot || '',
-        is_cardio: !!item.is_cardio,
-        cardio_minutes: item.cardio_minutes || '',
+        record_mode: item.record_mode || 'reps',
         sets:
-          !item.is_cardio && Array.isArray(item.sets) && item.sets.length > 0
-            ? item.sets
-            : [{ kg: '', reps: '' }],
+          Array.isArray(item.sets) && item.sets.length > 0
+            ? item.sets.map((setRow) => ({
+                kg: setRow.kg || '',
+                reps: setRow.reps || '',
+                duration_seconds: setRow.duration_seconds || '',
+              }))
+            : [{ kg: '', reps: '', duration_seconds: '' }],
       }))
     : [{ ...emptyWorkoutItem }],
     })
@@ -3834,27 +3863,7 @@ const getSalesAutoFeedback = () => {
                         placeholder="예: 힙쓰러스트, 밴드 워크, 스쿼트"
                       />
                     </label>
-{item.is_cardio ? (
-  <label className="field">
-    <span>유산소 시간(분)</span>
-    <input
-      type="number"
-      value={item.cardio_minutes || ''}
-      onChange={(e) => {
-        const value = e.target.value
-        setWorkoutForm((prev) => {
-          const nextItems = [...prev.items]
-          nextItems[itemIndex] = {
-            ...nextItems[itemIndex],
-            cardio_minutes: value,
-          }
-          return { ...prev, items: nextItems }
-        })
-      }}
-      placeholder="예: 20"
-    />
-  </label>
-) : (
+
   <div className="stack-gap">
     {item.sets.map((setRow, setIndex) => (
       <div className="set-row" key={setIndex}>
@@ -4018,20 +4027,7 @@ const getSalesAutoFeedback = () => {
       <div key={item.id} className="record-item-box">
         <strong>{item.exercise_name_snapshot}</strong>
 
-        {item.is_cardio ? (
-          <div className="compact-text">유산소 {item.cardio_minutes || 0}분</div>
-        ) : (
-          <ul className="set-list">
-            {(item.sets || []).map((setRow, idx) => (
-              <li key={idx}>
-                {idx + 1}세트 - {setRow.kg || '-'}kg / {setRow.reps || '-'}회
-              </li>
-            ))}
-          </ul>
-        )}
-      </div>
-    ))}
-  </div>
+       
 
   <div className="workout-detail-summary">
     <p><strong>잘한점:</strong> {workout.good || '-'}</p>
