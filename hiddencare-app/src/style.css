@@ -66,6 +66,7 @@ textarea:focus {
 
 textarea {
   resize: vertical;
+  min-height: 110px;
 }
 
 img {
@@ -563,6 +564,37 @@ img {
   margin: 0;
 }
 
+.checkbox-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  min-height: 46px;
+  padding: 12px 14px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: #fff;
+  margin-top: 8px;
+  transition: 0.2s ease;
+}
+
+.checkbox-row:hover {
+  border-color: rgba(31, 111, 235, 0.28);
+  background: #f8fbff;
+}
+
+.checkbox-row input {
+  width: auto;
+  margin: 2px 0 0;
+  flex-shrink: 0;
+}
+
+.checkbox-row span {
+  line-height: 1.55;
+  color: var(--text);
+  word-break: keep-all;
+  overflow-wrap: break-word;
+}
+
 .slot-grid {
   display: flex;
   flex-wrap: wrap;
@@ -596,7 +628,6 @@ img {
   width: 100%;
 }
 
-/* 매출 미니 차트 */
 .mini-chart {
   display: flex;
   flex-direction: column;
@@ -639,7 +670,6 @@ img {
   font-weight: 700;
 }
 
-/* 세일즈일지 상태 */
 .sales-log-card {
   border-left: 4px solid var(--line);
 }
@@ -671,7 +701,6 @@ img {
   color: var(--warning);
 }
 
-/* 운동기록 목록 오른쪽 검색/날짜 그룹 전용 */
 .workout-list-tools {
   display: flex;
   flex-direction: column;
@@ -809,7 +838,6 @@ img {
   gap: 10px;
 }
 
-/* 세일즈 일지 폼 섹션 */
 .sales-form-section {
   border: 1px solid #e5e7eb;
   border-radius: 14px;
@@ -824,7 +852,6 @@ img {
   font-weight: 600;
 }
 
-/* 세일즈 체크박스 그리드 - 핵심 수정 */
 .check-grid {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -871,7 +898,6 @@ img {
   background: #f8faff;
 }
 
-/* 세일즈 목록 날짜 그룹 */
 .sales-log-date-group {
   margin-bottom: 16px;
 }
@@ -882,7 +908,6 @@ img {
   color: #374151;
 }
 
-/* 통계 카드 */
 .mini-stat-card {
   border: 1px solid #e5e7eb;
   border-radius: 12px;
@@ -901,7 +926,6 @@ img {
   color: #6b7280;
 }
 
-/* 문의사항 */
 .inquiry-card {
   border-left: 4px solid var(--primary);
 }
@@ -939,7 +963,6 @@ img {
   color: var(--warning);
 }
 
-/* 관리자 / 회원 알림 바 */
 .admin-alert-bar {
   display: flex;
   flex-direction: column;
@@ -1025,14 +1048,12 @@ img {
   border-color: #a5f3fc;
 }
 
-/* 제휴업체 */
 .partner-layout {
   display: grid;
   grid-template-columns: 1fr 2fr;
   gap: 20px;
 }
 
-/* 병의원·약국 소개 */
 .medical-layout {
   display: grid;
   grid-template-columns: 1fr 1.1fr;
@@ -1081,6 +1102,74 @@ img {
   color: #111827;
 }
 
+/* ===== 코치관리 / 운영대시보드 / 리포트 ===== */
+.admin-section {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.form-row {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  align-items: center;
+}
+
+.form-row > label {
+  font-size: 14px;
+  color: var(--sub);
+  font-weight: 700;
+  margin-bottom: 2px;
+}
+
+.coach-summary-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+}
+
+.coach-summary-card {
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 14px;
+  padding: 16px;
+}
+
+.coach-summary-card strong {
+  display: block;
+  font-size: 22px;
+  margin-top: 6px;
+}
+
+.coach-form-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+}
+
+.coach-form-grid .field,
+.coach-form-grid textarea,
+.coach-form-grid select,
+.coach-form-grid input {
+  width: 100%;
+}
+
+.report-feedback-card {
+  border: 1px solid var(--line);
+  background: var(--primary-soft);
+  color: var(--primary);
+  border-radius: 14px;
+  padding: 16px;
+  font-weight: 700;
+}
+
+.report-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+}
+
 /* 반응형 */
 @media (max-width: 1024px) {
   .choice-grid,
@@ -1126,6 +1215,12 @@ img {
   .admin-alert-item .secondary-btn {
     align-self: flex-end;
   }
+
+  .coach-summary-grid,
+  .coach-form-grid,
+  .report-grid {
+    grid-template-columns: 1fr;
+  }
 }
 
 @media (max-width: 768px) {
@@ -1138,6 +1233,10 @@ img {
     min-height: 52px;
     padding: 10px;
     font-size: 12px;
+  }
+
+  .form-row {
+    grid-template-columns: 1fr;
   }
 }
 
@@ -1217,60 +1316,5 @@ img {
   .checkbox-chip {
     min-height: 50px;
     font-size: 12px;
-  }
-}
-/* ===== 코치관리 / 리포트 추가 스타일 ===== */
-.coach-summary-grid {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 12px;
-}
-
-.coach-summary-card {
-  background: #fff;
-  border: 1px solid #e5e7eb;
-  border-radius: 14px;
-  padding: 16px;
-}
-
-.coach-summary-card strong {
-  display: block;
-  font-size: 22px;
-  margin-top: 6px;
-}
-
-.coach-form-grid {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 12px;
-}
-
-.coach-form-grid .field,
-.coach-form-grid textarea,
-.coach-form-grid select,
-.coach-form-grid input {
-  width: 100%;
-}
-
-.report-feedback-card {
-  border: 1px solid var(--line);
-  background: var(--primary-soft);
-  color: var(--primary);
-  border-radius: 14px;
-  padding: 16px;
-  font-weight: 700;
-}
-
-.report-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 14px;
-}
-
-@media (max-width: 900px) {
-  .coach-summary-grid,
-  .coach-form-grid,
-  .report-grid {
-    grid-template-columns: 1fr;
   }
 }
