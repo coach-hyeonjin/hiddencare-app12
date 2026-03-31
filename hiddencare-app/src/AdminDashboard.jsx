@@ -2000,7 +2000,6 @@ const clearAdminAlerts = () => {
 
   setWorkoutForm((prev) => {
     const nextItems = [...prev.items]
-
     const isCardio = found?.category === '유산소'
 
     nextItems[itemIndex] = {
@@ -2016,62 +2015,62 @@ const clearAdminAlerts = () => {
   })
 }
 
-  const updateWorkoutItemName = (itemIndex, value) => {
-    setWorkoutForm((prev) => {
-      const nextItems = [...prev.items]
-      nextItems[itemIndex] = {
-        ...nextItems[itemIndex],
-        exercise_name_snapshot: value,
-      }
-      return { ...prev, items: nextItems }
-    })
-  }
+const updateWorkoutItemName = (itemIndex, value) => {
+  setWorkoutForm((prev) => {
+    const nextItems = [...prev.items]
+    nextItems[itemIndex] = {
+      ...nextItems[itemIndex],
+      exercise_name_snapshot: value,
+    }
+    return { ...prev, items: nextItems }
+  })
+}
 
-  const addWorkoutItem = () => {
-    setWorkoutForm((prev) => ({
-      ...prev,
-      items: [...prev.items, { ...emptyWorkoutItem }],
-    }))
-  }
+const addWorkoutItem = () => {
+  setWorkoutForm((prev) => ({
+    ...prev,
+    items: [...prev.items, { ...emptyWorkoutItem }],
+  }))
+}
 
-  const removeWorkoutItem = (itemIndex) => {
-    setWorkoutForm((prev) => ({
-      ...prev,
-      items: prev.items.filter((_, idx) => idx !== itemIndex),
-    }))
-  }
+const removeWorkoutItem = (itemIndex) => {
+  setWorkoutForm((prev) => ({
+    ...prev,
+    items: prev.items.filter((_, idx) => idx !== itemIndex),
+  }))
+}
 
-  const addSet = (itemIndex) => {
-    setWorkoutForm((prev) => {
-      const nextItems = [...prev.items]
-      nextItems[itemIndex] = {
-        ...nextItems[itemIndex],
-        sets: [...nextItems[itemIndex].sets, { kg: '', reps: '' }],
-      }
-      return { ...prev, items: nextItems }
-    })
-  }
+const addSet = (itemIndex) => {
+  setWorkoutForm((prev) => {
+    const nextItems = [...prev.items]
+    nextItems[itemIndex] = {
+      ...nextItems[itemIndex],
+      sets: [...nextItems[itemIndex].sets, { kg: '', reps: '' }],
+    }
+    return { ...prev, items: nextItems }
+  })
+}
 
-  const removeSet = (itemIndex, setIndex) => {
-    setWorkoutForm((prev) => {
-      const nextItems = [...prev.items]
-      nextItems[itemIndex] = {
-        ...nextItems[itemIndex],
-        sets: nextItems[itemIndex].sets.filter((_, idx) => idx !== setIndex),
-      }
-      return { ...prev, items: nextItems }
-    })
-  }
+const removeSet = (itemIndex, setIndex) => {
+  setWorkoutForm((prev) => {
+    const nextItems = [...prev.items]
+    nextItems[itemIndex] = {
+      ...nextItems[itemIndex],
+      sets: nextItems[itemIndex].sets.filter((_, idx) => idx !== setIndex),
+    }
+    return { ...prev, items: nextItems }
+  })
+}
 
-  const updateSetValue = (itemIndex, setIndex, field, value) => {
-    setWorkoutForm((prev) => {
-      const nextItems = [...prev.items]
-      const nextSets = [...nextItems[itemIndex].sets]
-      nextSets[setIndex] = { ...nextSets[setIndex], [field]: value }
-      nextItems[itemIndex] = { ...nextItems[itemIndex], sets: nextSets }
-      return { ...prev, items: nextItems }
-    })
-  }
+const updateSetValue = (itemIndex, setIndex, field, value) => {
+  setWorkoutForm((prev) => {
+    const nextItems = [...prev.items]
+    const nextSets = [...nextItems[itemIndex].sets]
+    nextSets[setIndex] = { ...nextSets[setIndex], [field]: value }
+    nextItems[itemIndex] = { ...nextItems[itemIndex], sets: nextSets }
+    return { ...prev, items: nextItems }
+  })
+}
 
   const handleWorkoutSubmit = async (e) => {
     e.preventDefault()
