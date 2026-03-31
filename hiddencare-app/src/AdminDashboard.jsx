@@ -38,31 +38,21 @@ const emptyMemberForm = {
 const emptyWorkoutItem = {
   exercise_id: '',
   exercise_name_snapshot: '',
-  record_mode: 'reps',
-  sets: [{ kg: '', reps: '', duration_seconds: '' }],
+  is_cardio: false,
+  cardio_minutes: '',
+  sets: [{ kg: '', reps: '' }],
 }
+
 const emptyWorkoutForm = {
   id: null,
   member_id: '',
   workout_date: new Date().toISOString().slice(0, 10),
   workout_type: 'pt',
-
-  log_category: 'strength', // 'strength' | 'activity'
-
-  // 웨이트
-  items: [{ ...emptyWorkoutItem }],
-
-  // 활동기록
-  activity_name: '',
-  activity_duration_minutes: '',
-  activity_good: '',
-  activity_improve: '',
-  activity_feedback: '',
-  activity_memo: '',
-
   good: '',
   improve: '',
+  items: [{ ...emptyWorkoutItem }],
 }
+
 const emptyBrandForm = { name: '' }
 
 const emptyExerciseForm = {
@@ -381,23 +371,15 @@ function formatDate(value) {
 }
 
 function getTotalSetCount(items = []) {
-  return items.reduce((sum, item) => {
-    return sum + (item.sets?.length || 0)
-  }, 0)
+  return items.reduce((sum, item) => sum + (item.sets?.length || 0), 0)
 }
 
 function normalizeSets(sets = []) {
   return sets
-    .filter(
-      (setRow) =>
-        setRow.kg !== '' ||
-        setRow.reps !== '' ||
-        setRow.duration_seconds !== ''
-    )
+    .filter((setRow) => setRow.kg !== '' || setRow.reps !== '')
     .map((setRow) => ({
       kg: String(setRow.kg ?? ''),
       reps: String(setRow.reps ?? ''),
-      duration_seconds: setRow.duration_seconds || '',
     }))
 }
 
@@ -2018,22 +2000,15 @@ const clearAdminAlerts = () => {
 
   setWorkoutForm((prev) => {
     const nextItems = [...prev.items]
-    const updateWorkoutItemSelect = (itemIndex, exerciseId) => {
-  const found = exercises.find((exercise) => String(exercise.id) === String(exerciseId))
-
-  setWorkoutForm((prev) => {
-    const nextItems = [...prev.items]
+    const isCardio = found?.category === '유산소'
 
     nextItems[itemIndex] = {
       ...nextItems[itemIndex],
       exercise_id: found?.id || '',
-      exercise_name_snapshot:
-        found?.name || nextItems[itemIndex].exercise_name_snapshot,
-      record_mode: nextItems[itemIndex].record_mode || 'reps',
-      sets:
-        Array.isArray(nextItems[itemIndex].sets) && nextItems[itemIndex].sets.length > 0
-          ? nextItems[itemIndex].sets
-          : [{ kg: '', reps: '', duration_seconds: '' }],
+      exercise_name_snapshot: found?.name || nextItems[itemIndex].exercise_name_snapshot,
+      is_cardio: !!isCardio,
+      cardio_minutes: isCardio ? nextItems[itemIndex].cardio_minutes || '' : '',
+      sets: isCardio ? [{ kg: '', reps: '' }] : nextItems[itemIndex].sets,
     }
 
     return { ...prev, items: nextItems }
@@ -2068,15 +2043,10 @@ const removeWorkoutItem = (itemIndex) => {
 const addSet = (itemIndex) => {
   setWorkoutForm((prev) => {
     const nextItems = [...prev.items]
-
     nextItems[itemIndex] = {
       ...nextItems[itemIndex],
-      sets: [
-        ...nextItems[itemIndex].sets,
-        { kg: '', reps: '', duration_seconds: '' },
-      ],
+      sets: [...nextItems[itemIndex].sets, { kg: '', reps: '' }],
     }
-
     return { ...prev, items: nextItems }
   })
 }
@@ -2117,8 +2087,9 @@ const updateSetValue = (itemIndex, setIndex, field, value) => {
     exercise_id: item.exercise_id || null,
     exercise_name_snapshot: item.exercise_name_snapshot.trim(),
     sort_order: index,
-    record_mode: item.record_mode || 'reps',
-    sets: normalizeSets(item.sets),
+    is_cardio: !!item.is_cardio,
+    cardio_minutes: item.is_cardio ? Number(item.cardio_minutes || 0) : null,
+    sets: item.is_cardio ? [] : normalizeSets(item.sets),
   }))
     if (cleanedItems.length === 0) {
       setMessage('최소 1개의 운동을 입력해주세요.')
@@ -2197,15 +2168,12 @@ const updateSetValue = (itemIndex, setIndex, field, value) => {
     ? items.map((item) => ({
         exercise_id: item.exercise_id || '',
         exercise_name_snapshot: item.exercise_name_snapshot || '',
-        record_mode: item.record_mode || 'reps',
+        is_cardio: !!item.is_cardio,
+        cardio_minutes: item.cardio_minutes || '',
         sets:
-          Array.isArray(item.sets) && item.sets.length > 0
-            ? item.sets.map((setRow) => ({
-                kg: setRow.kg || '',
-                reps: setRow.reps || '',
-                duration_seconds: setRow.duration_seconds || '',
-              }))
-            : [{ kg: '', reps: '', duration_seconds: '' }],
+          !item.is_cardio && Array.isArray(item.sets) && item.sets.length > 0
+            ? item.sets
+            : [{ kg: '', reps: '' }],
       }))
     : [{ ...emptyWorkoutItem }],
     })
@@ -3866,74 +3834,49 @@ const getSalesAutoFeedback = () => {
                         placeholder="예: 힙쓰러스트, 밴드 워크, 스쿼트"
                       />
                     </label>
-<label className="field">
-  <span>기록 방식</span>
-  <select
-    value={item.record_mode || 'reps'}
-    onChange={(e) => {
-      const value = e.target.value
-      setWorkoutForm((prev) => {
-        const nextItems = [...prev.items]
-        nextItems[itemIndex] = {
-          ...nextItems[itemIndex],
-          record_mode: value,
-          sets:
-            Array.isArray(nextItems[itemIndex].sets) &&
-            nextItems[itemIndex].sets.length > 0
-              ? nextItems[itemIndex].sets.map((setRow) => ({
-                  kg: setRow.kg || '',
-                  reps: setRow.reps || '',
-                  duration_seconds: setRow.duration_seconds || '',
-                }))
-              : [{ kg: '', reps: '', duration_seconds: '' }],
-        }
-        return { ...prev, items: nextItems }
-      })
-    }}
-  >
-    <option value="reps">반복형 (kg / reps)</option>
-    <option value="timer">타이머형 (시간)</option>
-  </select>
-</label>
+{item.is_cardio ? (
+  <label className="field">
+    <span>유산소 시간(분)</span>
+    <input
+      type="number"
+      value={item.cardio_minutes || ''}
+      onChange={(e) => {
+        const value = e.target.value
+        setWorkoutForm((prev) => {
+          const nextItems = [...prev.items]
+          nextItems[itemIndex] = {
+            ...nextItems[itemIndex],
+            cardio_minutes: value,
+          }
+          return { ...prev, items: nextItems }
+        })
+      }}
+      placeholder="예: 20"
+    />
+  </label>
+) : (
   <div className="stack-gap">
     {item.sets.map((setRow, setIndex) => (
       <div className="set-row" key={setIndex}>
-  {item.record_mode === 'reps' ? (
-    <>
-      <input
-        placeholder="kg"
-        value={setRow.kg || ''}
-        onChange={(e) =>
-          updateSetValue(itemIndex, setIndex, 'kg', e.target.value)
-        }
-      />
-      <input
-        placeholder="reps"
-        value={setRow.reps || ''}
-        onChange={(e) =>
-          updateSetValue(itemIndex, setIndex, 'reps', e.target.value)
-        }
-      />
-    </>
-  ) : (
-    <input
-      placeholder="초 (seconds)"
-      value={setRow.duration_seconds || ''}
-      onChange={(e) =>
-        updateSetValue(itemIndex, setIndex, 'duration_seconds', e.target.value)
-      }
-    />
-  )}
-
-  <button
-    type="button"
-    className="danger-btn"
-    onClick={() => removeSet(itemIndex, setIndex)}
-    disabled={item.sets.length === 1}
-  >
-    세트 삭제
-  </button>
-</div>
+        <input
+          placeholder="kg"
+          value={setRow.kg}
+          onChange={(e) => updateSetValue(itemIndex, setIndex, 'kg', e.target.value)}
+        />
+        <input
+          placeholder="reps"
+          value={setRow.reps}
+          onChange={(e) => updateSetValue(itemIndex, setIndex, 'reps', e.target.value)}
+        />
+        <button
+          type="button"
+          className="danger-btn"
+          onClick={() => removeSet(itemIndex, setIndex)}
+          disabled={item.sets.length === 1}
+        >
+          세트 삭제
+        </button>
+      </div>
     ))}
 
     <button type="button" className="secondary-btn" onClick={() => addSet(itemIndex)}>
@@ -4068,22 +4011,34 @@ const getSalesAutoFeedback = () => {
                   </button>
                 </div>
 
-{!collapsed ? (
-  <div className="detail-box">
-    <div className="workout-detail-items">
-      {workout.items.map((item) => (
-        <div key={item.id} className="record-item-box">
-          <strong>{item.exercise_name_snapshot}</strong>
-        </div>
-      ))}
-    </div>
+                {!collapsed ? (
+                  <div className="detail-box">
+  <div className="workout-detail-items">
+    {workout.items.map((item) => (
+      <div key={item.id} className="record-item-box">
+        <strong>{item.exercise_name_snapshot}</strong>
 
-    <div className="workout-detail-summary">
-      <p><strong>잘한점:</strong> {workout.good || '-'}</p>
-      <p><strong>보완점:</strong> {workout.improve || '-'}</p>
-    </div>
+        {item.is_cardio ? (
+          <div className="compact-text">유산소 {item.cardio_minutes || 0}분</div>
+        ) : (
+          <ul className="set-list">
+            {(item.sets || []).map((setRow, idx) => (
+              <li key={idx}>
+                {idx + 1}세트 - {setRow.kg || '-'}kg / {setRow.reps || '-'}회
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
+    ))}
   </div>
-) : null}
+
+  <div className="workout-detail-summary">
+    <p><strong>잘한점:</strong> {workout.good || '-'}</p>
+    <p><strong>보완점:</strong> {workout.improve || '-'}</p>
+  </div>
+</div>
+                ) : null}
               </div>
             )
           })}
@@ -6587,9 +6542,7 @@ const getSalesAutoFeedback = () => {
 
     <div className="list-stack">
       {filteredInquiries.length === 0 ? (
-        <div className="workout-list-empty">
-          조건에 맞는 문의가 없습니다.
-        </div>
+        <div className="workout-list-empty">조건에 맞는 문의가 없습니다.</div>
       ) : null}
 
       {filteredInquiries.map((item) => {
@@ -6601,7 +6554,9 @@ const getSalesAutoFeedback = () => {
             <div className="list-card-top">
               <div>
                 <strong>{item.name || '익명'}</strong>
-                <div className="compact-text">{item.phone || '-'}</div>
+                <div className="compact-text">
+                  {item.phone || '-'}
+                </div>
               </div>
 
               <div className="inline-actions wrap">
@@ -6620,8 +6575,7 @@ const getSalesAutoFeedback = () => {
             </div>
 
             <div className="compact-text">
-              {item.is_private ? '코치님만 보기 문의' : '일반 문의'} /{' '}
-              {item.is_secret_reply ? '비밀답변 설정' : '일반답변'}
+              {item.is_private ? '코치님만 보기 문의' : '일반 문의'} / {item.is_secret_reply ? '비밀답변 설정' : '일반답변'}
             </div>
 
             <div className="inline-actions wrap">
@@ -6655,10 +6609,7 @@ const getSalesAutoFeedback = () => {
               <div className="detail-box stack-gap">
                 <p><strong>이름:</strong> {item.name || '-'}</p>
                 <p><strong>연락처:</strong> {item.phone || '-'}</p>
-                <p>
-                  <strong>작성일:</strong>{' '}
-                  {(item.created_at || '').slice(0, 16).replace('T', ' ') || '-'}
-                </p>
+                <p><strong>작성일:</strong> {(item.created_at || '').slice(0, 16).replace('T', ' ') || '-'}</p>
                 <p><strong>내용:</strong> {item.content || '-'}</p>
                 <p><strong>문의유형:</strong> {item.is_private ? '코치님만 보기' : '일반 문의'}</p>
                 <p><strong>답변유형:</strong> {item.is_secret_reply ? '비밀답변' : '일반답변'}</p>
@@ -6735,12 +6686,7 @@ function DietAdminCard({ diet, memberName, collapsed, onToggle, onSave, onDelete
       </div>
 
       {!collapsed ? (
-        <DietFeedbackEditor
-          diet={diet}
-          feedback={feedback}
-          setFeedback={setFeedback}
-          onSave={onSave}
-        />
+        <DietFeedbackEditor diet={diet} feedback={feedback} setFeedback={setFeedback} onSave={onSave} />
       ) : null}
     </div>
   )
