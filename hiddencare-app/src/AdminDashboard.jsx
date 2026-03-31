@@ -6663,7 +6663,7 @@ const getSalesAutoFeedback = () => {
           </section>
         </div>
       )}
-      {activeTab === '문의사항' && (
+     {activeTab === '문의사항' && (
   <div className="card">
     <div className="member-list-header">
       <h2>문의사항 목록</h2>
@@ -6821,7 +6821,11 @@ const getSalesAutoFeedback = () => {
     </div>
   </div>
 )}
-    
+    </div>
+  )
+}
+
+function DietAdminCard({ diet, memberName, collapsed, onToggle, onSave, onDelete }) {
 function DietAdminCard({ diet, memberName, collapsed, onToggle, onSave, onDelete }) {
   const [feedback, setFeedback] = useState(diet.coach_feedback || '')
 
