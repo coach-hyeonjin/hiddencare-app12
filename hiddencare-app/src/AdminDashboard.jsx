@@ -194,29 +194,20 @@ const emptyCoachConditionForm = {
   coach_id: '',
   check_month: new Date().toISOString().slice(0, 7),
 
-  condition_level: '보통',
-  fatigue_level: '약간',
-  stress_level: '보통',
-  focus_level: '보통',
-
   condition_checks: [],
   fatigue_checks: [],
   stress_checks: [],
   focus_checks: [],
 
   condition_score: 3,
-  fatigue_score: 2,
-  stress_score: 2,
+  fatigue_score: 1,
+  stress_score: 1,
   focus_score: 3,
 
   lead_actions: [],
   retention_actions: [],
   sales_actions: [],
   growth_actions: [],
-
-  action_goal_checks: [],
-  monthly_strategy: '',
-  next_week_focus: '',
 
   performance_score: 0,
   performance_level: '',
@@ -262,20 +253,12 @@ const salesConversionOptions = [
   { value: 'low', label: '낮음' },
 ]
 const salesFailReasonOptions = ['가격부담', '시간부족', '거리문제', '필요성부족', '비교중', '보호자/배우자상의', '운동의지부족', '기타']
-const CONDITION_LEVEL_OPTIONS = ['매우 좋음', '보통', '약간 떨어짐', '많이 떨어짐']
-const FATIGUE_LEVEL_OPTIONS = ['거의 없음', '약간', '높은 편', '매우 높음']
-const STRESS_LEVEL_OPTIONS = ['낮음', '보통', '높은 편', '매우 높음']
-const FOCUS_LEVEL_OPTIONS = ['잘됨', '보통', '떨어짐', '많이 떨어짐']
-
 const CONDITION_CHECKLIST = [
   '아침에 일어났을 때 몸이 가볍다',
   '근육통이나 몸살 느낌이 거의 없다',
   '수업할 때 힘이 잘 들어간다',
   '하루 에너지가 무난하게 유지된다',
   '몸 상태가 전반적으로 편안하다',
-  '몸이 무겁고 둔한 느낌이 있다',
-  '특정 부위가 불편하다',
-  '컨디션이 들쭉날쭉하다',
 ]
 
 const FATIGUE_CHECKLIST = [
@@ -284,7 +267,6 @@ const FATIGUE_CHECKLIST = [
   '잠을 자도 피로가 남는다',
   '허리나 하체 피로가 누적된다',
   '오후로 갈수록 체력이 확 떨어진다',
-  '쉬어도 회복되는 느낌이 적다',
 ]
 
 const STRESS_CHECKLIST = [
@@ -293,7 +275,6 @@ const STRESS_CHECKLIST = [
   '생각이 많아 머리가 복잡하다',
   '압박감이 느껴진다',
   '짜증이나 예민함이 올라온다',
-  '쉬는 시간에도 긴장이 잘 풀리지 않는다',
 ]
 
 const FOCUS_CHECKLIST = [
@@ -302,17 +283,6 @@ const FOCUS_CHECKLIST = [
   '실수가 적다',
   '해야 할 우선순위가 잘 보인다',
   '업무 전환이 비교적 깔끔하다',
-  '해야 할 일을 미루게 된다',
-  '작은 일에도 흐름이 자주 끊긴다',
-]
-
-const ACTION_GOAL_CHECKLIST = [
-  '주 3회 이상 콘텐츠 업로드',
-  '기존회원 재등록 체크 진행',
-  '후기 요청 또는 후기 관리',
-  '회원 관리 메시지 보내기',
-  '상담 유도 멘트 정리',
-  'OT 이후 후속 연락 진행',
 ]
 
 const PERFORMANCE_ACTION_SECTIONS = [
@@ -598,47 +568,21 @@ const selectedPartner = useMemo(
   () => medicalPartners.find((item) => item.id === selectedMedicalPartnerId) || null,
   [medicalPartners, selectedMedicalPartnerId],
 )
-  const LEVEL_SCORE_MAP = {
-  condition: {
-    '매우 좋음': 5,
-    '보통': 3,
-    '약간 떨어짐': 2,
-    '많이 떨어짐': 1,
-  },
-  fatigue: {
-    '거의 없음': 1,
-    '약간': 2,
-    '높은 편': 4,
-    '매우 높음': 5,
-  },
-  stress: {
-    '낮음': 1,
-    '보통': 2,
-    '높은 편': 4,
-    '매우 높음': 5,
-  },
-  focus: {
-    '잘됨': 5,
-    '보통': 3,
-    '떨어짐': 2,
-    '많이 떨어짐': 1,
-  },
+  const getPositiveScoreByCheckCount = (count) => {
+  if (count <= 1) return 1
+  if (count === 2) return 2
+  if (count === 3) return 3
+  if (count === 4) return 4
+  return 5
 }
 
-const getPositiveChecklistBoost = (count) => {
-  if (count >= 5) return 1
-  if (count >= 3) return 0.5
-  if (count === 0) return -0.5
-  return 0
+const getNegativeScoreByCheckCount = (count) => {
+  if (count === 0) return 1
+  if (count <= 2) return 2
+  if (count === 3) return 3
+  if (count === 4) return 4
+  return 5
 }
-
-const getNegativeChecklistBoost = (count) => {
-  if (count >= 5) return 1
-  if (count >= 3) return 0.5
-  return 0
-}
-
-const clampScore = (value) => Math.max(1, Math.min(5, Math.round(value)))
 
 const getPerformanceLevel = (score) => {
   return PERFORMANCE_LEVEL_META.find((item) => score >= item.min && score <= item.max)?.label || '기본'
@@ -663,101 +607,17 @@ const getCoachStatusText = ({ conditionScore, fatigueScore, stressScore, focusSc
     focusScore,
   })
 
+  const base = COACH_LEVEL_META[levelKey]?.description || ''
   const performanceLevel = getPerformanceLevel(performanceScore)
 
-  if (levelKey === 'top') {
-    return `현재 흐름이 좋습니다. 지금 루틴을 유지하면서 성과 행동은 ${performanceLevel} 수준으로 이어가면 좋습니다.`
-  }
-
-  if (levelKey === 'stable') {
-    return `전반적으로 무난한 상태입니다. 무리하게 늘리기보다 현재 루틴을 안정적으로 유지하는 것이 좋습니다. 성과 행동 수준은 ${performanceLevel}입니다.`
-  }
-
-  if (levelKey === 'caution') {
-    return `피로 또는 스트레스가 올라오는 흐름입니다. 이번 주는 일정 정리와 회복, 기본 행동 루틴 재정비가 먼저입니다. 성과 행동 수준은 ${performanceLevel}입니다.`
-  }
-
-  return `회복과 정리가 우선인 상태입니다. 무리하게 늘리기보다 업무량을 줄이고, 가장 기본적인 행동부터 다시 잡는 것이 좋습니다. 성과 행동 수준은 ${performanceLevel}입니다.`
-}
-
-const getCoachCoreIssues = (item) => {
-  const issues = []
-
-  if (Number(item.fatigue_score || 0) >= 4) issues.push('피로도 높음')
-  if (Number(item.stress_score || 0) >= 4) issues.push('스트레스 높음')
-  if (Number(item.focus_score || 0) <= 2) issues.push('집중도 낮음')
-  if (Number(item.condition_score || 0) <= 2) issues.push('컨디션 저하')
-  if (Number(item.performance_score || 0) <= 5) issues.push('성과 행동 부족')
-
-  return issues.slice(0, 3)
-}
-
-const getCoachGoalSummaryText = (item) => {
-  const goals = []
-
-  if (Number(item.monthly_goal_new_leads || 0) > 0) {
-    goals.push(`신규 상담 ${Number(item.monthly_goal_new_leads)}건`)
-  }
-  if (Number(item.monthly_goal_content || 0) > 0) {
-    goals.push(`콘텐츠 ${Number(item.monthly_goal_content)}건`)
-  }
-  if (Number(item.monthly_goal_retention || 0) > 0) {
-    goals.push(`회원 유지 ${Number(item.monthly_goal_retention)}건`)
-  }
-  if (Number(item.monthly_goal_revenue || 0) > 0) {
-    goals.push(`월 매출 ${Number(item.monthly_goal_revenue).toLocaleString()}원`)
-  }
-
-  return goals.slice(0, 3)
-}
-
-const getCoachRecommendedBehaviors = (item) => {
-  const actions = []
-
-  if (Number(item.fatigue_score || 0) >= 4) {
-    actions.push('이번 주는 무리한 일정 추가보다 회복 시간 먼저 확보하기')
-  }
-  if (Number(item.stress_score || 0) >= 4) {
-    actions.push('머릿속에 쌓인 업무를 3개만 우선순위로 다시 정리하기')
-  }
-  if (Number(item.focus_score || 0) <= 2) {
-    actions.push('해야 할 일을 줄이고 반복 행동 1개만 먼저 실행하기')
-  }
-  if (Number(item.performance_score || 0) <= 5) {
-    actions.push('신규 유입보다 기존회원 관리 행동 1개부터 먼저 실행하기')
-  }
-  if (Number(item.monthly_goal_content || 0) > 0) {
-    actions.push('업로드할 콘텐츠 주제 3개를 먼저 정리해두기')
-  }
-  if (Number(item.monthly_goal_new_leads || 0) > 0) {
-    actions.push('상담 유도 멘트 2개를 미리 정리해서 써보기')
-  }
-
-  if (!actions.length) {
-    actions.push('현재 하고 있는 루틴을 유지하면서 기록을 꾸준히 남기기')
-  }
-
-  return actions.slice(0, 3)
+  return `${base} / 성과 행동 수준은 ${performanceLevel}입니다.`
 }
 
 const calculateCoachConditionScores = (form) => {
-  const conditionBase = LEVEL_SCORE_MAP.condition[form.condition_level] ?? 3
-  const fatigueBase = LEVEL_SCORE_MAP.fatigue[form.fatigue_level] ?? 2
-  const stressBase = LEVEL_SCORE_MAP.stress[form.stress_level] ?? 2
-  const focusBase = LEVEL_SCORE_MAP.focus[form.focus_level] ?? 3
-
-  const conditionScore = clampScore(
-    conditionBase + getPositiveChecklistBoost((form.condition_checks || []).length)
-  )
-  const fatigueScore = clampScore(
-    fatigueBase + getNegativeChecklistBoost((form.fatigue_checks || []).length)
-  )
-  const stressScore = clampScore(
-    stressBase + getNegativeChecklistBoost((form.stress_checks || []).length)
-  )
-  const focusScore = clampScore(
-    focusBase + getPositiveChecklistBoost((form.focus_checks || []).length)
-  )
+  const conditionScore = getPositiveScoreByCheckCount((form.condition_checks || []).length)
+  const fatigueScore = getNegativeScoreByCheckCount((form.fatigue_checks || []).length)
+  const stressScore = getNegativeScoreByCheckCount((form.stress_checks || []).length)
+  const focusScore = getPositiveScoreByCheckCount((form.focus_checks || []).length)
 
   const performanceScore =
     (form.lead_actions || []).length +
@@ -785,21 +645,6 @@ const calculateCoachConditionScores = (form) => {
   }
 }
 
-const updateCoachConditionFormWithScores = (nextForm) => {
-  const scores = calculateCoachConditionScores(nextForm)
-
-  return {
-    ...nextForm,
-    condition_score: scores.conditionScore,
-    fatigue_score: scores.fatigueScore,
-    stress_score: scores.stressScore,
-    focus_score: scores.focusScore,
-    performance_score: scores.performanceScore,
-    performance_level: scores.performanceLevel,
-    status_level: scores.statusLevel,
-  }
-}
-
 const toggleChecklistItem = (field, item) => {
   setCoachConditionForm((prev) => {
     const current = Array.isArray(prev[field]) ? prev[field] : []
@@ -809,20 +654,24 @@ const toggleChecklistItem = (field, item) => {
       ? current.filter((value) => value !== item)
       : [...current, item]
 
-    return updateCoachConditionFormWithScores({
+    const nextForm = {
       ...prev,
       [field]: next,
-    })
-  })
-}
+    }
 
-const updateCoachLevelField = (field, value) => {
-  setCoachConditionForm((prev) =>
-    updateCoachConditionFormWithScores({
-      ...prev,
-      [field]: value,
-    }),
-  )
+    const scores = calculateCoachConditionScores(nextForm)
+
+    return {
+      ...nextForm,
+      condition_score: scores.conditionScore,
+      fatigue_score: scores.fatigueScore,
+      stress_score: scores.stressScore,
+      focus_score: scores.focusScore,
+      performance_score: scores.performanceScore,
+      performance_level: scores.performanceLevel,
+      status_level: scores.statusLevel,
+    }
+  })
 }
   const filteredExercises = useMemo(() => {
     const keyword = exerciseSearch.trim().toLowerCase()
@@ -3181,46 +3030,37 @@ const handleCoachConditionSubmit = async (e) => {
   const scores = calculateCoachConditionScores(coachConditionForm)
 
   const payload = {
-  coach_id: coachConditionForm.coach_id,
-  check_month: coachConditionForm.check_month,
+    coach_id: coachConditionForm.coach_id,
+    check_month: coachConditionForm.check_month,
 
-  condition_level: coachConditionForm.condition_level || '보통',
-  fatigue_level: coachConditionForm.fatigue_level || '약간',
-  stress_level: coachConditionForm.stress_level || '보통',
-  focus_level: coachConditionForm.focus_level || '보통',
+    condition_checks: coachConditionForm.condition_checks || [],
+    fatigue_checks: coachConditionForm.fatigue_checks || [],
+    stress_checks: coachConditionForm.stress_checks || [],
+    focus_checks: coachConditionForm.focus_checks || [],
 
-  condition_checks: coachConditionForm.condition_checks || [],
-  fatigue_checks: coachConditionForm.fatigue_checks || [],
-  stress_checks: coachConditionForm.stress_checks || [],
-  focus_checks: coachConditionForm.focus_checks || [],
+    lead_actions: coachConditionForm.lead_actions || [],
+    retention_actions: coachConditionForm.retention_actions || [],
+    sales_actions: coachConditionForm.sales_actions || [],
+    growth_actions: coachConditionForm.growth_actions || [],
 
-  lead_actions: coachConditionForm.lead_actions || [],
-  retention_actions: coachConditionForm.retention_actions || [],
-  sales_actions: coachConditionForm.sales_actions || [],
-  growth_actions: coachConditionForm.growth_actions || [],
+    condition_score: scores.conditionScore,
+    fatigue_score: scores.fatigueScore,
+    focus_score: scores.focusScore,
+    stress_score: scores.stressScore,
+    performance_score: scores.performanceScore,
+    performance_level: scores.performanceLevel,
+    status_level: scores.statusLevel,
 
-  action_goal_checks: coachConditionForm.action_goal_checks || [],
-  monthly_strategy: coachConditionForm.monthly_strategy?.trim() || '',
-  next_week_focus: coachConditionForm.next_week_focus?.trim() || '',
+    monthly_goal_revenue: Number(coachConditionForm.monthly_goal_revenue || 0),
+    monthly_goal_new_leads: Number(coachConditionForm.monthly_goal_new_leads || 0),
+    monthly_goal_retention: Number(coachConditionForm.monthly_goal_retention || 0),
+    monthly_goal_content: Number(coachConditionForm.monthly_goal_content || 0),
 
-  condition_score: scores.conditionScore,
-  fatigue_score: scores.fatigueScore,
-  focus_score: scores.focusScore,
-  stress_score: scores.stressScore,
-  performance_score: scores.performanceScore,
-  performance_level: scores.performanceLevel,
-  status_level: scores.statusLevel,
-
-  monthly_goal_revenue: Number(coachConditionForm.monthly_goal_revenue || 0),
-  monthly_goal_new_leads: Number(coachConditionForm.monthly_goal_new_leads || 0),
-  monthly_goal_retention: Number(coachConditionForm.monthly_goal_retention || 0),
-  monthly_goal_content: Number(coachConditionForm.monthly_goal_content || 0),
-
-  support_needed: coachConditionForm.support_needed?.trim() || '',
-  issue_note: coachConditionForm.issue_note?.trim() || '',
-  admin_id: currentAdminId || null,
-  gym_id: currentGymId || null,
-}
+    support_needed: coachConditionForm.support_needed?.trim() || '',
+    issue_note: coachConditionForm.issue_note?.trim() || '',
+    admin_id: currentAdminId || null,
+    gym_id: currentGymId || null,
+  }
 
   let error = null
 
@@ -3250,49 +3090,42 @@ const handleCoachConditionSubmit = async (e) => {
 
 const handleCoachConditionEdit = (item) => {
   setCoachConditionForm({
-  id: item.id,
-  coach_id: item.coach_id || '',
-  check_month: item.check_month || new Date().toISOString().slice(0, 7),
+    id: item.id,
+    coach_id: item.coach_id || '',
+    check_month: item.check_month || new Date().toISOString().slice(0, 7),
 
-  condition_level: item.condition_level || '보통',
-  fatigue_level: item.fatigue_level || '약간',
-  stress_level: item.stress_level || '보통',
-  focus_level: item.focus_level || '보통',
+    condition_checks: item.condition_checks || [],
+    fatigue_checks: item.fatigue_checks || [],
+    stress_checks: item.stress_checks || [],
+    focus_checks: item.focus_checks || [],
 
-  condition_checks: item.condition_checks || [],
-  fatigue_checks: item.fatigue_checks || [],
-  stress_checks: item.stress_checks || [],
-  focus_checks: item.focus_checks || [],
+    condition_score: item.condition_score ?? 3,
+    fatigue_score: item.fatigue_score ?? 1,
+    focus_score: item.focus_score ?? 3,
+    stress_score: item.stress_score ?? 1,
 
-  condition_score: item.condition_score ?? 3,
-  fatigue_score: item.fatigue_score ?? 2,
-  stress_score: item.stress_score ?? 2,
-  focus_score: item.focus_score ?? 3,
+    lead_actions: item.lead_actions || [],
+    retention_actions: item.retention_actions || [],
+    sales_actions: item.sales_actions || [],
+    growth_actions: item.growth_actions || [],
 
-  lead_actions: item.lead_actions || [],
-  retention_actions: item.retention_actions || [],
-  sales_actions: item.sales_actions || [],
-  growth_actions: item.growth_actions || [],
+    performance_score: item.performance_score ?? 0,
+    performance_level: item.performance_level || '',
+    status_level: item.status_level || '',
 
-  action_goal_checks: item.action_goal_checks || [],
-  monthly_strategy: item.monthly_strategy || '',
-  next_week_focus: item.next_week_focus || '',
+    monthly_goal_revenue: item.monthly_goal_revenue ?? '',
+    monthly_goal_new_leads: item.monthly_goal_new_leads ?? '',
+    monthly_goal_retention: item.monthly_goal_retention ?? '',
+    monthly_goal_content: item.monthly_goal_content ?? '',
 
-  performance_score: item.performance_score ?? 0,
-  performance_level: item.performance_level || '',
-  status_level: item.status_level || '',
+    support_needed: item.support_needed || '',
+    issue_note: item.issue_note || '',
+  })
 
-  monthly_goal_revenue: item.monthly_goal_revenue || '',
-  monthly_goal_new_leads: item.monthly_goal_new_leads || '',
-  monthly_goal_retention: item.monthly_goal_retention || '',
-  monthly_goal_content: item.monthly_goal_content || '',
-
-  support_needed: item.support_needed || '',
-  issue_note: item.issue_note || '',
-})
- setEditingCoachConditionId(item.id)
+  setEditingCoachConditionId(item.id)
   setActiveTab('코치관리')
 }
+
 const handleCoachConditionDelete = async (id) => {
   if (!window.confirm('이 코치 컨디션 기록을 삭제할까요?')) return
 
@@ -3310,65 +3143,7 @@ const handleCoachConditionDelete = async (id) => {
   await loadCoachConditions()
   setMessage('코치 컨디션이 삭제되었습니다.')
 }
-const getCoachCoreIssues = (item) => {
-  const issues = []
 
-  if (Number(item.fatigue_score || 0) >= 4) issues.push('피로도 높음')
-  if (Number(item.stress_score || 0) >= 4) issues.push('스트레스 높음')
-  if (Number(item.focus_score || 0) <= 2) issues.push('집중도 낮음')
-  if (Number(item.condition_score || 0) <= 2) issues.push('컨디션 저하')
-  if (Number(item.performance_score || 0) <= 5) issues.push('성과 행동 부족')
-
-  return issues.slice(0, 3)
-}
-
-const getCoachGoalSummaryText = (item) => {
-  const goals = []
-
-  if (Number(item.monthly_goal_new_leads || 0) > 0) {
-    goals.push(`신규 상담 ${Number(item.monthly_goal_new_leads)}건`)
-  }
-  if (Number(item.monthly_goal_content || 0) > 0) {
-    goals.push(`콘텐츠 ${Number(item.monthly_goal_content)}건`)
-  }
-  if (Number(item.monthly_goal_retention || 0) > 0) {
-    goals.push(`회원 유지 ${Number(item.monthly_goal_retention)}건`)
-  }
-  if (Number(item.monthly_goal_revenue || 0) > 0) {
-    goals.push(`월 매출 ${Number(item.monthly_goal_revenue).toLocaleString()}원`)
-  }
-
-  return goals.slice(0, 3)
-}
-
-const getCoachRecommendedBehaviors = (item) => {
-  const actions = []
-
-  if (Number(item.fatigue_score || 0) >= 4) {
-    actions.push('이번 주는 무리한 일정 추가보다 회복 시간 먼저 확보하기')
-  }
-  if (Number(item.stress_score || 0) >= 4) {
-    actions.push('머릿속에 쌓인 업무를 3개만 우선순위로 다시 정리하기')
-  }
-  if (Number(item.focus_score || 0) <= 2) {
-    actions.push('해야 할 일을 줄이고 반복 행동 1개만 먼저 실행하기')
-  }
-  if (Number(item.performance_score || 0) <= 5) {
-    actions.push('신규 유입보다 기존회원 관리 행동 1개부터 먼저 실행하기')
-  }
-  if (Number(item.monthly_goal_content || 0) > 0) {
-    actions.push('업로드할 콘텐츠 주제 3개를 먼저 정리해두기')
-  }
-  if (Number(item.monthly_goal_new_leads || 0) > 0) {
-    actions.push('상담 유도 멘트 2개를 미리 정리해서 써보기')
-  }
-
-  if (!actions.length) {
-    actions.push('현재 하고 있는 루틴을 유지하면서 기록을 꾸준히 남기기')
-  }
-
-  return actions.slice(0, 3)
-}
 const resetCoachReviewForm = () => {
   setCoachReviewForm(emptyCoachReviewForm)
   setEditingCoachReviewId(null)
@@ -4698,96 +4473,29 @@ const getSalesAutoFeedback = () => {
         </div>
       ) : (
         <div className="list-stack">
-  {filteredCoachConditions.map((item) => {
-    const coachName =
-      coaches.find((coach) => coach.id === item.coach_id)?.name || '코치없음'
+          {filteredCoachConditions.map((item) => {
+            const coachName =
+              coaches.find((coach) => coach.id === item.coach_id)?.name || '코치없음'
 
-    const statusMeta = COACH_LEVEL_META[item.status_level] || COACH_LEVEL_META.stable
-    const issues = getCoachCoreIssues(item)
-    const goals = getCoachGoalSummaryText(item)
-    const actions = item.next_week_focus?.trim()
-      ? [item.next_week_focus.trim()]
-      : getCoachRecommendedBehaviors(item)
-
-    return (
-      <div key={item.id} className="coach-condition-card card">
-        <div className="coach-card-header">
-          <div>
-            <strong>{coachName}</strong>
-            <div>{item.check_month || '-'}</div>
-          </div>
-          <span className={`status-badge ${statusMeta.colorClass}`}>
-            상태: {statusMeta.label}
-          </span>
+            return (
+              <div key={item.id} className="list-card">
+                <div className="list-card-top">
+                  <strong>{coachName}</strong>
+                  <span className="pill">{item.check_month || '-'}</span>
+                </div>
+                <div className="compact-text">
+                  컨디션 {item.condition_score || 0} / 피로도 {item.fatigue_score || 0} / 집중도 {item.focus_score || 0} / 스트레스 {item.stress_score || 0}
+                </div>
+                <div className="compact-text">
+                  지원 필요: {item.support_needed || '-'}
+                </div>
+                <div className="compact-text">
+                  메모: {item.issue_note || '-'}
+                </div>
+              </div>
+            )
+          })}
         </div>
-
-        <div className="coach-card-block">
-          <strong>이번 달 한줄 정리</strong>
-          <p>{getCoachStatusText(item)}</p>
-        </div>
-
-        <div className="coach-card-block">
-          <strong>핵심 체크 포인트</strong>
-          <ul>
-            {issues.length ? (
-              issues.map((text) => <li key={text}>{text}</li>)
-            ) : (
-              <li>기록된 핵심 이슈 없음</li>
-            )}
-          </ul>
-        </div>
-
-        <div className="coach-card-block">
-          <strong>이번 달 핵심 목표</strong>
-          <ul>
-            {goals.length ? (
-              goals.map((text) => <li key={text}>{text}</li>)
-            ) : (
-              <li>입력된 목표 없음</li>
-            )}
-          </ul>
-        </div>
-
-        <div className="coach-card-block">
-          <strong>이번 주 실행하면 좋은 행동</strong>
-          <ul>
-            {actions.map((text) => <li key={text}>{text}</li>)}
-          </ul>
-        </div>
-
-        {item.monthly_strategy ? (
-          <div className="coach-card-block">
-            <strong>이번 달 집중 전략</strong>
-            <p>{item.monthly_strategy}</p>
-          </div>
-        ) : null}
-
-        {item.support_needed ? (
-          <div className="coach-card-block">
-            <strong>지원이 필요한 부분</strong>
-            <p>{item.support_needed}</p>
-          </div>
-        ) : null}
-
-        {item.issue_note ? (
-          <div className="coach-card-block">
-            <strong>메모</strong>
-            <p>{item.issue_note}</p>
-          </div>
-        ) : null}
-
-        <div className="card-actions two-col">
-          <button type="button" onClick={() => handleCoachConditionEdit(item)}>
-            수정
-          </button>
-          <button type="button" onClick={() => handleCoachConditionDelete(item.id)}>
-            삭제
-          </button>
-        </div>
-      </div>
-    )
-  })}
-</div>
       )}
     </div>
   </div>
@@ -5649,22 +5357,7 @@ const getSalesAutoFeedback = () => {
 
     <div className="card">
       <h3>상태 체크리스트</h3>
-<div className="field">
-  <span>오늘 전반적인 컨디션</span>
-  <div className="chip-row">
-    {CONDITION_LEVEL_OPTIONS.map((option) => (
-      <button
-        key={option}
-        type="button"
-        className={`chip-btn ${coachConditionForm.condition_level === option ? 'active' : ''}`}
-        onClick={() => updateCoachLevelField('condition_level', option)}
-      >
-        {option}
-      </button>
-    ))}
-  </div>
-  <small className="field-help">해당 없으면 아래 체크는 안 해도 됩니다.</small>
-</div>
+
       <div className="stack-gap">
         <div>
           <strong>컨디션</strong>
@@ -5682,25 +5375,6 @@ const getSalesAutoFeedback = () => {
 
         <div>
           <strong>피로도</strong>
-          <div className="field">
-  <span>오늘 느껴지는 피로도</span>
-  <div className="chip-row">
-    {FATIGUE_LEVEL_OPTIONS.map((option) => (
-      <button
-        key={option}
-        type="button"
-        className={`chip-btn ${coachConditionForm.fatigue_level === option ? 'active' : ''}`}
-        onClick={() => updateCoachLevelField('fatigue_level', option)}
-      >
-        {option}
-      </button>
-    ))}
-  </div>
-  <small className="field-help">해당 없으면 아래 체크는 안 해도 됩니다.</small>
-</div>
-
-<div className="check-grid">
-  
           {FATIGUE_CHECKLIST.map((item) => (
             <label key={item} className="checkbox-row">
               <input
@@ -5715,25 +5389,6 @@ const getSalesAutoFeedback = () => {
 
         <div>
           <strong>스트레스</strong>
-          <div className="field">
-  <span>현재 스트레스 정도</span>
-  <div className="chip-row">
-    {STRESS_LEVEL_OPTIONS.map((option) => (
-      <button
-        key={option}
-        type="button"
-        className={`chip-btn ${coachConditionForm.stress_level === option ? 'active' : ''}`}
-        onClick={() => updateCoachLevelField('stress_level', option)}
-      >
-        {option}
-      </button>
-    ))}
-  </div>
-  <small className="field-help">해당 없으면 아래 체크는 안 해도 됩니다.</small>
-</div>
-
-<div className="check-grid">
-
           {STRESS_CHECKLIST.map((item) => (
             <label key={item} className="checkbox-row">
               <input
@@ -5748,24 +5403,6 @@ const getSalesAutoFeedback = () => {
 
         <div>
           <strong>집중도</strong>
-          <div className="field">
-  <span>오늘 업무 집중도</span>
-  <div className="chip-row">
-    {FOCUS_LEVEL_OPTIONS.map((option) => (
-      <button
-        key={option}
-        type="button"
-        className={`chip-btn ${coachConditionForm.focus_level === option ? 'active' : ''}`}
-        onClick={() => updateCoachLevelField('focus_level', option)}
-      >
-        {option}
-      </button>
-    ))}
-  </div>
-  <small className="field-help">해당 없으면 아래 체크는 안 해도 됩니다.</small>
-</div>
-
-<div className="check-grid">
           {FOCUS_CHECKLIST.map((item) => (
             <label key={item} className="checkbox-row">
               <input
@@ -5877,68 +5514,7 @@ const getSalesAutoFeedback = () => {
           }
         />
       </div>
-<div className="field">
-  <span>이번 달 실행 목표 체크</span>
-  <div className="check-grid">
-    {ACTION_GOAL_CHECKLIST.map((item) => {
-      const checked = (coachConditionForm.action_goal_checks || []).includes(item)
 
-      return (
-        <label key={item} className="check-card">
-          <input
-            type="checkbox"
-            checked={checked}
-            onChange={() => {
-              const current = Array.isArray(coachConditionForm.action_goal_checks)
-                ? coachConditionForm.action_goal_checks
-                : []
-
-              const next = checked
-                ? current.filter((value) => value !== item)
-                : [...current, item]
-
-              setCoachConditionForm((prev) => ({
-                ...prev,
-                action_goal_checks: next,
-              }))
-            }}
-          />
-          <span>{item}</span>
-        </label>
-      )
-    })}
-  </div>
-</div>
-
-<label className="field">
-  <span>이번 달 집중 전략</span>
-  <textarea
-    rows="3"
-    value={coachConditionForm.monthly_strategy}
-    onChange={(e) =>
-      setCoachConditionForm((prev) => ({
-        ...prev,
-        monthly_strategy: e.target.value,
-      }))
-    }
-    placeholder="이번 달 가장 신경 쓸 방향을 짧게 적어주세요."
-  />
-</label>
-
-<label className="field">
-  <span>이번 주 실행하면 좋은 행동 메모</span>
-  <textarea
-    rows="3"
-    value={coachConditionForm.next_week_focus}
-    onChange={(e) =>
-      setCoachConditionForm((prev) => ({
-        ...prev,
-        next_week_focus: e.target.value,
-      }))
-    }
-    placeholder="이번 주 바로 해볼 행동을 적어주세요."
-  />
-</label>
       <textarea
         placeholder="지원이 필요한 부분"
         value={coachConditionForm.support_needed}
@@ -5999,37 +5575,7 @@ const getSalesAutoFeedback = () => {
       <p>평균 성과 행동 점수: {coachDashboardSummary.avgPerformance?.toFixed(1)}</p>
       <p>현재 운영 레벨: {coachDashboardSummary.statusLabel}</p>
     </div>
-<div className="card">
-  <strong>현재 해석</strong>
-  <p>{coachDashboardSummary.statusText}</p>
-</div>
 
-<div className="card">
-  <strong>이번 주 실행하면 좋은 행동</strong>
-  <ul>
-    {getCoachRecommendedBehaviors({
-      condition_score: coachConditionSummary.avgCondition,
-      fatigue_score: coachConditionSummary.avgFatigue,
-      stress_score: coachConditionSummary.avgStress,
-      focus_score: coachConditionSummary.avgFocus,
-      performance_score: coachDashboardSummary.avgPerformance,
-      monthly_goal_new_leads: coachGoalSummary.newLeadGoalAvg,
-      monthly_goal_content: coachGoalSummary.contentGoalAvg,
-    }).map((text) => (
-      <li key={text}>{text}</li>
-    ))}
-  </ul>
-</div>
-
-<div className="card">
-  <strong>이 리포트 보는 방법</strong>
-  <ul>
-    <li>컨디션이 낮고 피로도가 높으면 회복과 일정 정리가 우선입니다.</li>
-    <li>집중도가 낮으면 업무를 늘리기보다 반복 행동 루틴을 먼저 줄여서 정리합니다.</li>
-    <li>성과 행동 점수가 낮으면 목표를 더 크게 잡기보다 실행 행동부터 다시 시작합니다.</li>
-    <li>월간 평균은 잘못을 찾기보다 흐름을 보는 기준으로 활용하면 됩니다.</li>
-  </ul>
-</div>
     <div className="card">
       <h3>자동 해석</h3>
       <p>{coachDashboardSummary.statusText}</p>
