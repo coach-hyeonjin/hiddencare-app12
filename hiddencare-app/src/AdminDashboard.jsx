@@ -3866,29 +3866,74 @@ const getSalesAutoFeedback = () => {
                         placeholder="예: 힙쓰러스트, 밴드 워크, 스쿼트"
                       />
                     </label>
-
+<label className="field">
+  <span>기록 방식</span>
+  <select
+    value={item.record_mode || 'reps'}
+    onChange={(e) => {
+      const value = e.target.value
+      setWorkoutForm((prev) => {
+        const nextItems = [...prev.items]
+        nextItems[itemIndex] = {
+          ...nextItems[itemIndex],
+          record_mode: value,
+          sets:
+            Array.isArray(nextItems[itemIndex].sets) &&
+            nextItems[itemIndex].sets.length > 0
+              ? nextItems[itemIndex].sets.map((setRow) => ({
+                  kg: setRow.kg || '',
+                  reps: setRow.reps || '',
+                  duration_seconds: setRow.duration_seconds || '',
+                }))
+              : [{ kg: '', reps: '', duration_seconds: '' }],
+        }
+        return { ...prev, items: nextItems }
+      })
+    }}
+  >
+    <option value="reps">반복형 (kg / reps)</option>
+    <option value="timer">타이머형 (시간)</option>
+  </select>
+</label>
   <div className="stack-gap">
     {item.sets.map((setRow, setIndex) => (
       <div className="set-row" key={setIndex}>
-        <input
-          placeholder="kg"
-          value={setRow.kg}
-          onChange={(e) => updateSetValue(itemIndex, setIndex, 'kg', e.target.value)}
-        />
-        <input
-          placeholder="reps"
-          value={setRow.reps}
-          onChange={(e) => updateSetValue(itemIndex, setIndex, 'reps', e.target.value)}
-        />
-        <button
-          type="button"
-          className="danger-btn"
-          onClick={() => removeSet(itemIndex, setIndex)}
-          disabled={item.sets.length === 1}
-        >
-          세트 삭제
-        </button>
-      </div>
+  {item.record_mode === 'reps' ? (
+    <>
+      <input
+        placeholder="kg"
+        value={setRow.kg || ''}
+        onChange={(e) =>
+          updateSetValue(itemIndex, setIndex, 'kg', e.target.value)
+        }
+      />
+      <input
+        placeholder="reps"
+        value={setRow.reps || ''}
+        onChange={(e) =>
+          updateSetValue(itemIndex, setIndex, 'reps', e.target.value)
+        }
+      />
+    </>
+  ) : (
+    <input
+      placeholder="초 (seconds)"
+      value={setRow.duration_seconds || ''}
+      onChange={(e) =>
+        updateSetValue(itemIndex, setIndex, 'duration_seconds', e.target.value)
+      }
+    />
+  )}
+
+  <button
+    type="button"
+    className="danger-btn"
+    onClick={() => removeSet(itemIndex, setIndex)}
+    disabled={item.sets.length === 1}
+  >
+    세트 삭제
+  </button>
+</div>
     ))}
 
     <button type="button" className="secondary-btn" onClick={() => addSet(itemIndex)}>
