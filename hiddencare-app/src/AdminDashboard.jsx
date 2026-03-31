@@ -6714,7 +6714,7 @@ const getSalesAutoFeedback = () => {
         <div className="workout-list-empty">조건에 맞는 문의가 없습니다.</div>
       ) : null}
 
-      {filteredInquiries.map((item) => {
+            {filteredInquiries.map((item) => {
         const collapsed = collapsedInquiries[item.id] ?? true
         const isAnswered = String(item.answer || '').trim().length > 0
 
@@ -6821,7 +6821,6 @@ const getSalesAutoFeedback = () => {
     </div>
   </div>
 )}
-
 function DietAdminCard({ diet, memberName, collapsed, onToggle, onSave, onDelete }) {
   const [feedback, setFeedback] = useState(diet.coach_feedback || '')
 
