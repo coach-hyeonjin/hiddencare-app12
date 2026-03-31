@@ -6540,166 +6540,161 @@ const getSalesAutoFeedback = () => {
         </div>
       )}
       {activeTab === '문의사항' && (
-  <div className="card">
-    <div className="member-list-header">
-      <h2>문의사항 목록</h2>
 
-      <div className="member-list-search-area">
-        <input
-          placeholder="이름 / 연락처 / 문의내용 / 답변 검색"
-          value={inquirySearch}
-          onChange={(e) => setInquirySearch(e.target.value)}
-        />
+  <div className="member-list-search-area">
+    <input
+      placeholder="이름 / 연락처 / 문의내용 / 답변 검색"
+      value={inquirySearch}
+      onChange={(e) => setInquirySearch(e.target.value)}
+    />
 
-        <div className="member-list-filter-row">
-          <input
-            type="date"
-            value={inquiryDateFilter}
-            onChange={(e) => setInquiryDateFilter(e.target.value)}
-          />
+    <div className="member-list-filter-row">
+      <input
+        type="date"
+        value={inquiryDateFilter}
+        onChange={(e) => setInquiryDateFilter(e.target.value)}
+      />
 
-          <select
-            value={inquiryStatusFilter}
-            onChange={(e) => setInquiryStatusFilter(e.target.value)}
-          >
-            <option value="all">전체</option>
-            <option value="pending">미답변</option>
-            <option value="answered">답변완료</option>
-            <option value="private">코치님만 보기</option>
-          </select>
+      <select
+        value={inquiryStatusFilter}
+        onChange={(e) => setInquiryStatusFilter(e.target.value)}
+      >
+        <option value="all">전체</option>
+        <option value="pending">미답변</option>
+        <option value="answered">답변완료</option>
+        <option value="private">코치님만 보기</option>
+      </select>
+    </div>
+
+    <div className="inline-actions wrap">
+      <button
+        type="button"
+        className="secondary-btn"
+        onClick={() => {
+          setInquirySearch('')
+          setInquiryDateFilter('')
+          setInquiryStatusFilter('all')
+        }}
+      >
+        초기화
+      </button>
+    </div>
+  </div>
+</div>
+
+<div className="list-stack">
+  {filteredInquiries.length === 0 ? (
+    <div className="workout-list-empty">
+      조건에 맞는 문의가 없습니다.
+    </div>
+  ) : null}
+
+  {filteredInquiries.map((item) => {
+    const collapsed = collapsedInquiries[item.id] ?? true
+    const isAnswered = String(item.answer || '').trim().length > 0
+
+    return (
+      <div key={item.id} className="list-card">
+        <div className="list-card-top">
+          <div>
+            <strong>{item.name || '익명'}</strong>
+            <div className="compact-text">
+              {item.phone || '-'}
+            </div>
+          </div>
+
+          <div className="inline-actions wrap">
+            <span className="pill">
+              {isAnswered ? '답변완료' : '미답변'}
+            </span>
+            <span className="pill">
+              {(item.created_at || '').slice(0, 10)}
+            </span>
+          </div>
+        </div>
+
+        <div className="compact-text">
+          {(item.content || '').slice(0, 50)}
+          {(item.content || '').length > 50 ? '...' : ''}
+        </div>
+
+        <div className="compact-text">
+          {item.is_private ? '코치님만 보기 문의' : '일반 문의'} /
+          {item.is_secret_reply ? '비밀답변 설정' : '일반답변'}
         </div>
 
         <div className="inline-actions wrap">
           <button
             type="button"
             className="secondary-btn"
-            onClick={() => {
-              setInquirySearch('')
-              setInquiryDateFilter('')
-              setInquiryStatusFilter('all')
+            onClick={() =>
+              setCollapsedInquiries((prev) => ({
+                ...prev,
+                [item.id]: !collapsed,
+              }))
+            }
+          >
+            {collapsed ? '상세히보기' : '간략히보기'}
+          </button>
+
+          <button
+            type="button"
+            className="danger-btn"
+            onClick={async () => {
+              if (!window.confirm('삭제할까요?')) return
+              await supabase.from('inquiries').delete().eq('id', item.id)
+              await loadInquiries()
             }}
           >
-            초기화
+            삭제
           </button>
         </div>
-      </div>
-    </div>
 
-    <div className="list-stack">
-      {filteredInquiries.length === 0 ? (
-        <div className="workout-list-empty">조건에 맞는 문의가 없습니다.</div>
-      ) : null}
+        {!collapsed && (
+          <div className="detail-box stack-gap">
+            <p><strong>이름:</strong> {item.name || '-'}</p>
+            <p><strong>연락처:</strong> {item.phone || '-'}</p>
+            <p><strong>작성일:</strong> {(item.created_at || '').slice(0, 16).replace('T', ' ') || '-'}</p>
+            <p><strong>내용:</strong> {item.content || '-'}</p>
+            <p><strong>문의유형:</strong> {item.is_private ? '코치님만 보기' : '일반 문의'}</p>
+            <p><strong>답변유형:</strong> {item.is_secret_reply ? '비밀답변' : '일반답변'}</p>
+            <p><strong>답변상태:</strong> {isAnswered ? '답변완료' : '미답변'}</p>
 
-      {filteredInquiries.map((item) => {
-        const collapsed = collapsedInquiries[item.id] ?? true
-        const isAnswered = String(item.answer || '').trim().length > 0
-
-        return (
-          <div key={item.id} className="list-card">
-            <div className="list-card-top">
-              <div>
-                <strong>{item.name || '익명'}</strong>
-                <div className="compact-text">
-                  {item.phone || '-'}
-                </div>
-              </div>
-
-              <div className="inline-actions wrap">
-                <span className="pill">
-                  {isAnswered ? '답변완료' : '미답변'}
-                </span>
-                <span className="pill">
-                  {(item.created_at || '').slice(0, 10)}
-                </span>
-              </div>
-            </div>
-
-            <div className="compact-text">
-              {(item.content || '').slice(0, 50)}
-              {(item.content || '').length > 50 ? '...' : ''}
-            </div>
-
-            <div className="compact-text">
-              {item.is_private ? '코치님만 보기 문의' : '일반 문의'} / {item.is_secret_reply ? '비밀답변 설정' : '일반답변'}
-            </div>
-
-            <div className="inline-actions wrap">
-              <button
-                type="button"
-                className="secondary-btn"
-                onClick={() =>
-                  setCollapsedInquiries((prev) => ({
-                    ...prev,
-                    [item.id]: !collapsed,
-                  }))
-                }
-              >
-                {collapsed ? '상세히보기' : '간략히보기'}
-              </button>
-
-              <button
-                type="button"
-                className="danger-btn"
-                onClick={async () => {
-                  if (!window.confirm('삭제할까요?')) return
-                  await supabase.from('inquiries').delete().eq('id', item.id)
+            <label className="checkbox-line">
+              <input
+                type="checkbox"
+                checked={!!item.is_secret_reply}
+                onChange={async (e) => {
+                  await supabase
+                    .from('inquiries')
+                    .update({ is_secret_reply: e.target.checked })
+                    .eq('id', item.id)
                   await loadInquiries()
                 }}
-              >
-                삭제
-              </button>
-            </div>
+              />
+              <span>비밀답변으로 설정</span>
+            </label>
 
-            {!collapsed && (
-              <div className="detail-box stack-gap">
-                <p><strong>이름:</strong> {item.name || '-'}</p>
-                <p><strong>연락처:</strong> {item.phone || '-'}</p>
-                <p><strong>작성일:</strong> {(item.created_at || '').slice(0, 16).replace('T', ' ') || '-'}</p>
-                <p><strong>내용:</strong> {item.content || '-'}</p>
-                <p><strong>문의유형:</strong> {item.is_private ? '코치님만 보기' : '일반 문의'}</p>
-                <p><strong>답변유형:</strong> {item.is_secret_reply ? '비밀답변' : '일반답변'}</p>
-                <p><strong>답변상태:</strong> {isAnswered ? '답변완료' : '미답변'}</p>
-
-                <label className="checkbox-line">
-                  <input
-                    type="checkbox"
-                    checked={!!item.is_secret_reply}
-                    onChange={async (e) => {
-                      await supabase
-                        .from('inquiries')
-                        .update({ is_secret_reply: e.target.checked })
-                        .eq('id', item.id)
-                      await loadInquiries()
-                    }}
-                  />
-                  <span>비밀답변으로 설정</span>
-                </label>
-
-                <label className="field">
-                  <span>답변</span>
-                  <textarea
-                    rows="4"
-                    defaultValue={item.answer || ''}
-                    onBlur={async (e) => {
-                      await supabase
-                        .from('inquiries')
-                        .update({ answer: e.target.value })
-                        .eq('id', item.id)
-                      await loadInquiries()
-                    }}
-                  />
-                </label>
-              </div>
-            )}
+            <label className="field">
+              <span>답변</span>
+              <textarea
+                rows="4"
+                defaultValue={item.answer || ''}
+                onBlur={async (e) => {
+                  await supabase
+                    .from('inquiries')
+                    .update({ answer: e.target.value })
+                    .eq('id', item.id)
+                  await loadInquiries()
+                }}
+              />
+            </label>
           </div>
-        )
-      })}
-    </div>
-  </div>
-      )}
-    </div>
-  )
-}
+        )}
+      </div>
+    )
+  })}
+</div>
 
 function DietAdminCard({ diet, memberName, collapsed, onToggle, onSave, onDelete }) {
   const [feedback, setFeedback] = useState(diet.coach_feedback || '')
