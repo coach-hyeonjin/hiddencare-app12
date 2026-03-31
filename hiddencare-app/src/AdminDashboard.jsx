@@ -6816,14 +6816,13 @@ const getSalesAutoFeedback = () => {
               </div>
             )}
           </div>
-  )
-      </div>
+ </div>
+          </div>
+        </div>
+      )}
     </div>
-  )}
-</div>
   )
 }
-
 function DietAdminCard({ diet, memberName, collapsed, onToggle, onSave, onDelete }) {
   const [feedback, setFeedback] = useState(diet.coach_feedback || '')
 
