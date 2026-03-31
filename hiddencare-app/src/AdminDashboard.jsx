@@ -6818,8 +6818,8 @@ const getSalesAutoFeedback = () => {
           </div>
         )
       })}
-    </div>
-  </div>
+      </div>
+  </section>
 )}
     </div>
   )
