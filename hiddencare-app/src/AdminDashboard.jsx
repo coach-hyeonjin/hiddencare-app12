@@ -4068,21 +4068,22 @@ const getSalesAutoFeedback = () => {
                   </button>
                 </div>
 
-                {!collapsed ? (
-                  <div className="detail-box">
-  <div className="workout-detail-items">
-    {workout.items.map((item) => (
-      <div key={item.id} className="record-item-box">
-        <strong>{item.exercise_name_snapshot}</strong>
+{!collapsed ? (
+  <div className="detail-box">
+    <div className="workout-detail-items">
+      {workout.items.map((item) => (
+        <div key={item.id} className="record-item-box">
+          <strong>{item.exercise_name_snapshot}</strong>
+        </div>
+      ))}
+    </div>
 
-       
-
-  <div className="workout-detail-summary">
-    <p><strong>잘한점:</strong> {workout.good || '-'}</p>
-    <p><strong>보완점:</strong> {workout.improve || '-'}</p>
+    <div className="workout-detail-summary">
+      <p><strong>잘한점:</strong> {workout.good || '-'}</p>
+      <p><strong>보완점:</strong> {workout.improve || '-'}</p>
+    </div>
   </div>
-</div>
-                ) : null}
+) : null}
               </div>
             )
           })}
