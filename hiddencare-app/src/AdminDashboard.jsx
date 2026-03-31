@@ -6816,12 +6816,11 @@ const getSalesAutoFeedback = () => {
               </div>
             )}
           </div>
-        )
-      })}
+  )
       </div>
-  </section>
-)}
     </div>
+  )}
+</div>
   )
 }
 
