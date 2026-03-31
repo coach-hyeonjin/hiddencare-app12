@@ -2068,12 +2068,15 @@ const removeWorkoutItem = (itemIndex) => {
 const addSet = (itemIndex) => {
   setWorkoutForm((prev) => {
     const nextItems = [...prev.items]
+
     nextItems[itemIndex] = {
       ...nextItems[itemIndex],
-     sets: [
-  ...nextItems[itemIndex].sets,
-  { kg: '', reps: '', duration_seconds: '' },
-],
+      sets: [
+        ...nextItems[itemIndex].sets,
+        { kg: '', reps: '', duration_seconds: '' },
+      ],
+    }
+
     return { ...prev, items: nextItems }
   })
 }
