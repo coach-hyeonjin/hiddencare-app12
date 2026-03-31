@@ -568,6 +568,111 @@ const selectedPartner = useMemo(
   () => medicalPartners.find((item) => item.id === selectedMedicalPartnerId) || null,
   [medicalPartners, selectedMedicalPartnerId],
 )
+  const getPositiveScoreByCheckCount = (count) => {
+  if (count <= 1) return 1
+  if (count === 2) return 2
+  if (count === 3) return 3
+  if (count === 4) return 4
+  return 5
+}
+
+const getNegativeScoreByCheckCount = (count) => {
+  if (count === 0) return 1
+  if (count <= 2) return 2
+  if (count === 3) return 3
+  if (count === 4) return 4
+  return 5
+}
+
+const getPerformanceLevel = (score) => {
+  return PERFORMANCE_LEVEL_META.find((item) => score >= item.min && score <= item.max)?.label || '기본'
+}
+
+const getCoachStatusLevelKey = ({ conditionScore, fatigueScore, stressScore, focusScore }) => {
+  const positive = Number(conditionScore || 0) + Number(focusScore || 0)
+  const negative = Number(fatigueScore || 0) + Number(stressScore || 0)
+  const diff = positive - negative
+
+  if (diff >= 4) return 'top'
+  if (diff >= 1) return 'stable'
+  if (diff >= -2) return 'caution'
+  return 'risk'
+}
+
+const getCoachStatusText = ({ conditionScore, fatigueScore, stressScore, focusScore, performanceScore }) => {
+  const levelKey = getCoachStatusLevelKey({
+    conditionScore,
+    fatigueScore,
+    stressScore,
+    focusScore,
+  })
+
+  const base = COACH_LEVEL_META[levelKey]?.description || ''
+  const performanceLevel = getPerformanceLevel(performanceScore)
+
+  return `${base} / 성과 행동 수준은 ${performanceLevel}입니다.`
+}
+
+const calculateCoachConditionScores = (form) => {
+  const conditionScore = getPositiveScoreByCheckCount((form.condition_checks || []).length)
+  const fatigueScore = getNegativeScoreByCheckCount((form.fatigue_checks || []).length)
+  const stressScore = getNegativeScoreByCheckCount((form.stress_checks || []).length)
+  const focusScore = getPositiveScoreByCheckCount((form.focus_checks || []).length)
+
+  const performanceScore =
+    (form.lead_actions || []).length +
+    (form.retention_actions || []).length +
+    (form.sales_actions || []).length +
+    (form.growth_actions || []).length
+
+  const statusLevel = getCoachStatusLevelKey({
+    conditionScore,
+    fatigueScore,
+    stressScore,
+    focusScore,
+  })
+
+  const performanceLevel = getPerformanceLevel(performanceScore)
+
+  return {
+    conditionScore,
+    fatigueScore,
+    stressScore,
+    focusScore,
+    performanceScore,
+    statusLevel,
+    performanceLevel,
+  }
+}
+
+const toggleChecklistItem = (field, item) => {
+  setCoachConditionForm((prev) => {
+    const current = Array.isArray(prev[field]) ? prev[field] : []
+    const exists = current.includes(item)
+
+    const next = exists
+      ? current.filter((value) => value !== item)
+      : [...current, item]
+
+    const nextForm = {
+      ...prev,
+      [field]: next,
+    }
+
+    const scores = calculateCoachConditionScores(nextForm)
+
+    return {
+      ...nextForm,
+      condition_score: scores.conditionScore,
+      fatigue_score: scores.fatigueScore,
+      stress_score: scores.stressScore,
+      focus_score: scores.focusScore,
+      performance_score: scores.performanceScore,
+      performance_level: scores.performanceLevel,
+      status_level: scores.statusLevel,
+    }
+  })
+}
   const filteredExercises = useMemo(() => {
     const keyword = exerciseSearch.trim().toLowerCase()
     if (!keyword) return exercises
