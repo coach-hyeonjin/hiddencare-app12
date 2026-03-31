@@ -6601,9 +6601,7 @@ const getSalesAutoFeedback = () => {
             <div className="list-card-top">
               <div>
                 <strong>{item.name || '익명'}</strong>
-                <div className="compact-text">
-                  {item.phone || '-'}
-                </div>
+                <div className="compact-text">{item.phone || '-'}</div>
               </div>
 
               <div className="inline-actions wrap">
@@ -6703,6 +6701,9 @@ const getSalesAutoFeedback = () => {
     </div>
   </div>
 )}
+    </div>
+  )
+}
 
 function DietAdminCard({ diet, memberName, collapsed, onToggle, onSave, onDelete }) {
   const [feedback, setFeedback] = useState(diet.coach_feedback || '')
