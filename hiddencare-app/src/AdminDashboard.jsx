@@ -5467,21 +5467,30 @@ const getSalesAutoFeedback = () => {
       <div className="card">
         <h3>월간 필터</h3>
         <div className="form-row">
-          <label className="field">
-            <label className="field">
-  <span>기록 날짜</span>
-  <input
-    type="date"
-    value={coachConditionForm.check_date}
-    onChange={(e) =>
-      setCoachConditionForm((prev) => ({
-        ...prev,
-        check_date: e.target.value,
-        check_month: (e.target.value || '').slice(0, 7),
-      }))
-    }
-  />
-</label>
+  <label className="field">
+    <span>기준 월</span>
+    <input
+      type="month"
+      value={coachConditionMonth}
+      onChange={(e) => setCoachConditionMonth(e.target.value)}
+    />
+  </label>
+
+  <label className="field">
+    <span>코치 선택</span>
+    <select
+      value={coachConditionCoachFilter}
+      onChange={(e) => setCoachConditionCoachFilter(e.target.value)}
+    >
+      <option value="">전체 코치</option>
+      {coaches.map((coach) => (
+        <option key={coach.id} value={coach.id}>
+          {coach.name}
+        </option>
+      ))}
+    </select>
+  </label>
+</div>
 
           <label className="field">
             <span>코치 선택</span>
@@ -5535,26 +5544,42 @@ const getSalesAutoFeedback = () => {
     <div className="card">
       <h3>{editingCoachConditionId ? '코치 상태 수정' : '코치 상태 입력'}</h3>
 
-      <div className="form-row">
-        <label className="field">
-          <span>코치</span>
-          <select
-            value={coachConditionForm.coach_id}
-            onChange={(e) =>
-              setCoachConditionForm((prev) => ({
-                ...prev,
-                coach_id: e.target.value,
-              }))
-            }
-          >
-            <option value="">코치 선택</option>
-            {coaches.map((coach) => (
-              <option key={coach.id} value={coach.id}>
-                {coach.name}
-              </option>
-            ))}
-          </select>
-        </label>
+     <div className="form-row">
+  <label className="field">
+    <span>코치</span>
+    <select
+      value={coachConditionForm.coach_id}
+      onChange={(e) =>
+        setCoachConditionForm((prev) => ({
+          ...prev,
+          coach_id: e.target.value,
+        }))
+      }
+    >
+      <option value="">코치 선택</option>
+      {coaches.map((coach) => (
+        <option key={coach.id} value={coach.id}>
+          {coach.name}
+        </option>
+      ))}
+    </select>
+  </label>
+
+  <label className="field">
+    <span>기록 날짜</span>
+    <input
+      type="date"
+      value={coachConditionForm.check_date}
+      onChange={(e) =>
+        setCoachConditionForm((prev) => ({
+          ...prev,
+          check_date: e.target.value,
+          check_month: (e.target.value || '').slice(0, 7),
+        }))
+      }
+    />
+  </label>
+</div>
 
         <label className="field">
           <span>기준 월</span>
