@@ -255,18 +255,18 @@ const salesConversionOptions = [
 const salesFailReasonOptions = ['가격부담', '시간부족', '거리문제', '필요성부족', '비교중', '보호자/배우자상의', '운동의지부족', '기타']
 const CONDITION_CHECKLIST = [
   '아침에 일어났을 때 몸이 가볍다',
-  '몸이 무겁고 둔한 느낌이 있다',
-  '근육통이나 결림이 거의 없다',
-  '수업 시작 전부터 이미 피곤하다',
-  '움직임이 전반적으로 편안하다',
+  '근육통이나 몸살 느낌이 거의 없다',
+  '수업할 때 힘이 잘 들어간다',
+  '하루 에너지가 무난하게 유지된다',
+  '몸 상태가 전반적으로 편안하다',
 ]
 
 const FATIGUE_CHECKLIST = [
+  '몸이 무겁다',
   '수업 후 급격히 지친다',
   '잠을 자도 피로가 남는다',
-  '오후로 갈수록 체력이 확 떨어진다',
   '허리나 하체 피로가 누적된다',
-  '오늘은 쉬고 싶다는 느낌이 강하다',
+  '오후로 갈수록 체력이 확 떨어진다',
 ]
 
 const STRESS_CHECKLIST = [
@@ -281,8 +281,8 @@ const FOCUS_CHECKLIST = [
   '수업 집중이 잘 된다',
   '코칭 흐름이 자연스럽다',
   '실수가 적다',
-  '우선순위가 잘 보인다',
-  '설명보다 버티는 느낌으로 수업하게 된다',
+  '해야 할 우선순위가 잘 보인다',
+  '업무 전환이 비교적 깔끔하다',
 ]
 
 const PERFORMANCE_ACTION_SECTIONS = [
@@ -362,43 +362,6 @@ const PERFORMANCE_LEVEL_META = [
   { min: 11, max: 16, label: '양호' },
   { min: 17, max: 999, label: '고성과' },
 ]
-const CLASS_CAPACITY_META = {
-  full: {
-    label: '풀 퍼포먼스 가능',
-    description: '고강도 수업과 상담까지 무난하게 소화 가능한 상태입니다.',
-  },
-  normal: {
-    label: '보통 운영 가능',
-    description: '일반 수업은 가능하지만 무리한 추가 일정은 조절이 좋습니다.',
-  },
-  limited: {
-    label: '최소 운영 권장',
-    description: '수업은 가능하지만 강도와 감정 소모를 줄이는 것이 좋습니다.',
-  },
-  rest: {
-    label: '회복 우선',
-    description: '무리한 진행보다 회복과 일정 조절이 우선입니다.',
-  },
-}
-
-const BURNOUT_LEVEL_META = {
-  safe: {
-    label: '안정',
-    description: '현재는 번아웃 위험이 높지 않습니다.',
-  },
-  watch: {
-    label: '주의',
-    description: '피로와 스트레스가 누적되는 흐름입니다.',
-  },
-  risk: {
-    label: '위험',
-    description: '번아웃 전단계로 보고 수업 강도 조절이 필요합니다.',
-  },
-  critical: {
-    label: '심각',
-    description: '회복 우선 상태입니다. 일정 재배치가 필요합니다.',
-  },
-}
 function randomCode() {
   return Math.random().toString(36).slice(2, 10).toUpperCase()
 }
@@ -627,62 +590,6 @@ const getNegativeScoreByCheckCount = (count) => {
 const getPerformanceLevel = (score) => {
   return PERFORMANCE_LEVEL_META.find((item) => score >= item.min && score <= item.max)?.label || '기본'
 }
-  const getClassCapacityLevel = ({ conditionScore, fatigueScore, stressScore, focusScore }) => {
-  const positive = Number(conditionScore || 0) + Number(focusScore || 0)
-  const negative = Number(fatigueScore || 0) + Number(stressScore || 0)
-  const diff = positive - negative
-
-  if (fatigueScore >= 5 || stressScore >= 5) return 'rest'
-  if (diff >= 4) return 'full'
-  if (diff >= 1) return 'normal'
-  if (diff >= -2) return 'limited'
-  return 'rest'
-}
-
-const getBurnoutLevel = ({ fatigueScore, stressScore, focusScore, performanceScore }) => {
-  const burnoutScore =
-    Number(fatigueScore || 0) * 2 +
-    Number(stressScore || 0) * 2 +
-    (Number(focusScore || 0) <= 2 ? 2 : 0) +
-    (Number(performanceScore || 0) <= 5 ? 1 : 0)
-
-  if (burnoutScore >= 16) return { score: burnoutScore, level: 'critical' }
-  if (burnoutScore >= 12) return { score: burnoutScore, level: 'risk' }
-  if (burnoutScore >= 8) return { score: burnoutScore, level: 'watch' }
-  return { score: burnoutScore, level: 'safe' }
-}
-
-const getCoachActionGuide = ({ statusLevel, burnoutLevel, classCapacityLevel, performanceLevel }) => {
-  const actions = []
-
-  if (classCapacityLevel === 'rest') {
-    actions.push('오늘은 수업 강도 50~70% 수준으로 조절')
-    actions.push('설명 중심 수업으로 운영하고 직접 시범은 최소화')
-    actions.push('신규 상담·추가 응대는 가능하면 줄이기')
-  } else if (classCapacityLevel === 'limited') {
-    actions.push('고강도 수업보다 루틴형 수업 위주로 운영')
-    actions.push('세트 수와 데모 동작 수를 줄이기')
-    actions.push('감정 소모 큰 회원 응대는 분산하기')
-  } else if (classCapacityLevel === 'normal') {
-    actions.push('일반 수업은 가능하지만 추가 일정은 무리하지 않기')
-    actions.push('상담은 1건 정도만 목표로 운영')
-    actions.push('수업 사이 회복 시간을 꼭 확보하기')
-  } else {
-    actions.push('고강도 수업과 상담 진행 가능')
-    actions.push('콘텐츠 촬영이나 후기 요청도 진행 가능')
-    actions.push('재등록/상담 제안까지 적극 운영 가능')
-  }
-
-  if (burnoutLevel === 'risk' || burnoutLevel === 'critical') {
-    actions.push('이번 주 안에 회복 시간 또는 반일 휴식 확보 권장')
-  }
-
-  if (statusLevel === 'risk' && performanceLevel === '매우 부족') {
-    actions.push('오늘은 매출 목표보다 수업 품질 유지와 회복 우선')
-  }
-
-  return actions.slice(0, 4)
-}
 
 const getCoachStatusLevelKey = ({ conditionScore, fatigueScore, stressScore, focusScore }) => {
   const positive = Number(conditionScore || 0) + Number(focusScore || 0)
@@ -695,13 +602,7 @@ const getCoachStatusLevelKey = ({ conditionScore, fatigueScore, stressScore, foc
   return 'risk'
 }
 
-const getCoachStatusText = ({
-  conditionScore,
-  fatigueScore,
-  stressScore,
-  focusScore,
-  performanceScore,
-}) => {
+const getCoachStatusText = ({ conditionScore, fatigueScore, stressScore, focusScore, performanceScore }) => {
   const levelKey = getCoachStatusLevelKey({
     conditionScore,
     fatigueScore,
@@ -709,26 +610,10 @@ const getCoachStatusText = ({
     focusScore,
   })
 
-  const classCapacityLevel = getClassCapacityLevel({
-    conditionScore,
-    fatigueScore,
-    stressScore,
-    focusScore,
-  })
-
-  const burnout = getBurnoutLevel({
-    fatigueScore,
-    stressScore,
-    focusScore,
-    performanceScore,
-  })
-
   const base = COACH_LEVEL_META[levelKey]?.description || ''
   const performanceLevel = getPerformanceLevel(performanceScore)
-  const classCapacityText = CLASS_CAPACITY_META[classCapacityLevel]?.label || '-'
-  const burnoutText = BURNOUT_LEVEL_META[burnout.level]?.label || '-'
 
-  return `${base} / 오늘 수업 가능도는 ${classCapacityText} / 번아웃 상태는 ${burnoutText} / 성과 행동 수준은 ${performanceLevel}입니다.`
+  return `${base} / 성과 행동 수준은 ${performanceLevel}입니다.`
 }
 
 const calculateCoachConditionScores = (form) => {
@@ -752,27 +637,6 @@ const calculateCoachConditionScores = (form) => {
 
   const performanceLevel = getPerformanceLevel(performanceScore)
 
-  const classCapacityLevel = getClassCapacityLevel({
-    conditionScore,
-    fatigueScore,
-    stressScore,
-    focusScore,
-  })
-
-  const burnout = getBurnoutLevel({
-    fatigueScore,
-    stressScore,
-    focusScore,
-    performanceScore,
-  })
-
-  const actionGuides = getCoachActionGuide({
-    statusLevel,
-    burnoutLevel: burnout.level,
-    classCapacityLevel,
-    performanceLevel,
-  })
-
   return {
     conditionScore,
     fatigueScore,
@@ -781,10 +645,6 @@ const calculateCoachConditionScores = (form) => {
     performanceScore,
     statusLevel,
     performanceLevel,
-    classCapacityLevel,
-    burnoutScore: burnout.score,
-    burnoutLevel: burnout.level,
-    actionGuides,
   }
 }
 
@@ -1104,79 +964,39 @@ const coachConditionSummary = useMemo(() => {
       avgFatigue: 0,
       avgFocus: 0,
       avgStress: 0,
-      avgBurnoutScore: 0,
-      burnoutRiskCount: 0,
-      limitedCoachCount: 0,
     }
   }
 
   const total = filteredCoachConditions.length
 
-  const analyzed = filteredCoachConditions.map((item) =>
-    calculateCoachConditionScores({
-      condition_checks: item.condition_checks || [],
-      fatigue_checks: item.fatigue_checks || [],
-      stress_checks: item.stress_checks || [],
-      focus_checks: item.focus_checks || [],
-      lead_actions: item.lead_actions || [],
-      retention_actions: item.retention_actions || [],
-      sales_actions: item.sales_actions || [],
-      growth_actions: item.growth_actions || [],
-    })
-  )
-
   return {
-    avgCondition:
-      filteredCoachConditions.reduce((sum, item) => sum + Number(item.condition_score || 0), 0) / total,
-    avgFatigue:
-      filteredCoachConditions.reduce((sum, item) => sum + Number(item.fatigue_score || 0), 0) / total,
-    avgFocus:
-      filteredCoachConditions.reduce((sum, item) => sum + Number(item.focus_score || 0), 0) / total,
-    avgStress:
-      filteredCoachConditions.reduce((sum, item) => sum + Number(item.stress_score || 0), 0) / total,
-    avgBurnoutScore:
-      analyzed.reduce((sum, item) => sum + Number(item.burnoutScore || 0), 0) / total,
-    burnoutRiskCount:
-      analyzed.filter((item) => item.burnoutLevel === 'risk' || item.burnoutLevel === 'critical').length,
-    limitedCoachCount:
-      analyzed.filter((item) => item.classCapacityLevel === 'limited' || item.classCapacityLevel === 'rest').length,
+    avgCondition: filteredCoachConditions.reduce((sum, item) => sum + Number(item.condition_score || 0), 0) / total,
+    avgFatigue: filteredCoachConditions.reduce((sum, item) => sum + Number(item.fatigue_score || 0), 0) / total,
+    avgFocus: filteredCoachConditions.reduce((sum, item) => sum + Number(item.focus_score || 0), 0) / total,
+    avgStress: filteredCoachConditions.reduce((sum, item) => sum + Number(item.stress_score || 0), 0) / total,
   }
 }, [filteredCoachConditions])
- const coachAlertList = useMemo(() => {
+  const coachAlertList = useMemo(() => {
   return filteredCoachConditions
     .map((item) => {
       const coachName = item.coaches?.name || '이름 없음'
-
-      const analysis = calculateCoachConditionScores({
-        condition_checks: item.condition_checks || [],
-        fatigue_checks: item.fatigue_checks || [],
-        stress_checks: item.stress_checks || [],
-        focus_checks: item.focus_checks || [],
-        lead_actions: item.lead_actions || [],
-        retention_actions: item.retention_actions || [],
-        sales_actions: item.sales_actions || [],
-        growth_actions: item.growth_actions || [],
-      })
+      const fatigue = Number(item.fatigue_score || 0)
+      const stress = Number(item.stress_score || 0)
+      const focus = Number(item.focus_score || 0)
+      const performance = Number(item.performance_score || 0)
 
       const reasons = []
 
-      if (Number(item.fatigue_score || 0) >= 4) reasons.push('피로도 높음')
-      if (Number(item.stress_score || 0) >= 4) reasons.push('스트레스 높음')
-      if (Number(item.focus_score || 0) <= 2) reasons.push('집중도 낮음')
-      if (Number(item.performance_score || 0) <= 5) reasons.push('성과 행동 부족')
-      if (analysis.burnoutLevel === 'risk') reasons.push('번아웃 위험')
-      if (analysis.burnoutLevel === 'critical') reasons.push('번아웃 심각')
-      if (analysis.classCapacityLevel === 'limited') reasons.push('수업 강도 조절 필요')
-      if (analysis.classCapacityLevel === 'rest') reasons.push('회복 우선')
+      if (fatigue >= 4) reasons.push('피로도 높음')
+      if (stress >= 4) reasons.push('스트레스 높음')
+      if (focus <= 2) reasons.push('집중도 낮음')
+      if (performance <= 5) reasons.push('성과 행동 부족')
 
       return {
         ...item,
         coachName,
         reasons,
         isAlert: reasons.length > 0,
-        burnoutLevel: analysis.burnoutLevel,
-        classCapacityLevel: analysis.classCapacityLevel,
-        actionGuides: analysis.actionGuides,
       }
     })
     .filter((item) => item.isAlert)
@@ -1196,20 +1016,6 @@ const coachDashboardSummary = useMemo(() => {
     focusScore: coachConditionSummary.avgFocus,
   })
 
-  const classCapacityLevel = getClassCapacityLevel({
-    conditionScore: coachConditionSummary.avgCondition,
-    fatigueScore: coachConditionSummary.avgFatigue,
-    stressScore: coachConditionSummary.avgStress,
-    focusScore: coachConditionSummary.avgFocus,
-  })
-
-  const burnout = getBurnoutLevel({
-    fatigueScore: coachConditionSummary.avgFatigue,
-    stressScore: coachConditionSummary.avgStress,
-    focusScore: coachConditionSummary.avgFocus,
-    performanceScore: avgPerformance,
-  })
-
   return {
     avgPerformance,
     statusKey,
@@ -1221,10 +1027,6 @@ const coachDashboardSummary = useMemo(() => {
       focusScore: coachConditionSummary.avgFocus,
       performanceScore: avgPerformance,
     }),
-    classCapacityLevel,
-    classCapacityLabel: CLASS_CAPACITY_META[classCapacityLevel]?.label || '-',
-    burnoutLevel: burnout.level,
-    burnoutLabel: BURNOUT_LEVEL_META[burnout.level]?.label || '-',
   }
 }, [filteredCoachConditions, coachConditionSummary])
 
@@ -4733,37 +4535,7 @@ const getSalesAutoFeedback = () => {
           </div>
         </div>
       </div>
-<div className="card">
-    <h3>번아웃 / 운영 주의 코치</h3>
 
-    {!coachAlertList.length ? (
-      <p className="sub-text">현재 강한 경고 신호는 없습니다.</p>
-    ) : (
-      <div className="stack-gap">
-        {coachAlertList.slice(0, 5).map((item) => (
-          <div key={item.id} className="list-card">
-            <strong>{item.coachName || item.coaches?.name || '이름 없음'}</strong>
-
-            <div className="compact-text">
-              사유: {item.reasons.join(', ')}
-            </div>
-
-            <div className="compact-text">
-              수업 가능도: {CLASS_CAPACITY_META[item.classCapacityLevel]?.label || '-'}
-            </div>
-
-            <div className="compact-text">
-              번아웃 상태: {BURNOUT_LEVEL_META[item.burnoutLevel]?.label || '-'}
-            </div>
-
-            <div className="compact-text">
-              행동: {(item.actionGuides || []).join(' / ')}
-            </div>
-        </div>
-      ))}
-    </div>
-  )}
-</div>
       <div className="card">
         <h2>자동 판단</h2>
         <div className="list-stack">
@@ -5874,47 +5646,36 @@ const getSalesAutoFeedback = () => {
     <div className="report-grid">
       <div className="card">
         <h3>자동 계산 결과</h3>
-<p>컨디션: {currentCoachConditionAnalysis.conditionScore}</p>
-<p>피로도: {currentCoachConditionAnalysis.fatigueScore}</p>
-<p>스트레스: {currentCoachConditionAnalysis.stressScore}</p>
-<p>집중도: {currentCoachConditionAnalysis.focusScore}</p>
-<p>성과 행동 점수: {currentCoachConditionAnalysis.performanceScore}</p>
-<p>성과 행동 레벨: {currentCoachConditionAnalysis.performanceLevel}</p>
+        <p>컨디션: {coachConditionForm.condition_score}</p>
+        <p>피로도: {coachConditionForm.fatigue_score}</p>
+        <p>스트레스: {coachConditionForm.stress_score}</p>
+        <p>집중도: {coachConditionForm.focus_score}</p>
+        <p>성과 행동 점수: {coachConditionForm.performance_score}</p>
+        <p>성과 행동 레벨: {coachConditionForm.performance_level || getPerformanceLevel(coachConditionForm.performance_score)}</p>
+        <p>
+          상태 레벨:{' '}
+          {COACH_LEVEL_META[
+            coachConditionForm.status_level ||
+              getCoachStatusLevelKey({
+                conditionScore: coachConditionForm.condition_score,
+                fatigueScore: coachConditionForm.fatigue_score,
+                stressScore: coachConditionForm.stress_score,
+                focusScore: coachConditionForm.focus_score,
+              })
+          ]?.label || '-'}
+        </p>
+        <p>
+          자동 해석:{' '}
+          {getCoachStatusText({
+            conditionScore: coachConditionForm.condition_score,
+            fatigueScore: coachConditionForm.fatigue_score,
+            stressScore: coachConditionForm.stress_score,
+            focusScore: coachConditionForm.focus_score,
+            performanceScore: coachConditionForm.performance_score,
+          })}
+        </p>
+      </div>
 
-<p>
-  상태 레벨:{' '}
-  {COACH_LEVEL_META[currentCoachConditionAnalysis.statusLevel]?.label || '-'}
-</p>
-
-<p>
-  오늘 수업 가능도:{' '}
-  {CLASS_CAPACITY_META[currentCoachConditionAnalysis.classCapacityLevel]?.label || '-'}
-</p>
-
-<p>
-  번아웃 상태:{' '}
-  {BURNOUT_LEVEL_META[currentCoachConditionAnalysis.burnoutLevel]?.label || '-'}
-</p>
-
-<p>
-  자동 해석:{' '}
-  {getCoachStatusText({
-    conditionScore: currentCoachConditionAnalysis.conditionScore,
-    fatigueScore: currentCoachConditionAnalysis.fatigueScore,
-    stressScore: currentCoachConditionAnalysis.stressScore,
-    focusScore: currentCoachConditionAnalysis.focusScore,
-    performanceScore: currentCoachConditionAnalysis.performanceScore,
-  })}
-</p>
-
-<div className="compact-text">
-  수업 운영 가이드:
-  <ul>
-    {currentCoachConditionAnalysis.actionGuides.map((action, index) => (
-      <li key={`${action}-${index}`}>{action}</li>
-    ))}
-  </ul>
-</div>
       <div className="card">
        <h3>이번 달 목표(계획값)</h3>
         <div className="form-row">
@@ -6041,41 +5802,7 @@ const getSalesAutoFeedback = () => {
               <div className="compact-text">
                 메모: {item.issue_note || '-'}
               </div>
-<div className="compact-text">
-  오늘 수업 가능도:{' '}
-  {
-    CLASS_CAPACITY_META[
-      calculateCoachConditionScores({
-        condition_checks: item.condition_checks || [],
-        fatigue_checks: item.fatigue_checks || [],
-        stress_checks: item.stress_checks || [],
-        focus_checks: item.focus_checks || [],
-        lead_actions: item.lead_actions || [],
-        retention_actions: item.retention_actions || [],
-        sales_actions: item.sales_actions || [],
-        growth_actions: item.growth_actions || [],
-      }).classCapacityLevel
-    ]?.label || '-'
-  }
-</div>
 
-<div className="compact-text">
-  번아웃 상태:{' '}
-  {
-    BURNOUT_LEVEL_META[
-      calculateCoachConditionScores({
-        condition_checks: item.condition_checks || [],
-        fatigue_checks: item.fatigue_checks || [],
-        stress_checks: item.stress_checks || [],
-        focus_checks: item.focus_checks || [],
-        lead_actions: item.lead_actions || [],
-        retention_actions: item.retention_actions || [],
-        sales_actions: item.sales_actions || [],
-        growth_actions: item.growth_actions || [],
-      }).burnoutLevel
-    ]?.label || '-'
-  }
-</div>
               <div className="compact-text">
                 자동 해석:{' '}
                 {getCoachStatusText({
@@ -6086,23 +5813,7 @@ const getSalesAutoFeedback = () => {
                   performanceScore: item.performance_score,
                 })}
               </div>
-<div className="compact-text">
-  오늘 행동 추천:
-  <ul>
-    {calculateCoachConditionScores({
-      condition_checks: item.condition_checks || [],
-      fatigue_checks: item.fatigue_checks || [],
-      stress_checks: item.stress_checks || [],
-      focus_checks: item.focus_checks || [],
-      lead_actions: item.lead_actions || [],
-      retention_actions: item.retention_actions || [],
-      sales_actions: item.sales_actions || [],
-      growth_actions: item.growth_actions || [],
-    }).actionGuides.map((action, index) => (
-      <li key={`${item.id}-${index}`}>{action}</li>
-    ))}
-  </ul>
-</div>
+
               {item.condition_checks?.length ? (
                 <div className="compact-text">컨디션 체크: {item.condition_checks.join(', ')}</div>
               ) : null}
@@ -6173,52 +5884,8 @@ const getSalesAutoFeedback = () => {
         <strong>{filteredCoachReviews.length}</strong>
         <div className="compact-text">이번 조건에 맞는 월간 평가 기록 수</div>
       </div>
-   
-<div className="coach-summary-grid">
-  <div className="coach-summary-card">
-    <span>평균 컨디션</span>
-    <strong>{Number(coachConditionSummary.avgCondition || 0).toFixed(1)}</strong>
-    <div className="compact-text">
-      집중도 {Number(coachConditionSummary.avgFocus || 0).toFixed(1)} / 피로도 {Number(coachConditionSummary.avgFatigue || 0).toFixed(1)}
     </div>
-  </div>
 
-  <div className="coach-summary-card">
-    <span>평균 행동 점수</span>
-    <strong>{Number(coachDashboardSummary.avgPerformance || 0).toFixed(1)}</strong>
-    <div className="compact-text">
-      운영 레벨 {coachDashboardSummary.statusLabel || '-'}
-    </div>
-  </div>
-
-  <div className="coach-summary-card">
-    <span>주의 필요 코치</span>
-    <strong>{coachAlertList.length}</strong>
-    <div className="compact-text">주의 코치 우선 확인 필요</div>
-  </div>
-
-  <div className="coach-summary-card">
-    <span>평가 기록 수</span>
-    <strong>{filteredCoachReviews.length}</strong>
-    <div className="compact-text">이번 조건에 맞는 월간 평가 기록 수</div>
-  </div>
-
-  <div className="coach-summary-card">
-    <span>평균 번아웃 점수</span>
-    <strong>{Number(coachConditionSummary.avgBurnoutScore || 0).toFixed(1)}</strong>
-    <div className="compact-text">
-      위험 코치 {coachConditionSummary.burnoutRiskCount || 0}명
-    </div>
-  </div>
-
-  <div className="coach-summary-card">
-    <span>수업 조절 필요 코치</span>
-    <strong>{coachConditionSummary.limitedCoachCount || 0}명</strong>
-    <div className="compact-text">
-      운영 권장 {coachDashboardSummary.classCapacityLabel || '-'}
-    </div>
-  </div>
-</div>
     <div className="report-grid">
       <div className="card">
         <h3>리포트 필터</h3>
