@@ -6233,8 +6233,619 @@ const getSalesAutoFeedback = () => {
   </div> 
 </section>
 )}
+{activeTab === '코치스케줄' && (
+  <div className="two-col">
+    <section className="card">
+      <div className="section-head">
+        <div>
+          <h2>코치 스케줄 등록 / 수정</h2>
+          <p className="sub-text">코치별 근무일정과 가능 시간을 관리합니다.</p>
+        </div>
+      </div>
 
+      <div className="stack-gap">
+        <label className="field">
+          <span>코치 선택</span>
+          <select
+            value={selectedCoachId}
+            onChange={(e) => setSelectedCoachId(e.target.value)}
+          >
+            <option value="">코치 선택</option>
+            {coaches.map((coach) => (
+              <option key={coach.id} value={coach.id}>
+                {coach.name}
+              </option>
+            ))}
+          </select>
+        </label>
 
+        <div className="grid-2">
+          <label className="field">
+            <span>기준 월</span>
+            <input
+              type="month"
+              value={scheduleMonth}
+              onChange={(e) => setScheduleMonth(e.target.value)}
+            />
+          </label>
+
+          <label className="field">
+            <span>일정 날짜</span>
+            <input
+              type="date"
+              value={scheduleForm.schedule_date}
+              onChange={(e) =>
+                setScheduleForm((prev) => ({
+                  ...prev,
+                  schedule_date: e.target.value,
+                }))
+              }
+            />
+          </label>
+        </div>
+
+        <div className="grid-2">
+          <label className="checkbox-line">
+            <input
+              type="checkbox"
+              checked={!!scheduleForm.is_working}
+              onChange={(e) =>
+                setScheduleForm((prev) => ({
+                  ...prev,
+                  is_working: e.target.checked,
+                }))
+              }
+            />
+            <span>근무일</span>
+          </label>
+
+          <label className="checkbox-line">
+            <input
+              type="checkbox"
+              checked={!!scheduleForm.is_weekend_work}
+              onChange={(e) =>
+                setScheduleForm((prev) => ({
+                  ...prev,
+                  is_weekend_work: e.target.checked,
+                }))
+              }
+            />
+            <span>주말 근무</span>
+          </label>
+        </div>
+
+        <div className="grid-2">
+          <label className="field">
+            <span>근무 시작</span>
+            <input
+              type="time"
+              value={scheduleForm.work_start}
+              onChange={(e) =>
+                setScheduleForm((prev) => ({
+                  ...prev,
+                  work_start: e.target.value,
+                }))
+              }
+            />
+          </label>
+
+          <label className="field">
+            <span>근무 종료</span>
+            <input
+              type="time"
+              value={scheduleForm.work_end}
+              onChange={(e) =>
+                setScheduleForm((prev) => ({
+                  ...prev,
+                  work_end: e.target.value,
+                }))
+              }
+            />
+          </label>
+        </div>
+
+        <div className="field">
+          <span>가능 시간 선택</span>
+          <div className="check-grid">
+            {timeSlotOptions.map((slot) => (
+              <label key={slot} className="checkbox-chip">
+                <input
+                  type="checkbox"
+                  checked={(scheduleForm.selectedSlots || []).includes(slot)}
+                  onChange={() =>
+                    setScheduleForm((prev) => {
+                      const current = Array.isArray(prev.selectedSlots) ? prev.selectedSlots : []
+                      const exists = current.includes(slot)
+
+                      return {
+                        ...prev,
+                        selectedSlots: exists
+                          ? current.filter((value) => value !== slot)
+                          : [...current, slot],
+                      }
+                    })
+                  }
+                />
+                <span>{slot}</span>
+              </label>
+            ))}
+          </div>
+        </div>
+
+        <label className="field">
+          <span>메모</span>
+          <textarea
+            rows="4"
+            value={scheduleForm.memo}
+            onChange={(e) =>
+              setScheduleForm((prev) => ({
+                ...prev,
+                memo: e.target.value,
+              }))
+            }
+            placeholder="예: 오전 PT 집중 / 점심 이후 상담 가능 / 주말은 예약제"
+          />
+        </label>
+
+        <div className="inline-actions wrap">
+          <button
+            type="button"
+            className="primary-btn"
+            onClick={handleScheduleSave}
+            disabled={!selectedCoachId}
+          >
+            스케줄 저장
+          </button>
+
+          <button
+            type="button"
+            className="secondary-btn"
+            onClick={() =>
+              setScheduleForm({
+                schedule_date: new Date().toISOString().slice(0, 10),
+                is_working: true,
+                is_weekend_work: false,
+                work_start: '09:00',
+                work_end: '18:00',
+                memo: '',
+                selectedSlots: ['10:00', '11:00', '14:00', '15:00'],
+              })
+            }
+          >
+            초기화
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <section className="card">
+      <div className="member-list-header">
+        <h2>코치 스케줄 목록</h2>
+
+        <div className="member-list-search-area">
+          <div className="member-list-filter-row">
+            <input
+              type="month"
+              value={scheduleMonth}
+              onChange={(e) => setScheduleMonth(e.target.value)}
+            />
+
+            <select
+              value={selectedCoachId}
+              onChange={(e) => setSelectedCoachId(e.target.value)}
+            >
+              <option value="">전체 코치</option>
+              {coaches.map((coach) => (
+                <option key={coach.id} value={coach.id}>
+                  {coach.name}
+                </option>
+              ))}
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <div className="list-stack">
+        {coachSchedules
+          .filter((schedule) => !scheduleMonth || (schedule.schedule_date || '').slice(0, 7) === scheduleMonth)
+          .filter((schedule) => !selectedCoachId || schedule.coach_id === selectedCoachId)
+          .sort((a, b) => (b.schedule_date || '').localeCompare(a.schedule_date || ''))
+          .length === 0 ? (
+          <div className="workout-list-empty">등록된 코치 스케줄이 없습니다.</div>
+        ) : null}
+
+        {coachSchedules
+          .filter((schedule) => !scheduleMonth || (schedule.schedule_date || '').slice(0, 7) === scheduleMonth)
+          .filter((schedule) => !selectedCoachId || schedule.coach_id === selectedCoachId)
+          .sort((a, b) => (b.schedule_date || '').localeCompare(a.schedule_date || ''))
+          .map((schedule) => {
+            const collapsed = collapsedSchedules[schedule.id] ?? true
+            const coachName =
+              coaches.find((coach) => coach.id === schedule.coach_id)?.name ||
+              schedule.coaches?.name ||
+              '코치없음'
+
+            const slotList = coachScheduleSlotsMap[schedule.id] || []
+
+            return (
+              <div key={schedule.id} className="list-card">
+                <div className="list-card-top">
+                  <strong>{coachName}</strong>
+                  <span className="pill">{schedule.schedule_date || '-'}</span>
+                </div>
+
+                <div className="compact-text">
+                  간략히보기: {schedule.is_working ? '근무' : '휴무'} / {schedule.work_start || '-'} ~ {schedule.work_end || '-'}
+                </div>
+
+                <div className="inline-actions wrap">
+                  <button
+                    type="button"
+                    className="secondary-btn"
+                    onClick={() =>
+                      setCollapsedSchedules((prev) => ({
+                        ...prev,
+                        [schedule.id]: !collapsed,
+                      }))
+                    }
+                  >
+                    {collapsed ? '상세히보기' : '간략히보기'}
+                  </button>
+
+                  <button
+                    type="button"
+                    className="secondary-btn"
+                    onClick={() => handleScheduleEdit(schedule)}
+                  >
+                    수정
+                  </button>
+
+                  <button
+                    type="button"
+                    className="danger-btn"
+                    onClick={() => handleScheduleDelete(schedule.id)}
+                  >
+                    삭제
+                  </button>
+                </div>
+
+                {!collapsed && (
+                  <div className="detail-box">
+                    <p><strong>코치:</strong> {coachName}</p>
+                    <p><strong>날짜:</strong> {schedule.schedule_date || '-'}</p>
+                    <p><strong>근무 여부:</strong> {schedule.is_working ? '근무' : '휴무'}</p>
+                    <p><strong>주말 근무:</strong> {schedule.is_weekend_work ? '예' : '아니오'}</p>
+                    <p><strong>근무 시간:</strong> {schedule.work_start || '-'} ~ {schedule.work_end || '-'}</p>
+                    <p><strong>가능 시간:</strong> {slotList.length ? slotList.join(', ') : '없음'}</p>
+                    <p><strong>메모:</strong> {schedule.memo || '-'}</p>
+                  </div>
+                )}
+              </div>
+            )
+          })}
+      </div>
+    </section>
+  </div>
+)}
+{activeTab === '공지사항' && (
+  <div className="two-col">
+    <section className="card">
+      <div className="section-head">
+        <div>
+          <h2>{editingNoticeId ? '공지사항 수정' : '공지사항 등록'}</h2>
+          <p className="sub-text">회원 화면에 보여줄 공지와 소식을 등록합니다.</p>
+        </div>
+      </div>
+
+      <form className="stack-gap" onSubmit={handleNoticeSubmit}>
+        <label className="field">
+          <span>제목</span>
+          <input
+            value={noticeForm.title}
+            onChange={(e) =>
+              setNoticeForm((prev) => ({
+                ...prev,
+                title: e.target.value,
+              }))
+            }
+            placeholder="예: 4월 휴무 안내 / 이번달 이벤트"
+          />
+        </label>
+
+        <div className="grid-2">
+          <label className="field">
+            <span>카테고리</span>
+            <select
+              value={noticeForm.category}
+              onChange={(e) =>
+                setNoticeForm((prev) => ({
+                  ...prev,
+                  category: e.target.value,
+                }))
+              }
+            >
+              <option value="공지">공지</option>
+              <option value="이벤트">이벤트</option>
+              <option value="안내">안내</option>
+              <option value="소식">소식</option>
+            </select>
+          </label>
+
+          <label className="checkbox-line">
+            <input
+              type="checkbox"
+              checked={!!noticeForm.is_published}
+              onChange={(e) =>
+                setNoticeForm((prev) => ({
+                  ...prev,
+                  is_published: e.target.checked,
+                }))
+              }
+            />
+            <span>게시 상태</span>
+          </label>
+        </div>
+
+        <label className="field">
+          <span>내용</span>
+          <textarea
+            rows="8"
+            value={noticeForm.content}
+            onChange={(e) =>
+              setNoticeForm((prev) => ({
+                ...prev,
+                content: e.target.value,
+              }))
+            }
+            placeholder="회원에게 보여줄 공지 내용을 입력하세요."
+          />
+        </label>
+
+        <div className="grid-2">
+          <label className="field">
+            <span>이미지 URL</span>
+            <input
+              value={noticeForm.image_url}
+              onChange={(e) =>
+                setNoticeForm((prev) => ({
+                  ...prev,
+                  image_url: e.target.value,
+                }))
+              }
+              placeholder="이미지 주소가 있으면 입력"
+            />
+          </label>
+
+          <label className="field">
+            <span>영상 URL</span>
+            <input
+              value={noticeForm.video_url}
+              onChange={(e) =>
+                setNoticeForm((prev) => ({
+                  ...prev,
+                  video_url: e.target.value,
+                }))
+              }
+              placeholder="영상 주소가 있으면 입력"
+            />
+          </label>
+        </div>
+
+        <div className="grid-2">
+          <label className="field">
+            <span>노출 시작일</span>
+            <input
+              type="date"
+              value={noticeForm.starts_at ? String(noticeForm.starts_at).slice(0, 10) : ''}
+              onChange={(e) =>
+                setNoticeForm((prev) => ({
+                  ...prev,
+                  starts_at: e.target.value,
+                }))
+              }
+            />
+          </label>
+
+          <label className="field">
+            <span>노출 종료일</span>
+            <input
+              type="date"
+              value={noticeForm.ends_at ? String(noticeForm.ends_at).slice(0, 10) : ''}
+              onChange={(e) =>
+                setNoticeForm((prev) => ({
+                  ...prev,
+                  ends_at: e.target.value,
+                }))
+              }
+            />
+          </label>
+        </div>
+
+        <div className="inline-actions wrap">
+          <button className="primary-btn" type="submit">
+            {editingNoticeId ? '공지 수정 저장' : '공지 등록'}
+          </button>
+
+          <button
+            type="button"
+            className="secondary-btn"
+            onClick={() => {
+              setNoticeForm({
+                id: null,
+                title: '',
+                content: '',
+                category: '공지',
+                image_url: '',
+                video_url: '',
+                is_published: true,
+                starts_at: '',
+                ends_at: '',
+              })
+              setEditingNoticeId(null)
+            }}
+          >
+            초기화
+          </button>
+        </div>
+      </form>
+    </section>
+
+    <section className="card">
+      <div className="member-list-header">
+        <h2>공지사항 목록</h2>
+
+        <div className="member-list-search-area">
+          <input
+            placeholder="제목 / 내용 검색"
+            value={noticeSearch}
+            onChange={(e) => setNoticeSearch(e.target.value)}
+          />
+
+          <div className="member-list-filter-row">
+            <input
+              type="month"
+              value={noticeMonthFilter}
+              onChange={(e) => setNoticeMonthFilter(e.target.value)}
+            />
+
+            <select
+              value={noticeCategoryFilter}
+              onChange={(e) => setNoticeCategoryFilter(e.target.value)}
+            >
+              <option value="all">전체</option>
+              <option value="공지">공지</option>
+              <option value="이벤트">이벤트</option>
+              <option value="안내">안내</option>
+              <option value="소식">소식</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <div className="list-stack">
+        {notices
+          .filter((notice) =>
+            !noticeMonthFilter
+              ? true
+              : ((notice.starts_at || notice.created_at || '').slice(0, 7) === noticeMonthFilter)
+          )
+          .filter((notice) =>
+            noticeCategoryFilter === 'all' ? true : notice.category === noticeCategoryFilter
+          )
+          .filter((notice) => {
+            const keyword = noticeSearch.trim().toLowerCase()
+            if (!keyword) return true
+            return (
+              String(notice.title || '').toLowerCase().includes(keyword) ||
+              String(notice.content || '').toLowerCase().includes(keyword) ||
+              String(notice.category || '').toLowerCase().includes(keyword)
+            )
+          })
+          .sort((a, b) =>
+            String(b.starts_at || b.created_at || '').localeCompare(String(a.starts_at || a.created_at || ''))
+          )
+          .length === 0 ? (
+          <div className="workout-list-empty">등록된 공지사항이 없습니다.</div>
+        ) : null}
+
+        {notices
+          .filter((notice) =>
+            !noticeMonthFilter
+              ? true
+              : ((notice.starts_at || notice.created_at || '').slice(0, 7) === noticeMonthFilter)
+          )
+          .filter((notice) =>
+            noticeCategoryFilter === 'all' ? true : notice.category === noticeCategoryFilter
+          )
+          .filter((notice) => {
+            const keyword = noticeSearch.trim().toLowerCase()
+            if (!keyword) return true
+            return (
+              String(notice.title || '').toLowerCase().includes(keyword) ||
+              String(notice.content || '').toLowerCase().includes(keyword) ||
+              String(notice.category || '').toLowerCase().includes(keyword)
+            )
+          })
+          .sort((a, b) =>
+            String(b.starts_at || b.created_at || '').localeCompare(String(a.starts_at || a.created_at || ''))
+          )
+          .map((notice) => {
+            const collapsed = collapsedNotices[notice.id] ?? true
+
+            return (
+              <div key={notice.id} className="list-card">
+                <div className="list-card-top">
+                  <div>
+                    <strong>{notice.title || '(제목 없음)'}</strong>
+                    <div className="compact-text">
+                      {notice.category || '-'} / {notice.is_published ? '게시중' : '비공개'}
+                    </div>
+                  </div>
+
+                  <span className="pill">
+                    {(notice.starts_at || notice.created_at || '').slice(0, 10) || '-'}
+                  </span>
+                </div>
+
+                <div className="compact-text">
+                  {(notice.content || '').slice(0, 60)}
+                  {(notice.content || '').length > 60 ? '...' : ''}
+                </div>
+
+                <div className="inline-actions wrap">
+                  <button
+                    type="button"
+                    className="secondary-btn"
+                    onClick={() =>
+                      setCollapsedNotices((prev) => ({
+                        ...prev,
+                        [notice.id]: !collapsed,
+                      }))
+                    }
+                  >
+                    {collapsed ? '상세히보기' : '간략히보기'}
+                  </button>
+
+                  <button
+                    type="button"
+                    className="secondary-btn"
+                    onClick={() => handleNoticeEdit(notice)}
+                  >
+                    수정
+                  </button>
+
+                  <button
+                    type="button"
+                    className="danger-btn"
+                    onClick={async () => {
+                      if (!window.confirm('공지사항을 삭제할까요?')) return
+                      await supabase.from('notices').delete().eq('id', notice.id)
+                      await loadNotices()
+                    }}
+                  >
+                    삭제
+                  </button>
+                </div>
+
+                {!collapsed && (
+                  <div className="detail-box">
+                    <p><strong>제목:</strong> {notice.title || '-'}</p>
+                    <p><strong>카테고리:</strong> {notice.category || '-'}</p>
+                    <p><strong>게시 상태:</strong> {notice.is_published ? '게시중' : '비공개'}</p>
+                    <p><strong>노출 시작:</strong> {notice.starts_at ? String(notice.starts_at).slice(0, 10) : '-'}</p>
+                    <p><strong>노출 종료:</strong> {notice.ends_at ? String(notice.ends_at).slice(0, 10) : '-'}</p>
+                    <p><strong>이미지 URL:</strong> {notice.image_url || '-'}</p>
+                    <p><strong>영상 URL:</strong> {notice.video_url || '-'}</p>
+                    <p><strong>내용:</strong> {notice.content || '-'}</p>
+                  </div>
+                )}
+              </div>
+            )
+          })}
+      </div>
+    </section>
+  </div>
+)}
       {activeTab === '사용방법' && (
         <div className="card">
           <div className="section-head">
