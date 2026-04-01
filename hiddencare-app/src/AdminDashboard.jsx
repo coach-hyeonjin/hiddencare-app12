@@ -4759,12 +4759,11 @@ const getSalesAutoFeedback = () => {
             <div className="compact-text">
               행동: {(item.actionGuides || []).join(' / ')}
             </div>
-          </div>
-        ))}
-      </div>
-    )}
-  </section>
-
+        </div>
+      ))}
+    </div>
+  )}
+</div>
       <div className="card">
         <h2>자동 판단</h2>
         <div className="list-stack">
