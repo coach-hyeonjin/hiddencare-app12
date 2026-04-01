@@ -192,6 +192,7 @@ const emptySalesLogForm = {
 const emptyCoachConditionForm = {
   id: null,
   coach_id: '',
+  check_date: new Date().toISOString().slice(0, 10),
   check_month: new Date().toISOString().slice(0, 7),
 
   condition_checks: [],
@@ -951,7 +952,12 @@ const salesLogSummary = useMemo(() => {
 }, [filteredSalesLogs])
 const filteredCoachConditions = useMemo(() => {
   return coachConditions.filter((item) => {
-    const matchesMonth = !coachConditionMonth || item.check_month === coachConditionMonth
+    const monthKey =
+      (item.check_date || '').slice(0, 7) ||
+      item.check_month ||
+      ''
+
+    const matchesMonth = !coachConditionMonth || monthKey === coachConditionMonth
     const matchesCoach = !coachConditionCoachFilter || item.coach_id === coachConditionCoachFilter
     return matchesMonth && matchesCoach
   })
@@ -3057,8 +3063,9 @@ const handleCoachConditionSubmit = async (e) => {
   const scores = calculateCoachConditionScores(coachConditionForm)
 
   const payload = {
-    coach_id: coachConditionForm.coach_id,
-    check_month: coachConditionForm.check_month,
+  coach_id: coachConditionForm.coach_id,
+  check_date: coachConditionForm.check_date,
+  check_month: (coachConditionForm.check_date || '').slice(0, 7),
 
     condition_checks: coachConditionForm.condition_checks || [],
     fatigue_checks: coachConditionForm.fatigue_checks || [],
@@ -3119,7 +3126,10 @@ const handleCoachConditionEdit = (item) => {
   setCoachConditionForm({
     id: item.id,
     coach_id: item.coach_id || '',
-    check_month: item.check_month || new Date().toISOString().slice(0, 7),
+    check_date:
+  item.check_date ||
+  (item.check_month ? `${item.check_month}-01` : new Date().toISOString().slice(0, 10)),
+check_month: (item.check_date || `${item.check_month || new Date().toISOString().slice(0, 7)}-01`).slice(0, 7),
 
     condition_checks: item.condition_checks || [],
     fatigue_checks: item.fatigue_checks || [],
@@ -5458,13 +5468,20 @@ const getSalesAutoFeedback = () => {
         <h3>월간 필터</h3>
         <div className="form-row">
           <label className="field">
-            <span>기준 월</span>
-            <input
-              type="month"
-              value={coachConditionMonth}
-              onChange={(e) => setCoachConditionMonth(e.target.value)}
-            />
-          </label>
+            <label className="field">
+  <span>기록 날짜</span>
+  <input
+    type="date"
+    value={coachConditionForm.check_date}
+    onChange={(e) =>
+      setCoachConditionForm((prev) => ({
+        ...prev,
+        check_date: e.target.value,
+        check_month: (e.target.value || '').slice(0, 7),
+      }))
+    }
+  />
+</label>
 
           <label className="field">
             <span>코치 선택</span>
@@ -5780,9 +5797,12 @@ const getSalesAutoFeedback = () => {
             <div key={item.id} className="list-card">
               <div className="list-card-top">
                 <strong>{item.coaches?.name || '-'}</strong>
-                <span className="pill">{item.check_month || '-'}</span>
+               <span className="pill">{item.check_date || item.check_month || '-'}</span>
               </div>
 
+              <div className="compact-text">
+  기록일: {item.check_date || (item.check_month ? `${item.check_month}-01` : '-')}
+</div>
               <div className="compact-text">
                 상태레벨 {COACH_LEVEL_META[item.status_level]?.label || '-'} / 행동점수 {item.performance_score || 0}점 / 행동레벨 {item.performance_level || '-'}
               </div>
@@ -6005,7 +6025,7 @@ const getSalesAutoFeedback = () => {
             <div key={item.id} className="list-card">
               <div className="list-card-top">
                 <strong>{item.coaches?.name || '-'}</strong>
-                <span className="pill">{item.check_month || '-'}</span>
+                <span className="pill">{item.check_date || item.check_month || '-'}</span>
               </div>
 
               <div className="compact-text">
