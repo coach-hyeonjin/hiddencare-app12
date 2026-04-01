@@ -5837,6 +5837,414 @@ const getSalesAutoFeedback = () => {
   </section>
 )}
       {activeTab === '리포트' && (
+  <section className="admin-section">
+    <div className="section-head">
+      <div>
+        <h2>리포트</h2>
+        <p className="sub-text">
+          평균값만 보는 화면이 아니라, 이번 달 코치 운영 상태와 평가를 같이 보는 리포트 화면입니다.
+        </p>
+      </div>
+    </div>
+
+    <div className="coach-summary-grid">
+      <div className="coach-summary-card">
+        <span>평균 컨디션</span>
+        <strong>{Number(coachConditionSummary.avgCondition || 0).toFixed(1)}</strong>
+        <div className="compact-text">
+          집중도 {Number(coachConditionSummary.avgFocus || 0).toFixed(1)} / 피로도 {Number(coachConditionSummary.avgFatigue || 0).toFixed(1)}
+        </div>
+      </div>
+
+      <div className="coach-summary-card">
+        <span>평균 행동 점수</span>
+        <strong>{Number(coachDashboardSummary.avgPerformance || 0).toFixed(1)}</strong>
+        <div className="compact-text">
+          운영 레벨 {coachDashboardSummary.statusLabel || '-'}
+        </div>
+      </div>
+
+      <div className="coach-summary-card">
+        <span>주의 필요 코치</span>
+        <strong>{coachAlertList.length}</strong>
+        <div className="compact-text">주의 코치 우선 확인 필요</div>
+      </div>
+
+      <div className="coach-summary-card">
+        <span>평가 기록 수</span>
+        <strong>{filteredCoachReviews.length}</strong>
+        <div className="compact-text">이번 조건에 맞는 월간 평가 기록 수</div>
+      </div>
+    </div>
+
+    <div className="report-grid">
+      <div className="card">
+        <h3>리포트 필터</h3>
+        <div className="form-row">
+          <label className="field">
+            <span>리포트 기준 월</span>
+            <input
+              type="month"
+              value={coachConditionMonth}
+              onChange={(e) => setCoachConditionMonth(e.target.value)}
+            />
+          </label>
+
+          <label className="field">
+            <span>코치 필터</span>
+            <select
+              value={coachConditionCoachFilter}
+              onChange={(e) => setCoachConditionCoachFilter(e.target.value)}
+            >
+              <option value="">전체 코치</option>
+              {coaches.map((coach) => (
+                <option key={coach.id} value={coach.id}>
+                  {coach.name}
+                </option>
+              ))}
+            </select>
+          </label>
+        </div>
+
+        <div className="report-feedback-card">
+          {coachDashboardSummary.statusText || '-'}
+        </div>
+      </div>
+
+      <div className="card">
+        <h3>다음 액션 제안</h3>
+        <div className="list-stack">
+          <div className="report-feedback-card">
+            {getCoachConditionAutoFeedback()}
+          </div>
+          <div className="report-feedback-card">
+            {getSalesAutoFeedback()}
+          </div>
+          <div className="report-feedback-card">
+            {coachAlertList.length >= 2
+              ? '주의 필요 코치가 여러 명이므로 전체 평균보다 개별 코치 상태를 먼저 확인하세요.'
+              : '현재는 평균 흐름과 개별 코치 상태를 같이 보는 정도면 충분합니다.'}
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div className="report-grid">
+      <div className="card">
+        <h3>월간 상태 요약</h3>
+        <p>평균 컨디션: {Number(coachConditionSummary.avgCondition || 0).toFixed(1)}</p>
+        <p>평균 피로도: {Number(coachConditionSummary.avgFatigue || 0).toFixed(1)}</p>
+        <p>평균 스트레스: {Number(coachConditionSummary.avgStress || 0).toFixed(1)}</p>
+        <p>평균 집중도: {Number(coachConditionSummary.avgFocus || 0).toFixed(1)}</p>
+        <p>평균 성과 행동 점수: {Number(coachDashboardSummary.avgPerformance || 0).toFixed(1)}</p>
+        <p>현재 운영 레벨: {coachDashboardSummary.statusLabel || '-'}</p>
+      </div>
+
+      <div className="card">
+        <h3>이번 달 목표 평균</h3>
+        <p>월 매출 목표 평균: {Math.round(coachGoalSummary.revenueGoalAvg || 0).toLocaleString()}원</p>
+        <p>신규 상담 목표 평균: {Math.round(coachGoalSummary.newLeadGoalAvg || 0)}건</p>
+        <p>회원 유지 목표 평균: {Math.round(coachGoalSummary.retentionGoalAvg || 0)}건</p>
+        <p>콘텐츠 업로드 목표 평균: {Math.round(coachGoalSummary.contentGoalAvg || 0)}건</p>
+      </div>
+    </div>
+
+    <div className="card">
+      <h3>주의 필요 코치</h3>
+      {coachAlertList.length === 0 ? (
+        <p>현재 주의 필요 코치가 없습니다.</p>
+      ) : (
+        <div className="list-stack">
+          {coachAlertList.map((item) => (
+            <div key={item.id} className="list-card">
+              <div className="list-card-top">
+                <strong>{item.coaches?.name || '이름 없음'}</strong>
+                <span className="pill">주의</span>
+              </div>
+              <div className="compact-text">{item.reasons.join(', ')}</div>
+              <div className="compact-text">
+                컨디션 {item.condition_score || 0} / 피로도 {item.fatigue_score || 0} / 스트레스 {item.stress_score || 0} / 집중도 {item.focus_score || 0}
+              </div>
+              <div className="compact-text">
+                행동 점수 {item.performance_score || 0} / 행동 레벨 {item.performance_level || '-'}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+
+    <div className="card">
+      <h3>코치별 비교</h3>
+      {filteredCoachConditions.length === 0 ? (
+        <div className="workout-list-empty">비교할 코치 기록이 없습니다.</div>
+      ) : (
+        <div className="list-stack">
+          {filteredCoachConditions.map((item) => (
+            <div key={item.id} className="list-card">
+              <div className="list-card-top">
+                <strong>{item.coaches?.name || '-'}</strong>
+                <span className="pill">{item.check_month || '-'}</span>
+              </div>
+
+              <div className="compact-text">
+                상태레벨 {COACH_LEVEL_META[item.status_level]?.label || '-'} / 행동레벨 {item.performance_level || '-'}
+              </div>
+
+              <div className="compact-text">
+                컨디션 {item.condition_score || 0} / 피로도 {item.fatigue_score || 0} / 스트레스 {item.stress_score || 0} / 집중도 {item.focus_score || 0}
+              </div>
+
+              <div className="compact-text">
+                행동 점수 {item.performance_score || 0}점 / 목표 매출 {Number(item.monthly_goal_revenue || 0).toLocaleString()}원
+              </div>
+
+              <div className="compact-text">
+                지원 필요: {item.support_needed || '-'}
+              </div>
+
+              <div className="compact-text">
+                자동 해석:{' '}
+                {getCoachStatusText({
+                  conditionScore: item.condition_score,
+                  fatigueScore: item.fatigue_score,
+                  stressScore: item.stress_score,
+                  focusScore: item.focus_score,
+                  performanceScore: item.performance_score,
+                })}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+
+    <div className="two-col">
+      <section className="card">
+        <h3>{editingCoachReviewId ? '코치 평가 수정' : '코치 평가 등록'}</h3>
+
+        <form className="stack-gap" onSubmit={handleCoachReviewSubmit}>
+          <label className="field">
+            <span>코치</span>
+            <select
+              value={coachReviewForm.coach_id}
+              onChange={(e) =>
+                setCoachReviewForm((prev) => ({
+                  ...prev,
+                  coach_id: e.target.value,
+                }))
+              }
+            >
+              <option value="">코치 선택</option>
+              {coaches.map((coach) => (
+                <option key={coach.id} value={coach.id}>
+                  {coach.name}
+                </option>
+              ))}
+            </select>
+          </label>
+
+          <label className="field">
+            <span>평가 월</span>
+            <input
+              type="month"
+              value={coachReviewForm.review_month}
+              onChange={(e) =>
+                setCoachReviewForm((prev) => ({
+                  ...prev,
+                  review_month: e.target.value,
+                }))
+              }
+            />
+          </label>
+
+          <div className="form-row">
+            <label className="field">
+              <span>매출 점수</span>
+              <input
+                type="number"
+                value={coachReviewForm.revenue_score}
+                onChange={(e) =>
+                  setCoachReviewForm((prev) => ({
+                    ...prev,
+                    revenue_score: e.target.value,
+                  }))
+                }
+              />
+            </label>
+
+            <label className="field">
+              <span>활동 점수</span>
+              <input
+                type="number"
+                value={coachReviewForm.activity_score}
+                onChange={(e) =>
+                  setCoachReviewForm((prev) => ({
+                    ...prev,
+                    activity_score: e.target.value,
+                  }))
+                }
+              />
+            </label>
+
+            <label className="field">
+              <span>세일즈 점수</span>
+              <input
+                type="number"
+                value={coachReviewForm.sales_score}
+                onChange={(e) =>
+                  setCoachReviewForm((prev) => ({
+                    ...prev,
+                    sales_score: e.target.value,
+                  }))
+                }
+              />
+            </label>
+
+            <label className="field">
+              <span>태도 점수</span>
+              <input
+                type="number"
+                value={coachReviewForm.attitude_score}
+                onChange={(e) =>
+                  setCoachReviewForm((prev) => ({
+                    ...prev,
+                    attitude_score: e.target.value,
+                  }))
+                }
+              />
+            </label>
+          </div>
+
+          <div className="detail-box">
+            총점:{' '}
+            {(Number(coachReviewForm.revenue_score) || 0) +
+              (Number(coachReviewForm.activity_score) || 0) +
+              (Number(coachReviewForm.sales_score) || 0) +
+              (Number(coachReviewForm.attitude_score) || 0)}
+          </div>
+
+          <label className="field">
+            <span>관리자 코멘트</span>
+            <textarea
+              rows="5"
+              value={coachReviewForm.manager_comment}
+              onChange={(e) =>
+                setCoachReviewForm((prev) => ({
+                  ...prev,
+                  manager_comment: e.target.value,
+                }))
+              }
+            />
+          </label>
+
+          <div className="inline-actions wrap">
+            <button className="primary-btn" type="submit">
+              {editingCoachReviewId ? '평가 수정 저장' : '평가 저장'}
+            </button>
+            <button className="secondary-btn" type="button" onClick={resetCoachReviewForm}>
+              초기화
+            </button>
+          </div>
+        </form>
+      </section>
+
+      <section className="card">
+        <div className="section-head">
+          <h3>코치 평가 목록</h3>
+          <div className="inline-actions wrap">
+            <input
+              type="month"
+              value={coachReviewMonth}
+              onChange={(e) => setCoachReviewMonth(e.target.value)}
+            />
+            <select
+              value={coachReviewCoachFilter}
+              onChange={(e) => setCoachReviewCoachFilter(e.target.value)}
+            >
+              <option value="">전체 코치</option>
+              {coaches.map((coach) => (
+                <option key={coach.id} value={coach.id}>
+                  {coach.name}
+                </option>
+              ))}
+            </select>
+          </div>
+        </div>
+
+        {filteredCoachReviews.length === 0 ? (
+          <div className="workout-list-empty">등록된 코치 평가가 없습니다.</div>
+        ) : (
+          <div className="list-stack">
+            {filteredCoachReviews.map((item) => (
+              <div key={item.id} className="list-card">
+                <div className="list-card-top">
+                  <strong>{item.coaches?.name || '-'}</strong>
+                  <span className="pill">{item.review_month || '-'}</span>
+                </div>
+
+                <div className="compact-text">
+                  매출 {item.revenue_score || 0} / 활동 {item.activity_score || 0} / 세일즈 {item.sales_score || 0} / 태도 {item.attitude_score || 0}
+                </div>
+
+                <div className="compact-text">
+                  총점 {item.total_score || 0}
+                </div>
+
+                <div className="compact-text">
+                  코멘트: {item.manager_comment || '-'}
+                </div>
+
+                <div className="inline-actions wrap">
+                  <button className="secondary-btn" type="button" onClick={() => handleCoachReviewEdit(item)}>
+                    수정
+                  </button>
+                  <button className="danger-btn" type="button" onClick={() => handleCoachReviewDelete(item.id)}>
+                    삭제
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </section>
+    </div>
+  </section>
+)}
+
+{activeTab === '사용방법' && (
+        <div className="card">
+          <div className="section-head">
+            <h2>사용방법 관리</h2>
+            <select value={manualTarget} onChange={(e) => setManualTarget(e.target.value)}>
+              <option value="member">회원용</option>
+              <option value="admin">관리자용</option>
+            </select>
+          </div>
+
+          <div className="stack-gap">
+            <label className="field">
+              <span>제목</span>
+              <input value={manualForm.title} onChange={(e) => setManualForm({ ...manualForm, title: e.target.value })} />
+            </label>
+
+            <label className="field">
+              <span>내용</span>
+              <textarea rows="10" value={manualForm.content} onChange={(e) => setManualForm({ ...manualForm, content: e.target.value })} />
+            </label>
+
+            <div className="inline-actions wrap">
+              <button className="primary-btn" type="button" onClick={handleManualSave}>
+                저장
+              </button>
+              <button className="danger-btn" type="button" onClick={handleManualDelete}>
+                삭제
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+      
       {activeTab === '사용방법' && (
         <div className="card">
           <div className="section-head">
