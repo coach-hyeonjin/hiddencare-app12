@@ -419,6 +419,9 @@ export default function AdminDashboard({ profile, currentAdminId, currentGymId, 
   const [activeTab, setActiveTab] = useState('회원')
   const [loading, setLoading] = useState(true)
   const [message, setMessage] = useState('')
+  const [selectedStatsMonth, setSelectedStatsMonth] = useState(
+  new Date().toISOString().slice(0, 7)
+)
 
   const [members, setMembers] = useState([])
   const [selectedMemberId, setSelectedMemberId] = useState('')
@@ -688,22 +691,28 @@ const toggleChecklistItem = (field, item) => {
   }, [exerciseSearch, exercises])
 
   const memberStats = useMemo(() => {
-    return members.map((member) => {
-      const memberWorkouts = workouts.filter((workout) => workout.member_id === member.id)
-      const ptCount = memberWorkouts.filter((workout) => workout.workout_type === 'pt').length
-      const personalCount = memberWorkouts.filter((workout) => workout.workout_type === 'personal').length
-      const remainingSessions = Math.max(
-        Number(member.total_sessions || 0) - Number(member.used_sessions || 0),
-        0,
-      )
-      return {
-        ...member,
-        ptCount,
-        personalCount,
-        remainingSessions,
-      }
-    })
-  }, [members, workouts])
+  return members.map((member) => {
+    const memberWorkouts = workouts.filter(
+      (workout) =>
+        workout.member_id === member.id &&
+        (workout.workout_date || '').slice(0, 7) === selectedStatsMonth
+    )
+
+    const ptCount = memberWorkouts.filter((workout) => workout.workout_type === 'pt').length
+    const personalCount = memberWorkouts.filter((workout) => workout.workout_type === 'personal').length
+    const remainingSessions = Math.max(
+      Number(member.total_sessions || 0) - Number(member.used_sessions || 0),
+      0,
+    )
+
+    return {
+      ...member,
+      ptCount,
+      personalCount,
+      remainingSessions,
+    }
+  })
+}, [members, workouts, selectedStatsMonth])
 
  const filteredMemberStats = useMemo(() => {
   return memberStats
@@ -740,21 +749,23 @@ const toggleChecklistItem = (field, item) => {
     })
   }, [memberStats, memberDetailSearch])
 
-  const monthlyStats = useMemo(() => {
-    const monthKey = new Date().toISOString().slice(0, 7)
-    const monthWorkouts = workouts.filter((workout) =>
-      (workout.workout_date || '').startsWith(monthKey),
-    )
-    return {
-      ptCount: monthWorkouts.filter((workout) => workout.workout_type === 'pt').length,
-      personalCount: monthWorkouts.filter((workout) => workout.workout_type === 'personal').length,
-      remainingSessions: members.reduce(
-        (sum, member) =>
-          sum + Math.max(Number(member.total_sessions || 0) - Number(member.used_sessions || 0), 0),
-        0,
-      ),
-    }
-  }, [workouts, members])
+ const monthlyStats = useMemo(() => {
+  const monthKey = selectedStatsMonth
+
+  const monthWorkouts = workouts.filter(
+    (workout) => (workout.workout_date || '').slice(0, 7) === monthKey
+  )
+
+  return {
+    ptCount: monthWorkouts.filter((workout) => workout.workout_type === 'pt').length,
+    personalCount: monthWorkouts.filter((workout) => workout.workout_type === 'personal').length,
+    remainingSessions: members.reduce(
+      (sum, member) =>
+        sum + Math.max(Number(member.total_sessions || 0) - Number(member.used_sessions || 0), 0),
+      0,
+    ),
+  }
+}, [workouts, members, selectedStatsMonth])
 
   const filteredSchedules = useMemo(() => {
     return coachSchedules.filter((schedule) => getMonthKey(schedule.schedule_date) === scheduleMonth)
@@ -4290,40 +4301,60 @@ const getSalesAutoFeedback = () => {
       )}
 
       {activeTab === '통계' && (
-        <div className="stack-gap">
-          <div className="stats-grid">
-            <div className="stat-card">
-              <span>이번달 PT 수</span>
-              <strong>{monthlyStats.ptCount}</strong>
-            </div>
-            <div className="stat-card">
-              <span>이번달 개인운동 수</span>
-              <strong>{monthlyStats.personalCount}</strong>
-            </div>
-            <div className="stat-card">
-              <span>전체 남은 세션</span>
-              <strong>{monthlyStats.remainingSessions}</strong>
-            </div>
-          </div>
-
-          <div className="card">
-            <h2>회원별 통계</h2>
-            <div className="list-stack">
-              {memberStats.map((member) => (
-                <div key={member.id} className="list-card">
-                  <div className="list-card-top">
-                    <strong>{member.name}</strong>
-                    <span className="pill">남은 {member.remainingSessions}회</span>
-                  </div>
-                  <div className="compact-text">
-                    PT {member.ptCount}회 / 개인운동 {member.personalCount}회 / 총 세션 {member.total_sessions || 0}회
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
+  <div className="stack-gap">
+    <div className="card">
+      <div className="section-head">
+        <h2>월별 통계</h2>
+        <div className="inline-row">
+          <input
+            type="month"
+            value={selectedStatsMonth}
+            onChange={(e) => setSelectedStatsMonth(e.target.value)}
+          />
+          <button
+            type="button"
+            className="secondary-btn"
+            onClick={() => setSelectedStatsMonth(new Date().toISOString().slice(0, 7))}
+          >
+            이번달
+          </button>
         </div>
-      )}
+      </div>
+    </div>
+
+    <div className="stats-grid">
+      <div className="stat-card">
+        <span>{selectedStatsMonth} PT 수</span>
+        <strong>{monthlyStats.ptCount}</strong>
+      </div>
+      <div className="stat-card">
+        <span>{selectedStatsMonth} 개인운동 수</span>
+        <strong>{monthlyStats.personalCount}</strong>
+      </div>
+      <div className="stat-card">
+        <span>전체 남은 세션</span>
+        <strong>{monthlyStats.remainingSessions}</strong>
+      </div>
+    </div>
+
+    <div className="card">
+      <h2>회원별 통계</h2>
+      <div className="list-stack">
+        {memberStats.map((member) => (
+          <div key={member.id} className="list-card">
+            <div className="list-card-top">
+              <strong>{member.name}</strong>
+              <span className="pill">남은 {member.remainingSessions}회</span>
+            </div>
+            <div className="compact-text">
+              PT {member.ptCount}회 / 개인운동 {member.personalCount}회 / 총 세션 {member.total_sessions || 0}회
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  </div>
+)}
 {activeTab === '운영대시보드' && (
   <div className="stack-gap">
     <div className="section-head">
