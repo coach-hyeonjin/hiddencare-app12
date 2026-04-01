@@ -5870,6 +5870,7 @@ const getSalesAutoFeedback = () => {
           ))}
         </div>
       )}
+    </div>
   </section>
 )}
       {activeTab === '리포트' && (
