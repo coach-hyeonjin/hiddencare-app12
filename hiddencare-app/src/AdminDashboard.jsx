@@ -6233,39 +6233,7 @@ const getSalesAutoFeedback = () => {
   </section>
 )}
 
-{activeTab === '사용방법' && (
-        <div className="card">
-          <div className="section-head">
-            <h2>사용방법 관리</h2>
-            <select value={manualTarget} onChange={(e) => setManualTarget(e.target.value)}>
-              <option value="member">회원용</option>
-              <option value="admin">관리자용</option>
-            </select>
-          </div>
 
-          <div className="stack-gap">
-            <label className="field">
-              <span>제목</span>
-              <input value={manualForm.title} onChange={(e) => setManualForm({ ...manualForm, title: e.target.value })} />
-            </label>
-
-            <label className="field">
-              <span>내용</span>
-              <textarea rows="10" value={manualForm.content} onChange={(e) => setManualForm({ ...manualForm, content: e.target.value })} />
-            </label>
-
-            <div className="inline-actions wrap">
-              <button className="primary-btn" type="button" onClick={handleManualSave}>
-                저장
-              </button>
-              <button className="danger-btn" type="button" onClick={handleManualDelete}>
-                삭제
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-      
       {activeTab === '사용방법' && (
         <div className="card">
           <div className="section-head">
