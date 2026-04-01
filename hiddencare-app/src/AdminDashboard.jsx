@@ -5466,7 +5466,7 @@ const getSalesAutoFeedback = () => {
     <div className="report-grid">
       <div className="card">
         <h3>월간 필터</h3>
-        <div className="form-row">
+<div className="form-row">
   <label className="field">
     <span>기준 월</span>
     <input
@@ -5492,26 +5492,9 @@ const getSalesAutoFeedback = () => {
   </label>
 </div>
 
-          <label className="field">
-            <span>코치 선택</span>
-            <select
-              value={coachConditionCoachFilter}
-              onChange={(e) => setCoachConditionCoachFilter(e.target.value)}
-            >
-              <option value="">전체 코치</option>
-              {coaches.map((coach) => (
-                <option key={coach.id} value={coach.id}>
-                  {coach.name}
-                </option>
-              ))}
-            </select>
-          </label>
-        </div>
-
-        <div className="report-feedback-card">
-          {getCoachConditionAutoFeedback()}
-        </div>
-      </div>
+<div className="report-feedback-card">
+  {getCoachConditionAutoFeedback()}
+</div>
 
       <div className="card">
         <h3>주의 필요 코치</h3>
