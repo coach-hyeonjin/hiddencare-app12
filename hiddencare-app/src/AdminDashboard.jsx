@@ -6173,20 +6173,50 @@ const getSalesAutoFeedback = () => {
         <strong>{filteredCoachReviews.length}</strong>
         <div className="compact-text">이번 조건에 맞는 월간 평가 기록 수</div>
       </div>
+   
+<div className="coach-summary-grid">
+  <div className="coach-summary-card">
+    <span>평균 컨디션</span>
+    <strong>{Number(coachConditionSummary.avgCondition || 0).toFixed(1)}</strong>
+    <div className="compact-text">
+      집중도 {Number(coachConditionSummary.avgFocus || 0).toFixed(1)} / 피로도 {Number(coachConditionSummary.avgFatigue || 0).toFixed(1)}
     </div>
-<div className="coach-summary-card">
-  <span>평균 번아웃 점수</span>
-  <strong>{Number(coachConditionSummary.avgBurnoutScore || 0).toFixed(1)}</strong>
-  <div className="compact-text">
-    위험 코치 {coachConditionSummary.burnoutRiskCount || 0}명
   </div>
-</div>
 
-<div className="coach-summary-card">
-  <span>수업 조절 필요 코치</span>
-  <strong>{coachConditionSummary.limitedCoachCount || 0}명</strong>
-  <div className="compact-text">
-    운영 권장 {coachDashboardSummary.classCapacityLabel || '-'}
+  <div className="coach-summary-card">
+    <span>평균 행동 점수</span>
+    <strong>{Number(coachDashboardSummary.avgPerformance || 0).toFixed(1)}</strong>
+    <div className="compact-text">
+      운영 레벨 {coachDashboardSummary.statusLabel || '-'}
+    </div>
+  </div>
+
+  <div className="coach-summary-card">
+    <span>주의 필요 코치</span>
+    <strong>{coachAlertList.length}</strong>
+    <div className="compact-text">주의 코치 우선 확인 필요</div>
+  </div>
+
+  <div className="coach-summary-card">
+    <span>평가 기록 수</span>
+    <strong>{filteredCoachReviews.length}</strong>
+    <div className="compact-text">이번 조건에 맞는 월간 평가 기록 수</div>
+  </div>
+
+  <div className="coach-summary-card">
+    <span>평균 번아웃 점수</span>
+    <strong>{Number(coachConditionSummary.avgBurnoutScore || 0).toFixed(1)}</strong>
+    <div className="compact-text">
+      위험 코치 {coachConditionSummary.burnoutRiskCount || 0}명
+    </div>
+  </div>
+
+  <div className="coach-summary-card">
+    <span>수업 조절 필요 코치</span>
+    <strong>{coachConditionSummary.limitedCoachCount || 0}명</strong>
+    <div className="compact-text">
+      운영 권장 {coachDashboardSummary.classCapacityLabel || '-'}
+    </div>
   </div>
 </div>
     <div className="report-grid">
