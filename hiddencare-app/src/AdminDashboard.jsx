@@ -1053,6 +1053,15 @@ const coachGoalSummary = useMemo(() => {
       filteredCoachConditions.reduce((sum, item) => sum + Number(item.monthly_goal_content || 0), 0) / total,
   }
 }, [filteredCoachConditions])
+  const coachActualSummary = useMemo(() => {
+  return {
+    actualRevenue: Number(salesStatsExtended?.totalSales || 0),
+    actualLeadCount: Number(salesLogSummary?.total || 0),
+    actualClosedCount: Number(salesLogSummary?.closed || 0),
+    actualFollowupCount: Number(salesLogSummary?.followup || 0),
+    actualLostCount: Number(salesLogSummary?.lost || 0),
+  }
+}, [salesStatsExtended, salesLogSummary])
   const filteredCoachReviews = useMemo(() => {
   return coachReviews.filter((item) => {
     const matchesMonth = !coachReviewMonth || item.review_month === coachReviewMonth
@@ -5668,11 +5677,11 @@ const getSalesAutoFeedback = () => {
       </div>
 
       <div className="card">
-        <h3>이번 달 목표</h3>
+       <h3>이번 달 목표(계획값)</h3>
         <div className="form-row">
           <input
             type="number"
-            placeholder="월 매출 목표"
+            placeholder="월 매출 목표(계획)"
             value={coachConditionForm.monthly_goal_revenue}
             onChange={(e) =>
               setCoachConditionForm((prev) => ({
@@ -5683,7 +5692,7 @@ const getSalesAutoFeedback = () => {
           />
           <input
             type="number"
-            placeholder="신규 상담 목표"
+            placeholder="신규 상담 목표(계획)"
             value={coachConditionForm.monthly_goal_new_leads}
             onChange={(e) =>
               setCoachConditionForm((prev) => ({
@@ -5694,7 +5703,7 @@ const getSalesAutoFeedback = () => {
           />
           <input
             type="number"
-            placeholder="회원 유지 목표"
+            placeholder="회원 유지 목표(계획)"
             value={coachConditionForm.monthly_goal_retention}
             onChange={(e) =>
               setCoachConditionForm((prev) => ({
@@ -5705,7 +5714,7 @@ const getSalesAutoFeedback = () => {
           />
           <input
             type="number"
-            placeholder="콘텐츠 업로드 목표"
+            placeholder="콘텐츠 업로드 목표(계획)"
             value={coachConditionForm.monthly_goal_content}
             onChange={(e) =>
               setCoachConditionForm((prev) => ({
@@ -5783,8 +5792,8 @@ const getSalesAutoFeedback = () => {
               </div>
 
               <div className="compact-text">
-                목표: 매출 {Number(item.monthly_goal_revenue || 0).toLocaleString()}원 / 신규상담 {item.monthly_goal_new_leads || 0}건 / 유지 {item.monthly_goal_retention || 0}건 / 콘텐츠 {item.monthly_goal_content || 0}건
-              </div>
+  계획 목표: 매출 {Number(item.monthly_goal_revenue || 0).toLocaleString()}원 / 신규상담 {item.monthly_goal_new_leads || 0}건 / 유지 {item.monthly_goal_retention || 0}건 / 콘텐츠 {item.monthly_goal_content || 0}건
+</div>
 
               <div className="compact-text">
                 지원 필요: {item.support_needed || '-'}
@@ -5941,13 +5950,25 @@ const getSalesAutoFeedback = () => {
       </div>
 
       <div className="card">
-        <h3>이번 달 목표 평균</h3>
-        <p>월 매출 목표 평균: {Math.round(coachGoalSummary.revenueGoalAvg || 0).toLocaleString()}원</p>
-        <p>신규 상담 목표 평균: {Math.round(coachGoalSummary.newLeadGoalAvg || 0)}건</p>
-        <p>회원 유지 목표 평균: {Math.round(coachGoalSummary.retentionGoalAvg || 0)}건</p>
-        <p>콘텐츠 업로드 목표 평균: {Math.round(coachGoalSummary.contentGoalAvg || 0)}건</p>
-      </div>
-    </div>
+  <h3>이번 달 목표(계획) vs 실제</h3>
+  <p><strong>목표 매출 평균:</strong> {Math.round(coachGoalSummary.revenueGoalAvg || 0).toLocaleString()}원</p>
+  <p><strong>실제 매출:</strong> {Number(coachActualSummary.actualRevenue || 0).toLocaleString()}원</p>
+
+  <p><strong>목표 신규 상담 평균:</strong> {Math.round(coachGoalSummary.newLeadGoalAvg || 0)}건</p>
+  <p><strong>실제 신규 상담 기록 수:</strong> {Number(coachActualSummary.actualLeadCount || 0)}건</p>
+
+  <p><strong>목표 회원 유지 평균:</strong> {Math.round(coachGoalSummary.retentionGoalAvg || 0)}건</p>
+  <p><strong>실제 결제 완료 수:</strong> {Number(coachActualSummary.actualClosedCount || 0)}건</p>
+
+  <p><strong>목표 콘텐츠 업로드 평균:</strong> {Math.round(coachGoalSummary.contentGoalAvg || 0)}건</p>
+  <p className="compact-text">※ 콘텐츠 실제값은 아직 별도 기록 구조가 없어서 자동 비교에서 제외했습니다.</p>
+
+  <div className="detail-box">
+    <p><strong>후속관리중:</strong> {Number(coachActualSummary.actualFollowupCount || 0)}건</p>
+    <p><strong>이탈:</strong> {Number(coachActualSummary.actualLostCount || 0)}건</p>
+    <p><strong>안내:</strong> 목표값은 코치가 입력한 계획 기준이며, 실제값은 매출기록/세일즈일지 기준입니다.</p>
+  </div>
+</div>
 
     <div className="card">
       <h3>주의 필요 코치</h3>
