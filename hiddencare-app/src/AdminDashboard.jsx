@@ -1053,6 +1053,13 @@ const coachGoalSummary = useMemo(() => {
       filteredCoachConditions.reduce((sum, item) => sum + Number(item.monthly_goal_content || 0), 0) / total,
   }
 }, [filteredCoachConditions])
+  const filteredCoachReviews = useMemo(() => {
+  return coachReviews.filter((item) => {
+    const matchesMonth = !coachReviewMonth || item.review_month === coachReviewMonth
+    const matchesCoach = !coachReviewCoachFilter || item.coach_id === coachReviewCoachFilter
+    return matchesMonth && matchesCoach
+  })
+}, [coachReviews, coachReviewMonth, coachReviewCoachFilter])
   const filteredPrograms = useMemo(() => {
   return programs
     .filter((p) => {
@@ -3247,23 +3254,77 @@ const handleCoachReviewDelete = async (id) => {
   setMessage('코치 평가가 삭제되었습니다.')
 }
  const getCoachConditionAutoFeedback = () => {
-  if (!filteredCoachConditions.length) return '이번 달 코치 컨디션 기록이 없습니다.'
-  if (coachConditionSummary.avgFatigue >= 4) return '코치 피로도가 높은 상태입니다. 스케줄 조정이 필요합니다.'
-  if (coachConditionSummary.avgStress >= 4) return '업무 스트레스가 높은 상태입니다. 운영 점검이 필요합니다.'
-  if (coachConditionSummary.avgCondition >= 4) return '전반적인 코치 컨디션은 안정적입니다.'
-  return '코치 컨디션은 보통 수준입니다.'
+  if (!filteredCoachConditions.length) {
+    return '이번 달 코치 컨디션 기록이 없습니다. 최소 월 1회 이상 입력해 주세요.'
+  }
+
+  const avgCondition = Number(coachConditionSummary.avgCondition || 0)
+  const avgFatigue = Number(coachConditionSummary.avgFatigue || 0)
+  const avgStress = Number(coachConditionSummary.avgStress || 0)
+  const avgFocus = Number(coachConditionSummary.avgFocus || 0)
+  const avgPerformance = Number(coachDashboardSummary.avgPerformance || 0)
+  const alertCount = coachAlertList.length
+
+  if (avgFatigue >= 4 && avgFocus <= 2.5) {
+    return '피로도가 높고 집중도가 낮습니다. 수업 분산, 휴식 조정, 스케줄 재배치가 우선입니다.'
+  }
+
+  if (avgStress >= 4 && avgPerformance <= 6) {
+    return '스트레스가 높고 실행 점수가 낮습니다. 운영 부담이 누적된 상태라 역할 분배와 업무 정리가 필요합니다.'
+  }
+
+  if (avgCondition >= 4 && avgPerformance >= 10) {
+    return '컨디션과 실행력이 모두 안정적입니다. 현재 운영 흐름은 유지해도 좋습니다.'
+  }
+
+  if (alertCount >= 2) {
+    return '주의 필요 코치가 여러 명 있습니다. 개별 코치 상태를 먼저 확인하고 원인별로 대응하세요.'
+  }
+
+  if (avgPerformance <= 5) {
+    return '성과 행동 점수가 낮습니다. 상담 제안, 재등록 제안, 콘텐츠 업로드 행동을 늘릴 필요가 있습니다.'
+  }
+
+  if (avgCondition < 3 && avgFatigue >= 3) {
+    return '회복 상태가 충분하지 않습니다. 강한 압박보다 루틴 안정화가 먼저입니다.'
+  }
+
+  return '전반적으로 보통 수준입니다. 피로도, 스트레스, 실행 행동을 함께 보면서 관리하세요.'
 }
 
 const getSalesAutoFeedback = () => {
   const total = Number(salesStatsExtended.totalSales || 0)
   const count = Number(salesStatsExtended.totalCount || 0)
   const vip = Number(salesStatsExtended.vipCount || 0)
+  const followup = Number(salesLogSummary?.followup || 0)
+  const closed = Number(salesLogSummary?.closed || 0)
+  const lost = Number(salesLogSummary?.lost || 0)
 
-  if (count === 0) return '이번 달 등록된 매출 기록이 없습니다.'
-  if (total >= 3000000) return '좋습니다. 이번 달 매출 흐름이 안정적입니다.'
-  if (vip >= 3) return 'VIP 전환이 잘 이루어지고 있습니다.'
-  if (total < 1000000) return '이번 달은 신규 등록/재등록 전환 전략 점검이 필요합니다.'
-  return '현재 매출 흐름은 보통 수준입니다. 결제수단과 프로그램 전환율을 함께 보세요.'
+  if (count === 0) {
+    return '이번 달 등록된 매출 기록이 없습니다. 매출기록 입력부터 먼저 점검해 주세요.'
+  }
+
+  if (total >= 3000000 && closed >= 3) {
+    return '매출과 전환 흐름이 모두 안정적입니다. 현재 제안 흐름을 유지하면서 재등록 관리에 집중하세요.'
+  }
+
+  if (followup > closed) {
+    return '결제완료보다 후속관리 대상이 더 많습니다. 신규 유입보다 보류 고객 재접촉이 우선입니다.'
+  }
+
+  if (vip >= 3) {
+    return 'VIP 전환 흐름이 좋습니다. 장기 등록 고객 관리와 후기 확보까지 연결하면 좋습니다.'
+  }
+
+  if (lost >= 3) {
+    return '이탈 고객이 누적되고 있습니다. 가격, 시간, 필요성 부족 중 어떤 이유가 많은지 먼저 확인하세요.'
+  }
+
+  if (total < 1000000) {
+    return '이번 달은 신규 등록/재등록 전환 전략 점검이 필요합니다. 상담 흐름과 제안 방식을 다시 보세요.'
+  }
+
+  return '현재 매출 흐름은 보통 수준입니다. 결제수단, 프로그램 구성, 후속관리 전환율을 함께 보세요.'
 }
   const resetNoticeForm = () => {
     setNoticeForm(emptyNoticeForm)
@@ -5344,45 +5405,144 @@ const getSalesAutoFeedback = () => {
       
 {activeTab === '코치관리' && (
   <section className="admin-section">
-    <h2>코치관리</h2>
+    <div className="section-head">
+      <div>
+        <h2>코치관리</h2>
+        <p className="sub-text">
+          코치 상태 입력만 하는 화면이 아니라, 이번 달 코치 운영 상태를 먼저 보고 필요한 기록을 남기는 화면입니다.
+        </p>
+      </div>
+    </div>
+
+    <div className="coach-summary-grid">
+      <div className="coach-summary-card">
+        <span>이번 달 기록 수</span>
+        <strong>{filteredCoachConditions.length}</strong>
+        <div className="compact-text">현재 선택한 조건으로 조회된 코치 컨디션 기록 수</div>
+      </div>
+
+      <div className="coach-summary-card">
+        <span>평균 컨디션</span>
+        <strong>{Number(coachConditionSummary.avgCondition || 0).toFixed(1)}</strong>
+        <div className="compact-text">
+          집중도 {Number(coachConditionSummary.avgFocus || 0).toFixed(1)} / 피로도 {Number(coachConditionSummary.avgFatigue || 0).toFixed(1)}
+        </div>
+      </div>
+
+      <div className="coach-summary-card">
+        <span>평균 행동 점수</span>
+        <strong>{Number(coachDashboardSummary.avgPerformance || 0).toFixed(1)}</strong>
+        <div className="compact-text">
+          현재 운영 레벨 {coachDashboardSummary.statusLabel || '-'}
+        </div>
+      </div>
+
+      <div className="coach-summary-card">
+        <span>주의 필요 코치</span>
+        <strong>{coachAlertList.length}</strong>
+        <div className="compact-text">피로도, 스트레스, 집중도, 행동 점수 기준</div>
+      </div>
+    </div>
+
+    <div className="report-grid">
+      <div className="card">
+        <h3>월간 필터</h3>
+        <div className="form-row">
+          <label className="field">
+            <span>기준 월</span>
+            <input
+              type="month"
+              value={coachConditionMonth}
+              onChange={(e) => setCoachConditionMonth(e.target.value)}
+            />
+          </label>
+
+          <label className="field">
+            <span>코치 선택</span>
+            <select
+              value={coachConditionCoachFilter}
+              onChange={(e) => setCoachConditionCoachFilter(e.target.value)}
+            >
+              <option value="">전체 코치</option>
+              {coaches.map((coach) => (
+                <option key={coach.id} value={coach.id}>
+                  {coach.name}
+                </option>
+              ))}
+            </select>
+          </label>
+        </div>
+
+        <div className="report-feedback-card">
+          {getCoachConditionAutoFeedback()}
+        </div>
+      </div>
+
+      <div className="card">
+        <h3>주의 필요 코치</h3>
+        {coachAlertList.length === 0 ? (
+          <div className="compact-text">현재 주의 필요 코치가 없습니다.</div>
+        ) : (
+          <div className="list-stack">
+            {coachAlertList.map((item) => (
+              <div key={item.id} className="list-card">
+                <div className="list-card-top">
+                  <strong>{item.coaches?.name || '이름 없음'}</strong>
+                  <span className="pill">주의</span>
+                </div>
+                <div className="compact-text">
+                  {item.reasons.join(', ')}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
 
     <div className="card">
       <h3>입력 안내</h3>
-      <p>숫자를 직접 판단해서 넣는 방식이 아니라, 아래 체크리스트를 선택하면 점수가 자동 계산됩니다.</p>
+      <p>숫자를 직접 입력하는 방식이 아니라, 아래 체크리스트를 선택하면 점수가 자동 계산됩니다.</p>
       <p>컨디션 / 집중도는 높을수록 좋고, 피로도 / 스트레스는 높을수록 부담이 큰 상태입니다.</p>
     </div>
 
     <div className="card">
-      <div className="form-row">
-        <label>코치</label>
-        <select
-          value={coachConditionForm.coach_id}
-          onChange={(e) =>
-            setCoachConditionForm((prev) => ({
-              ...prev,
-              coach_id: e.target.value,
-            }))
-          }
-        >
-          <option value="">코치 선택</option>
-          {coaches.map((coach) => (
-            <option key={coach.id} value={coach.id}>
-              {coach.name}
-            </option>
-          ))}
-        </select>
+      <h3>{editingCoachConditionId ? '코치 상태 수정' : '코치 상태 입력'}</h3>
 
-        <label>기준 월</label>
-        <input
-          type="month"
-          value={coachConditionForm.check_month}
-          onChange={(e) =>
-            setCoachConditionForm((prev) => ({
-              ...prev,
-              check_month: e.target.value,
-            }))
-          }
-        />
+      <div className="form-row">
+        <label className="field">
+          <span>코치</span>
+          <select
+            value={coachConditionForm.coach_id}
+            onChange={(e) =>
+              setCoachConditionForm((prev) => ({
+                ...prev,
+                coach_id: e.target.value,
+              }))
+            }
+          >
+            <option value="">코치 선택</option>
+            {coaches.map((coach) => (
+              <option key={coach.id} value={coach.id}>
+                {coach.name}
+              </option>
+            ))}
+          </select>
+        </label>
+
+        <label className="field">
+          <span>기준 월</span>
+          <input
+            type="month"
+            value={coachConditionForm.check_month}
+            onChange={(e) =>
+              setCoachConditionForm((prev) => ({
+                ...prev,
+                check_month: e.target.value,
+              }))
+            }
+          />
+        </label>
       </div>
     </div>
 
@@ -5451,345 +5611,232 @@ const getSalesAutoFeedback = () => {
     <div className="card">
       <h3>성과 행동 체크리스트</h3>
 
-      {PERFORMANCE_ACTION_SECTIONS.map((section) => (
-        <div key={section.key} className="stack-gap" style={{ marginBottom: '16px' }}>
-          <strong>{section.title}</strong>
-          {section.items.map((item) => (
-            <label key={item} className="checkbox-row">
-              <input
-                type="checkbox"
-                checked={(coachConditionForm[section.key] || []).includes(item)}
-                onChange={() => toggleChecklistItem(section.key, item)}
-              />
-              <span>{item}</span>
-            </label>
-          ))}
-        </div>
-      ))}
+      <div className="stack-gap">
+        {PERFORMANCE_ACTION_SECTIONS.map((section) => (
+          <div key={section.key} className="list-card">
+            <div className="list-card-top">
+              <strong>{section.title}</strong>
+              <span className="pill">{(coachConditionForm[section.key] || []).length}개</span>
+            </div>
+
+            {section.items.map((item) => (
+              <label key={item} className="checkbox-row">
+                <input
+                  type="checkbox"
+                  checked={(coachConditionForm[section.key] || []).includes(item)}
+                  onChange={() => toggleChecklistItem(section.key, item)}
+                />
+                <span>{item}</span>
+              </label>
+            ))}
+          </div>
+        ))}
+      </div>
     </div>
 
-    <div className="card">
-      <h3>자동 계산 결과</h3>
-      <p>컨디션: {coachConditionForm.condition_score}</p>
-      <p>피로도: {coachConditionForm.fatigue_score}</p>
-      <p>스트레스: {coachConditionForm.stress_score}</p>
-      <p>집중도: {coachConditionForm.focus_score}</p>
-      <p>성과 행동 점수: {coachConditionForm.performance_score}</p>
-      <p>성과 행동 레벨: {coachConditionForm.performance_level || getPerformanceLevel(coachConditionForm.performance_score)}</p>
-      <p>
-        오늘 상태 레벨:{' '}
-        {COACH_LEVEL_META[coachConditionForm.status_level || getCoachStatusLevelKey({
-          conditionScore: coachConditionForm.condition_score,
-          fatigueScore: coachConditionForm.fatigue_score,
-          stressScore: coachConditionForm.stress_score,
-          focusScore: coachConditionForm.focus_score,
-        })]?.label || '-'}
-      </p>
-      <p>
-        자동 해석:{' '}
-        {getCoachStatusText({
-          conditionScore: coachConditionForm.condition_score,
-          fatigueScore: coachConditionForm.fatigue_score,
-          stressScore: coachConditionForm.stress_score,
-          focusScore: coachConditionForm.focus_score,
-          performanceScore: coachConditionForm.performance_score,
-        })}
-      </p>
-    </div>
-
-    <div className="card">
-      <h3>이번 달 목표</h3>
-      <div className="form-row">
-        <input
-          type="number"
-          placeholder="월 매출 목표"
-          value={coachConditionForm.monthly_goal_revenue}
-          onChange={(e) =>
-            setCoachConditionForm((prev) => ({
-              ...prev,
-              monthly_goal_revenue: e.target.value,
-            }))
-          }
-        />
-        <input
-          type="number"
-          placeholder="신규 상담 목표"
-          value={coachConditionForm.monthly_goal_new_leads}
-          onChange={(e) =>
-            setCoachConditionForm((prev) => ({
-              ...prev,
-              monthly_goal_new_leads: e.target.value,
-            }))
-          }
-        />
-        <input
-          type="number"
-          placeholder="회원 유지 목표"
-          value={coachConditionForm.monthly_goal_retention}
-          onChange={(e) =>
-            setCoachConditionForm((prev) => ({
-              ...prev,
-              monthly_goal_retention: e.target.value,
-            }))
-          }
-        />
-        <input
-          type="number"
-          placeholder="콘텐츠 업로드 목표"
-          value={coachConditionForm.monthly_goal_content}
-          onChange={(e) =>
-            setCoachConditionForm((prev) => ({
-              ...prev,
-              monthly_goal_content: e.target.value,
-            }))
-          }
-        />
+    <div className="report-grid">
+      <div className="card">
+        <h3>자동 계산 결과</h3>
+        <p>컨디션: {coachConditionForm.condition_score}</p>
+        <p>피로도: {coachConditionForm.fatigue_score}</p>
+        <p>스트레스: {coachConditionForm.stress_score}</p>
+        <p>집중도: {coachConditionForm.focus_score}</p>
+        <p>성과 행동 점수: {coachConditionForm.performance_score}</p>
+        <p>성과 행동 레벨: {coachConditionForm.performance_level || getPerformanceLevel(coachConditionForm.performance_score)}</p>
+        <p>
+          상태 레벨:{' '}
+          {COACH_LEVEL_META[
+            coachConditionForm.status_level ||
+              getCoachStatusLevelKey({
+                conditionScore: coachConditionForm.condition_score,
+                fatigueScore: coachConditionForm.fatigue_score,
+                stressScore: coachConditionForm.stress_score,
+                focusScore: coachConditionForm.focus_score,
+              })
+          ]?.label || '-'}
+        </p>
+        <p>
+          자동 해석:{' '}
+          {getCoachStatusText({
+            conditionScore: coachConditionForm.condition_score,
+            fatigueScore: coachConditionForm.fatigue_score,
+            stressScore: coachConditionForm.stress_score,
+            focusScore: coachConditionForm.focus_score,
+            performanceScore: coachConditionForm.performance_score,
+          })}
+        </p>
       </div>
 
-      <textarea
-        placeholder="지원이 필요한 부분"
-        value={coachConditionForm.support_needed}
-        onChange={(e) =>
-          setCoachConditionForm((prev) => ({
-            ...prev,
-            support_needed: e.target.value,
-          }))
-        }
-      />
-
-      <textarea
-        placeholder="메모"
-        value={coachConditionForm.issue_note}
-        onChange={(e) =>
-          setCoachConditionForm((prev) => ({
-            ...prev,
-            issue_note: e.target.value,
-          }))
-        }
-      />
-    </div>
-
-    <div className="form-row">
-      <button type="button" onClick={handleCoachConditionSubmit}>저장</button>
-      <button type="button" onClick={resetCoachConditionForm}>초기화</button>
-    </div>
-
-    <div className="list-section">
-      {coachConditions.map((item) => (
-        <div key={item.id} className="card">
-          <div><strong>코치:</strong> {item.coaches?.name || '-'}</div>
-          <div><strong>월:</strong> {item.check_month || '-'}</div>
-          <div><strong>상태 레벨:</strong> {COACH_LEVEL_META[item.status_level]?.label || '-'}</div>
-          <div><strong>성과 행동 점수:</strong> {item.performance_score || 0}</div>
-          <div><strong>성과 행동 레벨:</strong> {item.performance_level || '-'}</div>
-          <div><strong>메모:</strong> {item.issue_note || '-'}</div>
-
-          <div className="form-row">
-            <button type="button" onClick={() => handleCoachConditionEdit(item)}>수정</button>
-            <button type="button" onClick={() => handleCoachConditionDelete(item.id)}>삭제</button>
-          </div>
+      <div className="card">
+        <h3>이번 달 목표</h3>
+        <div className="form-row">
+          <input
+            type="number"
+            placeholder="월 매출 목표"
+            value={coachConditionForm.monthly_goal_revenue}
+            onChange={(e) =>
+              setCoachConditionForm((prev) => ({
+                ...prev,
+                monthly_goal_revenue: e.target.value,
+              }))
+            }
+          />
+          <input
+            type="number"
+            placeholder="신규 상담 목표"
+            value={coachConditionForm.monthly_goal_new_leads}
+            onChange={(e) =>
+              setCoachConditionForm((prev) => ({
+                ...prev,
+                monthly_goal_new_leads: e.target.value,
+              }))
+            }
+          />
+          <input
+            type="number"
+            placeholder="회원 유지 목표"
+            value={coachConditionForm.monthly_goal_retention}
+            onChange={(e) =>
+              setCoachConditionForm((prev) => ({
+                ...prev,
+                monthly_goal_retention: e.target.value,
+              }))
+            }
+          />
+          <input
+            type="number"
+            placeholder="콘텐츠 업로드 목표"
+            value={coachConditionForm.monthly_goal_content}
+            onChange={(e) =>
+              setCoachConditionForm((prev) => ({
+                ...prev,
+                monthly_goal_content: e.target.value,
+              }))
+            }
+          />
         </div>
-      ))}
+
+        <label className="field">
+          <span>지원이 필요한 부분</span>
+          <textarea
+            rows="4"
+            value={coachConditionForm.support_needed}
+            onChange={(e) =>
+              setCoachConditionForm((prev) => ({
+                ...prev,
+                support_needed: e.target.value,
+              }))
+            }
+          />
+        </label>
+
+        <label className="field">
+          <span>메모</span>
+          <textarea
+            rows="4"
+            value={coachConditionForm.issue_note}
+            onChange={(e) =>
+              setCoachConditionForm((prev) => ({
+                ...prev,
+                issue_note: e.target.value,
+              }))
+            }
+          />
+        </label>
+      </div>
+    </div>
+
+    <div className="inline-actions wrap">
+      <button className="primary-btn" type="button" onClick={handleCoachConditionSubmit}>
+        {editingCoachConditionId ? '코치관리 수정 저장' : '코치관리 저장'}
+      </button>
+      <button className="secondary-btn" type="button" onClick={resetCoachConditionForm}>
+        초기화
+      </button>
+    </div>
+
+    <div className="card">
+      <div className="section-head">
+        <h3>저장된 코치 기록</h3>
+        <div className="compact-text">
+          {coachConditionMonth || '전체 월'} / {coachConditionCoachFilter ? '선택 코치만' : '전체 코치'}
+        </div>
+      </div>
+
+      {filteredCoachConditions.length === 0 ? (
+        <div className="workout-list-empty">등록된 코치 기록이 없습니다.</div>
+      ) : (
+        <div className="list-stack">
+          {filteredCoachConditions.map((item) => (
+            <div key={item.id} className="list-card">
+              <div className="list-card-top">
+                <strong>{item.coaches?.name || '-'}</strong>
+                <span className="pill">{item.check_month || '-'}</span>
+              </div>
+
+              <div className="compact-text">
+                상태레벨 {COACH_LEVEL_META[item.status_level]?.label || '-'} / 행동점수 {item.performance_score || 0}점 / 행동레벨 {item.performance_level || '-'}
+              </div>
+
+              <div className="compact-text">
+                컨디션 {item.condition_score || 0} / 피로도 {item.fatigue_score || 0} / 스트레스 {item.stress_score || 0} / 집중도 {item.focus_score || 0}
+              </div>
+
+              <div className="compact-text">
+                목표: 매출 {Number(item.monthly_goal_revenue || 0).toLocaleString()}원 / 신규상담 {item.monthly_goal_new_leads || 0}건 / 유지 {item.monthly_goal_retention || 0}건 / 콘텐츠 {item.monthly_goal_content || 0}건
+              </div>
+
+              <div className="compact-text">
+                지원 필요: {item.support_needed || '-'}
+              </div>
+
+              <div className="compact-text">
+                메모: {item.issue_note || '-'}
+              </div>
+
+              <div className="compact-text">
+                자동 해석:{' '}
+                {getCoachStatusText({
+                  conditionScore: item.condition_score,
+                  fatigueScore: item.fatigue_score,
+                  stressScore: item.stress_score,
+                  focusScore: item.focus_score,
+                  performanceScore: item.performance_score,
+                })}
+              </div>
+
+              {item.condition_checks?.length ? (
+                <div className="compact-text">컨디션 체크: {item.condition_checks.join(', ')}</div>
+              ) : null}
+
+              {item.fatigue_checks?.length ? (
+                <div className="compact-text">피로 체크: {item.fatigue_checks.join(', ')}</div>
+              ) : null}
+
+              {item.stress_checks?.length ? (
+                <div className="compact-text">스트레스 체크: {item.stress_checks.join(', ')}</div>
+              ) : null}
+
+              {item.focus_checks?.length ? (
+                <div className="compact-text">집중도 체크: {item.focus_checks.join(', ')}</div>
+              ) : null}
+
+              <div className="inline-actions wrap">
+                <button className="secondary-btn" type="button" onClick={() => handleCoachConditionEdit(item)}>
+                  수정
+                </button>
+                <button className="danger-btn" type="button" onClick={() => handleCoachConditionDelete(item.id)}>
+                  삭제
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   </section>
 )}
       {activeTab === '리포트' && (
-  <section className="admin-section">
-    <h2>리포트</h2>
-
-    <div className="card">
-      <h3>월간 상태 요약</h3>
-      <p>평균 컨디션: {coachConditionSummary.avgCondition?.toFixed(1)}</p>
-      <p>평균 피로도: {coachConditionSummary.avgFatigue?.toFixed(1)}</p>
-      <p>평균 스트레스: {coachConditionSummary.avgStress?.toFixed(1)}</p>
-      <p>평균 집중도: {coachConditionSummary.avgFocus?.toFixed(1)}</p>
-      <p>평균 성과 행동 점수: {coachDashboardSummary.avgPerformance?.toFixed(1)}</p>
-      <p>현재 운영 레벨: {coachDashboardSummary.statusLabel}</p>
-    </div>
-
-    <div className="card">
-      <h3>자동 해석</h3>
-      <p>{coachDashboardSummary.statusText}</p>
-    </div>
-
-    <div className="card">
-      <h3>주의 필요 코치</h3>
-      {coachAlertList.length === 0 ? (
-        <p>현재 주의 필요 코치가 없습니다.</p>
-      ) : (
-        coachAlertList.map((item) => (
-          <div key={item.id} style={{ marginBottom: '12px' }}>
-            <strong>{item.coaches?.name || '이름 없음'}</strong>
-            <p>{item.reasons.join(', ')}</p>
-          </div>
-        ))
-      )}
-    </div>
-
-    <div className="card">
-      <h3>이번 달 목표 평균</h3>
-      <p>월 매출 목표 평균: {Math.round(coachGoalSummary.revenueGoalAvg || 0).toLocaleString()}원</p>
-      <p>신규 상담 목표 평균: {Math.round(coachGoalSummary.newLeadGoalAvg || 0)}건</p>
-      <p>회원 유지 목표 평균: {Math.round(coachGoalSummary.retentionGoalAvg || 0)}건</p>
-      <p>콘텐츠 업로드 목표 평균: {Math.round(coachGoalSummary.contentGoalAvg || 0)}건</p>
-    </div>
-
-    <div className="card">
-      <h3>다음 액션 제안</h3>
-      <p>- 피로도/스트레스가 높은 코치는 일정 분배를 먼저 점검하세요.</p>
-      <p>- 성과 행동 점수가 낮은 코치는 상담 제안, 재등록 제안, 콘텐츠 행동을 늘리세요.</p>
-      <p>- 브랜딩 행동이 적으면 블로그, SNS, 후기 요청, 제휴업체 액션을 목표로 잡으세요.</p>
-    </div>
-  </section>
-)}
-      {activeTab === '공지사항' && (
-        <div className="two-col">
-          <section className="card">
-            <h2>공지 / 이벤트 등록</h2>
-            <form className="stack-gap" onSubmit={handleNoticeSubmit}>
-              <label className="field">
-                <span>제목</span>
-                <input value={noticeForm.title} onChange={(e) => setNoticeForm({ ...noticeForm, title: e.target.value })} />
-              </label>
-
-              <label className="field">
-                <span>카테고리</span>
-                <select value={noticeForm.category} onChange={(e) => setNoticeForm({ ...noticeForm, category: e.target.value })}>
-                  <option value="공지">공지</option>
-                  <option value="이벤트">이벤트</option>
-                  <option value="운동영상">운동영상</option>
-                </select>
-              </label>
-
-              <label className="field">
-                <span>내용</span>
-                <textarea rows="6" value={noticeForm.content} onChange={(e) => setNoticeForm({ ...noticeForm, content: e.target.value })} />
-              </label>
-
-              <label className="field">
-                <span>이미지 URL</span>
-                <input value={noticeForm.image_url} onChange={(e) => setNoticeForm({ ...noticeForm, image_url: e.target.value })} />
-              </label>
-
-              <label className="field">
-                <span>영상 URL</span>
-                <input value={noticeForm.video_url} onChange={(e) => setNoticeForm({ ...noticeForm, video_url: e.target.value })} />
-              </label>
-
-              <div className="grid-2">
-                <label className="field">
-                  <span>시작일</span>
-                  <input type="date" value={noticeForm.starts_at} onChange={(e) => setNoticeForm({ ...noticeForm, starts_at: e.target.value })} />
-                </label>
-
-                <label className="field">
-                  <span>종료일</span>
-                  <input type="date" value={noticeForm.ends_at} onChange={(e) => setNoticeForm({ ...noticeForm, ends_at: e.target.value })} />
-                </label>
-              </div>
-
-              <label className="checkbox-line">
-                <input
-                  type="checkbox"
-                  checked={noticeForm.is_published}
-                  onChange={(e) => setNoticeForm({ ...noticeForm, is_published: e.target.checked })}
-                />
-                <span>게시중</span>
-              </label>
-
-              <div className="inline-actions wrap">
-                <button className="primary-btn" type="submit">
-                  {editingNoticeId ? '공지 수정' : '공지 등록'}
-                </button>
-                <button type="button" className="secondary-btn" onClick={resetNoticeForm}>
-                  초기화
-                </button>
-              </div>
-            </form>
-          </section>
-
-          <section className="card">
-            <div className="section-head">
-              <h2>공지 / 이벤트 목록</h2>
-              <div className="inline-actions wrap">
-                <input
-                  type="month"
-                  value={noticeMonthFilter}
-                  onChange={(e) => setNoticeMonthFilter(e.target.value)}
-                />
-                <select value={noticeCategoryFilter} onChange={(e) => setNoticeCategoryFilter(e.target.value)}>
-                  <option value="all">전체 카테고리</option>
-                  <option value="공지">공지</option>
-                  <option value="이벤트">이벤트</option>
-                  <option value="운동영상">운동영상</option>
-                </select>
-              </div>
-            </div>
-
-            <label className="field">
-              <span>검색</span>
-              <input
-                value={noticeSearch}
-                onChange={(e) => setNoticeSearch(e.target.value)}
-                placeholder="제목 / 내용 / 카테고리 검색"
-              />
-            </label>
-
-            <div className="list-stack">
-              {filteredNotices.map((notice) => {
-                const collapsed = collapsedNotices[notice.id] ?? true
-                return (
-                  <div key={notice.id} className="list-card">
-                    <div className="list-card-top">
-                      <strong>{notice.title}</strong>
-                      <span className="pill">{notice.category}</span>
-                    </div>
-
-                    <div className="compact-text">
-                      간략히보기: {(notice.content || '').slice(0, 40)}
-                      {(notice.content || '').length > 40 ? '...' : ''}
-                    </div>
-
-                    <div className="inline-actions wrap">
-                      <button
-                        className="secondary-btn"
-                        type="button"
-                        onClick={() =>
-                          setCollapsedNotices((prev) => ({
-                            ...prev,
-                            [notice.id]: !collapsed,
-                          }))
-                        }
-                      >
-                        {collapsed ? '상세히보기' : '간략히보기'}
-                      </button>
-
-                      <button className="secondary-btn" type="button" onClick={() => handleNoticeEdit(notice)}>
-                        수정
-                      </button>
-
-                      <button className="danger-btn" type="button" onClick={() => handleNoticeDelete(notice.id)}>
-                        삭제
-                      </button>
-                    </div>
-
-                    {!collapsed ? (
-                      <div className="detail-box">
-                        <p><strong>내용:</strong> {notice.content || '-'}</p>
-                        <p><strong>이미지 URL:</strong> {notice.image_url || '-'}</p>
-                        <p><strong>영상 URL:</strong> {notice.video_url || '-'}</p>
-                        <p><strong>기간:</strong> {formatDate(notice.starts_at)} ~ {formatDate(notice.ends_at)}</p>
-                        <p><strong>게시상태:</strong> {notice.is_published ? '게시중' : '숨김'}</p>
-                      </div>
-                    ) : null}
-                  </div>
-                )
-              })}
-            </div>
-          </section>
-        </div>
-      )}
-
       {activeTab === '사용방법' && (
         <div className="card">
           <div className="section-head">
