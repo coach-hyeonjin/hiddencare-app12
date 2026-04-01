@@ -7128,6 +7128,7 @@ const getSalesAutoFeedback = () => {
     </div>
   </div>
 )}
+    </div>
   )
 }
 
