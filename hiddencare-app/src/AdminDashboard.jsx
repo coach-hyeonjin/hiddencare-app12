@@ -6527,6 +6527,212 @@ const getSalesAutoFeedback = () => {
     </section>
   </div>
 )}
+      {activeTab === '프로그램' && (
+  <div className="two-col">
+    <section className="card">
+      <div className="section-head">
+        <div>
+          <h2>{editingProgramId ? '프로그램 수정' : '프로그램 등록'}</h2>
+          <p className="sub-text">회원에게 연결할 프로그램을 등록하고 관리합니다.</p>
+        </div>
+      </div>
+
+      <form className="stack-gap" onSubmit={handleProgramSubmit}>
+        <label className="field">
+          <span>프로그램명</span>
+          <input
+            value={programForm.name}
+            onChange={(e) =>
+              setProgramForm((prev) => ({
+                ...prev,
+                name: e.target.value,
+              }))
+            }
+            placeholder="예: 베이직 PT 20회 / 재활 PT / 웨딩 라인관리"
+          />
+        </label>
+
+        <div className="grid-2">
+          <label className="field">
+            <span>가격</span>
+            <input
+              type="number"
+              value={programForm.price}
+              onChange={(e) =>
+                setProgramForm((prev) => ({
+                  ...prev,
+                  price: e.target.value,
+                }))
+              }
+              placeholder="예: 550000"
+            />
+          </label>
+
+          <label className="field">
+            <span>세션 수</span>
+            <input
+              type="number"
+              value={programForm.session_count}
+              onChange={(e) =>
+                setProgramForm((prev) => ({
+                  ...prev,
+                  session_count: e.target.value,
+                }))
+              }
+              placeholder="예: 20"
+            />
+          </label>
+        </div>
+
+        <label className="field">
+          <span>설명</span>
+          <textarea
+            rows="5"
+            value={programForm.description}
+            onChange={(e) =>
+              setProgramForm((prev) => ({
+                ...prev,
+                description: e.target.value,
+              }))
+            }
+            placeholder="예: 체형교정 + 기초근력 + 운동습관 형성 중심 프로그램"
+          />
+        </label>
+
+        <div className="grid-2">
+          <label className="checkbox-line">
+            <input
+              type="checkbox"
+              checked={!!programForm.is_vip}
+              onChange={(e) =>
+                setProgramForm((prev) => ({
+                  ...prev,
+                  is_vip: e.target.checked,
+                }))
+              }
+            />
+            <span>VIP 프로그램</span>
+          </label>
+
+          <label className="checkbox-line">
+            <input
+              type="checkbox"
+              checked={!!programForm.is_active}
+              onChange={(e) =>
+                setProgramForm((prev) => ({
+                  ...prev,
+                  is_active: e.target.checked,
+                }))
+              }
+            />
+            <span>활성화</span>
+          </label>
+        </div>
+
+        <div className="inline-actions wrap">
+          <button className="primary-btn" type="submit">
+            {editingProgramId ? '프로그램 수정 저장' : '프로그램 등록'}
+          </button>
+
+          <button
+            type="button"
+            className="secondary-btn"
+            onClick={() => {
+              setProgramForm(emptyProgramForm)
+              setEditingProgramId(null)
+            }}
+          >
+            초기화
+          </button>
+        </div>
+      </form>
+    </section>
+
+    <section className="card">
+      <div className="member-list-header">
+        <h2>프로그램 목록</h2>
+
+        <div className="member-list-search-area">
+          <input
+            placeholder="프로그램명 / 설명 검색"
+            value={programSearch}
+            onChange={(e) => setProgramSearch(e.target.value)}
+          />
+        </div>
+      </div>
+
+      <div className="list-stack">
+        {programs
+          .filter((program) => {
+            const keyword = programSearch.trim().toLowerCase()
+            if (!keyword) return true
+
+            return (
+              String(program.name || '').toLowerCase().includes(keyword) ||
+              String(program.description || '').toLowerCase().includes(keyword) ||
+              String(program.price || '').toLowerCase().includes(keyword) ||
+              String(program.session_count || '').toLowerCase().includes(keyword)
+            )
+          })
+          .length === 0 ? (
+          <div className="workout-list-empty">등록된 프로그램이 없습니다.</div>
+        ) : null}
+
+        {programs
+          .filter((program) => {
+            const keyword = programSearch.trim().toLowerCase()
+            if (!keyword) return true
+
+            return (
+              String(program.name || '').toLowerCase().includes(keyword) ||
+              String(program.description || '').toLowerCase().includes(keyword) ||
+              String(program.price || '').toLowerCase().includes(keyword) ||
+              String(program.session_count || '').toLowerCase().includes(keyword)
+            )
+          })
+          .map((program) => (
+            <div key={program.id} className="list-card">
+              <div className="list-card-top">
+                <div>
+                  <strong>{program.name || '-'}</strong>
+                  <div className="compact-text">
+                    {Number(program.price || 0).toLocaleString()}원 / {program.session_count || 0}회
+                  </div>
+                </div>
+
+                <div className="inline-actions wrap">
+                  <span className="pill">{program.is_active ? '활성' : '비활성'}</span>
+                  {program.is_vip ? <span className="pill">VIP</span> : null}
+                </div>
+              </div>
+
+              <div className="compact-text">
+                {program.description || '-'}
+              </div>
+
+              <div className="inline-actions wrap">
+                <button
+                  type="button"
+                  className="secondary-btn"
+                  onClick={() => handleProgramEdit(program)}
+                >
+                  수정
+                </button>
+
+                <button
+                  type="button"
+                  className="danger-btn"
+                  onClick={() => handleProgramDelete(program.id)}
+                >
+                  삭제
+                </button>
+              </div>
+            </div>
+          ))}
+      </div>
+    </section>
+  </div>
+)}
 {activeTab === '공지사항' && (
   <div className="two-col">
     <section className="card">
