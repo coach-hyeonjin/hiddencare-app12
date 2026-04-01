@@ -4733,7 +4733,7 @@ const getSalesAutoFeedback = () => {
           </div>
         </div>
       </div>
-<section className="card">
+<div className="card">
     <h3>번아웃 / 운영 주의 코치</h3>
 
     {!coachAlertList.length ? (
