@@ -5729,45 +5729,48 @@ const getSalesAutoFeedback = () => {
 </div>
 {burnoutSignalChecks.length >= 2 && (
   <div className="card">
-    <h3>번아웃 회복 체크</h3>
-      <p className="sub-text">
-        잘하고 있는데 피로가 쌓일 때 가볍게 확인하는 체크입니다.
-        번아웃이 아니라면 체크하지 않으셔도 됩니다 🙂
-      </p>
+    <div className="section-head">
+      <div>
+        <h3>번아웃 회복 체크</h3>
+        <p className="sub-text">
+          잘하고 있는데 피로가 쌓일 때 가볍게 확인하는 체크입니다.
+          번아웃이 아니라면 체크하지 않으셔도 됩니다 🙂
+        </p>
+      </div>
+    </div>
+
+    <div className="detail-box">
+      {BURNOUT_RELIEF_GUIDE.map((text) => (
+        <p key={text} className="compact-text">{text}</p>
+      ))}
+    </div>
+
+    <div className="checklist-grid">
+      {BURNOUT_RECOVERY_CHECKLIST.map((item) => (
+        <label key={item} className="check-chip">
+          <input
+            type="checkbox"
+            checked={burnoutRecoveryChecks.includes(item)}
+            onChange={() => toggleBurnoutRecoveryItem(item)}
+          />
+          <span>{item}</span>
+        </label>
+      ))}
+    </div>
+
+    <div className="detail-box" style={{ marginTop: '12px' }}>
+      <p><strong>현재 체크 수:</strong> {getBurnoutRecoveryCount(burnoutRecoveryChecks)}개</p>
+      <p><strong>해석:</strong> {getBurnoutRecoveryComment(burnoutRecoveryChecks)}</p>
+    </div>
+
+    <div className="detail-box" style={{ marginTop: '12px' }}>
+      <p><strong>조치 체크리스트</strong></p>
+      {BURNOUT_RESPONSE_CHECKLIST.map((item) => (
+        <p key={item} className="compact-text">- {item}</p>
+      ))}
     </div>
   </div>
-
-  <div className="detail-box">
-    {BURNOUT_RELIEF_GUIDE.map((text) => (
-      <p key={text} className="compact-text">{text}</p>
-    ))}
-  </div>
-
-  <div className="checklist-grid">
-    {BURNOUT_RECOVERY_CHECKLIST.map((item) => (
-      <label key={item} className="check-chip">
-        <input
-          type="checkbox"
-          checked={burnoutRecoveryChecks.includes(item)}
-          onChange={() => toggleBurnoutRecoveryItem(item)}
-        />
-        <span>{item}</span>
-      </label>
-    ))}
-  </div>
-
-  <div className="detail-box" style={{ marginTop: '12px' }}>
-    <p><strong>현재 체크 수:</strong> {getBurnoutRecoveryCount(burnoutRecoveryChecks)}개</p>
-    <p><strong>해석:</strong> {getBurnoutRecoveryComment(burnoutRecoveryChecks)}</p>
-  </div>
-
-  <div className="detail-box" style={{ marginTop: '12px' }}>
-    <p><strong>조치 체크리스트</strong></p>
-    {BURNOUT_RESPONSE_CHECKLIST.map((item) => (
-      <p key={item} className="compact-text">- {item}</p>
-    ))}
-  </div>
-</div>
+)}
     <div className="card">
       <h3>성과 행동 체크리스트</h3>
 
