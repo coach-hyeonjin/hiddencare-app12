@@ -362,6 +362,46 @@ const PERFORMANCE_LEVEL_META = [
   { min: 11, max: 16, label: '양호' },
   { min: 17, max: 999, label: '고성과' },
 ]
+const BURNOUT_RELIEF_GUIDE = [
+  '오늘 회원 한 명이라도 제대로 봤으면 잘하고 있는 날입니다.',
+  '최근 피로감이 올라온다면, 아래 체크리스트를 가볍게 확인해보세요.',
+  '번아웃이 아니라면 체크하지 않으셔도 됩니다 🙂',
+]
+
+const BURNOUT_RECOVERY_CHECKLIST = [
+  '오늘 수업할 때 억지로 끌고 간 느낌이 덜했다',
+  '회원 말이 전보다 잘 들렸다',
+  '수업 설명이 조금 더 자연스럽게 나왔다',
+  '끝난 뒤 과하게 지치는 느낌이 덜했다',
+  '회원 반응을 받을 때 부담이 조금 덜했다',
+  '오늘은 내가 부족하다는 압박이 조금 덜했다',
+]
+
+const BURNOUT_RESPONSE_CHECKLIST = [
+  '잘하고 있다. 완벽하게 하려 하지 말고, 하던 흐름을 유지한다',
+  '회원 반응 한 가지라도 좋았던 점을 확인한다',
+  '수업 후 스스로 부족했던 점보다, 잘 된 점 1가지를 먼저 적는다',
+  '다음 수업 전까지 생각을 길게 끌지 않는다',
+]
+
+function getBurnoutRecoveryCount(checks = []) {
+  return Array.isArray(checks) ? checks.length : 0
+}
+
+function getBurnoutRecoveryComment(checks = []) {
+  const count = getBurnoutRecoveryCount(checks)
+
+  if (count === 0) {
+    return '아직 체크 전입니다. 번아웃이 아니라면 체크하지 않으셔도 됩니다 🙂'
+  }
+  if (count <= 2) {
+    return '아직 회복 초입입니다. 무리하게 끌어올리기보다 현재 흐름 유지에 집중하세요.'
+  }
+  if (count <= 4) {
+    return '조금씩 좋아지고 있습니다. 지금 방식 유지하면 됩니다.'
+  }
+  return '회복 흐름이 좋습니다. 현재 운영 흐름을 이어가면 됩니다.'
+}
 function randomCode() {
   return Math.random().toString(36).slice(2, 10).toUpperCase()
 }
@@ -512,12 +552,14 @@ const [coachConditionForm, setCoachConditionForm] = useState(emptyCoachCondition
 const [editingCoachConditionId, setEditingCoachConditionId] = useState(null)
 const [coachConditionMonth, setCoachConditionMonth] = useState(new Date().toISOString().slice(0, 7))
 const [coachConditionCoachFilter, setCoachConditionCoachFilter] = useState('')
+  const [burnoutRecoveryChecks, setBurnoutRecoveryChecks] = useState([])
 
 const [coachReviews, setCoachReviews] = useState([])
 const [coachReviewForm, setCoachReviewForm] = useState(emptyCoachReviewForm)
 const [editingCoachReviewId, setEditingCoachReviewId] = useState(null)
 const [coachReviewMonth, setCoachReviewMonth] = useState(new Date().toISOString().slice(0, 7))
 const [coachReviewCoachFilter, setCoachReviewCoachFilter] = useState('')
+  const [burnoutRecoveryChecks, setBurnoutRecoveryChecks] = useState([])
   const [notices, setNotices] = useState([])
   const [noticeForm, setNoticeForm] = useState(emptyNoticeForm)
   const [editingNoticeId, setEditingNoticeId] = useState(null)
@@ -675,6 +717,20 @@ const toggleChecklistItem = (field, item) => {
       status_level: scores.statusLevel,
     }
   })
+}
+  const toggleBurnoutRecoveryItem = (item) => {
+  setBurnoutRecoveryChecks((prev) =>
+    prev.includes(item)
+      ? prev.filter((v) => v !== item)
+      : [...prev, item]
+  )
+}
+  const toggleBurnoutRecoveryItem = (item) => {
+  setBurnoutRecoveryChecks((prev) =>
+    prev.includes(item)
+      ? prev.filter((value) => value !== item)
+      : [...prev, item]
+  )
 }
   const filteredExercises = useMemo(() => {
     const keyword = exerciseSearch.trim().toLowerCase()
@@ -5616,7 +5672,48 @@ const getSalesAutoFeedback = () => {
         </div>
       </div>
     </div>
+<div className="card">
+  <div className="section-head">
+    <div>
+      <h3>번아웃 회복 체크</h3>
+      <p className="sub-text">
+        잘하고 있는데 피로가 쌓일 때 가볍게 확인하는 체크입니다.
+        번아웃이 아니라면 체크하지 않으셔도 됩니다 🙂
+      </p>
+    </div>
+  </div>
 
+  <div className="detail-box">
+    {BURNOUT_RELIEF_GUIDE.map((text) => (
+      <p key={text} className="compact-text">{text}</p>
+    ))}
+  </div>
+
+  <div className="checklist-grid">
+    {BURNOUT_RECOVERY_CHECKLIST.map((item) => (
+      <label key={item} className="check-chip">
+        <input
+          type="checkbox"
+          checked={burnoutRecoveryChecks.includes(item)}
+          onChange={() => toggleBurnoutRecoveryItem(item)}
+        />
+        <span>{item}</span>
+      </label>
+    ))}
+  </div>
+
+  <div className="detail-box" style={{ marginTop: '12px' }}>
+    <p><strong>현재 체크 수:</strong> {getBurnoutRecoveryCount(burnoutRecoveryChecks)}개</p>
+    <p><strong>해석:</strong> {getBurnoutRecoveryComment(burnoutRecoveryChecks)}</p>
+  </div>
+
+  <div className="detail-box" style={{ marginTop: '12px' }}>
+    <p><strong>조치 체크리스트</strong></p>
+    {BURNOUT_RESPONSE_CHECKLIST.map((item) => (
+      <p key={item} className="compact-text">- {item}</p>
+    ))}
+  </div>
+</div>
     <div className="card">
       <h3>성과 행동 체크리스트</h3>
 
@@ -5675,7 +5772,9 @@ const getSalesAutoFeedback = () => {
           })}
         </p>
       </div>
-
+<div className="compact-text">
+  회복 안내: 번아웃이 아니라면 체크하지 않으셔도 됩니다. 피로가 올라오는 시기에만 가볍게 확인하세요.
+</div>
       <div className="card">
        <h3>이번 달 목표(계획값)</h3>
         <div className="form-row">
