@@ -4370,7 +4370,15 @@ const getSalesAutoFeedback = () => {
                 <div className="compact-text">
                   간략히보기: 운동 {workout.items.length}개 / 총세트 {getTotalSetCount(workout.items)}세트
                 </div>
-
+{workout?.pain_enabled && (workout?.pain_logs?.length || 0) > 0 ? (
+  <div className="compact-text">
+    통증기록:{' '}
+    {workout.pain_logs
+      ?.filter((log) => log?.body_part || log?.pain_score !== null)
+      ?.map((log) => `${log?.body_part || '부위미입력'} ${log?.pain_score ?? '-'}점`)
+      ?.join(' / ')}
+  </div>
+) : null}
                 <div className="inline-actions wrap">
                   <button
                     type="button"
@@ -4419,6 +4427,30 @@ const getSalesAutoFeedback = () => {
   <div className="workout-detail-summary">
     <p><strong>잘한점:</strong> {workout.good || '-'}</p>
     <p><strong>보완점:</strong> {workout.improve || '-'}</p>
+    {workout?.pain_enabled && (workout?.pain_logs?.length || 0) > 0 ? (
+  <div className="detail-box">
+    <p><strong>[통증 기록]</strong></p>
+
+    {(workout.pain_logs || []).map((log, index) => (
+      <div key={index} className="compact-text">
+        {index + 1}. [{log?.pain_type || '-'}] {log?.body_part || '-'} /{' '}
+        {log?.movement_name || '-'} / {log?.pain_timing || '-'} / VAS{' '}
+        {log?.pain_score ?? '-'} / {log?.pain_note || '-'}
+      </div>
+    ))}
+
+    <div style={{ height: '8px' }} />
+
+    <p><strong>VAS 기준:</strong></p>
+    <div className="compact-text">0: 통증 없음</div>
+    <div className="compact-text">1~2: 거의 신경 쓰이지 않는 통증</div>
+    <div className="compact-text">3~4: 움직일 때 불편하지만 운동 가능</div>
+    <div className="compact-text">5~6: 운동 시 집중이 흐트러질 정도</div>
+    <div className="compact-text">7~8: 운동 수행이 어려움</div>
+    <div className="compact-text">9: 일상생활에서도 지속적인 통증</div>
+    <div className="compact-text">10: 견디기 힘든 극심한 통증</div>
+  </div>
+) : null}
   </div>
 </div>
                 ) : null}
