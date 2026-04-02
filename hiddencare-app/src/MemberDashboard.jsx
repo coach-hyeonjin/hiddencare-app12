@@ -25,12 +25,21 @@ const emptyPersonalItem = {
   cardio_minutes: '',
   sets: [{ kg: '', reps: '' }],
 }
-
+const emptyPainLog = {
+  pain_type: '운동중',
+  body_part: '',
+  movement_name: '',
+  pain_timing: '',
+  pain_score: '',
+  pain_note: '',
+}
 const emptyPersonalForm = {
   id: null,
   workout_date: new Date().toISOString().slice(0, 10),
   good: '',
   improve: '',
+  pain_enabled: false,
+  pain_logs: [{ ...emptyPainLog }],
   items: [{ ...emptyPersonalItem }],
 }
 
@@ -1050,7 +1059,37 @@ const clearMemberAlerts = () => {
       items: prev.items.filter((_, idx) => idx !== itemIndex),
     }))
   }
+  const addPainLog = () => {
+    setPersonalForm((prev) => ({
+      ...prev,
+      pain_logs: [...(prev.pain_logs || []), { ...emptyPainLog }],
+    }))
+  }
 
+  const removePainLog = (painIndex) => {
+    setPersonalForm((prev) => ({
+      ...prev,
+      pain_logs:
+        (prev.pain_logs || []).length > 1
+          ? prev.pain_logs.filter((_, idx) => idx !== painIndex)
+          : [{ ...emptyPainLog }],
+    }))
+  }
+
+  const updatePainLogValue = (painIndex, field, value) => {
+    setPersonalForm((prev) => {
+      const nextPainLogs = [...(prev.pain_logs || [])]
+      nextPainLogs[painIndex] = {
+        ...nextPainLogs[painIndex],
+        [field]: field === 'pain_score' ? value : value,
+      }
+
+      return {
+        ...prev,
+        pain_logs: nextPainLogs,
+      }
+    })
+  }
   const addSet = (itemIndex) => {
     setPersonalForm((prev) => {
       const nextItems = [...prev.items]
@@ -1108,12 +1147,37 @@ const clearMemberAlerts = () => {
       return
     }
 
+    const cleanedPainLogs = personalForm.pain_enabled
+      ? (personalForm.pain_logs || [])
+          .filter(
+            (log) =>
+              log?.body_part?.trim() ||
+              log?.movement_name?.trim() ||
+              log?.pain_timing?.trim() ||
+              String(log?.pain_score ?? '').trim() ||
+              log?.pain_note?.trim(),
+          )
+          .map((log) => ({
+            pain_type: log?.pain_type || '운동중',
+            body_part: log?.body_part?.trim() || '',
+            movement_name: log?.movement_name?.trim() || '',
+            pain_timing: log?.pain_timing?.trim() || '',
+            pain_score:
+              log?.pain_score === '' || log?.pain_score === null || log?.pain_score === undefined
+                ? null
+                : Number(log.pain_score),
+            pain_note: log?.pain_note?.trim() || '',
+          }))
+      : []
+
     const payload = {
       member_id: member.id,
       workout_date: personalForm.workout_date,
       workout_type: 'personal',
       good: personalForm.good?.trim() || '',
       improve: personalForm.improve?.trim() || '',
+      pain_enabled: !!personalForm.pain_enabled,
+      pain_logs: cleanedPainLogs,
       created_by: null,
       admin_id: currentAdminId || null,
       gym_id: currentGymId || null,
@@ -1147,11 +1211,23 @@ const clearMemberAlerts = () => {
   const handlePersonalEdit = (workout) => {
     const items = workoutItemsMap[workout.id] || []
 
-    setPersonalForm({
+        setPersonalForm({
       id: workout.id,
       workout_date: workout.workout_date,
       good: workout.good || '',
       improve: workout.improve || '',
+      pain_enabled: !!workout.pain_enabled,
+      pain_logs:
+        Array.isArray(workout.pain_logs) && workout.pain_logs.length > 0
+          ? workout.pain_logs.map((log) => ({
+              pain_type: log?.pain_type || '운동중',
+              body_part: log?.body_part || '',
+              movement_name: log?.movement_name || '',
+              pain_timing: log?.pain_timing || '',
+              pain_score: log?.pain_score ?? '',
+              pain_note: log?.pain_note || '',
+            }))
+          : [{ ...emptyPainLog }],
       items:
         items.length > 0
           ? items.map((item) => ({
@@ -1166,7 +1242,6 @@ const clearMemberAlerts = () => {
             }))
           : [{ ...emptyPersonalItem }],
     })
-
     setActiveTab('개인운동입력')
   }
 
@@ -1870,7 +1945,15 @@ const clearMemberAlerts = () => {
                   <div className="compact-text">
                     간략히보기: 운동 {workout.items.length}개 / 총세트 {getTotalSetCount(workout.items)}세트
                   </div>
-
+ {workout?.pain_enabled && (workout?.pain_logs?.length || 0) > 0 ? (
+                    <div className="compact-text">
+                      통증기록:{' '}
+                      {workout.pain_logs
+                        ?.filter((log) => log?.body_part || log?.pain_score !== null)
+                        ?.map((log) => `${log?.body_part || '부위미입력'} ${log?.pain_score ?? '-'}점`)
+                        ?.join(' / ')}
+                    </div>
+                  ) : null}
                   <div className="inline-actions wrap">
                     <button
                       type="button"
@@ -1926,6 +2009,30 @@ const clearMemberAlerts = () => {
                       ))}
                       <p><strong>잘한점:</strong> {workout.good || '-'}</p>
                       <p><strong>보완점:</strong> {workout.improve || '-'}</p>
+                                            {workout?.pain_enabled && (workout?.pain_logs?.length || 0) > 0 ? (
+                        <div className="detail-box">
+                          <p><strong>[통증 기록]</strong></p>
+
+                          {(workout.pain_logs || []).map((log, index) => (
+                            <div key={index} className="compact-text">
+                              {index + 1}. [{log?.pain_type || '-'}] {log?.body_part || '-'} /{' '}
+                              {log?.movement_name || '-'} / {log?.pain_timing || '-'} / VAS{' '}
+                              {log?.pain_score ?? '-'} / {log?.pain_note || '-'}
+                            </div>
+                          ))}
+
+                          <div style={{ height: '8px' }} />
+
+                          <p><strong>VAS 기준:</strong></p>
+                          <div className="compact-text">0: 통증 없음</div>
+                          <div className="compact-text">1~2: 거의 신경 쓰이지 않는 통증</div>
+                          <div className="compact-text">3~4: 움직일 때 불편하지만 운동 가능</div>
+                          <div className="compact-text">5~6: 운동 시 집중이 흐트러질 정도</div>
+                          <div className="compact-text">7~8: 운동 수행이 어려움</div>
+                          <div className="compact-text">9: 일상생활에서도 지속적인 통증</div>
+                          <div className="compact-text">10: 견디기 힘든 극심한 통증</div>
+                        </div>
+                      ) : null}
                     </div>
                   ) : null}
                 </div>
@@ -2070,7 +2177,127 @@ const clearMemberAlerts = () => {
                 onChange={(e) => setPersonalForm({ ...personalForm, improve: e.target.value })}
               />
             </label>
+            <div className="sub-card stack-gap">
+              <div className="list-card-top">
+                <strong>통증 기록</strong>
+                <label className="checkbox-line">
+                  <input
+                    type="checkbox"
+                    checked={!!personalForm.pain_enabled}
+                    onChange={(e) =>
+                      setPersonalForm((prev) => ({
+                        ...prev,
+                        pain_enabled: e.target.checked,
+                        pain_logs: e.target.checked
+                          ? prev.pain_logs?.length
+                            ? prev.pain_logs
+                            : [{ ...emptyPainLog }]
+                          : [{ ...emptyPainLog }],
+                      }))
+                    }
+                  />
+                  <span>이번 운동에 통증 기록하기</span>
+                </label>
+              </div>
 
+              {personalForm.pain_enabled ? (
+                <>
+                  <div className="detail-box">
+                    <strong>VAS 기준</strong>
+                    <div className="compact-text">0: 통증 없음</div>
+                    <div className="compact-text">1~2: 거의 신경 쓰이지 않는 통증</div>
+                    <div className="compact-text">3~4: 움직일 때 불편하지만 운동 가능</div>
+                    <div className="compact-text">5~6: 운동 시 집중이 흐트러질 정도</div>
+                    <div className="compact-text">7~8: 운동 수행이 어려움</div>
+                    <div className="compact-text">9: 일상생활에서도 지속적인 통증</div>
+                    <div className="compact-text">10: 견디기 힘든 극심한 통증</div>
+                  </div>
+
+                  {(personalForm.pain_logs || []).map((painLog, painIndex) => (
+                    <div key={painIndex} className="detail-box stack-gap">
+                      <div className="list-card-top">
+                        <strong>통증 {painIndex + 1}</strong>
+                        <button
+                          type="button"
+                          className="danger-btn"
+                          onClick={() => removePainLog(painIndex)}
+                          disabled={(personalForm.pain_logs || []).length === 1}
+                        >
+                          삭제
+                        </button>
+                      </div>
+
+                      <label className="field">
+                        <span>통증 유형</span>
+                        <select
+                          value={painLog?.pain_type || '운동중'}
+                          onChange={(e) => updatePainLogValue(painIndex, 'pain_type', e.target.value)}
+                        >
+                          <option value="운동중">운동중</option>
+                          <option value="운동후">운동후</option>
+                          <option value="상시">상시</option>
+                        </select>
+                      </label>
+
+                      <label className="field">
+                        <span>부위</span>
+                        <input
+                          value={painLog?.body_part || ''}
+                          onChange={(e) => updatePainLogValue(painIndex, 'body_part', e.target.value)}
+                          placeholder="예: 어깨, 허리, 무릎"
+                        />
+                      </label>
+
+                      <label className="field">
+                        <span>동작명</span>
+                        <input
+                          value={painLog?.movement_name || ''}
+                          onChange={(e) =>
+                            updatePainLogValue(painIndex, 'movement_name', e.target.value)
+                          }
+                          placeholder="예: 벤치프레스, 스쿼트"
+                        />
+                      </label>
+
+                      <label className="field">
+                        <span>통증이 느껴진 시점</span>
+                        <input
+                          value={painLog?.pain_timing || ''}
+                          onChange={(e) => updatePainLogValue(painIndex, 'pain_timing', e.target.value)}
+                          placeholder="예: 하강 시, 올라올 때, 걷는 중"
+                        />
+                      </label>
+
+                      <label className="field">
+                        <span>VAS 점수 (0~10)</span>
+                        <input
+                          type="number"
+                          min="0"
+                          max="10"
+                          value={painLog?.pain_score ?? ''}
+                          onChange={(e) => updatePainLogValue(painIndex, 'pain_score', e.target.value)}
+                          placeholder="0~10"
+                        />
+                      </label>
+
+                      <label className="field">
+                        <span>메모</span>
+                        <textarea
+                          rows="3"
+                          value={painLog?.pain_note || ''}
+                          onChange={(e) => updatePainLogValue(painIndex, 'pain_note', e.target.value)}
+                          placeholder="예: 찌르는 느낌, 뻐근함, 특정 각도에서 심해짐"
+                        />
+                      </label>
+                    </div>
+                  ))}
+
+                  <button type="button" className="secondary-btn" onClick={addPainLog}>
+                    통증 기록 추가
+                  </button>
+                </>
+              ) : null}
+            </div>
             <div className="inline-actions wrap">
               <button className="primary-btn" type="submit">
                 {personalForm.id ? '개인운동 수정' : '개인운동 저장'}
