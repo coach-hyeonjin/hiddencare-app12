@@ -1783,28 +1783,79 @@ setPartnerCategories(uniqueCategories)
   setPartnerUsages(data || [])
 }
 
- const loadSalesRecords = async () => {
+const loadSalesRecords = async () => {
   if (!currentAdminId) {
     setSalesRecords([])
     setCollapsedSales({})
     return
   }
 
-  const { data } = await supabase
+  const { data, error } = await supabase
     .from('sales_records')
-    .select('*, members(id, name), programs(id, name)')
+    .select('*')
     .eq('admin_id', currentAdminId)
     .order('sale_date', { ascending: false })
     .order('created_at', { ascending: false })
 
-  if (data) {
-    const collapsed = {}
-    data.forEach((sale) => {
-      collapsed[sale.id] = true
-    })
-    setSalesRecords(data)
-    setCollapsedSales(collapsed)
+  if (error) {
+    console.error('매출 목록 불러오기 실패:', error)
+    setMessage(`매출 목록 불러오기 실패: ${error.message}`)
+    setSalesRecords([])
+    setCollapsedSales({})
+    return
   }
+
+  const memberIds = [...new Set((data || []).map((sale) => sale.member_id).filter(Boolean))]
+  const programIds = [...new Set((data || []).map((sale) => sale.program_id).filter(Boolean))]
+
+  let memberMap = {}
+  let programMap = {}
+
+  if (memberIds.length > 0) {
+    const { data: memberRows, error: memberError } = await supabase
+      .from('members')
+      .select('id, name')
+      .in('id', memberIds)
+
+    if (memberError) {
+      console.error('매출 회원 정보 불러오기 실패:', memberError)
+    } else {
+      memberMap = (memberRows || []).reduce((acc, row) => {
+        acc[row.id] = row
+        return acc
+      }, {})
+    }
+  }
+
+  if (programIds.length > 0) {
+    const { data: programRows, error: programError } = await supabase
+      .from('programs')
+      .select('id, name')
+      .in('id', programIds)
+
+    if (programError) {
+      console.error('매출 프로그램 정보 불러오기 실패:', programError)
+    } else {
+      programMap = (programRows || []).reduce((acc, row) => {
+        acc[row.id] = row
+        return acc
+      }, {})
+    }
+  }
+
+  const merged = (data || []).map((sale) => ({
+    ...sale,
+    members: sale.member_id ? memberMap[sale.member_id] || null : null,
+    programs: sale.program_id ? programMap[sale.program_id] || null : null,
+  }))
+
+  const collapsed = {}
+  merged.forEach((sale) => {
+    collapsed[sale.id] = true
+  })
+
+  setSalesRecords(merged)
+  setCollapsedSales(collapsed)
 }
 const loadSalesSummary = async (month) => {
   if (!currentAdminId) {
