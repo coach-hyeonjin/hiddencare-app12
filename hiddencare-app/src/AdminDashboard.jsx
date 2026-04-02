@@ -932,22 +932,21 @@ const groupedWorkoutCards = useMemo(() => {
   }, [dietLogs, dietMemberFilter, dietSearch, members])
 
   const filteredSales = useMemo(() => {
-  return salesRecords
-    .filter((sale) => getMonthKey(sale.sale_date) === selectedStatsMonth)
-    .filter((sale) => {
-      const matchesPayment = salePaymentFilter === 'all' || sale.payment_method === salePaymentFilter
-      const matchesKeyword =
-        !saleSearch.trim() ||
-        textIncludes(sale.members?.name, saleSearch) ||
-        textIncludes(sale.programs?.name, saleSearch) ||
-        textIncludes(sale.payment_method, saleSearch) ||
-        textIncludes(sale.memo, saleSearch) ||
-        textIncludes(sale.sale_date, saleSearch) ||
-        textIncludes(sale.amount, saleSearch)
-
-      return matchesPayment && matchesKeyword
-    })
-}, [salesRecords, selectedStatsMonth, saleSearch, salePaymentFilter])
+    return salesRecords
+      .filter((sale) => getMonthKey(sale.sale_date) === saleMonth)
+      .filter((sale) => {
+        const matchesPayment = salePaymentFilter === 'all' || sale.payment_method === salePaymentFilter
+        const matchesKeyword =
+          !saleSearch.trim() ||
+          textIncludes(sale.members?.name, saleSearch) ||
+          textIncludes(sale.programs?.name, saleSearch) ||
+          textIncludes(sale.payment_method, saleSearch) ||
+          textIncludes(sale.memo, saleSearch) ||
+          textIncludes(sale.sale_date, saleSearch) ||
+          textIncludes(sale.amount, saleSearch)
+        return matchesPayment && matchesKeyword
+      })
+  }, [salesRecords, saleMonth, saleSearch, salePaymentFilter])
 
  const salesStatsExtended = useMemo(() => {
   const totalSales = filteredSales.reduce((sum, sale) => sum + Number(sale.amount || 0), 0)
@@ -1863,7 +1862,6 @@ const loadSalesSummary = async (month) => {
     .from('coach_condition_logs')
     .select('*, coaches(id, name)')
     .eq('admin_id', currentAdminId)
-    .eq('check_month', coachConditionMonth)
     .order('check_month', { ascending: false })
     .order('created_at', { ascending: false })
 
@@ -1875,11 +1873,7 @@ const loadSalesSummary = async (month) => {
 
   setCoachConditions(data || [])
 }
-  
-useEffect(() => {
-  loadCoachConditions()
-}, [currentAdminId, coachConditionMonth])
-  
+
 const loadCoachReviews = async () => {
   if (!currentAdminId) {
     setCoachReviews([])
@@ -3037,7 +3031,7 @@ const handlePartnerUsageReject = async (usageId) => {
 
     resetSaleForm()
     await loadSalesRecords()
-    await loadSalesSummary(selectedStatsMonth)
+    await loadSalesSummary(saleMonth)
   }
 
   const handleSaleEdit = (sale) => {
@@ -3062,7 +3056,7 @@ const handlePartnerUsageReject = async (usageId) => {
     if (!window.confirm('매출 기록을 삭제할까요?')) return
     await supabase.from('sales_records').delete().eq('id', saleId)
     await loadSalesRecords()
-   await loadSalesSummary(selectedStatsMonth)
+    await loadSalesSummary(saleMonth)
     setMessage('매출 기록이 삭제되었습니다.')
   }
 const toggleSalesArrayValue = (field, value) => {
