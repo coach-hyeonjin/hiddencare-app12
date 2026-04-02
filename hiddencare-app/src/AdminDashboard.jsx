@@ -5958,7 +5958,9 @@ const getSalesAutoFeedback = () => {
  ))}
         </div>
       )}
-    </div>
+      </div>
+  </section>
+)}
       {activeTab === '리포트' && (
   <section className="admin-section">
     <div className="section-head">
