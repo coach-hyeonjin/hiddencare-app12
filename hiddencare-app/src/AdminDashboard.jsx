@@ -4077,11 +4077,12 @@ const getSalesAutoFeedback = () => {
       <select
         value={routinePresetType}
         onChange={(e) => {
-          setRoutinePresetType(e.target.value)
+          const nextType = e.target.value
+          setRoutinePresetType(nextType)
           setRoutinePresetName('')
           setRoutineForm((prev) => ({
             ...prev,
-            category_type: e.target.value,
+            category_type: nextType,
             category_name: '',
             items: [],
           }))
@@ -4128,7 +4129,9 @@ const getSalesAutoFeedback = () => {
 
   <div className="list-stack">
     {(routineForm.items || []).length === 0 ? (
-      <div className="compact-text">등록된 운동이 없습니다. 세부 분류를 선택하거나 직접 추가하세요.</div>
+      <div className="compact-text">
+        등록된 운동이 없습니다. 세부 분류를 선택하거나 직접 추가하세요.
+      </div>
     ) : (
       routineForm.items.map((item, index) => (
         <div key={index} className="list-card">
@@ -4137,7 +4140,9 @@ const getSalesAutoFeedback = () => {
               <span>운동명</span>
               <input
                 value={item.exercise_name}
-                onChange={(e) => updateRoutineItem(index, 'exercise_name', e.target.value)}
+                onChange={(e) =>
+                  updateRoutineItem(index, 'exercise_name', e.target.value)
+                }
               />
             </label>
 
@@ -4145,7 +4150,9 @@ const getSalesAutoFeedback = () => {
               <span>입력 방식</span>
               <select
                 value={item.input_type}
-                onChange={(e) => updateRoutineItem(index, 'input_type', e.target.value)}
+                onChange={(e) =>
+                  updateRoutineItem(index, 'input_type', e.target.value)
+                }
               >
                 <option value="reps">횟수형</option>
                 <option value="time">시간형</option>
@@ -4159,7 +4166,9 @@ const getSalesAutoFeedback = () => {
               <span>세트</span>
               <input
                 value={item.sets}
-                onChange={(e) => updateRoutineItem(index, 'sets', e.target.value)}
+                onChange={(e) =>
+                  updateRoutineItem(index, 'sets', e.target.value)
+                }
                 placeholder="예: 3"
               />
             </label>
@@ -4168,7 +4177,9 @@ const getSalesAutoFeedback = () => {
               <span>횟수 / 시간</span>
               <input
                 value={item.value}
-                onChange={(e) => updateRoutineItem(index, 'value', e.target.value)}
+                onChange={(e) =>
+                  updateRoutineItem(index, 'value', e.target.value)
+                }
                 placeholder="예: 12 또는 30"
               />
             </label>
@@ -4177,7 +4188,9 @@ const getSalesAutoFeedback = () => {
               <span>단위</span>
               <input
                 value={item.unit}
-                onChange={(e) => updateRoutineItem(index, 'unit', e.target.value)}
+                onChange={(e) =>
+                  updateRoutineItem(index, 'unit', e.target.value)
+                }
                 placeholder="회 / 초 / 분"
               />
             </label>
@@ -4187,7 +4200,9 @@ const getSalesAutoFeedback = () => {
             <span>메모</span>
             <input
               value={item.note}
-              onChange={(e) => updateRoutineItem(index, 'note', e.target.value)}
+              onChange={(e) =>
+                updateRoutineItem(index, 'note', e.target.value)
+              }
               placeholder="예: 천천히, 좌우 동일, 통증 없는 범위"
             />
           </label>
