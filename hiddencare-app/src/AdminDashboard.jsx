@@ -933,7 +933,7 @@ const groupedWorkoutCards = useMemo(() => {
 
   const filteredSales = useMemo(() => {
   return salesRecords
-    .filter((sale) => getMonthKey(sale.sale_date) === selectedStatsMonth)
+    .filter((sale) => getMonthKey(sale.sale_date) === saleMonth)
     .filter((sale) => {
       const matchesPayment = salePaymentFilter === 'all' || sale.payment_method === salePaymentFilter
       const matchesKeyword =
