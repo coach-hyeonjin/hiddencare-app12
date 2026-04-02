@@ -559,7 +559,6 @@ const [coachReviewForm, setCoachReviewForm] = useState(emptyCoachReviewForm)
 const [editingCoachReviewId, setEditingCoachReviewId] = useState(null)
 const [coachReviewMonth, setCoachReviewMonth] = useState(new Date().toISOString().slice(0, 7))
 const [coachReviewCoachFilter, setCoachReviewCoachFilter] = useState('')
-  const [burnoutRecoveryChecks, setBurnoutRecoveryChecks] = useState([])
   const [notices, setNotices] = useState([])
   const [noticeForm, setNoticeForm] = useState(emptyNoticeForm)
   const [editingNoticeId, setEditingNoticeId] = useState(null)
@@ -722,13 +721,6 @@ const toggleChecklistItem = (field, item) => {
   setBurnoutRecoveryChecks((prev) =>
     prev.includes(item)
       ? prev.filter((v) => v !== item)
-      : [...prev, item]
-  )
-}
-  const toggleBurnoutRecoveryItem = (item) => {
-  setBurnoutRecoveryChecks((prev) =>
-    prev.includes(item)
-      ? prev.filter((value) => value !== item)
       : [...prev, item]
   )
 }
