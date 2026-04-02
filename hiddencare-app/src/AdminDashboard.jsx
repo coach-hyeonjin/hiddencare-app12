@@ -560,6 +560,7 @@ const [editingCoachReviewId, setEditingCoachReviewId] = useState(null)
 const [coachReviewMonth, setCoachReviewMonth] = useState(new Date().toISOString().slice(0, 7))
 const [coachReviewCoachFilter, setCoachReviewCoachFilter] = useState('')
   const [collapsedCoachConditions, setCollapsedCoachConditions] = useState({})
+  const [showCoachDetail, setShowCoachDetail] = useState(false)
   const [notices, setNotices] = useState([])
   const [noticeForm, setNoticeForm] = useState(emptyNoticeForm)
   const [editingNoticeId, setEditingNoticeId] = useState(null)
@@ -5563,7 +5564,17 @@ const getSalesAutoFeedback = () => {
         )}
       </div>
     </div>
-
+<div className="inline-actions" style={{ marginBottom: '12px' }}>
+  <button
+    className="secondary-btn"
+    type="button"
+    onClick={() => setShowCoachDetail((prev) => !prev)}
+  >
+    {showCoachDetail ? '간략히 보기' : '입력 펼치기'}
+  </button>
+</div>
+    {showCoachDetail && (
+  <>
     <div className="card">
       <h3>입력 안내</h3>
       <p>숫자를 직접 입력하는 방식이 아니라, 아래 체크리스트를 선택하면 점수가 자동 계산됩니다.</p>
@@ -5861,6 +5872,8 @@ const getSalesAutoFeedback = () => {
         초기화
       </button>
     </div>
+  </>
+)}
 
     <div className="card">
       <div className="section-head">
