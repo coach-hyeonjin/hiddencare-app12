@@ -560,6 +560,7 @@ const [editingCoachReviewId, setEditingCoachReviewId] = useState(null)
 const [coachReviewMonth, setCoachReviewMonth] = useState(new Date().toISOString().slice(0, 7))
 const [coachReviewCoachFilter, setCoachReviewCoachFilter] = useState('')
   const [collapsedCoachConditions, setCollapsedCoachConditions] = useState({})
+  const [burnoutSignalChecks, setBurnoutSignalChecks] = useState([])
   const [showCoachDetail, setShowCoachDetail] = useState(false)
   const [notices, setNotices] = useState([])
   const [noticeForm, setNoticeForm] = useState(emptyNoticeForm)
@@ -718,6 +719,21 @@ const toggleChecklistItem = (field, item) => {
       status_level: scores.statusLevel,
     }
   })
+}
+  const toggleBurnoutSignalItem = (item) => {
+  setBurnoutSignalChecks((prev) =>
+    prev.includes(item)
+      ? prev.filter((v) => v !== item)
+      : [...prev, item]
+  )
+}
+
+const getBurnoutSignalText = (checks = []) => {
+  const count = checks.length
+
+  if (count <= 1) return '현재는 번아웃보다는 일반 피로 수준입니다.'
+  if (count <= 3) return '피로 누적이 시작된 상태입니다.'
+  return '번아웃 가능성이 높은 상태입니다. 회복 체크를 확인하세요.'
 }
   const toggleBurnoutRecoveryItem = (item) => {
   setBurnoutRecoveryChecks((prev) =>
@@ -5682,10 +5698,38 @@ const getSalesAutoFeedback = () => {
         </div>
       </div>
     </div>
-<div className="card">
-  <div className="section-head">
-    <div>
-      <h3>번아웃 회복 체크</h3>
+    <div className="card">
+  <h3>번아웃 여부 확인</h3>
+  <p className="sub-text">
+    최근 상태가 단순 피로인지, 번아웃 신호인지 먼저 확인합니다.
+  </p>
+
+  <div className="checklist-grid">
+    {[
+      '수업 전부터 부담감이 느껴진다',
+      '회원 응대가 버겁게 느껴진다',
+      '코칭이 자연스럽게 나오지 않는다',
+      '쉬어도 피로가 회복되지 않는다',
+      '일 시작 전부터 지치는 느낌이 있다',
+    ].map((item) => (
+      <label key={item} className="check-chip">
+        <input
+          type="checkbox"
+          checked={burnoutSignalChecks.includes(item)}
+          onChange={() => toggleBurnoutSignalItem(item)}
+        />
+        <span>{item}</span>
+      </label>
+    ))}
+  </div>
+
+  <div className="detail-box" style={{ marginTop: '12px' }}>
+    <p><strong>현재 상태:</strong> {getBurnoutSignalText(burnoutSignalChecks)}</p>
+  </div>
+</div>
+{burnoutSignalChecks.length >= 2 && (
+  <div className="card">
+    <h3>번아웃 회복 체크</h3>
       <p className="sub-text">
         잘하고 있는데 피로가 쌓일 때 가볍게 확인하는 체크입니다.
         번아웃이 아니라면 체크하지 않으셔도 됩니다 🙂
