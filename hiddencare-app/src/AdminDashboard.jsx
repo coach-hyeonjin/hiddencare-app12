@@ -42,7 +42,24 @@ const emptyWorkoutItem = {
   cardio_minutes: '',
   sets: [{ kg: '', reps: '' }],
 }
+const emptyPainLog = {
+  pain_type: 'existing',
+  body_part: '',
+  movement_name: '',
+  pain_score: 0,
+  pain_timing: '',
+  pain_note: '',
+}
 
+const getPainScoreLabel = (score) => {
+  const value = Number(score || 0)
+
+  if (value <= 2) return '문제 없음'
+  if (value <= 4) return '주의'
+  if (value <= 6) return '조절 필요'
+  if (value <= 8) return '중단 고려'
+  return '운동 중단 필요'
+}
 const emptyWorkoutForm = {
   id: null,
   member_id: '',
@@ -51,6 +68,8 @@ const emptyWorkoutForm = {
   good: '',
   improve: '',
   items: [{ ...emptyWorkoutItem }],
+  pain_enabled: false,
+pain_logs: [],
 }
 
 const emptyBrandForm = { name: '' }
@@ -2171,7 +2190,33 @@ const removeWorkoutItem = (itemIndex) => {
     items: prev.items.filter((_, idx) => idx !== itemIndex),
   }))
 }
+const addPainLog = () => {
+  setWorkoutForm((prev) => ({
+    ...prev,
+    pain_enabled: true,
+    pain_logs: [...(prev.pain_logs || []), { ...emptyPainLog }],
+  }))
+}
 
+const updatePainLog = (index, field, value) => {
+  setWorkoutForm((prev) => ({
+    ...prev,
+    pain_logs: (prev.pain_logs || []).map((log, i) =>
+      i === index ? { ...log, [field]: value } : log
+    ),
+  }))
+}
+
+const removePainLog = (index) => {
+  setWorkoutForm((prev) => {
+    const nextLogs = (prev.pain_logs || []).filter((_, i) => i !== index)
+    return {
+      ...prev,
+      pain_logs: nextLogs,
+      pain_enabled: nextLogs.length > 0 ? prev.pain_enabled : false,
+    }
+  })
+}
 const addSet = (itemIndex) => {
   setWorkoutForm((prev) => {
     const nextItems = [...prev.items]
@@ -2234,6 +2279,8 @@ const updateSetValue = (itemIndex, setIndex, field, value) => {
   workout_type: workoutForm.workout_type,
   good: workoutForm.good?.trim() || '',
   improve: workoutForm.improve?.trim() || '',
+     pain_enabled: !!workoutForm.pain_enabled,
+  pain_logs: workoutForm.pain_enabled ? (workoutForm.pain_logs || []) : [],
   created_by: profile?.id || null,
   admin_id: currentAdminId || null,
   gym_id: currentGymId || null,
@@ -2295,6 +2342,8 @@ const updateSetValue = (itemIndex, setIndex, field, value) => {
       workout_type: workout.workout_type,
       good: workout.good || '',
       improve: workout.improve || '',
+      pain_enabled: !!workout.pain_enabled,
+pain_logs: workout.pain_logs || [],
       items:
   items.length > 0
     ? items.map((item) => ({
@@ -4101,7 +4150,140 @@ const getSalesAutoFeedback = () => {
                 <span>보완점</span>
                 <textarea rows="3" value={workoutForm.improve} onChange={(e) => setWorkoutForm({ ...workoutForm, improve: e.target.value })} />
               </label>
+<div className="card">
+  <h3>통증 기록</h3>
+  <p className="sub-text">
+    재활 회원이거나 평소 통증이 있는 경우, 또는 운동 중 새 통증이 생긴 경우만 기록합니다.
+  </p>
 
+  <label className="checkbox-line">
+    <input
+      type="checkbox"
+      checked={!!workoutForm.pain_enabled}
+      onChange={(e) =>
+        setWorkoutForm((prev) => ({
+          ...prev,
+          pain_enabled: e.target.checked,
+          pain_logs:
+            e.target.checked
+              ? (prev.pain_logs?.length ? prev.pain_logs : [{ ...emptyPainLog }])
+              : [],
+        }))
+      }
+    />
+    <span>오늘 통증 상태를 기록합니다</span>
+  </label>
+
+  {workoutForm.pain_enabled && (
+    <div className="stack-gap" style={{ marginTop: '14px' }}>
+      {(workoutForm.pain_logs || []).map((pain, index) => (
+        <div key={index} className="detail-box">
+          <div className="list-card-top">
+            <strong>통증 기록 {index + 1}</strong>
+            <button
+              type="button"
+              className="danger-btn"
+              onClick={() => removePainLog(index)}
+            >
+              삭제
+            </button>
+          </div>
+
+          <div className="form-row" style={{ marginTop: '12px' }}>
+            <label className="field">
+              <span>구분</span>
+              <select
+                value={pain.pain_type || 'existing'}
+                onChange={(e) => updatePainLog(index, 'pain_type', e.target.value)}
+              >
+                <option value="rehab">재활 회원 관리 중</option>
+                <option value="existing">평소 통증이 있어 기록</option>
+                <option value="new">운동 중 새 불편감 발생</option>
+              </select>
+            </label>
+
+            <label className="field">
+              <span>부위</span>
+              <select
+                value={pain.body_part || ''}
+                onChange={(e) => updatePainLog(index, 'body_part', e.target.value)}
+              >
+                <option value="">선택</option>
+                <option value="목">목</option>
+                <option value="어깨">어깨</option>
+                <option value="팔꿈치">팔꿈치</option>
+                <option value="손목">손목</option>
+                <option value="등">등</option>
+                <option value="허리">허리</option>
+                <option value="고관절">고관절</option>
+                <option value="무릎">무릎</option>
+                <option value="발목">발목</option>
+                <option value="기타">기타</option>
+              </select>
+            </label>
+          </div>
+
+          <div className="form-row">
+            <label className="field">
+              <span>어떤 움직임에서</span>
+              <input
+                placeholder="예: 스쿼트 하강 / 팔 옆으로 들기 / 걷기"
+                value={pain.movement_name || ''}
+                onChange={(e) => updatePainLog(index, 'movement_name', e.target.value)}
+              />
+            </label>
+
+            <label className="field">
+              <span>언제 아픈지</span>
+              <select
+                value={pain.pain_timing || ''}
+                onChange={(e) => updatePainLog(index, 'pain_timing', e.target.value)}
+              >
+                <option value="">선택</option>
+                <option value="평상시">평상시</option>
+                <option value="운동 전">운동 전</option>
+                <option value="운동 중">운동 중</option>
+                <option value="운동 후">운동 후</option>
+              </select>
+            </label>
+          </div>
+
+          <label className="field">
+            <span>통증 점수 (VAS 0~10)</span>
+            <input
+              type="range"
+              min="0"
+              max="10"
+              step="1"
+              value={pain.pain_score ?? 0}
+              onChange={(e) => updatePainLog(index, 'pain_score', Number(e.target.value))}
+            />
+            <div className="compact-text">
+              현재 점수: {pain.pain_score ?? 0}점 / {getPainScoreLabel(pain.pain_score)}
+            </div>
+            <div className="compact-text">
+              0~2 문제 없음 / 3~4 주의 / 5~6 조절 필요 / 7 이상 중단 고려
+            </div>
+          </label>
+
+          <label className="field">
+            <span>메모</span>
+            <textarea
+              rows="3"
+              placeholder="예: 끝범위에서 찝힘 / 당김 / 저림 / 뻐근함"
+              value={pain.pain_note || ''}
+              onChange={(e) => updatePainLog(index, 'pain_note', e.target.value)}
+            />
+          </label>
+        </div>
+      ))}
+
+      <button type="button" className="secondary-btn" onClick={addPainLog}>
+        통증 기록 추가
+      </button>
+    </div>
+  )}
+</div>
               <div className="inline-actions wrap">
                 <button className="primary-btn" type="submit">
                   {workoutForm.id ? '운동 기록 수정' : '운동 기록 저장'}
@@ -8204,7 +8386,11 @@ function DietAdminCard({ diet, memberName, collapsed, onToggle, onSave, onDelete
         간략히보기: {diet.meal_type || '식단'} / {diet.meal_time || '-'} / {diet.content?.slice(0, 24) || ''}
         {diet.content?.length > 24 ? '...' : ''}
       </div>
-
+{workout.pain_enabled && workout.pain_logs?.length ? (
+  <div className="compact-text">
+    통증기록: {workout.pain_logs.map((pain) => `${pain.body_part || '부위미정'} ${pain.pain_score ?? 0}점`).join(' / ')}
+  </div>
+) : null}
       <div className="inline-actions wrap">
         <button type="button" className="secondary-btn" onClick={onToggle}>
           {collapsed ? '상세히보기' : '간략히보기'}
@@ -8214,7 +8400,17 @@ function DietAdminCard({ diet, memberName, collapsed, onToggle, onSave, onDelete
           삭제
         </button>
       </div>
-
+{workout.pain_enabled && workout.pain_logs?.length ? (
+  <div className="detail-box">
+    <p><strong>통증 기록</strong></p>
+    {workout.pain_logs.map((pain, index) => (
+      <p key={index}>
+        {index + 1}. [{pain.pain_type || '-'}] {pain.body_part || '-'} / {pain.movement_name || '-'} /
+        {pain.pain_timing || '-'} / VAS {pain.pain_score ?? 0} / {pain.pain_note || '-'}
+      </p>
+    ))}
+  </div>
+) : null}
       {!collapsed ? (
         <DietFeedbackEditor diet={diet} feedback={feedback} setFeedback={setFeedback} onSave={onSave} />
       ) : null}
