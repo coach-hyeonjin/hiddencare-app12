@@ -1104,7 +1104,9 @@ const coachConditionSummary = useMemo(() => {
     })
     .filter((item) => item.isAlert)
 }, [filteredCoachConditions])
-
+const uniqueAlertCoaches = useMemo(() => {
+  return [...new Map(coachAlertList.map((item) => [item.coach_id, item])).values()]
+}, [coachAlertList])
 const coachDashboardSummary = useMemo(() => {
   const avgPerformance =
     filteredCoachConditions.length > 0
@@ -3382,7 +3384,7 @@ const handleCoachReviewDelete = async (id) => {
   const avgStress = Number(coachConditionSummary.avgStress || 0)
   const avgFocus = Number(coachConditionSummary.avgFocus || 0)
   const avgPerformance = Number(coachDashboardSummary.avgPerformance || 0)
-  const alertCount = coachAlertList.length
+  const alertCount = uniqueAlertCoaches.length
 
   if (avgFatigue >= 4 && avgFocus <= 2.5) {
     return '피로도가 높고 집중도가 낮습니다. 수업 분산, 휴식 조정, 스케줄 재배치가 우선입니다.'
@@ -4606,11 +4608,11 @@ const getSalesAutoFeedback = () => {
 
   <div className="card">
     <h2>주의 필요 코치</h2>
-    {coachAlertList.length === 0 ? (
-      <p>현재 주의 필요 코치가 없습니다.</p>
-    ) : (
-      <div className="list-stack">
-        {coachAlertList.map((item) => (
+    {uniqueAlertCoaches.length === 0 ? (
+  <div className="compact-text">현재 주의 필요 코치가 없습니다.</div>
+) : (
+  <div className="list-stack">
+    {uniqueAlertCoaches.map((item) => (
           <div key={item.id} className="list-card">
             <div className="list-card-top">
               <strong>{item.coaches?.name || '이름 없음'}</strong>
@@ -5574,7 +5576,7 @@ const getSalesAutoFeedback = () => {
 
       <div className="coach-summary-card">
         <span>주의 필요 코치</span>
-        <strong>{coachAlertList.length}</strong>
+       <strong>{uniqueAlertCoaches.length}</strong>
         <div className="compact-text">피로도, 스트레스, 집중도, 행동 점수 기준</div>
       </div>
     </div>
@@ -5615,11 +5617,11 @@ const getSalesAutoFeedback = () => {
 
       <div className="card">
         <h3>주의 필요 코치</h3>
-        {coachAlertList.length === 0 ? (
-          <div className="compact-text">현재 주의 필요 코치가 없습니다.</div>
-        ) : (
-          <div className="list-stack">
-            {coachAlertList.map((item) => (
+        {uniqueAlertCoaches.length === 0 ? (
+  <div className="compact-text">현재 주의 필요 코치가 없습니다.</div>
+) : (
+  <div className="list-stack">
+    {uniqueAlertCoaches.map((item) => (
               <div key={item.id} className="list-card">
                 <div className="list-card-top">
                   <strong>{item.coaches?.name || '이름 없음'}</strong>
@@ -6105,7 +6107,7 @@ const getSalesAutoFeedback = () => {
 
       <div className="coach-summary-card">
         <span>주의 필요 코치</span>
-        <strong>{coachAlertList.length}</strong>
+        <strong>{uniqueAlertCoaches.length}</strong>
         <div className="compact-text">주의 코치 우선 확인 필요</div>
       </div>
 
@@ -6202,11 +6204,11 @@ const getSalesAutoFeedback = () => {
 
     <div className="card">
       <h3>주의 필요 코치</h3>
-      {coachAlertList.length === 0 ? (
-        <p>현재 주의 필요 코치가 없습니다.</p>
-      ) : (
-        <div className="list-stack">
-          {coachAlertList.map((item) => (
+      {uniqueAlertCoaches.length === 0 ? (
+  <div className="compact-text">현재 주의 필요 코치가 없습니다.</div>
+) : (
+  <div className="list-stack">
+    {uniqueAlertCoaches.map((item) => (
             <div key={item.id} className="list-card">
               <div className="list-card-top">
                 <strong>{item.coaches?.name || '이름 없음'}</strong>
