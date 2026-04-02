@@ -527,103 +527,7 @@ export default function AdminDashboard({ profile, currentAdminId, currentGymId, 
   const [dietMemberFilter, setDietMemberFilter] = useState('')
   const [dietSearch, setDietSearch] = useState('')
 
- 
-  const ROUTINE_PRESETS = {
-  근력운동: {
-    가슴: [
-      { exercise_name: '벤치프레스', input_type: 'reps', sets: '4', value: '10', unit: '회', note: '' },
-      { exercise_name: '인클라인 덤벨프레스', input_type: 'reps', sets: '3', value: '12', unit: '회', note: '' },
-    ],
-    어깨: [
-      { exercise_name: '숄더프레스', input_type: 'reps', sets: '4', value: '10', unit: '회', note: '' },
-      { exercise_name: '사이드 레터럴 레이즈', input_type: 'reps', sets: '3', value: '15', unit: '회', note: '' },
-    ],
-    등: [
-      { exercise_name: '랫풀다운', input_type: 'reps', sets: '4', value: '12', unit: '회', note: '' },
-      { exercise_name: '시티드 로우', input_type: 'reps', sets: '3', value: '12', unit: '회', note: '' },
-    ],
-    하체: [
-      { exercise_name: '레그프레스', input_type: 'reps', sets: '4', value: '12', unit: '회', note: '' },
-      { exercise_name: '레그컬', input_type: 'reps', sets: '3', value: '15', unit: '회', note: '' },
-    ],
-    팔: [
-      { exercise_name: '바벨컬', input_type: 'reps', sets: '3', value: '12', unit: '회', note: '' },
-      { exercise_name: '케이블 푸시다운', input_type: 'reps', sets: '3', value: '15', unit: '회', note: '' },
-    ],
-    '3분할': [
-      { exercise_name: '1일차: 가슴 / 삼두', input_type: 'custom', sets: '', value: '', unit: '', note: '' },
-      { exercise_name: '2일차: 등 / 이두', input_type: 'custom', sets: '', value: '', unit: '', note: '' },
-      { exercise_name: '3일차: 하체 / 어깨', input_type: 'custom', sets: '', value: '', unit: '', note: '' },
-    ],
-    '4분할': [
-      { exercise_name: '1일차: 가슴', input_type: 'custom', sets: '', value: '', unit: '', note: '' },
-      { exercise_name: '2일차: 등', input_type: 'custom', sets: '', value: '', unit: '', note: '' },
-      { exercise_name: '3일차: 하체', input_type: 'custom', sets: '', value: '', unit: '', note: '' },
-      { exercise_name: '4일차: 어깨 / 팔', input_type: 'custom', sets: '', value: '', unit: '', note: '' },
-    ],
-    '5분할': [
-      { exercise_name: '1일차: 가슴', input_type: 'custom', sets: '', value: '', unit: '', note: '' },
-      { exercise_name: '2일차: 등', input_type: 'custom', sets: '', value: '', unit: '', note: '' },
-      { exercise_name: '3일차: 하체', input_type: 'custom', sets: '', value: '', unit: '', note: '' },
-      { exercise_name: '4일차: 어깨', input_type: 'custom', sets: '', value: '', unit: '', note: '' },
-      { exercise_name: '5일차: 팔', input_type: 'custom', sets: '', value: '', unit: '', note: '' },
-    ],
-  },
-  재활운동: {
-    '어깨 재활': [
-      { exercise_name: '밴드 외회전', input_type: 'reps', sets: '3', value: '15', unit: '회', note: '' },
-      { exercise_name: '월슬라이드', input_type: 'time', sets: '2', value: '30', unit: '초', note: '' },
-    ],
-    '무릎 재활': [
-      { exercise_name: '터미널 니 익스텐션', input_type: 'reps', sets: '3', value: '15', unit: '회', note: '' },
-      { exercise_name: '스텝업', input_type: 'reps', sets: '3', value: '10', unit: '회', note: '' },
-    ],
-    '허리 재활': [
-      { exercise_name: '데드버그', input_type: 'reps', sets: '3', value: '10', unit: '회', note: '' },
-      { exercise_name: '버드독', input_type: 'time', sets: '3', value: '20', unit: '초', note: '' },
-    ],
-  },
-  기능성운동: {
-    가동성: [
-      { exercise_name: '고관절 90/90', input_type: 'time', sets: '2', value: '40', unit: '초', note: '' },
-      { exercise_name: '흉추 회전', input_type: 'reps', sets: '2', value: '10', unit: '회', note: '' },
-    ],
-    안정성: [
-      { exercise_name: '싱글레그 밸런스', input_type: 'time', sets: '3', value: '20', unit: '초', note: '' },
-      { exercise_name: '데드버그', input_type: 'reps', sets: '3', value: '10', unit: '회', note: '' },
-    ],
-  },
-  스트레칭: {
-    '전신 스트레칭': [
-      { exercise_name: '햄스트링 스트레칭', input_type: 'time', sets: '2', value: '30', unit: '초', note: '' },
-      { exercise_name: '흉추 스트레칭', input_type: 'time', sets: '2', value: '30', unit: '초', note: '' },
-    ],
-    '고관절 가동성': [
-      { exercise_name: '90/90 스트레칭', input_type: 'time', sets: '2', value: '40', unit: '초', note: '' },
-      { exercise_name: '힙 플렉서 스트레칭', input_type: 'time', sets: '2', value: '30', unit: '초', note: '' },
-    ],
-  },
-}
-
-const createEmptyRoutineItem = () => ({
-  exercise_name: '',
-  input_type: 'reps',
-  sets: '',
-  value: '',
-  unit: '회',
-  note: '',
-})
-
-const [routineForm, setRoutineForm] = useState({
-  title: '루틴',
-  category_type: '근력운동',
-  category_name: '',
-  items: [],
-  content: '',
-})
-
-const [routinePresetType, setRoutinePresetType] = useState('근력운동')
-const [routinePresetName, setRoutinePresetName] = useState('')
+  const [routineForm, setRoutineForm] = useState({ title: '루틴', content: '' })
   const [manualTarget, setManualTarget] = useState('member')
   const [manualForm, setManualForm] = useState({ title: '', content: '' })
   const [manuals, setManuals] = useState([])
@@ -872,74 +776,6 @@ const getBurnoutSignalText = (checks = []) => {
     ...prev,
     [id]: !prev[id],
   }))
-}
-  const applyRoutinePreset = (type, name) => {
-  const presetItems = ROUTINE_PRESETS?.[type]?.[name] || []
-
-  setRoutinePresetType(type)
-  setRoutinePresetName(name)
-
-  setRoutineForm((prev) => ({
-    ...prev,
-    title: name || '루틴',
-    category_type: type,
-    category_name: name,
-    items: presetItems.map((item) => ({ ...item })),
-    content: '',
-  }))
-}
-
-const addRoutineItem = () => {
-  setRoutineForm((prev) => ({
-    ...prev,
-    items: [...(prev.items || []), createEmptyRoutineItem()],
-  }))
-}
-
-const updateRoutineItem = (index, key, value) => {
-  setRoutineForm((prev) => ({
-    ...prev,
-    items: (prev.items || []).map((item, idx) =>
-      idx === index
-        ? {
-            ...item,
-            [key]: value,
-            ...(key === 'input_type'
-              ? {
-                  unit:
-                    value === 'time'
-                      ? '초'
-                      : value === 'reps'
-                      ? '회'
-                      : value === 'custom'
-                      ? ''
-                      : item.unit,
-                }
-              : {}),
-          }
-        : item
-    ),
-  }))
-}
-
-const removeRoutineItem = (index) => {
-  setRoutineForm((prev) => ({
-    ...prev,
-    items: (prev.items || []).filter((_, idx) => idx !== index),
-  }))
-}
-
-const convertRoutineItemsToContent = (items = []) => {
-  return items
-    .map((item) => {
-      const name = item.exercise_name || ''
-      const sets = item.sets ? `${item.sets}세트` : ''
-      const value = item.value ? `${item.value}${item.unit || ''}` : ''
-      const note = item.note ? ` (${item.note})` : ''
-      return [name, sets, value].filter(Boolean).join(' / ') + note
-    })
-    .filter(Boolean)
-    .join('\n')
 }
   const filteredExercises = useMemo(() => {
     const keyword = exerciseSearch.trim().toLowerCase()
@@ -1540,20 +1376,12 @@ useEffect(() => {
 
   useEffect(() => {
     if (!selectedMemberId) {
-  setRoutineForm({
-    title: '루틴',
-    category_type: '근력운동',
-    category_name: '',
-    items: [],
-    content: '',
-  })
-  setRoutinePresetType('근력운동')
-  setRoutinePresetName('')
-  setAdminNotes([])
-  setMemberHealthLogs([])
-  setAdminNoteInput('')
-  return
-}
+      setRoutineForm({ title: '루틴', content: '' })
+      setAdminNotes([])
+      setMemberHealthLogs([])
+      setAdminNoteInput('')
+      return
+    }
     loadRoutine(selectedMemberId)
     loadAdminNotes(selectedMemberId)
     loadHealthLogs(selectedMemberId)
@@ -1770,36 +1598,21 @@ const loadBrands = async () => {
 }
 
   const loadRoutine = async (memberId) => {
-  const { data } = await supabase
-    .from('member_routines')
-    .select('*')
-    .eq('member_id', memberId)
-    .maybeSingle()
+    const { data } = await supabase
+      .from('member_routines')
+      .select('*')
+      .eq('member_id', memberId)
+      .maybeSingle()
 
-  if (data) {
-    setRoutineForm({
-      title: data.title || '루틴',
-      category_type: data.category_type || '근력운동',
-      category_name: data.category_name || '',
-      items: [],
-      content: data.content || '',
-    })
-
-    setRoutinePresetType(data.category_type || '근력운동')
-    setRoutinePresetName(data.category_name || '')
-  } else {
-    setRoutineForm({
-      title: '루틴',
-      category_type: '근력운동',
-      category_name: '',
-      items: [],
-      content: '',
-    })
-
-    setRoutinePresetType('근력운동')
-    setRoutinePresetName('')
+    if (data) {
+      setRoutineForm({
+        title: data.title || '루틴',
+        content: data.content || '',
+      })
+    } else {
+      setRoutineForm({ title: '루틴', content: '' })
+    }
   }
-}
 
   const loadManuals = async () => {
     const { data } = await supabase.from('app_manuals').select('*').order('target_role')
@@ -2294,11 +2107,11 @@ const clearAdminAlerts = () => {
       setMessage('루틴을 저장할 회원을 먼저 선택해주세요.')
       return
     }
-const contentText = convertRoutineItemsToContent(routineForm.items || [])
+
     const payload = {
       member_id: selectedMemberId,
       title: routineForm.title?.trim() || '루틴',
-      content: contentText,
+      content: routineForm.content?.trim() || '',
     }
 
     const { data: existing } = await supabase
@@ -4071,165 +3884,33 @@ const getSalesAutoFeedback = () => {
       </div>
 
       <div className="stack-gap">
-  <div className="grid-2">
-    <label className="field">
-      <span>루틴 유형</span>
-      <select
-        value={routinePresetType}
-        onChange={(e) => {
-          const nextType = e.target.value
-          setRoutinePresetType(nextType)
-          setRoutinePresetName('')
-          setRoutineForm((prev) => ({
-            ...prev,
-            category_type: nextType,
-            category_name: '',
-            items: [],
-          }))
-        }}
-      >
-        <option value="근력운동">근력운동</option>
-        <option value="재활운동">재활운동</option>
-        <option value="기능성운동">기능성운동</option>
-        <option value="스트레칭">스트레칭</option>
-      </select>
-    </label>
+        <label className="field">
+          <span>루틴 제목</span>
+          <input
+            value={routineForm.title}
+            onChange={(e) => setRoutineForm({ ...routineForm, title: e.target.value })}
+          />
+        </label>
 
-    <label className="field">
-      <span>세부 분류</span>
-      <select
-        value={routinePresetName}
-        onChange={(e) => applyRoutinePreset(routinePresetType, e.target.value)}
-      >
-        <option value="">선택하세요</option>
-        {Object.keys(ROUTINE_PRESETS[routinePresetType] || {}).map((name) => (
-          <option key={name} value={name}>
-            {name}
-          </option>
-        ))}
-      </select>
-    </label>
-  </div>
+        <label className="field">
+          <span>루틴 내용</span>
+          <textarea
+            rows="6"
+            value={routineForm.content}
+            onChange={(e) => setRoutineForm({ ...routineForm, content: e.target.value })}
+          />
+        </label>
 
-  <label className="field">
-    <span>루틴 제목</span>
-    <input
-      value={routineForm.title}
-      onChange={(e) =>
-        setRoutineForm((prev) => ({ ...prev, title: e.target.value }))
-      }
-    />
-  </label>
-
-  <div className="inline-actions wrap">
-    <button className="secondary-btn" type="button" onClick={addRoutineItem}>
-      운동 추가
-    </button>
-  </div>
-
-  <div className="list-stack">
-    {(routineForm.items || []).length === 0 ? (
-      <div className="compact-text">
-        등록된 운동이 없습니다. 세부 분류를 선택하거나 직접 추가하세요.
-      </div>
-    ) : (
-      routineForm.items.map((item, index) => (
-        <div key={index} className="list-card">
-          <div className="grid-2">
-            <label className="field">
-              <span>운동명</span>
-              <input
-                value={item.exercise_name}
-                onChange={(e) =>
-                  updateRoutineItem(index, 'exercise_name', e.target.value)
-                }
-              />
-            </label>
-
-            <label className="field">
-              <span>입력 방식</span>
-              <select
-                value={item.input_type}
-                onChange={(e) =>
-                  updateRoutineItem(index, 'input_type', e.target.value)
-                }
-              >
-                <option value="reps">횟수형</option>
-                <option value="time">시간형</option>
-                <option value="custom">자유입력형</option>
-              </select>
-            </label>
-          </div>
-
-          <div className="grid-3">
-            <label className="field">
-              <span>세트</span>
-              <input
-                value={item.sets}
-                onChange={(e) =>
-                  updateRoutineItem(index, 'sets', e.target.value)
-                }
-                placeholder="예: 3"
-              />
-            </label>
-
-            <label className="field">
-              <span>횟수 / 시간</span>
-              <input
-                value={item.value}
-                onChange={(e) =>
-                  updateRoutineItem(index, 'value', e.target.value)
-                }
-                placeholder="예: 12 또는 30"
-              />
-            </label>
-
-            <label className="field">
-              <span>단위</span>
-              <input
-                value={item.unit}
-                onChange={(e) =>
-                  updateRoutineItem(index, 'unit', e.target.value)
-                }
-                placeholder="회 / 초 / 분"
-              />
-            </label>
-          </div>
-
-          <label className="field">
-            <span>메모</span>
-            <input
-              value={item.note}
-              onChange={(e) =>
-                updateRoutineItem(index, 'note', e.target.value)
-              }
-              placeholder="예: 천천히, 좌우 동일, 통증 없는 범위"
-            />
-          </label>
-
-          <div className="inline-actions wrap">
-            <button
-              className="danger-btn"
-              type="button"
-              onClick={() => removeRoutineItem(index)}
-            >
-              이 운동 삭제
-            </button>
-          </div>
+        <div className="inline-actions wrap">
+          <button className="primary-btn" type="button" onClick={handleRoutineSave}>
+            루틴 저장
+          </button>
+          <button className="danger-btn" type="button" onClick={handleRoutineDelete}>
+            루틴 삭제
+          </button>
         </div>
-      ))
-    )}
-  </div>
-
-  <div className="inline-actions wrap">
-    <button className="primary-btn" type="button" onClick={handleRoutineSave}>
-      루틴 저장
-    </button>
-    <button className="danger-btn" type="button" onClick={handleRoutineDelete}>
-      루틴 삭제
-    </button>
-  </div>
-</div>
+      </div>
+    </div>
 
     <div className="sub-card">
       <h3>관리자 전용 메모</h3>
