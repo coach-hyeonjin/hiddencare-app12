@@ -5184,55 +5184,73 @@ const getSalesAutoFeedback = () => {
           </div>
 
           <div className="card">
-            <h2>매출 목록</h2>
-            <div className="list-stack">
-              {filteredSales.map((sale) => {
-                const collapsed = collapsedSales[sale.id] ?? true
-                return (
-                  <div key={sale.id} className="list-card">
-                    <div className="list-card-top">
-                      <strong>{sale.members?.name || '회원없음'} / {sale.programs?.name || '프로그램없음'}</strong>
-                      <span className="pill">{sale.sale_date}</span>
-                    </div>
-                    <div className="compact-text">
-                      간략히보기: {Number(sale.amount || 0).toLocaleString()}원 / {sale.payment_method}
-                    </div>
-                    <div className="inline-actions wrap">
-                      <button
-                        className="secondary-btn"
-                        type="button"
-                        onClick={() =>
-                          setCollapsedSales((prev) => ({
-                            ...prev,
-                            [sale.id]: !collapsed,
-                          }))
-                        }
-                      >
-                        {collapsed ? '상세히보기' : '간략히보기'}
-                      </button>
-                      <button className="secondary-btn" type="button" onClick={() => handleSaleEdit(sale)}>
-                        수정
-                      </button>
-                      <button className="danger-btn" type="button" onClick={() => handleSaleDelete(sale.id)}>
-                        삭제
-                      </button>
-                    </div>
+  <h2>매출 목록</h2>
 
-                    {!collapsed ? (
-                      <div className="detail-box">
-                        <p><strong>구매 세션:</strong> {sale.purchased_session_count || 0}</p>
-                        <p><strong>서비스 세션:</strong> {sale.service_session_count || 0}</p>
-                        <p><strong>메모:</strong> {sale.memo || '-'}</p>
-                        <p><strong>VIP:</strong> {sale.is_vip ? '예' : '아니오'}</p>
-                      </div>
-                    ) : null}
-                  </div>
-                )
-              })}
+  <div className="list-stack">
+    {filteredSales.length === 0 ? (
+      <div className="empty-box">해당 월의 매출 목록이 없습니다.</div>
+    ) : (
+      filteredSales.map((sale) => {
+        const collapsed = collapsedSales[sale.id] ?? true
+
+        return (
+          <div key={sale.id} className="list-card">
+            <div className="list-card-top">
+              <strong>
+                {sale.members?.name || '회원없음'} / {sale.programs?.name || '프로그램없음'}
+              </strong>
+              <span className="pill">{sale.sale_date}</span>
             </div>
+
+            <div className="compact-text">
+              간략히보기: {Number(sale.amount || 0).toLocaleString()}원 / {sale.payment_method}
+            </div>
+
+            <div className="inline-actions wrap">
+              <button
+                className="secondary-btn"
+                type="button"
+                onClick={() =>
+                  setCollapsedSales((prev) => ({
+                    ...prev,
+                    [sale.id]: !collapsed,
+                  }))
+                }
+              >
+                {collapsed ? '상세히보기' : '간략히보기'}
+              </button>
+
+              <button
+                className="secondary-btn"
+                type="button"
+                onClick={() => handleSaleEdit(sale)}
+              >
+                수정
+              </button>
+
+              <button
+                className="danger-btn"
+                type="button"
+                onClick={() => handleSaleDelete(sale.id)}
+              >
+                삭제
+              </button>
+            </div>
+
+            {!collapsed ? (
+              <div className="detail-box">
+                <p><strong>구매 세션:</strong> {sale.purchased_session_count || 0}</p>
+                <p><strong>서비스 세션:</strong> {sale.service_session_count || 0}</p>
+                <p><strong>메모:</strong> {sale.memo || '-'}</p>
+                <p><strong>VIP:</strong> {sale.is_vip ? '예' : '아니오'}</p>
+              </div>
+            ) : null}
           </div>
-        </div>
-      )}
+        )
+      })
+    )}
+  </div>
+</div>
 
       {activeTab === '세일즈일지' && (
   <div className="two-col sales-log-layout">
