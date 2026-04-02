@@ -8185,14 +8185,6 @@ const getSalesAutoFeedback = () => {
   </div>
 )
 }
-function DietAdminCard({ diet, memberName, collapsed, onToggle, onSave, onDelete }) {
-  const [feedback, setFeedback] = useState(diet.coach_feedback || '')
-
-  useEffect(() => {
-    setFeedback(diet.coach_feedback || '')
-  }, [diet.coach_feedback])
-
-  return (
 
 function DietAdminCard({ diet, memberName, collapsed, onToggle, onSave, onDelete }) {
   const [feedback, setFeedback] = useState(diet.coach_feedback || '')
