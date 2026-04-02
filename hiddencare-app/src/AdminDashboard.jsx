@@ -933,11 +933,9 @@ const groupedWorkoutCards = useMemo(() => {
 
   const filteredSales = useMemo(() => {
   return salesRecords
-    .filter((sale) => getMonthKey(sale.sale_date) === saleMonth)
+    .filter((sale) => getMonthKey(sale.sale_date) === selectedStatsMonth)
     .filter((sale) => {
-      const matchesPayment =
-        salePaymentFilter === 'all' || sale.payment_method === salePaymentFilter
-
+      const matchesPayment = salePaymentFilter === 'all' || sale.payment_method === salePaymentFilter
       const matchesKeyword =
         !saleSearch.trim() ||
         textIncludes(sale.members?.name, saleSearch) ||
@@ -949,7 +947,7 @@ const groupedWorkoutCards = useMemo(() => {
 
       return matchesPayment && matchesKeyword
     })
-}, [salesRecords, saleMonth, saleSearch, salePaymentFilter])
+}, [salesRecords, selectedStatsMonth, saleSearch, salePaymentFilter])
 
  const salesStatsExtended = useMemo(() => {
   const totalSales = filteredSales.reduce((sum, sale) => sum + Number(sale.amount || 0), 0)
@@ -1785,79 +1783,28 @@ setPartnerCategories(uniqueCategories)
   setPartnerUsages(data || [])
 }
 
-const loadSalesRecords = async () => {
+ const loadSalesRecords = async () => {
   if (!currentAdminId) {
     setSalesRecords([])
     setCollapsedSales({})
     return
   }
 
-  const { data, error } = await supabase
+  const { data } = await supabase
     .from('sales_records')
-    .select('*')
+    .select('*, members(id, name), programs(id, name)')
     .eq('admin_id', currentAdminId)
     .order('sale_date', { ascending: false })
     .order('created_at', { ascending: false })
 
-  if (error) {
-    console.error('매출 목록 불러오기 실패:', error)
-    setMessage(`매출 목록 불러오기 실패: ${error.message}`)
-    setSalesRecords([])
-    setCollapsedSales({})
-    return
+  if (data) {
+    const collapsed = {}
+    data.forEach((sale) => {
+      collapsed[sale.id] = true
+    })
+    setSalesRecords(data)
+    setCollapsedSales(collapsed)
   }
-
-  const memberIds = [...new Set((data || []).map((sale) => sale.member_id).filter(Boolean))]
-  const programIds = [...new Set((data || []).map((sale) => sale.program_id).filter(Boolean))]
-
-  let memberMap = {}
-  let programMap = {}
-
-  if (memberIds.length > 0) {
-    const { data: memberRows, error: memberError } = await supabase
-      .from('members')
-      .select('id, name')
-      .in('id', memberIds)
-
-    if (memberError) {
-      console.error('매출 회원 정보 불러오기 실패:', memberError)
-    } else {
-      memberMap = (memberRows || []).reduce((acc, row) => {
-        acc[row.id] = row
-        return acc
-      }, {})
-    }
-  }
-
-  if (programIds.length > 0) {
-    const { data: programRows, error: programError } = await supabase
-      .from('programs')
-      .select('id, name')
-      .in('id', programIds)
-
-    if (programError) {
-      console.error('매출 프로그램 정보 불러오기 실패:', programError)
-    } else {
-      programMap = (programRows || []).reduce((acc, row) => {
-        acc[row.id] = row
-        return acc
-      }, {})
-    }
-  }
-
-  const merged = (data || []).map((sale) => ({
-    ...sale,
-    members: sale.member_id ? memberMap[sale.member_id] || null : null,
-    programs: sale.program_id ? programMap[sale.program_id] || null : null,
-  }))
-
-  const collapsed = {}
-  merged.forEach((sale) => {
-    collapsed[sale.id] = true
-  })
-
-  setSalesRecords(merged)
-  setCollapsedSales(collapsed)
 }
 const loadSalesSummary = async (month) => {
   if (!currentAdminId) {
@@ -3090,7 +3037,7 @@ const handlePartnerUsageReject = async (usageId) => {
 
     resetSaleForm()
     await loadSalesRecords()
-   await loadSalesSummary(saleMonth)
+    await loadSalesSummary(selectedStatsMonth)
   }
 
   const handleSaleEdit = (sale) => {
@@ -3115,7 +3062,7 @@ const handlePartnerUsageReject = async (usageId) => {
     if (!window.confirm('매출 기록을 삭제할까요?')) return
     await supabase.from('sales_records').delete().eq('id', saleId)
     await loadSalesRecords()
-   await loadSalesSummary(saleMonth)
+   await loadSalesSummary(selectedStatsMonth)
     setMessage('매출 기록이 삭제되었습니다.')
   }
 const toggleSalesArrayValue = (field, value) => {
@@ -3856,55 +3803,77 @@ const getSalesAutoFeedback = () => {
     </div>
   </div>
 
-<div className="list-stack">
-  {filteredSales.length === 0 ? (
-    <div className="empty-box">해당 월의 매출 목록이 없습니다.</div>
-  ) : (
-    filteredSales.map((sale) => {
-      const collapsed = collapsedSales[sale.id] ?? true
-      return (
-        <div key={sale.id} className="list-card">
-          <div className="list-card-top">
-            <strong>{sale.members?.name || '회원없음'} / {sale.programs?.name || '프로그램없음'}</strong>
-            <span className="pill">{sale.sale_date}</span>
-          </div>
-          <div className="compact-text">
-            간략히보기: {Number(sale.amount || 0).toLocaleString()}원 / {sale.payment_method}
-          </div>
-          <div className="inline-actions wrap">
-            <button
-              className="secondary-btn"
-              type="button"
-              onClick={() =>
-                setCollapsedSales((prev) => ({
-                  ...prev,
-                  [sale.id]: !collapsed,
-                }))
-              }
-            >
-              {collapsed ? '상세히보기' : '간략히보기'}
-            </button>
-            <button className="secondary-btn" type="button" onClick={() => handleSaleEdit(sale)}>
-              수정
-            </button>
-            <button className="danger-btn" type="button" onClick={() => handleSaleDelete(sale.id)}>
-              삭제
-            </button>
-          </div>
+ <div className="list-stack">
 
-          {!collapsed ? (
-            <div className="detail-box">
-              <p><strong>구매 세션:</strong> {sale.purchased_session_count || 0}</p>
-              <p><strong>서비스 세션:</strong> {sale.service_session_count || 0}</p>
-              <p><strong>메모:</strong> {sale.memo || '-'}</p>
-              <p><strong>VIP:</strong> {sale.is_vip ? '예' : '아니오'}</p>
+  {filteredMemberStats.length === 0 ? (
+    <div className="workout-list-empty">검색 결과가 없습니다.</div>
+  ) : null}
+
+  {filteredMemberStats.map((member) => {
+                const isSelected = selectedMemberId === member.id
+                return (
+                  <div
+                    key={member.id}
+                    className={`list-card ${isSelected ? 'selected' : ''}`}
+                    onClick={() => {
+                      setSelectedMemberId(member.id)
+                      setActiveTab('회원상세')
+                   }}
+                  >
+                    <div className="list-card-top">
+                      <strong>{member.name}</strong>
+                      <span className="pill">남은 {member.remainingSessions}회</span>
+                    </div>
+
+                    <div className="compact-text">
+                      목표: {member.goal || '-'} / Access: {member.access_code}
+                    </div>
+                    <div className="compact-text">
+                      PT {member.ptCount}회 / 개인운동 {member.personalCount}회 / 프로그램 {member.programs?.name || '-'}
+                    </div>
+
+                    <div className="inline-actions wrap">
+                      <button
+                        type="button"
+                        className="secondary-btn"
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          handleMemberEdit(member)
+                        }}
+                      >
+                        수정
+                      </button>
+
+                      <button
+                        type="button"
+                        className="secondary-btn"
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          copyMemberLink(member)
+                        }}
+                      >
+                        링크 복사
+                      </button>
+
+                      <button
+                        type="button"
+                        className="danger-btn"
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          handleMemberDelete(member.id)
+                        }}
+                      >
+                        삭제
+                      </button>
+                    </div>
+                  </div>
+                )
+              })}
             </div>
-          ) : null}
+
+          </section>
         </div>
-      )
-    })
-  )}
-</div>
+      )}
 {activeTab === '회원상세' && selectedMember && (
   <div className="card">
     <h2>회원 상세</h2>
@@ -5184,75 +5153,56 @@ const getSalesAutoFeedback = () => {
           </div>
 
           <div className="card">
-  <h2>매출 목록</h2>
+            <h2>매출 목록</h2>
+            <div className="list-stack">
+              {filteredSales.map((sale) => {
+                const collapsed = collapsedSales[sale.id] ?? true
+                return (
+                  <div key={sale.id} className="list-card">
+                    <div className="list-card-top">
+                      <strong>{sale.members?.name || '회원없음'} / {sale.programs?.name || '프로그램없음'}</strong>
+                      <span className="pill">{sale.sale_date}</span>
+                    </div>
+                    <div className="compact-text">
+                      간략히보기: {Number(sale.amount || 0).toLocaleString()}원 / {sale.payment_method}
+                    </div>
+                    <div className="inline-actions wrap">
+                      <button
+                        className="secondary-btn"
+                        type="button"
+                        onClick={() =>
+                          setCollapsedSales((prev) => ({
+                            ...prev,
+                            [sale.id]: !collapsed,
+                          }))
+                        }
+                      >
+                        {collapsed ? '상세히보기' : '간략히보기'}
+                      </button>
+                      <button className="secondary-btn" type="button" onClick={() => handleSaleEdit(sale)}>
+                        수정
+                      </button>
+                      <button className="danger-btn" type="button" onClick={() => handleSaleDelete(sale.id)}>
+                        삭제
+                      </button>
+                    </div>
 
-  <div className="list-stack">
-    {filteredSales.length === 0 ? (
-      <div className="empty-box">해당 월의 매출 목록이 없습니다.</div>
-    ) : (
-      filteredSales.map((sale) => {
-        const collapsed = collapsedSales[sale.id] ?? true
-
-        return (
-          <div key={sale.id} className="list-card">
-            <div className="list-card-top">
-              <strong>
-                {sale.members?.name || '회원없음'} / {sale.programs?.name || '프로그램없음'}
-              </strong>
-              <span className="pill">{sale.sale_date}</span>
+                    {!collapsed ? (
+                      <div className="detail-box">
+                        <p><strong>구매 세션:</strong> {sale.purchased_session_count || 0}</p>
+                        <p><strong>서비스 세션:</strong> {sale.service_session_count || 0}</p>
+                        <p><strong>메모:</strong> {sale.memo || '-'}</p>
+                        <p><strong>VIP:</strong> {sale.is_vip ? '예' : '아니오'}</p>
+                      </div>
+                    ) : null}
+                  </div>
+                )
+              })}
             </div>
-
-            <div className="compact-text">
-              간략히보기: {Number(sale.amount || 0).toLocaleString()}원 / {sale.payment_method}
-            </div>
-
-            <div className="inline-actions wrap">
-              <button
-                className="secondary-btn"
-                type="button"
-                onClick={() =>
-                  setCollapsedSales((prev) => ({
-                    ...prev,
-                    [sale.id]: !collapsed,
-                  }))
-                }
-              >
-                {collapsed ? '상세히보기' : '간략히보기'}
-              </button>
-
-              <button
-                className="secondary-btn"
-                type="button"
-                onClick={() => handleSaleEdit(sale)}
-              >
-                수정
-              </button>
-
-              <button
-                className="danger-btn"
-                type="button"
-                onClick={() => handleSaleDelete(sale.id)}
-              >
-                삭제
-              </button>
-            </div>
-
-            {!collapsed ? (
-              <div className="detail-box">
-                <p><strong>구매 세션:</strong> {sale.purchased_session_count || 0}</p>
-                <p><strong>서비스 세션:</strong> {sale.service_session_count || 0}</p>
-                <p><strong>메모:</strong> {sale.memo || '-'}</p>
-                <p><strong>VIP:</strong> {sale.is_vip ? '예' : '아니오'}</p>
-              </div>
-            ) : null}
           </div>
-        )
-      })
-    )}
-  </div>
-</div>
         </div>
       )}
+
       {activeTab === '세일즈일지' && (
   <div className="two-col sales-log-layout">
     <section className="card">
