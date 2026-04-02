@@ -559,6 +559,7 @@ const [coachReviewForm, setCoachReviewForm] = useState(emptyCoachReviewForm)
 const [editingCoachReviewId, setEditingCoachReviewId] = useState(null)
 const [coachReviewMonth, setCoachReviewMonth] = useState(new Date().toISOString().slice(0, 7))
 const [coachReviewCoachFilter, setCoachReviewCoachFilter] = useState('')
+  const [collapsedCoachConditions, setCollapsedCoachConditions] = useState({})
   const [notices, setNotices] = useState([])
   const [noticeForm, setNoticeForm] = useState(emptyNoticeForm)
   const [editingNoticeId, setEditingNoticeId] = useState(null)
@@ -723,6 +724,12 @@ const toggleChecklistItem = (field, item) => {
       ? prev.filter((v) => v !== item)
       : [...prev, item]
   )
+}
+  const toggleCoachConditionCollapse = (id) => {
+  setCollapsedCoachConditions((prev) => ({
+    ...prev,
+    [id]: !prev[id],
+  }))
 }
   const filteredExercises = useMemo(() => {
     const keyword = exerciseSearch.trim().toLowerCase()
@@ -5869,73 +5876,85 @@ const getSalesAutoFeedback = () => {
         <div className="list-stack">
           {filteredCoachConditions.map((item) => (
             <div key={item.id} className="list-card">
-              <div className="list-card-top">
-                <strong>{item.coaches?.name || '-'}</strong>
-                <span className="pill">{item.check_month || '-'}</span>
-              </div>
+  <div className="list-card-top">
+    <strong>{item.coaches?.name || '-'}</strong>
+    <span className="pill">{item.check_month || '-'}</span>
+  </div>
 
-              <div className="compact-text">
-                상태레벨 {COACH_LEVEL_META[item.status_level]?.label || '-'} / 행동점수 {item.performance_score || 0}점 / 행동레벨 {item.performance_level || '-'}
-              </div>
+  <div className="compact-text">
+    상태레벨 {COACH_LEVEL_META[item.status_level]?.label || '-'} / 행동점수 {item.performance_score || 0}점 / 행동레벨 {item.performance_level || '-'}
+  </div>
 
-              <div className="compact-text">
-                컨디션 {item.condition_score || 0} / 피로도 {item.fatigue_score || 0} / 스트레스 {item.stress_score || 0} / 집중도 {item.focus_score || 0}
-              </div>
+  <div className="compact-text">
+    컨디션 {item.condition_score || 0} / 피로도 {item.fatigue_score || 0} / 스트레스 {item.stress_score || 0} / 집중도 {item.focus_score || 0}
+  </div>
 
-              <div className="compact-text">
-  계획 목표: 매출 {Number(item.monthly_goal_revenue || 0).toLocaleString()}원 / 신규상담 {item.monthly_goal_new_leads || 0}건 / 유지 {item.monthly_goal_retention || 0}건 / 콘텐츠 {item.monthly_goal_content || 0}건
+  <div className="inline-actions wrap" style={{ marginTop: '8px' }}>
+    <button
+      className="secondary-btn"
+      type="button"
+      onClick={() => toggleCoachConditionCollapse(item.id)}
+    >
+      {collapsedCoachConditions[item.id] ? '상세히 보기' : '간략히 보기'}
+    </button>
+  </div>
+
+  {!collapsedCoachConditions[item.id] && (
+    <>
+      <div className="compact-text">
+        계획 목표: 매출 {Number(item.monthly_goal_revenue || 0).toLocaleString()}원 / 신규상담 {item.monthly_goal_new_leads || 0}건 / 유지 {item.monthly_goal_retention || 0}건 / 콘텐츠 {item.monthly_goal_content || 0}건
+      </div>
+
+      <div className="compact-text">
+        지원 필요: {item.support_needed || '-'}
+      </div>
+
+      <div className="compact-text">
+        메모: {item.issue_note || '-'}
+      </div>
+
+      <div className="compact-text">
+        자동 해석:{' '}
+        {getCoachStatusText({
+          conditionScore: item.condition_score,
+          fatigueScore: item.fatigue_score,
+          stressScore: item.stress_score,
+          focusScore: item.focus_score,
+          performanceScore: item.performance_score,
+        })}
+      </div>
+
+      <div className="compact-text">
+        안내: 번아웃이 아니라면 체크하지 않으셔도 됩니다. 피로가 올라오는 시기에만 가볍게 확인해주세요.
+      </div>
+
+      {item.condition_checks?.length ? (
+        <div className="compact-text">컨디션 체크: {item.condition_checks.join(', ')}</div>
+      ) : null}
+
+      {item.fatigue_checks?.length ? (
+        <div className="compact-text">피로 체크: {item.fatigue_checks.join(', ')}</div>
+      ) : null}
+
+      {item.stress_checks?.length ? (
+        <div className="compact-text">스트레스 체크: {item.stress_checks.join(', ')}</div>
+      ) : null}
+
+      {item.focus_checks?.length ? (
+        <div className="compact-text">집중도 체크: {item.focus_checks.join(', ')}</div>
+      ) : null}
+    </>
+  )}
+
+  <div className="inline-actions wrap">
+    <button className="secondary-btn" type="button" onClick={() => handleCoachConditionEdit(item)}>
+      수정
+    </button>
+    <button className="danger-btn" type="button" onClick={() => handleCoachConditionDelete(item.id)}>
+      삭제
+    </button>
+  </div>
 </div>
-
-              <div className="compact-text">
-                지원 필요: {item.support_needed || '-'}
-              </div>
-
-              <div className="compact-text">
-                메모: {item.issue_note || '-'}
-              </div>
-
-              <div className="compact-text">
-                자동 해석:{' '}
-                {getCoachStatusText({
-                  conditionScore: item.condition_score,
-                  fatigueScore: item.fatigue_score,
-                  stressScore: item.stress_score,
-                  focusScore: item.focus_score,
-                  performanceScore: item.performance_score,
-                })}
-              </div>
-
-              {item.condition_checks?.length ? (
-                <div className="compact-text">컨디션 체크: {item.condition_checks.join(', ')}</div>
-              ) : null}
-
-              {item.fatigue_checks?.length ? (
-                <div className="compact-text">피로 체크: {item.fatigue_checks.join(', ')}</div>
-              ) : null}
-
-              {item.stress_checks?.length ? (
-                <div className="compact-text">스트레스 체크: {item.stress_checks.join(', ')}</div>
-              ) : null}
-
-              {item.focus_checks?.length ? (
-                <div className="compact-text">집중도 체크: {item.focus_checks.join(', ')}</div>
-              ) : null}
-
-              <div className="inline-actions wrap">
-                <button className="secondary-btn" type="button" onClick={() => handleCoachConditionEdit(item)}>
-                  수정
-                </button>
-                <button className="danger-btn" type="button" onClick={() => handleCoachConditionDelete(item.id)}>
-                  삭제
-                </button>
-              </div>
-            </div>
-          ))}
-        </div>
-      )}
-    </div>
-  </section>
-)}
       {activeTab === '리포트' && (
   <section className="admin-section">
     <div className="section-head">
