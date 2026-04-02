@@ -653,7 +653,12 @@ const getCoachStatusText = ({ conditionScore, fatigueScore, stressScore, focusSc
     stressScore,
     focusScore,
   })
-
+const getSimpleStatus = (value) => {
+  if (value >= 4) return '좋음'
+  if (value >= 3) return '보통'
+  if (value >= 2) return '낮음'
+  return '위험'
+}
   const base = COACH_LEVEL_META[levelKey]?.description || ''
   const performanceLevel = getPerformanceLevel(performanceScore)
 
@@ -1046,6 +1051,27 @@ const coachConditionSummary = useMemo(() => {
     avgFatigue: filteredCoachConditions.reduce((sum, item) => sum + Number(item.fatigue_score || 0), 0) / total,
     avgFocus: filteredCoachConditions.reduce((sum, item) => sum + Number(item.focus_score || 0), 0) / total,
     avgStress: filteredCoachConditions.reduce((sum, item) => sum + Number(item.stress_score || 0), 0) / total,
+  }
+}, [filteredCoachConditions])
+  const burnoutSummary = useMemo(() => {
+  if (!filteredCoachConditions.length) return {
+    avgSignal: 0,
+    avgRecovery: 0,
+  }
+
+  const totalSignal = filteredCoachConditions.reduce(
+    (sum, item) => sum + (item.burnout_signal_count || 0),
+    0
+  )
+
+  const totalRecovery = filteredCoachConditions.reduce(
+    (sum, item) => sum + (item.burnout_recovery_count || 0),
+    0
+  )
+
+  return {
+    avgSignal: totalSignal / filteredCoachConditions.length,
+    avgRecovery: totalRecovery / filteredCoachConditions.length,
   }
 }, [filteredCoachConditions])
   const coachAlertList = useMemo(() => {
@@ -3131,6 +3157,11 @@ const handleCoachConditionSubmit = async (e) => {
   const payload = {
     coach_id: coachConditionForm.coach_id,
     check_month: coachConditionForm.check_month,
+      burnout_signal_checks: burnoutSignalChecks,
+  burnout_recovery_checks: burnoutRecoveryChecks,
+  burnout_signal_count: burnoutSignalChecks.length,
+  burnout_recovery_count: burnoutRecoveryChecks.length,
+  burnout_recovery_comment: getBurnoutRecoveryComment(burnoutRecoveryChecks),
 
     condition_checks: coachConditionForm.condition_checks || [],
     fatigue_checks: coachConditionForm.fatigue_checks || [],
@@ -3188,6 +3219,8 @@ const handleCoachConditionSubmit = async (e) => {
 }
 
 const handleCoachConditionEdit = (item) => {
+  setBurnoutSignalChecks(item.burnout_signal_checks || [])
+setBurnoutRecoveryChecks(item.burnout_recovery_checks || [])
   setCoachConditionForm({
     id: item.id,
     coach_id: item.coach_id || '',
@@ -4508,6 +4541,21 @@ const getSalesAutoFeedback = () => {
 
     <div className="coach-summary-grid">
       <div className="coach-summary-card">
+  <span>번아웃 의심 평균</span>
+  <strong>{Number(burnoutSummary.avgSignal || 0).toFixed(1)}</strong>
+  <div className="compact-text">
+    {burnoutSummary.avgSignal >= 3 ? '주의 필요' : '정상 범위'}
+  </div>
+</div>
+
+<div className="coach-summary-card">
+  <span>회복 체크 평균</span>
+  <strong>{Number(burnoutSummary.avgRecovery || 0).toFixed(1)}</strong>
+  <div className="compact-text">
+    {burnoutSummary.avgRecovery >= 3 ? '회복 중' : '관리 필요'}
+  </div>
+</div>
+      <div className="coach-summary-card">
         <span>이번달 총 매출</span>
         <strong>{Number(salesStatsExtended.totalSales || 0).toLocaleString()}원</strong>
         <div className="compact-text">
@@ -5505,6 +5553,9 @@ const getSalesAutoFeedback = () => {
       <div className="coach-summary-card">
         <span>평균 컨디션</span>
         <strong>{Number(coachConditionSummary.avgCondition || 0).toFixed(1)}</strong>
+        <div className="compact-text">
+  컨디션 {getSimpleStatus(coachConditionSummary.avgCondition)}
+</div>
         <div className="compact-text">
           집중도 {Number(coachConditionSummary.avgFocus || 0).toFixed(1)} / 피로도 {Number(coachConditionSummary.avgFatigue || 0).toFixed(1)}
         </div>
