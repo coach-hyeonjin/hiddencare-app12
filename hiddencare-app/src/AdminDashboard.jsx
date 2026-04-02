@@ -932,21 +932,22 @@ const groupedWorkoutCards = useMemo(() => {
   }, [dietLogs, dietMemberFilter, dietSearch, members])
 
   const filteredSales = useMemo(() => {
-    return salesRecords
-      .filter((sale) => getMonthKey(sale.sale_date) === saleMonth)
-      .filter((sale) => {
-        const matchesPayment = salePaymentFilter === 'all' || sale.payment_method === salePaymentFilter
-        const matchesKeyword =
-          !saleSearch.trim() ||
-          textIncludes(sale.members?.name, saleSearch) ||
-          textIncludes(sale.programs?.name, saleSearch) ||
-          textIncludes(sale.payment_method, saleSearch) ||
-          textIncludes(sale.memo, saleSearch) ||
-          textIncludes(sale.sale_date, saleSearch) ||
-          textIncludes(sale.amount, saleSearch)
-        return matchesPayment && matchesKeyword
-      })
-  }, [salesRecords, saleMonth, saleSearch, salePaymentFilter])
+  return salesRecords
+    .filter((sale) => getMonthKey(sale.sale_date) === selectedStatsMonth)
+    .filter((sale) => {
+      const matchesPayment = salePaymentFilter === 'all' || sale.payment_method === salePaymentFilter
+      const matchesKeyword =
+        !saleSearch.trim() ||
+        textIncludes(sale.members?.name, saleSearch) ||
+        textIncludes(sale.programs?.name, saleSearch) ||
+        textIncludes(sale.payment_method, saleSearch) ||
+        textIncludes(sale.memo, saleSearch) ||
+        textIncludes(sale.sale_date, saleSearch) ||
+        textIncludes(sale.amount, saleSearch)
+
+      return matchesPayment && matchesKeyword
+    })
+}, [salesRecords, selectedStatsMonth, saleSearch, salePaymentFilter])
 
  const salesStatsExtended = useMemo(() => {
   const totalSales = filteredSales.reduce((sum, sale) => sum + Number(sale.amount || 0), 0)
@@ -3036,7 +3037,7 @@ const handlePartnerUsageReject = async (usageId) => {
 
     resetSaleForm()
     await loadSalesRecords()
-    await loadSalesSummary(saleMonth)
+    await loadSalesSummary(selectedStatsMonth)
   }
 
   const handleSaleEdit = (sale) => {
@@ -3061,7 +3062,7 @@ const handlePartnerUsageReject = async (usageId) => {
     if (!window.confirm('매출 기록을 삭제할까요?')) return
     await supabase.from('sales_records').delete().eq('id', saleId)
     await loadSalesRecords()
-    await loadSalesSummary(saleMonth)
+   await loadSalesSummary(selectedStatsMonth)
     setMessage('매출 기록이 삭제되었습니다.')
   }
 const toggleSalesArrayValue = (field, value) => {
