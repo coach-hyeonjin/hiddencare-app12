@@ -405,7 +405,12 @@ function getBurnoutRecoveryComment(checks = []) {
 function randomCode() {
   return Math.random().toString(36).slice(2, 10).toUpperCase()
 }
-
+function getSimpleStatus(value) {
+  if (Number(value) >= 4) return '좋음'
+  if (Number(value) >= 3) return '보통'
+  if (Number(value) >= 2) return '낮음'
+  return '위험'
+}
 function formatDate(value) {
   return value || '-'
 }
@@ -5553,9 +5558,7 @@ const getSalesAutoFeedback = () => {
       <div className="coach-summary-card">
         <span>평균 컨디션</span>
         <strong>{Number(coachConditionSummary.avgCondition || 0).toFixed(1)}</strong>
-        <div className="compact-text">
-  컨디션 {getSimpleStatus(coachConditionSummary.avgCondition)}
-</div>
+        
         <div className="compact-text">
           집중도 {Number(coachConditionSummary.avgFocus || 0).toFixed(1)} / 피로도 {Number(coachConditionSummary.avgFatigue || 0).toFixed(1)}
         </div>
