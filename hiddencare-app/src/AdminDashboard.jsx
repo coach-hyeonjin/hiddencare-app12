@@ -5251,7 +5251,8 @@ const getSalesAutoFeedback = () => {
     )}
   </div>
 </div>
-)}
+        </div>
+      )}
       {activeTab === '세일즈일지' && (
   <div className="two-col sales-log-layout">
     <section className="card">
