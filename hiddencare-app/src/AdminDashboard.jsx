@@ -3593,18 +3593,26 @@ const getSalesAutoFeedback = () => {
         </button>
       </header>
 
-      <nav className="tab-row">
+      <div className="dashboard-layout">
+  <aside className="dashboard-sidebar">
+    <div className="dashboard-sidebar-scroll">
+      <nav className="side-tab-list">
         {TABS.map((tab) => (
           <button
             key={tab}
-            className={`tab-btn ${activeTab === tab ? 'active' : ''}`}
+            className={`side-tab-btn ${activeTab === tab ? 'active' : ''}`}
             onClick={() => setActiveTab(tab)}
+            type="button"
           >
             {tab}
           </button>
         ))}
       </nav>
+    </div>
+  </aside>
 
+  <section className="dashboard-main">
+    <div className="dashboard-main-scroll">
       {message ? <div className="message success">{message}</div> : null}
 
       {activeTab === '회원' && (
@@ -8079,18 +8087,12 @@ const getSalesAutoFeedback = () => {
             <div className="list-card-top">
               <div>
                 <strong>{item.name || '익명'}</strong>
-                <div className="compact-text">
-                  {item.phone || '-'}
-                </div>
+                <div className="compact-text">{item.phone || '-'}</div>
               </div>
 
               <div className="inline-actions wrap">
-                <span className="pill">
-                  {isAnswered ? '답변완료' : '미답변'}
-                </span>
-                <span className="pill">
-                  {(item.created_at || '').slice(0, 10)}
-                </span>
+                <span className="pill">{isAnswered ? '답변완료' : '미답변'}</span>
+                <span className="pill">{(item.created_at || '').slice(0, 10)}</span>
               </div>
             </div>
 
@@ -8177,9 +8179,21 @@ const getSalesAutoFeedback = () => {
     </div>
   </div>
 )}
+        </div>
+      </section>
     </div>
   )
 }
+
+
+function DietAdminCard({ diet, memberName, collapsed, onToggle, onSave, onDelete }) {
+  const [feedback, setFeedback] = useState(diet.coach_feedback || '')
+
+  useEffect(() => {
+    setFeedback(diet.coach_feedback || '')
+  }, [diet.coach_feedback])
+
+  return (
 
 function DietAdminCard({ diet, memberName, collapsed, onToggle, onSave, onDelete }) {
   const [feedback, setFeedback] = useState(diet.coach_feedback || '')
