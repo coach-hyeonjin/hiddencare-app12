@@ -5770,10 +5770,10 @@ const getSalesAutoFeedback = () => {
             performanceScore: coachConditionForm.performance_score,
           })}
         </p>
-      </div>
-<div className="compact-text">
+     <div className="compact-text">
   회복 안내: 번아웃이 아니라면 체크하지 않으셔도 됩니다. 피로가 올라오는 시기에만 가볍게 확인하세요.
 </div>
+
       <div className="card">
        <h3>이번 달 목표(계획값)</h3>
         <div className="form-row">
