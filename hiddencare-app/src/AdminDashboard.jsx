@@ -1862,6 +1862,7 @@ const loadSalesSummary = async (month) => {
     .from('coach_condition_logs')
     .select('*, coaches(id, name)')
     .eq('admin_id', currentAdminId)
+    .eq('check_month', coachConditionMonth)
     .order('check_month', { ascending: false })
     .order('created_at', { ascending: false })
 
@@ -1873,7 +1874,11 @@ const loadSalesSummary = async (month) => {
 
   setCoachConditions(data || [])
 }
-
+  
+useEffect(() => {
+  loadCoachConditions()
+}, [currentAdminId, coachConditionMonth])
+  
 const loadCoachReviews = async () => {
   if (!currentAdminId) {
     setCoachReviews([])
