@@ -527,7 +527,7 @@ export default function AdminDashboard({ profile, currentAdminId, currentGymId, 
   const [dietMemberFilter, setDietMemberFilter] = useState('')
   const [dietSearch, setDietSearch] = useState('')
 
-  const [routineForm, setRoutineForm] = useState({ title: '루틴', content: '' })
+ 
   const ROUTINE_PRESETS = {
   근력운동: {
     가슴: [
