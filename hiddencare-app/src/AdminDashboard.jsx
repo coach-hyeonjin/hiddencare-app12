@@ -2621,90 +2621,117 @@ const buildRoutineContent = (form) => {
 }
 
 const handleRoutineSave = async () => {
-  alert('루틴저장 함수 실행됨')
-  console.log('루틴저장 함수 실행됨', { selectedMemberId, routineForm })
+  try {
+    alert('1. 루틴저장 함수 실행됨')
+    console.log('1. 루틴저장 함수 실행됨', { selectedMemberId, routineForm })
 
-  if (!selectedMemberId) {
-    alert('selectedMemberId 없음')
-    setMessage('루틴을 저장할 회원을 먼저 선택해주세요.')
-    return
-  }
-
-  const payloadData = buildRoutinePayload(routineForm)
-  console.log('payloadData', payloadData)
-  alert('payloadData 생성됨')
-
-  const hasAnyItem = payloadData.weeks.some((week) =>
-    week.days.some((day) => (day.items || []).length > 0)
-  )
-
-  console.log('hasAnyItem', hasAnyItem)
-
-  if (!hasAnyItem) {
-    alert('hasAnyItem false')
-    setMessage('최소 1개 이상의 루틴 운동을 입력해주세요.')
-    return
-  }
-
-  const payload = {
-    member_id: selectedMemberId,
-    title: routineForm.title?.trim() || '루틴',
-    content: buildRoutineContent(routineForm),
-    routine_data: payloadData,
-    admin_id: currentAdminId || null,
-    gym_id: currentGymId || null,
-  }
-
-  console.log('최종 payload', payload)
-  alert('payload 생성 완료')
-
-  const { data: existingRoutine, error: existingError } = await supabase
-    .from('member_routines')
-    .select('id')
-    .eq('member_id', selectedMemberId)
-    .maybeSingle()
-
-  console.log('existingRoutine', existingRoutine, existingError)
-
-  if (existingError) {
-    alert(`루틴 확인 실패: ${existingError.message}`)
-    setMessage(`루틴 확인 실패: ${existingError.message}`)
-    return
-  }
-
-  if (existingRoutine?.id) {
-    const { error } = await supabase
-      .from('member_routines')
-      .update(payload)
-      .eq('id', existingRoutine.id)
-
-    console.log('update error', error)
-
-    if (error) {
-      alert(`루틴 수정 실패: ${error.message}`)
-      setMessage(`루틴 수정 실패: ${error.message}`)
+    if (!selectedMemberId) {
+      setMessage('루틴을 저장할 회원을 먼저 선택해주세요.')
+      alert('selectedMemberId 없음')
       return
     }
 
-    alert('루틴 수정 성공')
-    setMessage('루틴이 수정되었습니다.')
-  } else {
-    const { error } = await supabase
-      .from('member_routines')
-      .insert(payload)
-
-    console.log('insert error', error)
-
-    if (error) {
-      alert(`루틴 저장 실패: ${error.message}`)
-      setMessage(`루틴 저장 실패: ${error.message}`)
+    if (!routineForm || !Array.isArray(routineForm.weeks)) {
+      setMessage('루틴 데이터 구조가 올바르지 않습니다.')
+      alert('routineForm.weeks 없음')
       return
     }
 
-    alert('루틴 저장 성공')
-    setMessage('루틴이 저장되었습니다.')
+    alert('2. buildRoutinePayload 시작')
+    const payloadData = buildRoutinePayload(routineForm)
+    console.log('2. payloadData', payloadData)
+
+    if (!payloadData || !Array.isArray(payloadData.weeks)) {
+      setMessage('루틴 payload 생성에 실패했습니다.')
+      alert('payloadData.weeks 없음')
+      return
+    }
+
+    const hasAnyItem = payloadData.weeks.some((week) =>
+      (week.days || []).some((day) => (day.items || []).length > 0)
+    )
+
+    console.log('3. hasAnyItem', hasAnyItem)
+
+    if (!hasAnyItem) {
+      setMessage('최소 1개 이상의 루틴 운동을 입력해주세요.')
+      alert('입력된 운동이 없음')
+      return
+    }
+
+    alert('4. buildRoutineContent 시작')
+    const routineContent = buildRoutineContent(routineForm)
+    console.log('4. routineContent', routineContent)
+
+    const payload = {
+      member_id: selectedMemberId,
+      title: routineForm.title?.trim() || '루틴',
+      content: routineContent,
+      routine_data: payloadData,
+      admin_id: currentAdminId || null,
+      gym_id: currentGymId || null,
+    }
+
+    console.log('5. 최종 payload', payload)
+    alert('5. 기존 루틴 확인 시작')
+
+    const { data: existingRoutine, error: existingError } = await supabase
+      .from('member_routines')
+      .select('id')
+      .eq('member_id', selectedMemberId)
+      .maybeSingle()
+
+    console.log('6. existingRoutine', existingRoutine, existingError)
+
+    if (existingError) {
+      setMessage(`루틴 확인 실패: ${existingError.message}`)
+      alert(`루틴 확인 실패: ${existingError.message}`)
+      return
+    }
+
+    if (existingRoutine?.id) {
+      alert('7. update 시작')
+
+      const { error } = await supabase
+        .from('member_routines')
+        .update(payload)
+        .eq('id', existingRoutine.id)
+
+      console.log('7. update error', error)
+
+      if (error) {
+        setMessage(`루틴 수정 실패: ${error.message}`)
+        alert(`루틴 수정 실패: ${error.message}`)
+        return
+      }
+
+      setMessage('루틴이 수정되었습니다.')
+      alert('루틴 수정 성공')
+    } else {
+      alert('7. insert 시작')
+
+      const { error } = await supabase
+        .from('member_routines')
+        .insert(payload)
+
+      console.log('7. insert error', error)
+
+      if (error) {
+        setMessage(`루틴 저장 실패: ${error.message}`)
+        alert(`루틴 저장 실패: ${error.message}`)
+        return
+      }
+
+      setMessage('루틴이 저장되었습니다.')
+      alert('루틴 저장 성공')
+    }
+  } catch (error) {
+    console.error('handleRoutineSave catch error:', error)
+    setMessage(`루틴 저장 중 오류: ${error.message}`)
+    alert(`루틴 저장 중 오류: ${error.message}`)
   }
 }
+
 
   const handleRoutineDelete = async () => {
     if (!selectedMemberId) {
