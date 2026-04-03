@@ -273,35 +273,33 @@ const salesConversionOptions = [
 ]
 const salesFailReasonOptions = ['가격부담', '시간부족', '거리문제', '필요성부족', '비교중', '보호자/배우자상의', '운동의지부족', '기타']
 const CONDITION_CHECKLIST = [
-  '아침에 일어났을 때 몸이 가볍다',
-  '근육통이나 몸살 느낌이 거의 없다',
-  '수업할 때 힘이 잘 들어간다',
-  '하루 에너지가 무난하게 유지된다',
-  '몸 상태가 전반적으로 편안하다',
+  '오늘 몸이 가볍고 무난하다',
+  '수업할 체력은 충분한 편이다',
+  '움직일 때 몸이 덜 무겁다',
+  '전반적으로 몸 상태가 괜찮다',
 ]
 
 const FATIGUE_CHECKLIST = [
   '몸이 무겁다',
-  '수업 후 급격히 지친다',
-  '잠을 자도 피로가 남는다',
-  '허리나 하체 피로가 누적된다',
-  '오후로 갈수록 체력이 확 떨어진다',
+  '잠을 자도 피로가 남아 있다',
+  '평소보다 체력이 떨어진다',
+  '수업만 해도 쉽게 지친다',
+  '오늘은 무리하면 더 퍼질 것 같다',
 ]
 
 const STRESS_CHECKLIST = [
-  '회원/업무 때문에 신경 쓸 일이 많다',
-  '감정적으로 피곤하다',
-  '생각이 많아 머리가 복잡하다',
-  '압박감이 느껴진다',
-  '짜증이나 예민함이 올라온다',
+  '생각이 많고 머리가 복잡하다',
+  '회원 응대가 조금 버겁다',
+  '압박감이나 부담감이 있다',
+  '예민하거나 감정 소모가 크다',
+  '오늘은 운영 흐름이 걱정된다',
 ]
 
 const FOCUS_CHECKLIST = [
   '수업 집중이 잘 된다',
   '코칭 흐름이 자연스럽다',
-  '실수가 적다',
-  '해야 할 우선순위가 잘 보인다',
-  '업무 전환이 비교적 깔끔하다',
+  '해야 할 우선순위가 보인다',
+  '말이나 설명이 비교적 잘 나온다',
 ]
 
 const PERFORMANCE_ACTION_SECTIONS = [
@@ -309,127 +307,154 @@ const PERFORMANCE_ACTION_SECTIONS = [
     key: 'lead_actions',
     title: '신규 유입 행동',
     items: [
-      '워크인 회원에게 먼저 인사/응대했다',
-      '상담 또는 OT 제안을 했다',
-      '블로그 글을 작성했다',
-      'SNS 업로드(인스타/릴스/스레드)를 했다',
-      '리뷰노트 체험단 모집을 진행했다',
-      '회원/지인에게 소개 요청을 했다',
+      '먼저 인사하거나 대화를 열었다',
+      '상담으로 연결했다',
+      'OT 또는 체험을 제안했다',
+      '신규 유입 관련 행동을 1회 이상 했다',
     ],
   },
   {
     key: 'retention_actions',
-    title: '기존 회원 유지 행동',
+    title: '기존 회원 관리 행동',
     items: [
       '수업 후 피드백을 전달했다',
-      '운동 영상 또는 과제를 전달했다',
-      '미방문 회원에게 연락했다',
-      '회원 상태를 기록했다',
-      '다음 수업 방향을 안내했다',
+      '다음 방향이나 과제를 안내했다',
+      '미방문/이탈 가능 회원을 체크했다',
+      '회원 상태를 기록하거나 정리했다',
     ],
   },
   {
     key: 'sales_actions',
     title: '전환 / 재등록 행동',
     items: [
-      '상담을 진행했다',
-      '프로그램 차별성을 설명했다',
-      '가격/구성을 안내했다',
-      '재등록 제안을 했다',
-      '보류 이유를 기록했다',
+      '가격 또는 구성 설명을 했다',
+      '결제/재등록 제안을 했다',
+      '후속 연락 또는 후속 일정을 잡았다',
+      '보류 이유를 확인하고 남겼다',
     ],
   },
   {
     key: 'growth_actions',
-    title: '브랜딩 / 확장 행동',
+    title: '브랜딩 / 운영 행동',
     items: [
-      '후기를 요청하거나 관리했다',
-      '제휴업체를 탐색했다',
-      '제휴업체와 연락/미팅을 진행했다',
-      '제휴업체를 실제 등록했다',
-      '개인 브랜딩 콘텐츠를 기획했다',
+      '후기 요청 또는 후기 관리를 했다',
+      '콘텐츠 업로드/기획을 했다',
+      '제휴/소개 관련 행동을 했다',
+      '오늘 운영을 돌아보고 메모를 남겼다',
     ],
   },
 ]
 
-const COACH_LEVEL_META = {
-  top: {
-    label: '최상',
-    description: '컨디션과 집중도가 좋고, 피로와 스트레스가 안정적입니다.',
-    colorClass: 'good',
-  },
-  stable: {
-    label: '안정',
-    description: '전반적으로 무난한 상태입니다. 현재 루틴 유지가 좋습니다.',
-    colorClass: 'good',
-  },
-  caution: {
-    label: '주의',
-    description: '피로 또는 스트레스가 올라오고 있습니다. 일정 조절이 필요할 수 있습니다.',
-    colorClass: 'warn',
-  },
-  risk: {
-    label: '위험',
-    description: '회복이 우선인 상태입니다. 무리한 일정은 줄이는 것이 좋습니다.',
-    colorClass: 'danger',
-  },
-}
-
-const PERFORMANCE_LEVEL_META = [
-  { min: 0, max: 5, label: '매우 부족' },
-  { min: 6, max: 10, label: '기본' },
-  { min: 11, max: 16, label: '양호' },
-  { min: 17, max: 999, label: '고성과' },
-]
 const BURNOUT_RELIEF_GUIDE = [
-  '오늘 회원 한 명이라도 제대로 봤으면 잘하고 있는 날입니다.',
-  '최근 피로감이 올라온다면, 아래 체크리스트를 가볍게 확인해보세요.',
-  '번아웃이 아니라면 체크하지 않으셔도 됩니다 🙂',
+  '오늘은 좀 어떠셨나요?',
+  '최근 들어 수업, 상담, 회원 응대가 평소보다 버겁게 느껴졌다면 가볍게 체크해보세요.',
+  '지금 상태를 확인하는 용도이며, 무조건 번아웃이라고 단정하는 것은 아닙니다.',
 ]
 
 const BURNOUT_RECOVERY_CHECKLIST = [
-  '오늘 수업할 때 억지로 끌고 간 느낌이 덜했다',
-  '회원 말이 전보다 잘 들렸다',
-  '수업 설명이 조금 더 자연스럽게 나왔다',
-  '끝난 뒤 과하게 지치는 느낌이 덜했다',
-  '회원 반응을 받을 때 부담이 조금 덜했다',
+  '오늘은 수업할 때 덜 버거웠다',
+  '회원 응대 부담이 조금 덜했다',
+  '코칭이 어제보다 조금 자연스럽게 나왔다',
+  '끝나고 과하게 지치는 느낌이 덜했다',
   '오늘은 내가 부족하다는 압박이 조금 덜했다',
+  '퇴근 후 회복할 여유가 조금 있었다',
 ]
 
 const BURNOUT_RESPONSE_CHECKLIST = [
-  '잘하고 있다. 완벽하게 하려 하지 말고, 하던 흐름을 유지한다',
-  '회원 반응 한 가지라도 좋았던 점을 확인한다',
-  '수업 후 스스로 부족했던 점보다, 잘 된 점 1가지를 먼저 적는다',
-  '다음 수업 전까지 생각을 길게 끌지 않는다',
+  '혼자 끌고 가지 말고 팀장님께 지금 상태를 짧게라도 공유해보기',
+  '가장 버거운 수업/회원 유형 1가지만 적어보기',
+  '오늘 꼭 해야 할 일 1~2개만 정해서 마무리하기',
+  '잘하려고 하기보다 덜 소모되는 방향으로 운영하기',
 ]
+
+function getPercentFromChecks(checkedCount = 0, totalCount = 1) {
+  if (!totalCount) return 0
+  return Math.round((checkedCount / totalCount) * 100)
+}
 
 function getBurnoutRecoveryCount(checks = []) {
   return Array.isArray(checks) ? checks.length : 0
 }
 
-function getBurnoutRecoveryComment(checks = []) {
-  const count = getBurnoutRecoveryCount(checks)
-
-  if (count === 0) {
-    return '아직 체크 전입니다. 번아웃이 아니라면 체크하지 않으셔도 됩니다 🙂'
-  }
-  if (count <= 2) {
-    return '아직 회복 초입입니다. 무리하게 끌어올리기보다 현재 흐름 유지에 집중하세요.'
-  }
-  if (count <= 4) {
-    return '조금씩 좋아지고 있습니다. 지금 방식 유지하면 됩니다.'
-  }
-  return '회복 흐름이 좋습니다. 현재 운영 흐름을 이어가면 됩니다.'
+function getBurnoutSignalPercent(checks = []) {
+  return getPercentFromChecks(checks.length, 5)
 }
+
+function getBurnoutRecoveryPercent(checks = []) {
+  return getPercentFromChecks(checks.length, BURNOUT_RECOVERY_CHECKLIST.length)
+}
+
+function getBurnoutSignalText(checks = []) {
+  const percent = getBurnoutSignalPercent(checks)
+
+  if (percent <= 20) {
+    return '현재는 번아웃보다는 일반 피로 수준에 가깝습니다.'
+  }
+  if (percent <= 40) {
+    return '운영 피로가 누적되기 시작하는 상태입니다.'
+  }
+  if (percent <= 60) {
+    return '번아웃 위험도가 올라온 상태입니다. 운영 강도 조절이 필요합니다.'
+  }
+  return '번아웃 가능성이 높은 상태입니다. 지금은 회복과 조정이 우선입니다.'
+}
+
+function getBurnoutLeaderMessage(checks = []) {
+  const percent = getBurnoutSignalPercent(checks)
+
+  if (percent <= 20) {
+    return '아직 완전히 무너진 상태는 아닙니다. 지금부터 수면, 식사, 회복 루틴을 먼저 챙겨보세요.'
+  }
+  if (percent <= 40) {
+    return '요즘 조금 지치는 느낌이 있을 수 있어요. 어떤 수업이나 어떤 상황에서 유독 에너지가 빠지는지 한번 정리해보세요.'
+  }
+  if (percent <= 60) {
+    return '지금은 억지로 버티기보다, 오늘 해야 할 일의 우선순위를 줄이고 덜 소모되는 방식으로 운영하는 게 좋습니다.'
+  }
+  return '지금은 의지로 버티는 것보다 조정이 필요한 시점입니다. 혼자 끌고 가지 말고 팀장님께 현재 상태를 짧게라도 공유해보세요.'
+}
+
+function getBurnoutRecoveryComment(checks = []) {
+  const percent = getBurnoutRecoveryPercent(checks)
+
+  if (percent === 0) {
+    return '오늘 번아웃 회복은 체크해보셨나요? 아직 체크 전이라면, 어제보다 조금 덜 버거웠는지만 가볍게 봐주세요.'
+  }
+  if (percent <= 34) {
+    return '아직 회복 체감이 크지 않을 수 있습니다. 더 안 무너지게 유지하는 것만으로도 충분히 의미 있습니다.'
+  }
+  if (percent <= 67) {
+    return '조금씩 회복 흐름이 보이고 있습니다. 지금 방식이 아주 나쁘지 않다는 뜻입니다.'
+  }
+  return '회복 흐름이 분명히 보입니다. 무리해서 다시 끌어올리기보다 현재 리듬을 조금 더 유지해보세요.'
+}
+
+function getBurnoutRecoveryLeaderMessage(checks = []) {
+  const percent = getBurnoutRecoveryPercent(checks)
+
+  if (percent === 0) {
+    return '크게 좋아지지 않았어도 괜찮아요. 오늘은 어제보다 조금 덜 힘들었는지부터 확인해보면 됩니다.'
+  }
+  if (percent <= 34) {
+    return '회복이 아직 선명하지 않아도 이상한 건 아닙니다. 번아웃은 하루 만에 좋아지지 않으니, 더 무너지지 않는 흐름을 먼저 만드세요.'
+  }
+  if (percent <= 67) {
+    return '지금 조금씩 좋아지고 있는 흐름은 맞아요. 다만 갑자기 원래처럼 다 하려고 하면 다시 지칠 수 있습니다.'
+  }
+  return '좋습니다. 현재 조절 방식이 맞고 있을 가능성이 큽니다. 지금 흐름을 급하게 깨지 않는 게 더 중요합니다.'
+}
+
 function randomCode() {
   return Math.random().toString(36).slice(2, 10).toUpperCase()
 }
+
 function getSimpleStatus(value) {
-  if (Number(value) >= 4) return '좋음'
-  if (Number(value) >= 3) return '보통'
-  if (Number(value) >= 2) return '낮음'
-  return '위험'
+  if (Number(value) >= 80) return '좋음'
+  if (Number(value) >= 60) return '보통'
+  if (Number(value) >= 40) return '저하'
+  return '관리 필요'
 }
+
 function formatDate(value) {
   return value || '-'
 }
@@ -690,25 +715,73 @@ const getSimpleStatus = (value) => {
 }
 
 const calculateCoachConditionScores = (form) => {
-  const conditionScore = getPositiveScoreByCheckCount((form.condition_checks || []).length)
-  const fatigueScore = getNegativeScoreByCheckCount((form.fatigue_checks || []).length)
-  const stressScore = getNegativeScoreByCheckCount((form.stress_checks || []).length)
-  const focusScore = getPositiveScoreByCheckCount((form.focus_checks || []).length)
+  const conditionPercent = getPercentFromChecks(
+    (form.condition_checks || []).length,
+    CONDITION_CHECKLIST.length
+  )
 
-  const performanceScore =
+  const fatiguePercent = getPercentFromChecks(
+    (form.fatigue_checks || []).length,
+    FATIGUE_CHECKLIST.length
+  )
+
+  const stressPercent = getPercentFromChecks(
+    (form.stress_checks || []).length,
+    STRESS_CHECKLIST.length
+  )
+
+  const focusPercent = getPercentFromChecks(
+    (form.focus_checks || []).length,
+    FOCUS_CHECKLIST.length
+  )
+
+  const performanceCheckedCount =
     (form.lead_actions || []).length +
     (form.retention_actions || []).length +
     (form.sales_actions || []).length +
     (form.growth_actions || []).length
 
-  const statusLevel = getCoachStatusLevelKey({
-    conditionScore,
-    fatigueScore,
-    stressScore,
-    focusScore,
-  })
+  const performanceTotalCount = PERFORMANCE_ACTION_SECTIONS.reduce(
+    (sum, section) => sum + section.items.length,
+    0
+  )
 
-  const performanceLevel = getPerformanceLevel(performanceScore)
+  const performancePercent = getPercentFromChecks(
+    performanceCheckedCount,
+    performanceTotalCount
+  )
+
+  const conditionScore = Math.round(conditionPercent / 20) || 1
+  const fatigueScore = Math.round(fatiguePercent / 20) || 1
+  const stressScore = Math.round(stressPercent / 20) || 1
+  const focusScore = Math.round(focusPercent / 20) || 1
+  const performanceScore = performancePercent
+
+  const burnoutPercent = getBurnoutSignalPercent(burnoutSignalChecks)
+  const finalPercent = Math.round(
+    conditionPercent * 0.3 +
+    focusPercent * 0.2 +
+    (100 - burnoutPercent) * 0.3 +
+    performancePercent * 0.2
+  )
+
+  let statusLevel = 'stable'
+  if (burnoutPercent >= 60 || finalPercent < 40) {
+    statusLevel = 'risk'
+  } else if (burnoutPercent >= 40 || finalPercent < 60) {
+    statusLevel = 'caution'
+  } else if (finalPercent >= 80) {
+    statusLevel = 'top'
+  }
+
+  const performanceLevel =
+    performancePercent >= 80
+      ? '고성과'
+      : performancePercent >= 60
+      ? '양호'
+      : performancePercent >= 40
+      ? '기본'
+      : '매우 부족'
 
   return {
     conditionScore,
@@ -718,6 +791,12 @@ const calculateCoachConditionScores = (form) => {
     performanceScore,
     statusLevel,
     performanceLevel,
+    conditionPercent,
+    fatiguePercent,
+    stressPercent,
+    focusPercent,
+    burnoutPercent,
+    finalPercent,
   }
 }
 
