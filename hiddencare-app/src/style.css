@@ -1627,3 +1627,11 @@ img {
     grid-template-columns: 1fr;
   }
 }
+.field textarea {
+  min-height: 90px;
+  line-height: 1.5;
+}
+.field textarea {
+  min-height: 90px;
+  line-height: 1.5;
+}
