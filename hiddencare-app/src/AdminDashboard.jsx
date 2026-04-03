@@ -2720,21 +2720,28 @@ const handleRoutineSave = async () => {
 
 
 const addRoutineWeek = () => {
-  setRoutineForm((prev) => ({
-    ...prev,
-    weeks: [...prev.weeks, createEmptyRoutineWeek(prev.weeks.length + 1)],
-  }))
+  setRoutineForm((prev) => {
+    const currentWeeks = Array.isArray(prev?.weeks) ? prev.weeks : []
+    return {
+      ...prev,
+      weeks: [...currentWeeks, createEmptyRoutineWeek(currentWeeks.length + 1)],
+    }
+  })
 }
 
 const removeRoutineWeek = (weekIndex) => {
   setRoutineForm((prev) => {
+    const currentWeeks = Array.isArray(prev?.weeks) ? prev.weeks : []
+
     const nextWeeks =
-      prev.weeks.length === 1
+      currentWeeks.length <= 1
         ? [createEmptyRoutineWeek(1)]
-        : prev.weeks.filter((_, idx) => idx !== weekIndex).map((week, idx) => ({
-            ...week,
-            week_number: idx + 1,
-          }))
+        : currentWeeks
+            .filter((_, idx) => idx !== weekIndex)
+            .map((week, idx) => ({
+              ...week,
+              week_number: idx + 1,
+            }))
 
     return { ...prev, weeks: nextWeeks }
   })
@@ -4691,10 +4698,11 @@ const getSalesAutoFeedback = () => {
   <button
     type="button"
     className="secondary-btn"
-    onClick={() => {
-      addRoutineWeek()
-      setSelectedRoutineWeek(routineForm.weeks.length)
-    }}
+   onClick={() => {
+  const nextIndex = Array.isArray(routineForm.weeks) ? routineForm.weeks.length : 0
+  addRoutineWeek()
+  setSelectedRoutineWeek(nextIndex)
+}}
   >
     + 주차 추가
   </button>
