@@ -3553,10 +3553,7 @@ const handleCoachConditionSubmit = async (e) => {
     performance_level: scores.performanceLevel,
     status_level: scores.statusLevel,
 
-    monthly_goal_revenue: Number(coachConditionForm.monthly_goal_revenue || 0),
-    monthly_goal_new_leads: Number(coachConditionForm.monthly_goal_new_leads || 0),
-    monthly_goal_retention: Number(coachConditionForm.monthly_goal_retention || 0),
-        monthly_goal_content: Number(coachConditionForm.monthly_goal_content || 0),
+
 
    condition_note: coachConditionForm.condition_note?.trim() || '',
     fatigue_note: coachConditionForm.fatigue_note?.trim() || '',
@@ -3623,11 +3620,7 @@ setBurnoutRecoveryChecks(item.burnout_recovery_checks || [])
     performance_level: item.performance_level || '',
     status_level: item.status_level || '',
 
-    monthly_goal_revenue: item.monthly_goal_revenue ?? '',
-    monthly_goal_new_leads: item.monthly_goal_new_leads ?? '',
-    monthly_goal_retention: item.monthly_goal_retention ?? '',
-    monthly_goal_content: item.monthly_goal_content ?? '',
-
+    
     condition_note: item.condition_note || '',
     fatigue_note: item.fatigue_note || '',
     stress_note: item.stress_note || '',
