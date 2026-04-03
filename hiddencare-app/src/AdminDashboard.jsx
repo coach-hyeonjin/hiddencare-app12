@@ -6778,53 +6778,27 @@ const getSalesAutoFeedback = () => {
     />
   </label>
 
-  <label className="field">
-    <span>메모</span>
-    <textarea
-      rows="4"
-      value={coachGoalForm.issue_note}
-      onChange={(e) =>
-        setCoachGoalForm((prev) => ({
-          ...prev,
-          issue_note: e.target.value,
-        }))
-      }
-    />
-  </label>
-
   <div className="inline-actions wrap">
-    <button className="secondary-btn" type="button" onClick={handleCoachGoalSave}>
-  이번 달 목표 저장
-</button>
+    <button
+      className="secondary-btn"
+      type="button"
+      onClick={handleCoachGoalSave}
+    >
+      이번 달 목표 저장
+    </button>
   </div>
 </div>
 
-  <label className="field">
-    <span>메모</span>
-    <textarea
-      rows="4"
-      value={coachConditionForm.issue_note}
-      onChange={(e) =>
-        setCoachConditionForm((prev) => ({
-          ...prev,
-          issue_note: e.target.value,
-        }))
-      }
-    />
-  </label>
 </div>
-    </div>
 
-    <div className="inline-actions wrap">
-      <button className="primary-btn" type="button" onClick={handleCoachConditionSubmit}>
-        {editingCoachConditionId ? '코치관리 수정 저장' : '코치관리 저장'}
-      </button>
-      <button className="secondary-btn" type="button" onClick={resetCoachConditionForm}>
-        초기화
-      </button>
-    </div>
-  </>
-)}
+<div className="inline-actions wrap">
+  <button className="primary-btn" type="button" onClick={handleCoachConditionSubmit}>
+    {editingCoachConditionId ? '코치관리 수정 저장' : '코치관리 저장'}
+  </button>
+  <button className="secondary-btn" type="button" onClick={resetCoachConditionForm}>
+    초기화
+  </button>
+</div>
 
     <div className="card">
       <div className="section-head">
