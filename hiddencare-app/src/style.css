@@ -1539,3 +1539,91 @@ img {
     font-size: 24px;
   }
 }
+/* ===== 코치관리 확장 (컨디션/번아웃/성과) ===== */
+
+.coach-percent-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 14px;
+}
+
+.coach-percent-card {
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 16px;
+  padding: 16px;
+  text-align: center;
+}
+
+.coach-percent-card span {
+  font-size: 13px;
+  color: #6b7280;
+  font-weight: 700;
+}
+
+.coach-percent-card strong {
+  display: block;
+  font-size: 28px;
+  margin-top: 6px;
+  color: #111827;
+}
+
+
+/* ===== 팀장 피드백 ===== */
+.coach-feedback-box {
+  border-radius: 14px;
+  padding: 16px;
+  background: #eef2ff;
+  border: 1px solid #c7d2fe;
+  color: #1e3a8a;
+  font-weight: 600;
+  line-height: 1.6;
+}
+
+
+/* ===== 오늘 방향 ===== */
+.coach-direction-box {
+  border-radius: 14px;
+  padding: 16px;
+  background: #f0fdf4;
+  border: 1px solid #bbf7d0;
+  color: #166534;
+  font-weight: 700;
+  line-height: 1.6;
+}
+
+
+/* ===== 번아웃 경고 ===== */
+.coach-warning-box {
+  border-radius: 14px;
+  padding: 16px;
+  background: #fff7ed;
+  border: 1px solid #fdba74;
+  color: #9a3412;
+  font-weight: 600;
+}
+
+
+/* ===== 위험 상태 ===== */
+.coach-danger-box {
+  border-radius: 14px;
+  padding: 16px;
+  background: #fef2f2;
+  border: 1px solid #fca5a5;
+  color: #7f1d1d;
+  font-weight: 700;
+}
+
+
+/* 반응형 */
+@media (max-width: 900px) {
+  .coach-percent-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 500px) {
+  .coach-percent-grid {
+    grid-template-columns: 1fr;
+  }
+}
