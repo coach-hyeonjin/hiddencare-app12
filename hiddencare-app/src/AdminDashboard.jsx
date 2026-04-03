@@ -3526,7 +3526,84 @@ const resetCoachConditionForm = () => {
   setCoachConditionForm(emptyCoachConditionForm)
   setEditingCoachConditionId(null)
 }
+const handleCoachGoalSave = async () => {
+  if (!coachGoalForm.coach_id || !coachGoalForm.goal_month) {
+    setMessage('코치와 기준 월을 먼저 선택해주세요.')
+    return
+  }
 
+  const payload = {
+    coach_id: coachGoalForm.coach_id,
+    check_month: coachGoalForm.goal_month,
+    monthly_goal_revenue: Number(coachGoalForm.monthly_goal_revenue || 0),
+    monthly_goal_new_leads: Number(coachGoalForm.monthly_goal_new_leads || 0),
+    monthly_goal_retention: Number(coachGoalForm.monthly_goal_retention || 0),
+    monthly_goal_content: Number(coachGoalForm.monthly_goal_content || 0),
+    support_needed: coachGoalForm.support_needed?.trim() || '',
+    issue_note: coachGoalForm.issue_note?.trim() || '',
+    admin_id: currentAdminId || null,
+    gym_id: currentGymId || null,
+  }
+
+  const { data: existingGoal, error: fetchError } = await supabase
+    .from('coach_condition_logs')
+    .select('id')
+    .eq('coach_id', coachGoalForm.coach_id)
+    .eq('check_month', coachGoalForm.goal_month)
+    .order('created_at', { ascending: false })
+    .limit(1)
+    .maybeSingle()
+
+  if (fetchError) {
+    setMessage(`월 목표 조회 실패: ${fetchError.message}`)
+    return
+  }
+
+  let error = null
+
+  if (existingGoal?.id) {
+    const { error: updateError } = await supabase
+      .from('coach_condition_logs')
+      .update(payload)
+      .eq('id', existingGoal.id)
+    error = updateError
+  } else {
+    const { error: insertError } = await supabase
+      .from('coach_condition_logs')
+      .insert({
+        ...payload,
+        condition_checks: [],
+        fatigue_checks: [],
+        stress_checks: [],
+        focus_checks: [],
+        lead_actions: [],
+        retention_actions: [],
+        sales_actions: [],
+        growth_actions: [],
+        condition_score: 0,
+        fatigue_score: 0,
+        stress_score: 0,
+        focus_score: 0,
+        performance_score: 0,
+        performance_level: '',
+        status_level: '',
+        burnout_signal_checks: [],
+        burnout_recovery_checks: [],
+        burnout_signal_count: 0,
+        burnout_recovery_count: 0,
+        burnout_recovery_comment: '',
+      })
+    error = insertError
+  }
+
+  if (error) {
+    setMessage(`월 목표 저장 실패: ${error.message}`)
+    return
+  }
+
+  setMessage('이번 달 목표가 저장되었습니다.')
+  await loadCoachConditions()
+}
 const handleCoachConditionSubmit = async (e) => {
   if (e?.preventDefault) e.preventDefault()
 
@@ -6390,12 +6467,19 @@ const getSalesAutoFeedback = () => {
           <span>코치</span>
           <select
             value={coachConditionForm.coach_id}
-            onChange={(e) =>
-              setCoachConditionForm((prev) => ({
-                ...prev,
-                coach_id: e.target.value,
-              }))
-            }
+            onChange={(e) => {
+  const value = e.target.value
+
+  setCoachConditionForm((prev) => ({
+    ...prev,
+    coach_id: value,
+  }))
+
+  setCoachGoalForm((prev) => ({
+    ...prev,
+    coach_id: value,
+  }))
+}}
           >
             <option value="">코치 선택</option>
             {coaches.map((coach) => (
@@ -6411,12 +6495,19 @@ const getSalesAutoFeedback = () => {
           <input
             type="month"
             value={coachConditionForm.check_month}
-            onChange={(e) =>
-              setCoachConditionForm((prev) => ({
-                ...prev,
-                check_month: e.target.value,
-              }))
-            }
+            onChange={(e) => {
+  const value = e.target.value
+
+  setCoachConditionForm((prev) => ({
+    ...prev,
+    check_month: value,
+  }))
+
+  setCoachGoalForm((prev) => ({
+    ...prev,
+    goal_month: value,
+  }))
+}}
           />
         </label>
       </div>
@@ -6780,12 +6871,11 @@ const getSalesAutoFeedback = () => {
 
   <div className="inline-actions wrap">
     <button
-      className="secondary-btn"
-      type="button"
-      onClick={handleCoachGoalSave}
-    >
-      이번 달 목표 저장
-    </button>
+  className="secondary-btn"
+  type="button"
+>
+  이번 달 목표 저장
+</button>
   </div>
 </div>
 
