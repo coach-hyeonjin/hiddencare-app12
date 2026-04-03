@@ -606,9 +606,31 @@ export default function AdminDashboard({ profile, currentAdminId, currentGymId, 
   sets: [{ kg: '', reps: '' }],
 }
 
+const ROUTINE_DAYS = ['월', '화', '수', '목', '금', '토', '일']
+
+const createEmptyRoutineSet = () => ({ kg: '', reps: '' })
+
+const createEmptyRoutineItem = () => ({
+  exercise_id: '',
+  exercise_name_snapshot: '',
+  duration_minutes: '',
+  memo: '',
+  sets: [createEmptyRoutineSet()],
+})
+
+const createEmptyRoutineDay = (dayOfWeek = '월') => ({
+  day_of_week: dayOfWeek,
+  items: [createEmptyRoutineItem()],
+})
+
+const createEmptyRoutineWeek = (weekNumber = 1) => ({
+  week_number: weekNumber,
+  days: ROUTINE_DAYS.map((day) => createEmptyRoutineDay(day)),
+})
+
 const emptyRoutineForm = {
   title: '루틴',
-  items: [{ ...emptyRoutineItem }],
+  weeks: [createEmptyRoutineWeek(1)],
 }
 
 const [routineForm, setRoutineForm] = useState(emptyRoutineForm)
@@ -2521,47 +2543,138 @@ const clearAdminAlerts = () => {
     setMessage('관리자 메모가 삭제되었습니다.')
   }
 
-  const handleRoutineSave = async () => {
+  const normalizeRoutineSets = (sets = []) => {
+  return sets
+    .filter((setRow) => setRow.kg !== '' || setRow.reps !== '')
+    .map((setRow) => ({
+      kg: String(setRow.kg ?? ''),
+      reps: String(setRow.reps ?? ''),
+    }))
+}
+
+const buildRoutinePayload = (form) => {
+  return {
+    title: form.title?.trim() || '루틴',
+    weeks: (form.weeks || []).map((week, weekIndex) => ({
+      week_number: week.week_number || weekIndex + 1,
+      days: (week.days || []).map((day) => ({
+        day_of_week: day.day_of_week,
+        items: (day.items || [])
+          .filter((item) => item.exercise_name_snapshot?.trim() || item.exercise_id)
+          .map((item) => ({
+            exercise_id: item.exercise_id || null,
+            exercise_name_snapshot: item.exercise_name_snapshot?.trim() || '',
+            duration_minutes: item.duration_minutes ? Number(item.duration_minutes) : null,
+            memo: item.memo?.trim() || '',
+            sets: normalizeRoutineSets(item.sets || []),
+          })),
+      })),
+    })),
+  }
+}
+
+const buildRoutineContent = (form) => {
+  return (form.weeks || [])
+    .map((week) => {
+      const dayLines = (week.days || [])
+        .map((day) => {
+          const items = (day.items || []).filter(
+            (item) => item.exercise_name_snapshot?.trim() || item.exercise_id
+          )
+
+          if (!items.length) return `${day.day_of_week}: 휴식 또는 미입력`
+
+          const itemLines = items.map((item, index) => {
+            const exerciseName = item.exercise_name_snapshot?.trim() || `운동 ${index + 1}`
+            const durationText = item.duration_minutes ? ` / 시간 ${item.duration_minutes}분` : ''
+            const setLines = (item.sets || [])
+              .filter((setRow) => setRow.kg !== '' || setRow.reps !== '')
+              .map((setRow, setIndex) => {
+                const kgText = setRow.kg ? `${setRow.kg}kg` : '-'
+                const repsText = setRow.reps ? `${setRow.reps}회` : '-'
+                return `    - ${setIndex + 1}세트: ${kgText} / ${repsText}`
+              })
+
+            const memoLine = item.memo?.trim() ? `    - 메모: ${item.memo.trim()}` : ''
+
+            return [
+              `  ${index + 1}. ${exerciseName}${durationText}`,
+              ...setLines,
+              memoLine,
+            ]
+              .filter(Boolean)
+              .join('\n')
+          })
+
+          return [`${day.day_of_week}`, ...itemLines].join('\n')
+        })
+        .join('\n\n')
+
+      return `${week.week_number}주차\n${dayLines}`
+    })
+    .join('\n\n')
+}
+
+const handleRoutineSave = async () => {
   if (!selectedMemberId) {
     setMessage('루틴을 저장할 회원을 먼저 선택해주세요.')
     return
   }
 
-  const normalizedItems = (routineForm.items || []).map((item) => ({
-    exercise_id: item.exercise_id || '',
-    exercise_name_snapshot: item.exercise_name_snapshot?.trim() || '',
-    duration_minutes: item.duration_minutes || '',
-    memo: item.memo?.trim() || '',
-    sets: (item.sets || []).map((setRow) => ({
-      kg: setRow.kg ?? '',
-      reps: setRow.reps ?? '',
-    })),
-  }))
+  const payloadData = buildRoutinePayload(routineForm)
+  const hasAnyItem = payloadData.weeks.some((week) =>
+    week.days.some((day) => (day.items || []).length > 0)
+  )
+
+  if (!hasAnyItem) {
+    setMessage('최소 1개 이상의 루틴 운동을 입력해주세요.')
+    return
+  }
 
   const payload = {
     member_id: selectedMemberId,
     title: routineForm.title?.trim() || '루틴',
-    content: buildRoutineContent({
-      ...routineForm,
-      items: normalizedItems,
-    }),
-    items: normalizedItems,
+    content: buildRoutineContent(routineForm),
+    routine_data: payloadData,
+    admin_id: currentAdminId || null,
+    gym_id: currentGymId || null,
   }
 
-  const { data: existing } = await supabase
+  const { data: existingRoutine, error: existingError } = await supabase
     .from('member_routines')
     .select('id')
     .eq('member_id', selectedMemberId)
     .maybeSingle()
 
-  if (existing?.id) {
-    await supabase.from('member_routines').update(payload).eq('id', existing.id)
-  } else {
-    await supabase.from('member_routines').insert(payload)
+  if (existingError) {
+    setMessage(`루틴 확인 실패: ${existingError.message}`)
+    return
   }
 
-  setMessage('루틴이 저장되었습니다.')
-  await loadRoutine(selectedMemberId)
+  if (existingRoutine?.id) {
+    const { error } = await supabase
+      .from('member_routines')
+      .update(payload)
+      .eq('id', existingRoutine.id)
+
+    if (error) {
+      setMessage(`루틴 수정 실패: ${error.message}`)
+      return
+    }
+
+    setMessage('루틴이 수정되었습니다.')
+  } else {
+    const { error } = await supabase
+      .from('member_routines')
+      .insert(payload)
+
+    if (error) {
+      setMessage(`루틴 저장 실패: ${error.message}`)
+      return
+    }
+
+    setMessage('루틴이 저장되었습니다.')
+  }
 }
 
   const handleRoutineDelete = async () => {
@@ -2635,58 +2748,149 @@ const updateRoutineItemField = (itemIndex, field, value) => {
   })
 }
 
-const addRoutineItem = () => {
+const addRoutineWeek = () => {
   setRoutineForm((prev) => ({
     ...prev,
-    items: [...prev.items, { ...emptyRoutineItem }],
+    weeks: [...prev.weeks, createEmptyRoutineWeek(prev.weeks.length + 1)],
   }))
 }
 
-const removeRoutineItem = (itemIndex) => {
-  setRoutineForm((prev) => ({
-    ...prev,
-    items:
-      prev.items.length === 1
-        ? [{ ...emptyRoutineItem }]
-        : prev.items.filter((_, idx) => idx !== itemIndex),
-  }))
-}
-
-const addRoutineSet = (itemIndex) => {
+const removeRoutineWeek = (weekIndex) => {
   setRoutineForm((prev) => {
-    const nextItems = [...prev.items]
-    nextItems[itemIndex] = {
-      ...nextItems[itemIndex],
-      sets: [...nextItems[itemIndex].sets, { kg: '', reps: '' }],
-    }
-    return { ...prev, items: nextItems }
+    const nextWeeks =
+      prev.weeks.length === 1
+        ? [createEmptyRoutineWeek(1)]
+        : prev.weeks.filter((_, idx) => idx !== weekIndex).map((week, idx) => ({
+            ...week,
+            week_number: idx + 1,
+          }))
+
+    return { ...prev, weeks: nextWeeks }
   })
 }
 
-const removeRoutineSet = (itemIndex, setIndex) => {
+const addRoutineItem = (weekIndex, dayIndex) => {
   setRoutineForm((prev) => {
-    const nextItems = [...prev.items]
-    const currentSets = nextItems[itemIndex].sets || [{ kg: '', reps: '' }]
+    const nextWeeks = [...prev.weeks]
+    const targetWeek = { ...nextWeeks[weekIndex] }
+    const nextDays = [...targetWeek.days]
+    const targetDay = { ...nextDays[dayIndex] }
 
-    nextItems[itemIndex] = {
-      ...nextItems[itemIndex],
-      sets:
-        currentSets.length === 1
-          ? [{ kg: '', reps: '' }]
-          : currentSets.filter((_, idx) => idx !== setIndex),
-    }
+    targetDay.items = [...(targetDay.items || []), createEmptyRoutineItem()]
+    nextDays[dayIndex] = targetDay
+    targetWeek.days = nextDays
+    nextWeeks[weekIndex] = targetWeek
 
-    return { ...prev, items: nextItems }
+    return { ...prev, weeks: nextWeeks }
   })
 }
 
-const updateRoutineSetValue = (itemIndex, setIndex, field, value) => {
+const removeRoutineItem = (weekIndex, dayIndex, itemIndex) => {
   setRoutineForm((prev) => {
-    const nextItems = [...prev.items]
-    const nextSets = [...(nextItems[itemIndex].sets || [])]
+    const nextWeeks = [...prev.weeks]
+    const targetWeek = { ...nextWeeks[weekIndex] }
+    const nextDays = [...targetWeek.days]
+    const targetDay = { ...nextDays[dayIndex] }
+
+    targetDay.items =
+      targetDay.items.length === 1
+        ? [createEmptyRoutineItem()]
+        : targetDay.items.filter((_, idx) => idx !== itemIndex)
+
+    nextDays[dayIndex] = targetDay
+    targetWeek.days = nextDays
+    nextWeeks[weekIndex] = targetWeek
+
+    return { ...prev, weeks: nextWeeks }
+  })
+}
+
+const addRoutineSet = (weekIndex, dayIndex, itemIndex) => {
+  setRoutineForm((prev) => {
+    const nextWeeks = [...prev.weeks]
+    const targetWeek = { ...nextWeeks[weekIndex] }
+    const nextDays = [...targetWeek.days]
+    const targetDay = { ...nextDays[dayIndex] }
+    const nextItems = [...targetDay.items]
+    const targetItem = { ...nextItems[itemIndex] }
+
+    targetItem.sets = [...(targetItem.sets || []), createEmptyRoutineSet()]
+    nextItems[itemIndex] = targetItem
+    targetDay.items = nextItems
+    nextDays[dayIndex] = targetDay
+    targetWeek.days = nextDays
+    nextWeeks[weekIndex] = targetWeek
+
+    return { ...prev, weeks: nextWeeks }
+  })
+}
+
+const removeRoutineSet = (weekIndex, dayIndex, itemIndex, setIndex) => {
+  setRoutineForm((prev) => {
+    const nextWeeks = [...prev.weeks]
+    const targetWeek = { ...nextWeeks[weekIndex] }
+    const nextDays = [...targetWeek.days]
+    const targetDay = { ...nextDays[dayIndex] }
+    const nextItems = [...targetDay.items]
+    const targetItem = { ...nextItems[itemIndex] }
+    const currentSets = targetItem.sets || [createEmptyRoutineSet()]
+
+    targetItem.sets =
+      currentSets.length === 1
+        ? [createEmptyRoutineSet()]
+        : currentSets.filter((_, idx) => idx !== setIndex)
+
+    nextItems[itemIndex] = targetItem
+    targetDay.items = nextItems
+    nextDays[dayIndex] = targetDay
+    targetWeek.days = nextDays
+    nextWeeks[weekIndex] = targetWeek
+
+    return { ...prev, weeks: nextWeeks }
+  })
+}
+
+const updateRoutineSetValue = (weekIndex, dayIndex, itemIndex, setIndex, field, value) => {
+  setRoutineForm((prev) => {
+    const nextWeeks = [...prev.weeks]
+    const targetWeek = { ...nextWeeks[weekIndex] }
+    const nextDays = [...targetWeek.days]
+    const targetDay = { ...nextDays[dayIndex] }
+    const nextItems = [...targetDay.items]
+    const targetItem = { ...nextItems[itemIndex] }
+    const nextSets = [...(targetItem.sets || [])]
+
     nextSets[setIndex] = { ...nextSets[setIndex], [field]: value }
-    nextItems[itemIndex] = { ...nextItems[itemIndex], sets: nextSets }
-    return { ...prev, items: nextItems }
+    targetItem.sets = nextSets
+    nextItems[itemIndex] = targetItem
+    targetDay.items = nextItems
+    nextDays[dayIndex] = targetDay
+    targetWeek.days = nextDays
+    nextWeeks[weekIndex] = targetWeek
+
+    return { ...prev, weeks: nextWeeks }
+  })
+}
+
+const updateRoutineItemField = (weekIndex, dayIndex, itemIndex, field, value) => {
+  setRoutineForm((prev) => {
+    const nextWeeks = [...prev.weeks]
+    const targetWeek = { ...nextWeeks[weekIndex] }
+    const nextDays = [...targetWeek.days]
+    const targetDay = { ...nextDays[dayIndex] }
+    const nextItems = [...targetDay.items]
+
+    nextItems[itemIndex] = {
+      ...nextItems[itemIndex],
+      [field]: value,
+    }
+
+    targetDay.items = nextItems
+    nextDays[dayIndex] = targetDay
+    targetWeek.days = nextDays
+    nextWeeks[weekIndex] = targetWeek
+
+    return { ...prev, weeks: nextWeeks }
   })
 }
 
@@ -4518,136 +4722,202 @@ const getSalesAutoFeedback = () => {
 
       <div className="stack-gap">
   <label className="field">
-    <span>루틴 제목</span>
-    <input
-      value={routineForm.title}
-      onChange={(e) =>
-        setRoutineForm((prev) => ({ ...prev, title: e.target.value }))
-      }
-    />
-  </label>
+  <span>루틴 제목</span>
+  <input
+    value={routineForm.title}
+    onChange={(e) =>
+      setRoutineForm((prev) => ({ ...prev, title: e.target.value }))
+    }
+  />
+</label>
 
-  <div className="inline-actions wrap">
-    <button className="secondary-btn" type="button" onClick={addRoutineItem}>
-      운동 추가
-    </button>
-  </div>
+<div className="inline-actions wrap">
+  <button className="secondary-btn" type="button" onClick={addRoutineWeek}>
+    주차 추가
+  </button>
+</div>
 
-  <div className="list-stack">
-    {(routineForm.items || []).map((item, itemIndex) => (
-      <div key={itemIndex} className="record-item-box">
-        <div className="list-card-top">
-          <strong>운동 {itemIndex + 1}</strong>
-          <button
-            type="button"
-            className="danger-btn"
-            onClick={() => removeRoutineItem(itemIndex)}
-          >
-            운동 삭제
-          </button>
-        </div>
+<div className="list-stack">
+  {(routineForm.weeks || []).map((week, weekIndex) => (
+    <div key={weekIndex} className="sub-card">
+      <div className="list-card-top">
+        <strong>{week.week_number}주차</strong>
+        <button
+          type="button"
+          className="danger-btn"
+          onClick={() => removeRoutineWeek(weekIndex)}
+        >
+          주차 삭제
+        </button>
+      </div>
 
-        <div className="grid-2" style={{ marginTop: '12px' }}>
-          <label className="field">
-            <span>운동 선택</span>
-            <select
-              value={item.exercise_id || ''}
-              onChange={(e) => updateRoutineItemSelect(itemIndex, e.target.value)}
-            >
-              <option value="">운동DB에서 선택</option>
-              {exercises.map((exercise) => (
-                <option key={exercise.id} value={exercise.id}>
-                  [{exercise.body_part || '-'}] {exercise.name}
-                </option>
-              ))}
-            </select>
-          </label>
-
-          <label className="field">
-            <span>운동명 직접입력</span>
-            <input
-              value={item.exercise_name_snapshot || ''}
-              onChange={(e) => updateRoutineItemName(itemIndex, e.target.value)}
-              placeholder="예: 레그프레스, 햄스트링 스트레칭"
-            />
-          </label>
-        </div>
-
-        <div className="grid-2">
-          <label className="field">
-            <span>시간(분)</span>
-            <input
-              type="number"
-              min="0"
-              value={item.duration_minutes || ''}
-              onChange={(e) =>
-                updateRoutineItemField(itemIndex, 'duration_minutes', e.target.value)
-              }
-              placeholder="선택 입력"
-            />
-          </label>
-
-          <label className="field">
-            <span>메모 / 코칭포인트</span>
-            <input
-              value={item.memo || ''}
-              onChange={(e) =>
-                updateRoutineItemField(itemIndex, 'memo', e.target.value)
-              }
-              placeholder="예: 천천히 내려가기 / 호흡 유지"
-            />
-          </label>
-        </div>
-
-        <div className="stack-gap">
-          <div className="inline-actions wrap">
-            <button
-              type="button"
-              className="secondary-btn"
-              onClick={() => addRoutineSet(itemIndex)}
-            >
-              세트 추가
-            </button>
-          </div>
-
-          {(item.sets || []).map((setRow, setIndex) => (
-            <div key={setIndex} className="set-row">
-              <input
-                placeholder="중량(kg)"
-                value={setRow.kg}
-                onChange={(e) =>
-                  updateRoutineSetValue(itemIndex, setIndex, 'kg', e.target.value)
-                }
-              />
-              <input
-                placeholder="횟수(reps)"
-                value={setRow.reps}
-                onChange={(e) =>
-                  updateRoutineSetValue(itemIndex, setIndex, 'reps', e.target.value)
-                }
-              />
+      <div className="list-stack" style={{ marginTop: '12px' }}>
+        {(week.days || []).map((day, dayIndex) => (
+          <div key={`${week.week_number}-${day.day_of_week}`} className="record-item-box">
+            <div className="list-card-top">
+              <strong>{day.day_of_week}요일</strong>
               <button
                 type="button"
-                className="danger-btn"
-                onClick={() => removeRoutineSet(itemIndex, setIndex)}
+                className="secondary-btn"
+                onClick={() => addRoutineItem(weekIndex, dayIndex)}
               >
-                삭제
+                운동 추가
               </button>
             </div>
-          ))}
-        </div>
-      </div>
-    ))}
-  </div>
 
-  <div className="inline-actions wrap">
-    <button className="primary-btn" type="button" onClick={handleRoutineSave}>
-      루틴 저장
-    </button>
-    <button className="danger-btn" type="button" onClick={handleRoutineDelete}>
-      루틴 삭제
-    </button>
-  </div>
+            <div className="list-stack" style={{ marginTop: '12px' }}>
+              {(day.items || []).map((item, itemIndex) => (
+                <div key={itemIndex} className="sub-card">
+                  <div className="list-card-top">
+                    <strong>운동 {itemIndex + 1}</strong>
+                    <button
+                      type="button"
+                      className="danger-btn"
+                      onClick={() => removeRoutineItem(weekIndex, dayIndex, itemIndex)}
+                    >
+                      운동 삭제
+                    </button>
+                  </div>
+
+                  <div className="grid-2" style={{ marginTop: '12px' }}>
+                    <label className="field">
+                      <span>운동 선택</span>
+                      <select
+                        value={item.exercise_id || ''}
+                        onChange={(e) =>
+                          updateRoutineItemSelect(weekIndex, dayIndex, itemIndex, e.target.value)
+                        }
+                      >
+                        <option value="">운동DB에서 선택</option>
+                        {exercises.map((exercise) => (
+                          <option key={exercise.id} value={exercise.id}>
+                            [{exercise.body_part || '-'}] {exercise.name}
+                          </option>
+                        ))}
+                      </select>
+                    </label>
+
+                    <label className="field">
+                      <span>운동명 직접입력</span>
+                      <input
+                        value={item.exercise_name_snapshot || ''}
+                        onChange={(e) =>
+                          updateRoutineItemName(weekIndex, dayIndex, itemIndex, e.target.value)
+                        }
+                        placeholder="예: 레그프레스, 햄스트링 스트레칭"
+                      />
+                    </label>
+                  </div>
+
+                  <div className="grid-2">
+                    <label className="field">
+                      <span>시간(분)</span>
+                      <input
+                        type="number"
+                        min="0"
+                        value={item.duration_minutes || ''}
+                        onChange={(e) =>
+                          updateRoutineItemField(
+                            weekIndex,
+                            dayIndex,
+                            itemIndex,
+                            'duration_minutes',
+                            e.target.value
+                          )
+                        }
+                        placeholder="선택 입력"
+                      />
+                    </label>
+
+                    <label className="field">
+                      <span>메모 / 코칭포인트</span>
+                      <input
+                        value={item.memo || ''}
+                        onChange={(e) =>
+                          updateRoutineItemField(
+                            weekIndex,
+                            dayIndex,
+                            itemIndex,
+                            'memo',
+                            e.target.value
+                          )
+                        }
+                        placeholder="예: 천천히 내려가기 / 호흡 유지"
+                      />
+                    </label>
+                  </div>
+
+                  <div className="stack-gap">
+                    <div className="inline-actions wrap">
+                      <button
+                        type="button"
+                        className="secondary-btn"
+                        onClick={() => addRoutineSet(weekIndex, dayIndex, itemIndex)}
+                      >
+                        세트 추가
+                      </button>
+                    </div>
+
+                    {(item.sets || []).map((setRow, setIndex) => (
+                      <div key={setIndex} className="set-row">
+                        <input
+                          placeholder="중량(kg)"
+                          value={setRow.kg}
+                          onChange={(e) =>
+                            updateRoutineSetValue(
+                              weekIndex,
+                              dayIndex,
+                              itemIndex,
+                              setIndex,
+                              'kg',
+                              e.target.value
+                            )
+                          }
+                        />
+                        <input
+                          placeholder="횟수(reps)"
+                          value={setRow.reps}
+                          onChange={(e) =>
+                            updateRoutineSetValue(
+                              weekIndex,
+                              dayIndex,
+                              itemIndex,
+                              setIndex,
+                              'reps',
+                              e.target.value
+                            )
+                          }
+                        />
+                        <button
+                          type="button"
+                          className="danger-btn"
+                          onClick={() =>
+                            removeRoutineSet(weekIndex, dayIndex, itemIndex, setIndex)
+                          }
+                        >
+                          삭제
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  ))}
+</div>
+
+<div className="inline-actions wrap">
+  <button className="primary-btn" type="button" onClick={handleRoutineSave}>
+    루틴 저장
+  </button>
+  <button className="danger-btn" type="button" onClick={handleRoutineDelete}>
+    루틴 삭제
+  </button>
+</div>
 </div>
 </div>
     <div className="sub-card">
