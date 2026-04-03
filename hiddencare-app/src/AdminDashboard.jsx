@@ -2558,21 +2558,24 @@ const clearAdminAlerts = () => {
 }
 
 const buildRoutinePayload = (form) => {
+  const weeks = Array.isArray(form.weeks) ? form.weeks : []
+
   return {
-    title: form.title?.trim() || '루틴',
-    weeks: (form.weeks || []).map((week, weekIndex) => ({
+    title: form.title || '',
+    weeks: weeks.map((week, weekIndex) => ({
       week_number: week.week_number || weekIndex + 1,
-      days: (currentWeek.days || []).map((day) => ({
+      days: (week.days || []).map((day) => ({
         day_of_week: day.day_of_week,
-        items: (day.items || [])
-          .filter((item) => item.exercise_name_snapshot?.trim() || item.exercise_id)
-          .map((item) => ({
-            exercise_id: item.exercise_id || null,
-            exercise_name_snapshot: item.exercise_name_snapshot?.trim() || '',
-            duration_minutes: item.duration_minutes ? Number(item.duration_minutes) : null,
-            memo: item.memo?.trim() || '',
-            sets: normalizeRoutineSets(item.sets || []),
+        items: (day.items || []).map((item) => ({
+          exercise_id: item.exercise_id || null,
+          exercise_name_snapshot: item.exercise_name_snapshot || '',
+          duration_minutes: item.duration_minutes || null,
+          memo: item.memo || '',
+          sets: (item.sets || []).map((setRow) => ({
+            kg: setRow.kg || '',
+            reps: setRow.reps || '',
           })),
+        })),
       })),
     })),
   }
