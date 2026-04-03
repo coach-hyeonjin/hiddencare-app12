@@ -4649,7 +4649,7 @@ const getSalesAutoFeedback = () => {
     </button>
   </div>
 </div>
-
+</div>
     <div className="sub-card">
       <h3>관리자 전용 메모</h3>
 
