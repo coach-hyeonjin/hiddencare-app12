@@ -1780,7 +1780,7 @@ useEffect(() => {
 
   useEffect(() => {
     if (!selectedMemberId) {
-      setRoutineForm({ title: '루틴', content: '' })
+      setRoutineForm(emptyRoutineForm)
       setAdminNotes([])
       setMemberHealthLogs([])
       setAdminNoteInput('')
@@ -2002,36 +2002,36 @@ const loadBrands = async () => {
 }
 
   const loadRoutine = async (memberId) => {
-    const { data } = await supabase
-      .from('member_routines')
-      .select('*')
-      .eq('member_id', memberId)
-      .maybeSingle()
+  const { data } = await supabase
+    .from('member_routines')
+    .select('*')
+    .eq('member_id', memberId)
+    .maybeSingle()
 
-    if (data) {
-      setRoutineForm({
-  title: data?.title || '루틴',
-  items:
-    Array.isArray(data?.items) && data.items.length
-      ? data.items.map((item) => ({
-          exercise_id: item.exercise_id || '',
-          exercise_name_snapshot: item.exercise_name_snapshot || '',
-          duration_minutes: item.duration_minutes || '',
-          memo: item.memo || '',
-          sets:
-            Array.isArray(item.sets) && item.sets.length
-              ? item.sets.map((setRow) => ({
-                  kg: setRow.kg ?? '',
-                  reps: setRow.reps ?? '',
-                }))
-              : [{ kg: '', reps: '' }],
-        }))
-      : [{ ...emptyRoutineItem }],
-})
-    } else {
-      setRoutineForm({ title: '루틴', content: '' })
-    }
+  if (data) {
+    setRoutineForm({
+      title: data.title || '루틴',
+      items:
+        Array.isArray(data.items) && data.items.length
+          ? data.items.map((item) => ({
+              exercise_id: item.exercise_id || '',
+              exercise_name_snapshot: item.exercise_name_snapshot || '',
+              duration_minutes: item.duration_minutes || '',
+              memo: item.memo || '',
+              sets:
+                Array.isArray(item.sets) && item.sets.length
+                  ? item.sets.map((setRow) => ({
+                      kg: setRow.kg ?? '',
+                      reps: setRow.reps ?? '',
+                    }))
+                  : [{ kg: '', reps: '' }],
+            }))
+          : [{ ...emptyRoutineItem }],
+    })
+  } else {
+    setRoutineForm(emptyRoutineForm)
   }
+}
 
   const loadManuals = async () => {
     const { data } = await supabase.from('app_manuals').select('*').order('target_role')
@@ -2474,7 +2474,7 @@ const clearAdminAlerts = () => {
     if (selectedMemberId === memberId) {
       setSelectedMemberId('')
       resetMemberForm()
-      setRoutineForm({ title: '루틴', content: '' })
+     setRoutineForm(emptyRoutineForm)
       setAdminNotes([])
       setMemberHealthLogs([])
     }
