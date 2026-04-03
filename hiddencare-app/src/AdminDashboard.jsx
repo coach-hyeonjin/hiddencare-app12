@@ -598,7 +598,20 @@ export default function AdminDashboard({ profile, currentAdminId, currentGymId, 
   const [dietMemberFilter, setDietMemberFilter] = useState('')
   const [dietSearch, setDietSearch] = useState('')
 
-  const [routineForm, setRoutineForm] = useState({ title: '루틴', content: '' })
+ const emptyRoutineItem = {
+  exercise_id: '',
+  exercise_name_snapshot: '',
+  duration_minutes: '',
+  memo: '',
+  sets: [{ kg: '', reps: '' }],
+}
+
+const emptyRoutineForm = {
+  title: '루틴',
+  items: [{ ...emptyRoutineItem }],
+}
+
+const [routineForm, setRoutineForm] = useState(emptyRoutineForm)
   const [manualTarget, setManualTarget] = useState('member')
   const [manualForm, setManualForm] = useState({ title: '', content: '' })
   const [manuals, setManuals] = useState([])
@@ -1997,9 +2010,24 @@ const loadBrands = async () => {
 
     if (data) {
       setRoutineForm({
-        title: data.title || '루틴',
-        content: data.content || '',
-      })
+  title: data?.title || '루틴',
+  items:
+    Array.isArray(data?.items) && data.items.length
+      ? data.items.map((item) => ({
+          exercise_id: item.exercise_id || '',
+          exercise_name_snapshot: item.exercise_name_snapshot || '',
+          duration_minutes: item.duration_minutes || '',
+          memo: item.memo || '',
+          sets:
+            Array.isArray(item.sets) && item.sets.length
+              ? item.sets.map((setRow) => ({
+                  kg: setRow.kg ?? '',
+                  reps: setRow.reps ?? '',
+                }))
+              : [{ kg: '', reps: '' }],
+        }))
+      : [{ ...emptyRoutineItem }],
+})
     } else {
       setRoutineForm({ title: '루틴', content: '' })
     }
@@ -2494,32 +2522,47 @@ const clearAdminAlerts = () => {
   }
 
   const handleRoutineSave = async () => {
-    if (!selectedMemberId) {
-      setMessage('루틴을 저장할 회원을 먼저 선택해주세요.')
-      return
-    }
-
-    const payload = {
-      member_id: selectedMemberId,
-      title: routineForm.title?.trim() || '루틴',
-      content: routineForm.content?.trim() || '',
-    }
-
-    const { data: existing } = await supabase
-      .from('member_routines')
-      .select('id')
-      .eq('member_id', selectedMemberId)
-      .maybeSingle()
-
-    if (existing?.id) {
-      await supabase.from('member_routines').update(payload).eq('id', existing.id)
-    } else {
-      await supabase.from('member_routines').insert(payload)
-    }
-
-    setMessage('루틴이 저장되었습니다.')
-    await loadRoutine(selectedMemberId)
+  if (!selectedMemberId) {
+    setMessage('루틴을 저장할 회원을 먼저 선택해주세요.')
+    return
   }
+
+  const normalizedItems = (routineForm.items || []).map((item) => ({
+    exercise_id: item.exercise_id || '',
+    exercise_name_snapshot: item.exercise_name_snapshot?.trim() || '',
+    duration_minutes: item.duration_minutes || '',
+    memo: item.memo?.trim() || '',
+    sets: (item.sets || []).map((setRow) => ({
+      kg: setRow.kg ?? '',
+      reps: setRow.reps ?? '',
+    })),
+  }))
+
+  const payload = {
+    member_id: selectedMemberId,
+    title: routineForm.title?.trim() || '루틴',
+    content: buildRoutineContent({
+      ...routineForm,
+      items: normalizedItems,
+    }),
+    items: normalizedItems,
+  }
+
+  const { data: existing } = await supabase
+    .from('member_routines')
+    .select('id')
+    .eq('member_id', selectedMemberId)
+    .maybeSingle()
+
+  if (existing?.id) {
+    await supabase.from('member_routines').update(payload).eq('id', existing.id)
+  } else {
+    await supabase.from('member_routines').insert(payload)
+  }
+
+  setMessage('루틴이 저장되었습니다.')
+  await loadRoutine(selectedMemberId)
+}
 
   const handleRoutineDelete = async () => {
     if (!selectedMemberId) {
@@ -2529,7 +2572,7 @@ const clearAdminAlerts = () => {
     if (!window.confirm('이 회원의 루틴을 삭제할까요?')) return
 
     await supabase.from('member_routines').delete().eq('member_id', selectedMemberId)
-    setRoutineForm({ title: '루틴', content: '' })
+    setRoutineForm(emptyRoutineForm)
     setMessage('루틴이 삭제되었습니다.')
   }
 
@@ -2556,7 +2599,123 @@ const clearAdminAlerts = () => {
     return { ...prev, items: nextItems }
   })
 }
+const updateRoutineItemSelect = (itemIndex, exerciseId) => {
+  const found = exercises.find((exercise) => String(exercise.id) === String(exerciseId))
 
+  setRoutineForm((prev) => {
+    const nextItems = [...prev.items]
+    nextItems[itemIndex] = {
+      ...nextItems[itemIndex],
+      exercise_id: found?.id || '',
+      exercise_name_snapshot: found?.name || nextItems[itemIndex].exercise_name_snapshot,
+    }
+    return { ...prev, items: nextItems }
+  })
+}
+
+const updateRoutineItemName = (itemIndex, value) => {
+  setRoutineForm((prev) => {
+    const nextItems = [...prev.items]
+    nextItems[itemIndex] = {
+      ...nextItems[itemIndex],
+      exercise_name_snapshot: value,
+    }
+    return { ...prev, items: nextItems }
+  })
+}
+
+const updateRoutineItemField = (itemIndex, field, value) => {
+  setRoutineForm((prev) => {
+    const nextItems = [...prev.items]
+    nextItems[itemIndex] = {
+      ...nextItems[itemIndex],
+      [field]: value,
+    }
+    return { ...prev, items: nextItems }
+  })
+}
+
+const addRoutineItem = () => {
+  setRoutineForm((prev) => ({
+    ...prev,
+    items: [...prev.items, { ...emptyRoutineItem }],
+  }))
+}
+
+const removeRoutineItem = (itemIndex) => {
+  setRoutineForm((prev) => ({
+    ...prev,
+    items:
+      prev.items.length === 1
+        ? [{ ...emptyRoutineItem }]
+        : prev.items.filter((_, idx) => idx !== itemIndex),
+  }))
+}
+
+const addRoutineSet = (itemIndex) => {
+  setRoutineForm((prev) => {
+    const nextItems = [...prev.items]
+    nextItems[itemIndex] = {
+      ...nextItems[itemIndex],
+      sets: [...nextItems[itemIndex].sets, { kg: '', reps: '' }],
+    }
+    return { ...prev, items: nextItems }
+  })
+}
+
+const removeRoutineSet = (itemIndex, setIndex) => {
+  setRoutineForm((prev) => {
+    const nextItems = [...prev.items]
+    const currentSets = nextItems[itemIndex].sets || [{ kg: '', reps: '' }]
+
+    nextItems[itemIndex] = {
+      ...nextItems[itemIndex],
+      sets:
+        currentSets.length === 1
+          ? [{ kg: '', reps: '' }]
+          : currentSets.filter((_, idx) => idx !== setIndex),
+    }
+
+    return { ...prev, items: nextItems }
+  })
+}
+
+const updateRoutineSetValue = (itemIndex, setIndex, field, value) => {
+  setRoutineForm((prev) => {
+    const nextItems = [...prev.items]
+    const nextSets = [...(nextItems[itemIndex].sets || [])]
+    nextSets[setIndex] = { ...nextSets[setIndex], [field]: value }
+    nextItems[itemIndex] = { ...nextItems[itemIndex], sets: nextSets }
+    return { ...prev, items: nextItems }
+  })
+}
+
+const buildRoutineContent = (form) => {
+  const lines = (form.items || []).map((item, index) => {
+    const exerciseName = item.exercise_name_snapshot?.trim() || `운동 ${index + 1}`
+    const durationText = item.duration_minutes ? ` / 시간 ${item.duration_minutes}분` : ''
+
+    const setLines = (item.sets || [])
+      .filter((setRow) => setRow.kg !== '' || setRow.reps !== '')
+      .map((setRow, setIndex) => {
+        const kgText = setRow.kg ? `${setRow.kg}kg` : '-'
+        const repsText = setRow.reps ? `${setRow.reps}회` : '-'
+        return `  - ${setIndex + 1}세트: ${kgText} / ${repsText}`
+      })
+
+    const memoText = item.memo?.trim() ? `\n  - 메모: ${item.memo.trim()}` : ''
+
+    return [
+      `${index + 1}. ${exerciseName}${durationText}`,
+      ...(setLines.length ? setLines : []),
+      memoText ? memoText.trimEnd() : '',
+    ]
+      .filter(Boolean)
+      .join('\n')
+  })
+
+  return lines.join('\n\n')
+}
 const updateWorkoutItemName = (itemIndex, value) => {
   setWorkoutForm((prev) => {
     const nextItems = [...prev.items]
@@ -4358,33 +4517,138 @@ const getSalesAutoFeedback = () => {
       </div>
 
       <div className="stack-gap">
-        <label className="field">
-          <span>루틴 제목</span>
-          <input
-            value={routineForm.title}
-            onChange={(e) => setRoutineForm({ ...routineForm, title: e.target.value })}
-          />
-        </label>
+  <label className="field">
+    <span>루틴 제목</span>
+    <input
+      value={routineForm.title}
+      onChange={(e) =>
+        setRoutineForm((prev) => ({ ...prev, title: e.target.value }))
+      }
+    />
+  </label>
 
-        <label className="field">
-          <span>루틴 내용</span>
-          <textarea
-            rows="6"
-            value={routineForm.content}
-            onChange={(e) => setRoutineForm({ ...routineForm, content: e.target.value })}
-          />
-        </label>
+  <div className="inline-actions wrap">
+    <button className="secondary-btn" type="button" onClick={addRoutineItem}>
+      운동 추가
+    </button>
+  </div>
 
-        <div className="inline-actions wrap">
-          <button className="primary-btn" type="button" onClick={handleRoutineSave}>
-            루틴 저장
-          </button>
-          <button className="danger-btn" type="button" onClick={handleRoutineDelete}>
-            루틴 삭제
+  <div className="list-stack">
+    {(routineForm.items || []).map((item, itemIndex) => (
+      <div key={itemIndex} className="record-item-box">
+        <div className="list-card-top">
+          <strong>운동 {itemIndex + 1}</strong>
+          <button
+            type="button"
+            className="danger-btn"
+            onClick={() => removeRoutineItem(itemIndex)}
+          >
+            운동 삭제
           </button>
         </div>
+
+        <div className="grid-2" style={{ marginTop: '12px' }}>
+          <label className="field">
+            <span>운동 선택</span>
+            <select
+              value={item.exercise_id || ''}
+              onChange={(e) => updateRoutineItemSelect(itemIndex, e.target.value)}
+            >
+              <option value="">운동DB에서 선택</option>
+              {exercises.map((exercise) => (
+                <option key={exercise.id} value={exercise.id}>
+                  [{exercise.body_part || '-'}] {exercise.name}
+                </option>
+              ))}
+            </select>
+          </label>
+
+          <label className="field">
+            <span>운동명 직접입력</span>
+            <input
+              value={item.exercise_name_snapshot || ''}
+              onChange={(e) => updateRoutineItemName(itemIndex, e.target.value)}
+              placeholder="예: 레그프레스, 햄스트링 스트레칭"
+            />
+          </label>
+        </div>
+
+        <div className="grid-2">
+          <label className="field">
+            <span>시간(분)</span>
+            <input
+              type="number"
+              min="0"
+              value={item.duration_minutes || ''}
+              onChange={(e) =>
+                updateRoutineItemField(itemIndex, 'duration_minutes', e.target.value)
+              }
+              placeholder="선택 입력"
+            />
+          </label>
+
+          <label className="field">
+            <span>메모 / 코칭포인트</span>
+            <input
+              value={item.memo || ''}
+              onChange={(e) =>
+                updateRoutineItemField(itemIndex, 'memo', e.target.value)
+              }
+              placeholder="예: 천천히 내려가기 / 호흡 유지"
+            />
+          </label>
+        </div>
+
+        <div className="stack-gap">
+          <div className="inline-actions wrap">
+            <button
+              type="button"
+              className="secondary-btn"
+              onClick={() => addRoutineSet(itemIndex)}
+            >
+              세트 추가
+            </button>
+          </div>
+
+          {(item.sets || []).map((setRow, setIndex) => (
+            <div key={setIndex} className="set-row">
+              <input
+                placeholder="중량(kg)"
+                value={setRow.kg}
+                onChange={(e) =>
+                  updateRoutineSetValue(itemIndex, setIndex, 'kg', e.target.value)
+                }
+              />
+              <input
+                placeholder="횟수(reps)"
+                value={setRow.reps}
+                onChange={(e) =>
+                  updateRoutineSetValue(itemIndex, setIndex, 'reps', e.target.value)
+                }
+              />
+              <button
+                type="button"
+                className="danger-btn"
+                onClick={() => removeRoutineSet(itemIndex, setIndex)}
+              >
+                삭제
+              </button>
+            </div>
+          ))}
+        </div>
       </div>
-    </div>
+    ))}
+  </div>
+
+  <div className="inline-actions wrap">
+    <button className="primary-btn" type="button" onClick={handleRoutineSave}>
+      루틴 저장
+    </button>
+    <button className="danger-btn" type="button" onClick={handleRoutineDelete}>
+      루틴 삭제
+    </button>
+  </div>
+</div>
 
     <div className="sub-card">
       <h3>관리자 전용 메모</h3>
