@@ -2030,7 +2030,52 @@ const loadBrands = async () => {
   }
 }
 
-  const loadRoutine = async (memberId) =
+  const loadRoutine = async (memberId) => {
+  const { data, error } = await supabase
+    .from('member_routines')
+    .select('*')
+    .eq('member_id', memberId)
+    .maybeSingle()
+
+  if (error || !data) {
+    setRoutineForm(emptyRoutineForm)
+    setSelectedRoutineWeek(0)
+    return
+  }
+
+  if (data.routine_data && Array.isArray(data.routine_data.weeks)) {
+    setRoutineForm({
+      title: data.routine_data.title || data.title || '루틴',
+      weeks: data.routine_data.weeks.map((week, weekIndex) => ({
+        week_number: week.week_number || weekIndex + 1,
+        days: (week.days || []).map((day) => ({
+          day_of_week: day.day_of_week || '월',
+          items:
+            Array.isArray(day.items) && day.items.length
+              ? day.items.map((item) => ({
+                  exercise_id: item.exercise_id || '',
+                  exercise_name_snapshot: item.exercise_name_snapshot || '',
+                  duration_minutes: item.duration_minutes || '',
+                  memo: item.memo || '',
+                  sets:
+                    Array.isArray(item.sets) && item.sets.length
+                      ? item.sets.map((setRow) => ({
+                          kg: setRow.kg ?? '',
+                          reps: setRow.reps ?? '',
+                        }))
+                      : [{ kg: '', reps: '' }],
+                }))
+              : [{ ...createEmptyRoutineItem() }],
+        })),
+      })),
+    })
+    setSelectedRoutineWeek(0)
+    return
+  }
+
+  setRoutineForm(emptyRoutineForm)
+  setSelectedRoutineWeek(0)
+}
 
   const loadManuals = async () => {
     const { data } = await supabase.from('app_manuals').select('*').order('target_role')
