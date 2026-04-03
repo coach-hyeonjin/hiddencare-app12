@@ -1098,6 +1098,207 @@ const coachConditionSummary = useMemo(() => {
     avgRecovery: totalRecovery / filteredCoachConditions.length,
   }
 }, [filteredCoachConditions])
+  const dashboardOverview = useMemo(() => {
+  const now = new Date()
+  const todayKey = now.toISOString().slice(0, 10)
+  const currentMonthKey = now.toISOString().slice(0, 7)
+
+  const startOfWeek = new Date(now)
+  const day = startOfWeek.getDay()
+  const diffToMonday = day === 0 ? 6 : day - 1
+  startOfWeek.setDate(startOfWeek.getDate() - diffToMonday)
+  startOfWeek.setHours(0, 0, 0, 0)
+
+  const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1)
+  const previousMonthStart = new Date(now.getFullYear(), now.getMonth() - 1, 1)
+  const previousMonthEnd = new Date(now.getFullYear(), now.getMonth(), 0)
+
+  const toDate = (value) => {
+    if (!value) return null
+    const date = new Date(value)
+    return Number.isNaN(date.getTime()) ? null : date
+  }
+
+  const sumAmount = (rows = []) =>
+    rows.reduce((sum, row) => sum + Number(row.amount || 0), 0)
+
+  const currentDaySales = salesRecords.filter((sale) => sale.sale_date === todayKey)
+
+  const currentWeekSales = salesRecords.filter((sale) => {
+    const saleDate = toDate(sale.sale_date)
+    return saleDate && saleDate >= startOfWeek
+  })
+
+  const currentMonthSales = salesRecords.filter((sale) => {
+    const saleDate = toDate(sale.sale_date)
+    return saleDate && saleDate >= startOfMonth
+  })
+
+  const previousMonthSales = salesRecords.filter((sale) => {
+    const saleDate = toDate(sale.sale_date)
+    return saleDate && saleDate >= previousMonthStart && saleDate <= previousMonthEnd
+  })
+
+  const currentMonthWorkouts = workouts.filter(
+    (workout) => (workout.workout_date || '').slice(0, 7) === currentMonthKey
+  )
+
+  const ptCount = currentMonthWorkouts.filter(
+    (workout) => workout.workout_type === 'pt'
+  ).length
+
+  const personalCount = currentMonthWorkouts.filter(
+    (workout) => workout.workout_type === 'personal'
+  ).length
+
+  const remainingSessionTotal = members.reduce(
+    (sum, member) =>
+      sum + Math.max(Number(member.total_sessions || 0) - Number(member.used_sessions || 0), 0),
+    0
+  )
+
+  const endingMembers = members
+    .map((member) => ({
+      ...member,
+      remainingSessions: Math.max(
+        Number(member.total_sessions || 0) - Number(member.used_sessions || 0),
+        0
+      ),
+    }))
+    .filter((member) => member.remainingSessions <= 5)
+    .sort((a, b) => a.remainingSessions - b.remainingSessions)
+    .slice(0, 5)
+
+  const memberWorkoutCountMap = currentMonthWorkouts.reduce((acc, workout) => {
+    acc[workout.member_id] = (acc[workout.member_id] || 0) + 1
+    return acc
+  }, {})
+
+  const activeMembers = members
+    .map((member) => ({
+      ...member,
+      workoutCount: memberWorkoutCountMap[member.id] || 0,
+    }))
+    .filter((member) => member.workoutCount > 0)
+    .sort((a, b) => b.workoutCount - a.workoutCount)
+    .slice(0, 5)
+
+  const paymentBreakdownMap = salesRecords.reduce((acc, sale) => {
+    const key = sale.payment_method || '기타'
+    acc[key] = (acc[key] || 0) + Number(sale.amount || 0)
+    return acc
+  }, {})
+
+  const paymentBreakdown = Object.entries(paymentBreakdownMap)
+    .map(([label, amount]) => ({ label, amount }))
+    .sort((a, b) => b.amount - a.amount)
+
+  const programMap = currentMonthSales.reduce((acc, sale) => {
+    const key = sale.programs?.name || '미지정'
+    acc[key] = (acc[key] || 0) + Number(sale.amount || 0)
+    return acc
+  }, {})
+
+  const topPrograms = Object.entries(programMap)
+    .map(([name, amount]) => ({ name, amount }))
+    .sort((a, b) => b.amount - a.amount)
+    .slice(0, 5)
+
+  const riskCoaches = filteredCoachConditions
+    .filter((item) => item.status_level === 'risk')
+    .map((item) => ({
+      ...item,
+      coachName: item.coaches?.name || '이름 없음',
+    }))
+
+  const cautionCoaches = filteredCoachConditions
+    .filter((item) => item.status_level === 'caution')
+    .map((item) => ({
+      ...item,
+      coachName: item.coaches?.name || '이름 없음',
+    }))
+
+  const topCoachReviews = coachReviews
+    .filter((item) => !coachReviewMonth || item.review_month === coachReviewMonth)
+    .map((item) => ({
+      ...item,
+      coachName: coaches.find((coach) => coach.id === item.coach_id)?.name || '이름 없음',
+    }))
+    .sort((a, b) => Number(b.total_score || 0) - Number(a.total_score || 0))
+    .slice(0, 5)
+
+  const recentSales = [...salesRecords]
+    .sort((a, b) => `${b.sale_date || ''}`.localeCompare(`${a.sale_date || ''}`))
+    .slice(0, 5)
+
+  const recentSalesLogs = [...filteredSalesLogs].slice(0, 5)
+
+  const recentInquiries = [...inquiries]
+    .sort((a, b) => `${b.created_at || b.inquiry_date || ''}`.localeCompare(`${a.created_at || a.inquiry_date || ''}`))
+    .slice(0, 5)
+
+  const recentNotices = [...notices]
+    .sort((a, b) => `${b.created_at || b.starts_at || ''}`.localeCompare(`${a.created_at || a.starts_at || ''}`))
+    .slice(0, 5)
+
+  const monthSalesAmount = sumAmount(currentMonthSales)
+  const previousMonthSalesAmount = sumAmount(previousMonthSales)
+
+  const monthRevenueChangeRate =
+    previousMonthSalesAmount > 0
+      ? Math.round(((monthSalesAmount - previousMonthSalesAmount) / previousMonthSalesAmount) * 100)
+      : monthSalesAmount > 0
+      ? 100
+      : 0
+
+  return {
+    todaySalesAmount: sumAmount(currentDaySales),
+    todaySalesCount: currentDaySales.length,
+
+    weekSalesAmount: sumAmount(currentWeekSales),
+    weekSalesCount: currentWeekSales.length,
+
+    monthSalesAmount,
+    monthSalesCount: currentMonthSales.length,
+    monthRevenueChangeRate,
+
+    ptCount,
+    personalCount,
+    remainingSessionTotal,
+
+    pendingInquiries: inquiries.filter((item) => item.status !== 'answered').length,
+    unreadInquiryCount,
+    unreadNoticeCount,
+
+    riskCoachCount: riskCoaches.length,
+    cautionCoachCount: cautionCoaches.length,
+
+    paymentBreakdown,
+    topPrograms,
+    endingMembers,
+    activeMembers,
+    riskCoaches,
+    cautionCoaches,
+    topCoachReviews,
+    recentSales,
+    recentSalesLogs,
+    recentInquiries,
+    recentNotices,
+  }
+}, [
+  salesRecords,
+  workouts,
+  members,
+  filteredCoachConditions,
+  coachReviews,
+  coachReviewMonth,
+  coaches,
+  filteredSalesLogs,
+  inquiries,
+  notices,
+  unreadInquiryCount,
+  unreadNoticeCount,
+])
   const coachAlertList = useMemo(() => {
   return filteredCoachConditions
     .map((item) => {
@@ -4760,193 +4961,367 @@ const getSalesAutoFeedback = () => {
   </div>
 )}
 {activeTab === '운영대시보드' && (
-  <div className="stack-gap">
+  <div className="admin-section">
     <div className="section-head">
       <div>
         <h2>운영 대시보드</h2>
-        <p className="sub-text">숫자만 보는 화면이 아니라, 지금 무엇을 먼저 봐야 하는지 정리하는 화면입니다.</p>
+        <p className="sub-text">
+          코치관리, 매출기록, 세일즈일지, 문의사항 데이터를 한 화면에서 요약해서 보는 화면입니다.
+        </p>
       </div>
     </div>
 
-    <div className="coach-summary-grid">
-      <div className="coach-summary-card">
-  <span>번아웃 의심 평균</span>
-  <strong>{Number(burnoutSummary.avgSignal || 0).toFixed(1)}</strong>
-  <div className="compact-text">
-    {burnoutSummary.avgSignal >= 3 ? '주의 필요' : '정상 범위'}
-  </div>
-</div>
-
-<div className="coach-summary-card">
-  <span>회복 체크 평균</span>
-  <strong>{Number(burnoutSummary.avgRecovery || 0).toFixed(1)}</strong>
-  <div className="compact-text">
-    {burnoutSummary.avgRecovery >= 3 ? '회복 중' : '관리 필요'}
-  </div>
-</div>
-      <div className="coach-summary-card">
-        <span>이번달 총 매출</span>
-        <strong>{Number(salesStatsExtended.totalSales || 0).toLocaleString()}원</strong>
+    <div className="dashboard-kpi-grid">
+      <div className="dashboard-kpi-card">
+        <span>오늘 매출</span>
+        <strong>{Number(dashboardOverview.todaySalesAmount || 0).toLocaleString()}원</strong>
         <div className="compact-text">
-          결제 {salesStatsExtended.totalCount || 0}건 / VIP {salesStatsExtended.vipCount || 0}건
+          오늘 결제 {dashboardOverview.todaySalesCount || 0}건
         </div>
       </div>
 
-      <div className="coach-summary-card">
-        <span>신규 전환 현황</span>
-        <strong>{salesLogSummary.closed || 0}건</strong>
+      <div className="dashboard-kpi-card">
+        <span>이번 주 매출</span>
+        <strong>{Number(dashboardOverview.weekSalesAmount || 0).toLocaleString()}원</strong>
         <div className="compact-text">
-          세일즈일지 {salesLogSummary.total || 0}건 중 결제완료 {salesLogSummary.closed || 0}건
+          이번 주 결제 {dashboardOverview.weekSalesCount || 0}건
         </div>
       </div>
 
-      <div className="coach-summary-card">
-        <span>후속관리 필요</span>
-        <strong>{salesLogSummary.followup || 0}건</strong>
+      <div className="dashboard-kpi-card">
+        <span>이번 달 매출</span>
+        <strong>{Number(dashboardOverview.monthSalesAmount || 0).toLocaleString()}원</strong>
         <div className="compact-text">
-          지금 바로 다시 확인해야 할 잠재 결제 고객 수
+          이번 달 결제 {dashboardOverview.monthSalesCount || 0}건
         </div>
       </div>
 
-      <div className="coach-summary-card">
-        <span>코치 상태</span>
-        <strong>{Number(coachConditionSummary.avgCondition || 0).toFixed(1)}</strong>
+      <div className="dashboard-kpi-card">
+        <span>전월 대비 매출</span>
+        <strong>
+          {dashboardOverview.monthRevenueChangeRate > 0 ? '+' : ''}
+          {dashboardOverview.monthRevenueChangeRate || 0}%
+        </strong>
+        <div className="compact-text">이번 달 매출 증감률</div>
+      </div>
+
+      <div className="dashboard-kpi-card">
+        <span>이번 달 PT 수업</span>
+        <strong>{dashboardOverview.ptCount || 0}회</strong>
+        <div className="compact-text">기록작성/운동기록 기준</div>
+      </div>
+
+      <div className="dashboard-kpi-card">
+        <span>이번 달 개인운동</span>
+        <strong>{dashboardOverview.personalCount || 0}회</strong>
+        <div className="compact-text">회원 입력 기준</div>
+      </div>
+
+      <div className="dashboard-kpi-card">
+        <span>전체 남은 세션</span>
+        <strong>{dashboardOverview.remainingSessionTotal || 0}회</strong>
+        <div className="compact-text">전체 회원 잔여 세션 합계</div>
+      </div>
+
+      <div className="dashboard-kpi-card">
+        <span>미답변 문의</span>
+        <strong>{dashboardOverview.pendingInquiries || 0}건</strong>
         <div className="compact-text">
-          평균 피로도 {Number(coachConditionSummary.avgFatigue || 0).toFixed(1)} / 스트레스 {Number(coachConditionSummary.avgStress || 0).toFixed(1)}
-        </div>
-      </div>
-    </div>
-<div className="report-grid">
-  <div className="card">
-    <h2>코치 운영 요약</h2>
-    <p>평균 컨디션: {Number(coachConditionSummary.avgCondition || 0).toFixed(1)}</p>
-    <p>평균 피로도: {Number(coachConditionSummary.avgFatigue || 0).toFixed(1)}</p>
-    <p>평균 스트레스: {Number(coachConditionSummary.avgStress || 0).toFixed(1)}</p>
-    <p>평균 집중도: {Number(coachConditionSummary.avgFocus || 0).toFixed(1)}</p>
-    <p>평균 행동 점수: {Number(coachDashboardSummary.avgPerformance || 0).toFixed(1)}</p>
-    <p>현재 운영 레벨: {coachDashboardSummary.statusLabel || '-'}</p>
-    <p>자동 판단: {coachDashboardSummary.statusText || '-'}</p>
-  </div>
-
-  <div className="card">
-    <h2>주의 필요 코치</h2>
-    {uniqueAlertCoaches.length === 0 ? (
-  <div className="compact-text">현재 주의 필요 코치가 없습니다.</div>
-) : (
-  <div className="list-stack">
-    {uniqueAlertCoaches.map((item) => (
-          <div key={item.id} className="list-card">
-            <div className="list-card-top">
-              <strong>{item.coaches?.name || '이름 없음'}</strong>
-              <span className="pill">주의</span>
-            </div>
-            <div className="compact-text">
-              {item.reasons.join(', ')}
-            </div>
-          </div>
-        ))}
-      </div>
-    )}
-  </div>
-</div>
-    <div className="report-grid">
-      <div className="card">
-        <h2>지금 확인할 것</h2>
-        <div className="list-stack">
-          <div className="list-card">
-            <div className="list-card-top">
-              <strong>후속관리 대상</strong>
-              <span className="pill">{salesLogSummary.followup || 0}건</span>
-            </div>
-            <div className="compact-text">
-              결제 직전이거나 추가 설득이 필요한 리드입니다. 세일즈일지에서 후속관리중 항목 먼저 확인하세요.
-            </div>
-          </div>
-
-          <div className="list-card">
-            <div className="list-card-top">
-              <strong>이탈 고객</strong>
-              <span className="pill">{salesLogSummary.lost || 0}건</span>
-            </div>
-            <div className="compact-text">
-              가격, 시간, 필요성 부족 등 이탈 사유를 확인해서 다음 상담 방식에 반영해야 합니다.
-            </div>
-          </div>
-
-          <div className="list-card">
-            <div className="list-card-top">
-              <strong>컨디션 기록 수</strong>
-              <span className="pill">{filteredCoachConditions.length || 0}건</span>
-            </div>
-            <div className="compact-text">
-              이번달 코치 컨디션 기록이 적으면 평균값만 보고 판단하기 어렵습니다.
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div className="card">
-        <h2>자동 판단</h2>
-        <div className="list-stack">
-          <div className="report-feedback-card">
-            {getSalesAutoFeedback()}
-          </div>
-
-          <div className="report-feedback-card">
-            {!filteredCoachConditions.length
-              ? '이번 달 코치 컨디션 기록이 없습니다. 최소 주 1회 이상 입력해야 판단이 가능합니다.'
-              : Number(coachConditionSummary.avgFatigue || 0) >= 4
-                ? '코치 피로도가 높은 상태입니다. 스케줄 분산이나 휴식 조정이 먼저 필요합니다.'
-                : Number(coachConditionSummary.avgStress || 0) >= 4
-                  ? '업무 스트레스가 높습니다. 운영 방식이나 역할 분배를 점검하세요.'
-                  : Number(coachConditionSummary.avgCondition || 0) >= 4
-                    ? '전반적인 코치 컨디션은 안정적입니다.'
-                    : '코치 컨디션은 보통 수준입니다. 피로도와 스트레스 기록을 계속 누적해서 보세요.'}
-          </div>
-
-          <div className="report-feedback-card">
-            {salesLogSummary.followup > salesLogSummary.closed
-              ? '지금은 신규 유입보다 후속관리 정리가 더 우선입니다.'
-              : salesLogSummary.closed === 0
-                ? '세일즈일지 대비 결제완료가 없습니다. 상담 흐름과 제안 방식 점검이 필요합니다.'
-                : '현재는 결제 흐름이 완전히 나쁘지 않습니다. 후속관리와 재등록 제안을 같이 보세요.'}
-          </div>
+          unread 문의 {dashboardOverview.unreadInquiryCount || 0}건 / unread 공지 {dashboardOverview.unreadNoticeCount || 0}건
         </div>
       </div>
     </div>
 
-    <div className="card">
-      <h2>코치별 컨디션 기록</h2>
-      {filteredCoachConditions.length === 0 ? (
-        <div className="workout-list-empty">
-          아직 등록된 코치 컨디션 기록이 없습니다.
-        </div>
-      ) : (
-        <div className="list-stack">
-          {filteredCoachConditions.map((item) => {
-            const coachName =
-              coaches.find((coach) => coach.id === item.coach_id)?.name || '코치없음'
+    <div className="dashboard-main-grid">
+      <section className="card">
+        <h3>코치 상태 요약</h3>
+        <div className="dashboard-kpi-grid dashboard-kpi-grid-inside">
+          <div className="dashboard-kpi-card">
+            <span>번아웃 의심 평균</span>
+            <strong>{Number(burnoutSummary.avgSignal || 0).toFixed(1)}</strong>
+            <div className="compact-text">
+              {burnoutSummary.avgSignal >= 3 ? '주의 필요' : '정상 범위'}
+            </div>
+          </div>
 
-            return (
-              <div key={item.id} className="list-card">
+          <div className="dashboard-kpi-card">
+            <span>회복 체크 평균</span>
+            <strong>{Number(burnoutSummary.avgRecovery || 0).toFixed(1)}</strong>
+            <div className="compact-text">
+              {burnoutSummary.avgRecovery >= 3 ? '회복 중' : '관리 필요'}
+            </div>
+          </div>
+
+          <div className="dashboard-kpi-card">
+            <span>주의 코치</span>
+            <strong>{dashboardOverview.cautionCoachCount || 0}명</strong>
+            <div className="compact-text">컨디션/스트레스 확인 필요</div>
+          </div>
+
+          <div className="dashboard-kpi-card">
+            <span>위험 코치</span>
+            <strong>{dashboardOverview.riskCoachCount || 0}명</strong>
+            <div className="compact-text">즉시 일정 조정 검토</div>
+          </div>
+        </div>
+      </section>
+
+      <section className="card">
+        <h3>세일즈 요약</h3>
+        <div className="dashboard-kpi-grid dashboard-kpi-grid-inside">
+          <div className="dashboard-kpi-card">
+            <span>세일즈일지 전체</span>
+            <strong>{salesLogSummary.total || 0}건</strong>
+            <div className="compact-text">현재 필터 기준</div>
+          </div>
+
+          <div className="dashboard-kpi-card">
+            <span>결제완료</span>
+            <strong>{salesLogSummary.closed || 0}건</strong>
+            <div className="compact-text">신규 전환 완료</div>
+          </div>
+
+          <div className="dashboard-kpi-card">
+            <span>후속관리</span>
+            <strong>{salesLogSummary.followup || 0}건</strong>
+            <div className="compact-text">재접촉 필요</div>
+          </div>
+
+          <div className="dashboard-kpi-card">
+            <span>이탈</span>
+            <strong>{salesLogSummary.lost || 0}건</strong>
+            <div className="compact-text">보류/이탈 확인</div>
+          </div>
+        </div>
+      </section>
+    </div>
+
+    <div className="dashboard-main-grid">
+      <section className="card">
+        <h3>결제수단별 매출</h3>
+        <div className="list-stack">
+          {dashboardOverview.paymentBreakdown.length ? (
+            dashboardOverview.paymentBreakdown.map((item) => (
+              <div key={item.label} className="dashboard-row-card">
                 <div className="list-card-top">
-                  <strong>{coachName}</strong>
-                  <span className="pill">{item.check_month || '-'}</span>
-                </div>
-                <div className="compact-text">
-                  컨디션 {item.condition_score || 0} / 피로도 {item.fatigue_score || 0} / 집중도 {item.focus_score || 0} / 스트레스 {item.stress_score || 0}
-                </div>
-                <div className="compact-text">
-                  지원 필요: {item.support_needed || '-'}
-                </div>
-                <div className="compact-text">
-                  메모: {item.issue_note || '-'}
+                  <strong>{item.label}</strong>
+                  <span className="pill">{Number(item.amount || 0).toLocaleString()}원</span>
                 </div>
               </div>
-            )
-          })}
+            ))
+          ) : (
+            <div className="workout-list-empty">매출 데이터가 없습니다.</div>
+          )}
         </div>
-      )}
+      </section>
+
+      <section className="card">
+        <h3>이번 달 프로그램별 매출</h3>
+        <div className="list-stack">
+          {dashboardOverview.topPrograms.length ? (
+            dashboardOverview.topPrograms.map((item) => (
+              <div key={item.name} className="dashboard-row-card">
+                <div className="list-card-top">
+                  <strong>{item.name}</strong>
+                  <span className="pill">{Number(item.amount || 0).toLocaleString()}원</span>
+                </div>
+              </div>
+            ))
+          ) : (
+            <div className="workout-list-empty">프로그램 매출 데이터가 없습니다.</div>
+          )}
+        </div>
+      </section>
+    </div>
+
+    <div className="dashboard-main-grid">
+      <section className="card">
+        <h3>세션 종료 임박 회원</h3>
+        <div className="list-stack">
+          {dashboardOverview.endingMembers.length ? (
+            dashboardOverview.endingMembers.map((member) => (
+              <div key={member.id} className="dashboard-row-card">
+                <div className="list-card-top">
+                  <strong>{member.name}</strong>
+                  <span className="pill">남은 {member.remainingSessions}회</span>
+                </div>
+                <div className="compact-text">
+                  목표: {member.goal || '-'} / 프로그램: {member.programs?.name || '미지정'}
+                </div>
+              </div>
+            ))
+          ) : (
+            <div className="workout-list-empty">종료 임박 회원이 없습니다.</div>
+          )}
+        </div>
+      </section>
+
+      <section className="card">
+        <h3>이번 달 활동 많은 회원</h3>
+        <div className="list-stack">
+          {dashboardOverview.activeMembers.length ? (
+            dashboardOverview.activeMembers.map((member) => (
+              <div key={member.id} className="dashboard-row-card">
+                <div className="list-card-top">
+                  <strong>{member.name}</strong>
+                  <span className="pill">기록 {member.workoutCount}회</span>
+                </div>
+                <div className="compact-text">
+                  목표: {member.goal || '-'}
+                </div>
+              </div>
+            ))
+          ) : (
+            <div className="workout-list-empty">이번 달 운동기록이 없습니다.</div>
+          )}
+        </div>
+      </section>
+    </div>
+
+    <div className="dashboard-main-grid">
+      <section className="card">
+        <h3>위험 / 주의 코치</h3>
+        <div className="list-stack">
+          {dashboardOverview.riskCoaches.length === 0 && dashboardOverview.cautionCoaches.length === 0 ? (
+            <div className="workout-list-empty">주의 또는 위험 상태 코치가 없습니다.</div>
+          ) : (
+            <>
+              {dashboardOverview.riskCoaches.map((item) => (
+                <div key={`risk-${item.id}`} className="dashboard-row-card dashboard-row-danger">
+                  <div className="list-card-top">
+                    <strong>{item.coachName}</strong>
+                    <span className="pill">위험</span>
+                  </div>
+                  <div className="compact-text">
+                    컨디션 {item.condition_score || 0} / 피로 {item.fatigue_score || 0} / 스트레스 {item.stress_score || 0} / 집중도 {item.focus_score || 0}
+                  </div>
+                </div>
+              ))}
+
+              {dashboardOverview.cautionCoaches.map((item) => (
+                <div key={`caution-${item.id}`} className="dashboard-row-card dashboard-row-warn">
+                  <div className="list-card-top">
+                    <strong>{item.coachName}</strong>
+                    <span className="pill">주의</span>
+                  </div>
+                  <div className="compact-text">
+                    컨디션 {item.condition_score || 0} / 피로 {item.fatigue_score || 0} / 스트레스 {item.stress_score || 0} / 집중도 {item.focus_score || 0}
+                  </div>
+                </div>
+              ))}
+            </>
+          )}
+        </div>
+      </section>
+
+      <section className="card">
+        <h3>코치 리뷰 상위</h3>
+        <div className="list-stack">
+          {dashboardOverview.topCoachReviews.length ? (
+            dashboardOverview.topCoachReviews.map((item) => (
+              <div key={item.id} className="dashboard-row-card">
+                <div className="list-card-top">
+                  <strong>{item.coachName}</strong>
+                  <span className="pill">총점 {Number(item.total_score || 0).toFixed(1)}</span>
+                </div>
+                <div className="compact-text">
+                  매출 {item.revenue_score || 0} / 활동 {item.activity_score || 0} / 세일즈 {item.sales_score || 0} / 태도 {item.attitude_score || 0}
+                </div>
+              </div>
+            ))
+          ) : (
+            <div className="workout-list-empty">코치 리뷰 데이터가 없습니다.</div>
+          )}
+        </div>
+      </section>
+    </div>
+
+    <div className="dashboard-main-grid">
+      <section className="card">
+        <h3>최근 매출</h3>
+        <div className="list-stack">
+          {dashboardOverview.recentSales.length ? (
+            dashboardOverview.recentSales.map((sale) => (
+              <div key={sale.id} className="dashboard-row-card">
+                <div className="list-card-top">
+                  <strong>{sale.members?.name || '회원명 없음'}</strong>
+                  <span className="pill">{Number(sale.amount || 0).toLocaleString()}원</span>
+                </div>
+                <div className="compact-text">
+                  {sale.sale_date || '-'} / {sale.programs?.name || '프로그램 미지정'} / {sale.payment_method || '-'}
+                </div>
+              </div>
+            ))
+          ) : (
+            <div className="workout-list-empty">최근 매출이 없습니다.</div>
+          )}
+        </div>
+      </section>
+
+      <section className="card">
+        <h3>최근 세일즈일지</h3>
+        <div className="list-stack">
+          {dashboardOverview.recentSalesLogs.length ? (
+            dashboardOverview.recentSalesLogs.map((log) => (
+              <div key={log.id} className="dashboard-row-card">
+                <div className="list-card-top">
+                  <strong>{log.lead_name || '리드명 없음'}</strong>
+                  <span className="pill">{log.sales_result || '진행중'}</span>
+                </div>
+                <div className="compact-text">
+                  {log.log_date || '-'} / {log.coach_name || '-'} / {log.main_need || '-'} / 전환도 {log.conversion_score || '-'}
+                </div>
+              </div>
+            ))
+          ) : (
+            <div className="workout-list-empty">세일즈일지가 없습니다.</div>
+          )}
+        </div>
+      </section>
+    </div>
+
+    <div className="dashboard-main-grid">
+      <section className="card">
+        <h3>최근 문의</h3>
+        <div className="list-stack">
+          {dashboardOverview.recentInquiries.length ? (
+            dashboardOverview.recentInquiries.map((item) => (
+              <div key={item.id} className="dashboard-row-card">
+                <div className="list-card-top">
+                  <strong>{item.title || item.member_name || '문의'}</strong>
+                  <span className="pill">{item.status || 'pending'}</span>
+                </div>
+                <div className="compact-text">
+                  {item.created_at || item.inquiry_date || '-'}
+                </div>
+              </div>
+            ))
+          ) : (
+            <div className="workout-list-empty">문의 내역이 없습니다.</div>
+          )}
+        </div>
+      </section>
+
+      <section className="card">
+        <h3>최근 공지</h3>
+        <div className="list-stack">
+          {dashboardOverview.recentNotices.length ? (
+            dashboardOverview.recentNotices.map((item) => (
+              <div key={item.id} className="dashboard-row-card">
+                <div className="list-card-top">
+                  <strong>{item.title || '공지'}</strong>
+                  <span className="pill">{item.category || '공지'}</span>
+                </div>
+                <div className="compact-text">
+                  {item.starts_at || item.created_at || '-'}
+                </div>
+              </div>
+            ))
+          ) : (
+            <div className="workout-list-empty">공지 내역이 없습니다.</div>
+          )}
+        </div>
+      </section>
     </div>
   </div>
 )}
