@@ -634,6 +634,7 @@ const emptyRoutineForm = {
 }
 
 const [routineForm, setRoutineForm] = useState(emptyRoutineForm)
+  const [selectedRoutineWeek, setSelectedRoutineWeek] = useState(0)
   const [manualTarget, setManualTarget] = useState('member')
   const [manualForm, setManualForm] = useState({ title: '', content: '' })
   const [manuals, setManuals] = useState([])
@@ -2557,7 +2558,7 @@ const buildRoutinePayload = (form) => {
     title: form.title?.trim() || '루틴',
     weeks: (form.weeks || []).map((week, weekIndex) => ({
       week_number: week.week_number || weekIndex + 1,
-      days: (week.days || []).map((day) => ({
+      days: (currentWeek.days || []).map((day) => ({
         day_of_week: day.day_of_week,
         items: (day.items || [])
           .filter((item) => item.exercise_name_snapshot?.trim() || item.exercise_id)
@@ -2576,7 +2577,7 @@ const buildRoutinePayload = (form) => {
 const buildRoutineContent = (form) => {
   return (form.weeks || [])
     .map((week) => {
-      const dayLines = (week.days || [])
+      const dayLines = (currentWeek.days || [])
         .map((day) => {
           const items = (day.items || []).filter(
             (item) => item.exercise_name_snapshot?.trim() || item.exercise_id
@@ -2623,7 +2624,7 @@ const handleRoutineSave = async () => {
 
   const payloadData = buildRoutinePayload(routineForm)
   const hasAnyItem = payloadData.weeks.some((week) =>
-    week.days.some((day) => (day.items || []).length > 0)
+    currentWeek.days.some((day) => (day.items || []).length > 0)
   )
 
   if (!hasAnyItem) {
@@ -4675,7 +4676,29 @@ const getSalesAutoFeedback = () => {
     }
   />
 </label>
+<div className="inline-actions wrap">
+  {(routineForm.weeks || []).map((week, index) => (
+    <button
+      key={index}
+      type="button"
+      className={index === selectedRoutineWeek ? 'primary-btn' : 'secondary-btn'}
+      onClick={() => setSelectedRoutineWeek(index)}
+    >
+      {week.week_number}주차
+    </button>
+  ))}
 
+  <button
+    type="button"
+    className="secondary-btn"
+    onClick={() => {
+      addRoutineWeek()
+      setSelectedRoutineWeek(routineForm.weeks.length)
+    }}
+  >
+    + 주차 추가
+  </button>
+</div>
 <div className="inline-actions wrap">
   <button className="secondary-btn" type="button" onClick={addRoutineWeek}>
     주차 추가
@@ -4683,187 +4706,218 @@ const getSalesAutoFeedback = () => {
 </div>
 
 <div className="list-stack">
-  {(routineForm.weeks || []).map((week, weekIndex) => (
-    <div key={weekIndex} className="sub-card">
-      <div className="list-card-top">
-        <strong>{week.week_number}주차</strong>
-        <button
-          type="button"
-          className="danger-btn"
-          onClick={() => removeRoutineWeek(weekIndex)}
-        >
-          주차 삭제
-        </button>
-      </div>
+  {(() => {
+    const currentWeek = routineForm.weeks?.[selectedRoutineWeek]
 
-      <div className="list-stack" style={{ marginTop: '12px' }}>
-        {(week.days || []).map((day, dayIndex) => (
-          <div key={`${week.week_number}-${day.day_of_week}`} className="record-item-box">
-            <div className="list-card-top">
-              <strong>{day.day_of_week}요일</strong>
-              <button
-                type="button"
-                className="secondary-btn"
-                onClick={() => addRoutineItem(weekIndex, dayIndex)}
-              >
-                운동 추가
-              </button>
-            </div>
+    if (!currentWeek) {
+      return <div className="compact-text">선택된 주차가 없습니다.</div>
+    }
 
-            <div className="list-stack" style={{ marginTop: '12px' }}>
-              {(day.items || []).map((item, itemIndex) => (
-                <div key={itemIndex} className="sub-card">
-                  <div className="list-card-top">
-                    <strong>운동 {itemIndex + 1}</strong>
-                    <button
-                      type="button"
-                      className="danger-btn"
-                      onClick={() => removeRoutineItem(weekIndex, dayIndex, itemIndex)}
-                    >
-                      운동 삭제
-                    </button>
-                  </div>
+    return (
+      <div className="sub-card">
+        <div className="list-card-top">
+          <strong>{currentWeek.week_number}주차</strong>
+          <button
+            type="button"
+            className="danger-btn"
+            onClick={() => {
+              removeRoutineWeek(selectedRoutineWeek)
+              setSelectedRoutineWeek(0)
+            }}
+          >
+            주차 삭제
+          </button>
+        </div>
 
-                  <div className="grid-2" style={{ marginTop: '12px' }}>
-                    <label className="field">
-                      <span>운동 선택</span>
-                      <select
-                        value={item.exercise_id || ''}
-                        onChange={(e) =>
-                          updateRoutineItemSelect(weekIndex, dayIndex, itemIndex, e.target.value)
-                        }
-                      >
-                        <option value="">운동DB에서 선택</option>
-                        {exercises.map((exercise) => (
-                          <option key={exercise.id} value={exercise.id}>
-                            [{exercise.body_part || '-'}] {exercise.name}
-                          </option>
-                        ))}
-                      </select>
-                    </label>
+        <div className="list-stack" style={{ marginTop: '12px' }}>
+          {(currentWeek.days || []).map((day, dayIndex) => (
+            <div
+              key={`${currentWeek.week_number}-${day.day_of_week}`}
+              className="record-item-box"
+            >
+              <div className="list-card-top">
+                <strong>{day.day_of_week}요일</strong>
+                <button
+                  type="button"
+                  className="secondary-btn"
+                  onClick={() => addRoutineItem(selectedRoutineWeek, dayIndex)}
+                >
+                  운동 추가
+                </button>
+              </div>
 
-                    <label className="field">
-                      <span>운동명 직접입력</span>
-                      <input
-                        value={item.exercise_name_snapshot || ''}
-                        onChange={(e) =>
-                          updateRoutineItemName(weekIndex, dayIndex, itemIndex, e.target.value)
-                        }
-                        placeholder="예: 레그프레스, 햄스트링 스트레칭"
-                      />
-                    </label>
-                  </div>
-
-                  <div className="grid-2">
-                    <label className="field">
-                      <span>시간(분)</span>
-                      <input
-                        type="number"
-                        min="0"
-                        value={item.duration_minutes || ''}
-                        onChange={(e) =>
-                          updateRoutineItemField(
-                            weekIndex,
-                            dayIndex,
-                            itemIndex,
-                            'duration_minutes',
-                            e.target.value
-                          )
-                        }
-                        placeholder="선택 입력"
-                      />
-                    </label>
-
-                    <label className="field">
-                      <span>메모 / 코칭포인트</span>
-                      <input
-                        value={item.memo || ''}
-                        onChange={(e) =>
-                          updateRoutineItemField(
-                            weekIndex,
-                            dayIndex,
-                            itemIndex,
-                            'memo',
-                            e.target.value
-                          )
-                        }
-                        placeholder="예: 천천히 내려가기 / 호흡 유지"
-                      />
-                    </label>
-                  </div>
-
-                  <div className="stack-gap">
-                    <div className="inline-actions wrap">
+              <div className="list-stack" style={{ marginTop: '12px' }}>
+                {(day.items || []).map((item, itemIndex) => (
+                  <div key={itemIndex} className="sub-card">
+                    <div className="list-card-top">
+                      <strong>운동 {itemIndex + 1}</strong>
                       <button
                         type="button"
-                        className="secondary-btn"
-                        onClick={() => addRoutineSet(weekIndex, dayIndex, itemIndex)}
+                        className="danger-btn"
+                        onClick={() =>
+                          removeRoutineItem(selectedRoutineWeek, dayIndex, itemIndex)
+                        }
                       >
-                        세트 추가
+                        운동 삭제
                       </button>
                     </div>
 
-                    {(item.sets || []).map((setRow, setIndex) => (
-                      <div key={setIndex} className="set-row">
-                        <input
-                          placeholder="중량(kg)"
-                          value={setRow.kg}
+                    <div className="grid-2" style={{ marginTop: '12px' }}>
+                      <label className="field">
+                        <span>운동 선택</span>
+                        <select
+                          value={item.exercise_id || ''}
                           onChange={(e) =>
-                            updateRoutineSetValue(
-                              weekIndex,
+                            updateRoutineItemSelect(
+                              selectedRoutineWeek,
                               dayIndex,
                               itemIndex,
-                              setIndex,
-                              'kg',
                               e.target.value
                             )
-                          }
-                        />
-                        <input
-                          placeholder="횟수(reps)"
-                          value={setRow.reps}
-                          onChange={(e) =>
-                            updateRoutineSetValue(
-                              weekIndex,
-                              dayIndex,
-                              itemIndex,
-                              setIndex,
-                              'reps',
-                              e.target.value
-                            )
-                          }
-                        />
-                        <button
-                          type="button"
-                          className="danger-btn"
-                          onClick={() =>
-                            removeRoutineSet(weekIndex, dayIndex, itemIndex, setIndex)
                           }
                         >
-                          삭제
+                          <option value="">운동DB에서 선택</option>
+                          {exercises.map((exercise) => (
+                            <option key={exercise.id} value={exercise.id}>
+                              [{exercise.body_part || '-'}] {exercise.name}
+                            </option>
+                          ))}
+                        </select>
+                      </label>
+
+                      <label className="field">
+                        <span>운동명 직접입력</span>
+                        <input
+                          value={item.exercise_name_snapshot || ''}
+                          onChange={(e) =>
+                            updateRoutineItemName(
+                              selectedRoutineWeek,
+                              dayIndex,
+                              itemIndex,
+                              e.target.value
+                            )
+                          }
+                          placeholder="예: 레그프레스, 햄스트링 스트레칭"
+                        />
+                      </label>
+                    </div>
+
+                    <div className="grid-2">
+                      <label className="field">
+                        <span>시간(분)</span>
+                        <input
+                          type="number"
+                          min="0"
+                          value={item.duration_minutes || ''}
+                          onChange={(e) =>
+                            updateRoutineItemField(
+                              selectedRoutineWeek,
+                              dayIndex,
+                              itemIndex,
+                              'duration_minutes',
+                              e.target.value
+                            )
+                          }
+                          placeholder="선택 입력"
+                        />
+                      </label>
+
+                      <label className="field">
+                        <span>메모 / 코칭포인트</span>
+                        <input
+                          value={item.memo || ''}
+                          onChange={(e) =>
+                            updateRoutineItemField(
+                              selectedRoutineWeek,
+                              dayIndex,
+                              itemIndex,
+                              'memo',
+                              e.target.value
+                            )
+                          }
+                          placeholder="예: 천천히 내려가기 / 호흡 유지"
+                        />
+                      </label>
+                    </div>
+
+                    <div className="stack-gap">
+                      <div className="inline-actions wrap">
+                        <button
+                          type="button"
+                          className="secondary-btn"
+                          onClick={() =>
+                            addRoutineSet(selectedRoutineWeek, dayIndex, itemIndex)
+                          }
+                        >
+                          세트 추가
                         </button>
                       </div>
-                    ))}
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        ))}
-      </div>
-    </div>
-  ))}
-</div>
 
-<div className="inline-actions wrap">
-  <button className="primary-btn" type="button" onClick={handleRoutineSave}>
-    루틴 저장
-  </button>
-  <button className="danger-btn" type="button" onClick={handleRoutineDelete}>
-    루틴 삭제
-  </button>
-</div>
-</div>
+                      {(item.sets || []).map((setRow, setIndex) => (
+                        <div key={setIndex} className="set-row">
+                          <input
+                            placeholder="중량(kg)"
+                            value={setRow.kg}
+                            onChange={(e) =>
+                              updateRoutineSetValue(
+                                selectedRoutineWeek,
+                                dayIndex,
+                                itemIndex,
+                                setIndex,
+                                'kg',
+                                e.target.value
+                              )
+                            }
+                          />
+                          <input
+                            placeholder="횟수(reps)"
+                            value={setRow.reps}
+                            onChange={(e) =>
+                              updateRoutineSetValue(
+                                selectedRoutineWeek,
+                                dayIndex,
+                                itemIndex,
+                                setIndex,
+                                'reps',
+                                e.target.value
+                              )
+                            }
+                          />
+                          <button
+                            type="button"
+                            className="danger-btn"
+                            onClick={() =>
+                              removeRoutineSet(
+                                selectedRoutineWeek,
+                                dayIndex,
+                                itemIndex,
+                                setIndex
+                              )
+                            }
+                          >
+                            삭제
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          ))}
+        </div>
+
+        <div className="inline-actions wrap" style={{ marginTop: '16px' }}>
+          <button className="primary-btn" type="button" onClick={handleRoutineSave}>
+            루틴 저장
+          </button>
+          <button className="danger-btn" type="button" onClick={handleRoutineDelete}>
+            루틴 삭제
+          </button>
+        </div>
+      </div>
+    )
+  })()}
 </div>
     <div className="sub-card">
       <h3>관리자 전용 메모</h3>
