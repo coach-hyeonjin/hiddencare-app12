@@ -6799,10 +6799,12 @@ const getSalesAutoFeedback = () => {
     초기화
   </button>
 </div>
+  </>
+)}
 
-    <div className="card">
-      <div className="section-head">
-        <h3>저장된 코치 기록</h3>
+<div className="card">
+  <div className="section-head">
+    <h3>저장된 코치 기록</h3>
         <div className="compact-text">
           {coachConditionMonth || '전체 월'} / {coachConditionCoachFilter ? '선택 코치만' : '전체 코치'}
         </div>
