@@ -4711,7 +4711,7 @@ const getSalesAutoFeedback = () => {
 
 <div className="list-stack">
   {(() => {
-    const currentWeek = routineForm.weeks?.[selectedRoutineWeek]
+    const currentWeek = currentRoutineWeek
 
     if (!currentWeek) {
       return <div className="compact-text">선택된 주차가 없습니다.</div>
