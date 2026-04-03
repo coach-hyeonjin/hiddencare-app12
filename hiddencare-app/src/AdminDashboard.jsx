@@ -7088,94 +7088,93 @@ const getSalesAutoFeedback = () => {
       </div>
 
       <div className="card">
-  <h3>이번 달 목표(계획) vs 실제</h3>
-  <p><strong>목표 매출 평균:</strong> {Math.round(coachGoalSummary.revenueGoalAvg || 0).toLocaleString()}원</p>
-  <p><strong>실제 매출:</strong> {Number(coachActualSummary.actualRevenue || 0).toLocaleString()}원</p>
+        <h3>이번 달 목표 vs 실제</h3>
+        <p><strong>목표 매출:</strong> {Math.round(coachGoalSummary.revenueGoalAvg || 0).toLocaleString()}원</p>
+        <p><strong>실제 매출:</strong> {Number(coachActualSummary.actualRevenue || 0).toLocaleString()}원</p>
 
-  <p><strong>목표 신규 상담 평균:</strong> {Math.round(coachGoalSummary.newLeadGoalAvg || 0)}건</p>
-  <p><strong>실제 신규 상담 기록 수:</strong> {Number(coachActualSummary.actualLeadCount || 0)}건</p>
+        <p><strong>목표 신규 상담:</strong> {Math.round(coachGoalSummary.newLeadGoalAvg || 0)}건</p>
+        <p><strong>실제 신규 상담 기록 수:</strong> {Number(coachActualSummary.actualLeadCount || 0)}건</p>
 
-  <p><strong>목표 회원 유지 평균:</strong> {Math.round(coachGoalSummary.retentionGoalAvg || 0)}건</p>
-  <p><strong>실제 결제 완료 수:</strong> {Number(coachActualSummary.actualClosedCount || 0)}건</p>
+        <p><strong>목표 회원 유지:</strong> {Math.round(coachGoalSummary.retentionGoalAvg || 0)}건</p>
+        <p><strong>실제 결제 완료 수:</strong> {Number(coachActualSummary.actualClosedCount || 0)}건</p>
 
-  <p><strong>목표 콘텐츠 업로드 평균:</strong> {Math.round(coachGoalSummary.contentGoalAvg || 0)}건</p>
-  <p className="compact-text">※ 콘텐츠 실제값은 아직 별도 기록 구조가 없어서 자동 비교에서 제외했습니다.</p>
+        <p><strong>목표 콘텐츠 업로드:</strong> {Math.round(coachGoalSummary.contentGoalAvg || 0)}건</p>
+        <p className="compact-text">
+          콘텐츠 실제값은 아직 별도 기록 구조가 없어서 자동 비교에서 제외했습니다.
+        </p>
 
-  <div className="detail-box">
-    <p><strong>후속관리중:</strong> {Number(coachActualSummary.actualFollowupCount || 0)}건</p>
-    <p><strong>이탈:</strong> {Number(coachActualSummary.actualLostCount || 0)}건</p>
-    <p><strong>안내:</strong> 목표값은 코치가 입력한 계획 기준이며, 실제값은 매출기록/세일즈일지 기준입니다.</p>
-  </div>
-</div>
-
-    <div className="card">
-      <h3>주의 필요 코치</h3>
-      {uniqueAlertCoaches.length === 0 ? (
-  <div className="compact-text">현재 주의 필요 코치가 없습니다.</div>
-) : (
-  <div className="list-stack">
-    {uniqueAlertCoaches.map((item) => (
-            <div key={item.id} className="list-card">
-              <div className="list-card-top">
-                <strong>{item.coaches?.name || '이름 없음'}</strong>
-                <span className="pill">주의</span>
-              </div>
-              <div className="compact-text">{item.reasons.join(', ')}</div>
-              <div className="compact-text">
-                컨디션 {item.condition_score || 0} / 피로도 {item.fatigue_score || 0} / 스트레스 {item.stress_score || 0} / 집중도 {item.focus_score || 0}
-              </div>
-              <div className="compact-text">
-                행동 점수 {item.performance_score || 0} / 행동 레벨 {item.performance_level || '-'}
-              </div>
-            </div>
-          ))}
+        <div className="detail-box">
+          <p><strong>후속관리중:</strong> {Number(coachActualSummary.actualFollowupCount || 0)}건</p>
+          <p><strong>이탈:</strong> {Number(coachActualSummary.actualLostCount || 0)}건</p>
+          <p><strong>안내:</strong> 목표값은 이번 달 저장된 목표 기준이고, 실제값은 매출기록/세일즈일지 기준입니다.</p>
         </div>
-      )}
-    </div>
+      </div>
 
-    <div className="card">
-      <h3>코치별 비교</h3>
-      {filteredCoachConditions.length === 0 ? (
-        <div className="workout-list-empty">비교할 코치 기록이 없습니다.</div>
-      ) : (
-        <div className="list-stack">
-          {filteredCoachConditions.map((item) => (
-            <div key={item.id} className="list-card">
-              <div className="list-card-top">
-                <strong>{item.coaches?.name || '-'}</strong>
-                <span className="pill">{item.check_month || '-'}</span>
+      <div className="card">
+        <h3>주의 필요 코치</h3>
+        {uniqueAlertCoaches.length === 0 ? (
+          <div className="compact-text">현재 주의 필요 코치가 없습니다.</div>
+        ) : (
+          <div className="list-stack">
+            {uniqueAlertCoaches.map((item) => (
+              <div key={item.id} className="list-card">
+                <div className="list-card-top">
+                  <strong>{item.coaches?.name || '이름 없음'}</strong>
+                  <span className="pill">주의</span>
+                </div>
+                <div className="compact-text">{item.reasons.join(', ')}</div>
+                <div className="compact-text">
+                  컨디션 {item.condition_score || 0} / 피로도 {item.fatigue_score || 0} / 스트레스 {item.stress_score || 0} / 집중도 {item.focus_score || 0}
+                </div>
+                <div className="compact-text">
+                  행동 점수 {item.performance_score || 0} / 행동 레벨 {item.performance_level || '-'}
+                </div>
               </div>
+            ))}
+          </div>
+        )}
+      </div>
 
-              <div className="compact-text">
-                상태레벨 {COACH_LEVEL_META[item.status_level]?.label || '-'} / 행동레벨 {item.performance_level || '-'}
-              </div>
+      <div className="card">
+        <h3>코치별 비교</h3>
+        {filteredCoachConditions.length === 0 ? (
+          <div className="workout-list-empty">비교할 코치 기록이 없습니다.</div>
+        ) : (
+          <div className="list-stack">
+            {filteredCoachConditions.map((item) => (
+              <div key={item.id} className="list-card">
+                <div className="list-card-top">
+                  <strong>{item.coaches?.name || '-'}</strong>
+                  <span className="pill">{item.check_month || '-'}</span>
+                </div>
 
-              <div className="compact-text">
-                컨디션 {item.condition_score || 0} / 피로도 {item.fatigue_score || 0} / 스트레스 {item.stress_score || 0} / 집중도 {item.focus_score || 0}
-              </div>
+                <div className="compact-text">
+                  상태레벨 {COACH_LEVEL_META[item.status_level]?.label || '-'} / 행동레벨 {item.performance_level || '-'}
+                </div>
 
-              <div className="compact-text">
-                행동 점수 {item.performance_score || 0}점 / 목표 매출 {Number(item.monthly_goal_revenue || 0).toLocaleString()}원
-              </div>
+                <div className="compact-text">
+                  컨디션 {item.condition_score || 0} / 피로도 {item.fatigue_score || 0} / 스트레스 {item.stress_score || 0} / 집중도 {item.focus_score || 0}
+                </div>
 
-              <div className="compact-text">
-                지원 필요: {item.support_needed || '-'}
-              </div>
+                <div className="compact-text">
+                  행동 점수 {item.performance_score || 0}점
+                </div>
 
-              <div className="compact-text">
-                자동 해석:{' '}
-                {getCoachStatusText({
-                  conditionScore: item.condition_score,
-                  fatigueScore: item.fatigue_score,
-                  stressScore: item.stress_score,
-                  focusScore: item.focus_score,
-                  performanceScore: item.performance_score,
-                })}
+                <div className="compact-text">
+                  자동 해석:{' '}
+                  {getCoachStatusText({
+                    conditionScore: item.condition_score,
+                    fatigueScore: item.fatigue_score,
+                    stressScore: item.stress_score,
+                    focusScore: item.focus_score,
+                    performanceScore: item.performance_score,
+                  })}
+                </div>
               </div>
-            </div>
-          ))}
-        </div>
-      )}
+            ))}
+          </div>
+        )}
+      </div>
     </div>
 
     <div className="two-col">
@@ -7368,8 +7367,7 @@ const getSalesAutoFeedback = () => {
         )}
       </section>
     </div>
-  </div> 
-</section>
+  </section>
 )}
 {activeTab === '코치스케줄' && (
   <div className="two-col">
