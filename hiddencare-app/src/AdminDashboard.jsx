@@ -739,6 +739,10 @@ const [unreadNoticeCount, setUnreadNoticeCount] = useState(0)
     () => members.find((member) => member.id === selectedMemberId) || null,
     [members, selectedMemberId],
   )
+  const currentRoutineWeek = useMemo(
+  () => routineForm.weeks?.[selectedRoutineWeek] || null,
+  [routineForm.weeks, selectedRoutineWeek],
+)
 const selectedPartner = useMemo(
     () => partners.find((partner) => partner.id === selectedPartnerId) || null,
     [partners, selectedPartnerId],
