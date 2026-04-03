@@ -1635,3 +1635,170 @@ img {
   min-height: 90px;
   line-height: 1.5;
 }
+/* ===== 활동랭킹 탭 전용 ===== */
+.activity-rank-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+.activity-rank-card {
+  border: 1px solid #e5e7eb;
+  border-radius: 16px;
+  padding: 16px;
+  background: #ffffff;
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.04);
+}
+
+.activity-rank-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.activity-rank-head h3 {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 800;
+  color: #111827;
+}
+
+.activity-rank-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.activity-rank-item {
+  border: 1px solid #e5e7eb;
+  border-radius: 14px;
+  padding: 14px;
+  background: #ffffff;
+  transition: 0.2s ease;
+}
+
+.activity-rank-item:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 8px 20px rgba(15, 23, 42, 0.05);
+}
+
+.activity-rank-item.rank-1 {
+  background: linear-gradient(135deg, #fff8db 0%, #ffffff 100%);
+  border-color: #f5d76e;
+}
+
+.activity-rank-item.rank-2 {
+  background: linear-gradient(135deg, #f3f4f6 0%, #ffffff 100%);
+  border-color: #d1d5db;
+}
+
+.activity-rank-item.rank-3 {
+  background: linear-gradient(135deg, #fff1e8 0%, #ffffff 100%);
+  border-color: #f3b38a;
+}
+
+.activity-rank-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+}
+
+.activity-rank-name {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.activity-rank-number {
+  min-width: 34px;
+  height: 34px;
+  border-radius: 999px;
+  background: #eef2ff;
+  color: #4338ca;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  font-weight: 800;
+  flex-shrink: 0;
+}
+
+.activity-rank-item.rank-1 .activity-rank-number {
+  background: #facc15;
+  color: #78350f;
+}
+
+.activity-rank-item.rank-2 .activity-rank-number {
+  background: #d1d5db;
+  color: #374151;
+}
+
+.activity-rank-item.rank-3 .activity-rank-number {
+  background: #fdba74;
+  color: #7c2d12;
+}
+
+.activity-rank-name strong {
+  font-size: 15px;
+  color: #111827;
+  overflow-wrap: break-word;
+  word-break: keep-all;
+}
+
+.activity-rank-meta {
+  margin-top: 8px;
+  font-size: 13px;
+  color: #6b7280;
+  line-height: 1.7;
+  white-space: pre-line;
+  word-break: keep-all;
+  overflow-wrap: break-word;
+}
+
+.activity-rank-score {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 30px;
+  padding: 6px 12px;
+  border-radius: 999px;
+  background: #eef4ff;
+  color: #3659c9;
+  font-size: 12px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.activity-summary-card .stat-card strong {
+  font-size: 28px;
+  line-height: 1.35;
+}
+
+.activity-summary-card .stat-card span {
+  font-size: 13px;
+}
+
+@media (max-width: 1100px) {
+  .activity-rank-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 640px) {
+  .activity-rank-top {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .activity-rank-score {
+    align-self: flex-start;
+  }
+
+  .activity-summary-card .stat-card strong {
+    font-size: 22px;
+  }
+}
