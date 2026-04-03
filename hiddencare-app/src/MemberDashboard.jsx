@@ -128,26 +128,44 @@ function safeJsonParse(value, fallback) {
 }
 
 function normalizeRoutineData(row) {
-  const parsed = safeJsonParse(row?.content_json, null)
-  const entries = Array.isArray(parsed?.entries)
-    ? parsed.entries
-        .map((entry, index) => ({
-          id: entry.id || `${index + 1}`,
-          month_key: entry.month_key || '',
-          day: entry.day || '',
-          category: entry.category || '',
-          title: entry.title || '',
-          content: entry.content || '',
-          sort_order: Number(entry.sort_order ?? index),
-        }))
-        .sort((a, b) => Number(a.sort_order || 0) - Number(b.sort_order || 0))
-    : []
+  const parsed =
+    row?.routine_data && typeof row.routine_data === 'object'
+      ? row.routine_data
+      : safeJsonParse(row?.routine_data, null)
+
+  if (parsed && Array.isArray(parsed.weeks)) {
+    return {
+      id: row?.id || null,
+      title: parsed.title || row?.title || '루틴',
+      weeks: parsed.weeks.map((week, weekIndex) => ({
+        week_number: week.week_number || weekIndex + 1,
+        days: (week.days || []).map((day) => ({
+          day_of_week: day.day_of_week || '월',
+          items:
+            Array.isArray(day.items) && day.items.length
+              ? day.items.map((item) => ({
+                  exercise_id: item.exercise_id || '',
+                  exercise_name_snapshot: item.exercise_name_snapshot || '',
+                  duration_minutes: item.duration_minutes || '',
+                  memo: item.memo || '',
+                  sets:
+                    Array.isArray(item.sets) && item.sets.length
+                      ? item.sets.map((setRow) => ({
+                          kg: setRow.kg ?? '',
+                          reps: setRow.reps ?? '',
+                        }))
+                      : [{ kg: '', reps: '' }],
+                }))
+              : [],
+        })),
+      })),
+    }
+  }
 
   return {
     id: row?.id || null,
     title: row?.title || '루틴',
-    content: row?.content || '',
-    entries,
+    weeks: [],
   }
 }
 
@@ -211,6 +229,7 @@ export default function MemberDashboard({ member, accessCode, onLogout }) {
   const [healthForm, setHealthForm] = useState(emptyHealthForm)
 
   const [routine, setRoutine] = useState(null)
+  const [selectedRoutineWeek, setSelectedRoutineWeek] = useState(0)
   const [manual, setManual] = useState(null)
 
   const [programs, setPrograms] = useState([])
@@ -447,6 +466,9 @@ const calculatedRecommendedKcal = useMemo(() => {
       recentUsedAt: recentApproved?.approved_at || recentApproved?.requested_at || '',
     }
   }, [selectedPartner, partnerUsages])
+  const currentRoutineWeek = useMemo(() => {
+  return routine?.weeks?.[selectedRoutineWeek] || null
+}, [routine, selectedRoutineWeek])
   const publishedNotices = useMemo(() => {
     return notices
       .filter((notice) => notice.is_published)
@@ -747,15 +769,17 @@ useEffect(() => {
     }
   }
 
-  const loadRoutine = async () => {
-    const { data } = await supabase
-      .from('member_routines')
-      .select('*')
-      .eq('member_id', member.id)
-      .maybeSingle()
+ const loadRoutine = async () => {
+  const { data } = await supabase
+    .from('member_routines')
+    .select('*')
+    .eq('member_id', member.id)
+    .maybeSingle()
 
-    setRoutine(data ? normalizeRoutineData(data) : null)
-  }
+  const nextRoutine = data ? normalizeRoutineData(data) : null
+  setRoutine(nextRoutine)
+  setSelectedRoutineWeek(0)
+}
 
   const loadManual = async () => {
     const { data } = await supabase
@@ -2530,32 +2554,92 @@ const clearMemberAlerts = () => {
       )}
 
       {activeTab === '루틴' && (
-        <div className="card">
-          <h2>{routine?.title || '루틴'}</h2>
+  <div className="stack-gap">
+    <section className="card">
+      <h2>루틴</h2>
 
-          {routine?.entries && routine.entries.length > 0 ? (
-            <div className="list-stack">
-              {routine.entries.map((entry) => (
-                <div key={entry.id} className="list-card">
-                  <div className="list-card-top">
-                    <strong>{entry.title || '루틴 항목'}</strong>
-                    <span className="pill">
-                      {[entry.month_key, entry.day, entry.category].filter(Boolean).join(' / ') || '루틴'}
-                    </span>
-                  </div>
-                  <div className="detail-box">
-                    <pre className="pre-text">{entry.content || '-'}</pre>
-                  </div>
-                </div>
-              ))}
-            </div>
+      {!routine ? (
+        <div className="workout-list-empty">등록된 루틴이 없습니다.</div>
+      ) : (
+        <div className="stack-gap">
+          <div className="detail-box">
+            <p><strong>루틴 제목:</strong> {routine.title || '루틴'}</p>
+          </div>
+
+          <div className="inline-actions wrap">
+            {(routine.weeks || []).map((week, index) => (
+              <button
+                key={index}
+                type="button"
+                className={index === selectedRoutineWeek ? 'primary-btn' : 'secondary-btn'}
+                onClick={() => setSelectedRoutineWeek(index)}
+              >
+                {week.week_number}주차
+              </button>
+            ))}
+          </div>
+
+          {!currentRoutineWeek ? (
+            <div className="workout-list-empty">선택된 주차가 없습니다.</div>
           ) : (
-            <div className="detail-box">
-              <pre className="pre-text">{routine?.content || '아직 등록된 루틴이 없습니다.'}</pre>
+            <div className="sub-card">
+              <div className="list-card-top">
+                <strong>{currentRoutineWeek.week_number}주차</strong>
+              </div>
+
+              <div className="list-stack" style={{ marginTop: '12px' }}>
+                {(currentRoutineWeek.days || []).map((day, dayIndex) => (
+                  <div
+                    key={`${currentRoutineWeek.week_number}-${day.day_of_week}-${dayIndex}`}
+                    className="record-item-box"
+                  >
+                    <div className="list-card-top">
+                      <strong>{day.day_of_week}요일</strong>
+                      <span className="pill">{(day.items || []).length}개 운동</span>
+                    </div>
+
+                    {(day.items || []).length === 0 ? (
+                      <div className="compact-text">등록된 운동이 없습니다.</div>
+                    ) : (
+                      <div className="list-stack" style={{ marginTop: '12px' }}>
+                        {(day.items || []).map((item, itemIndex) => (
+                          <div key={itemIndex} className="sub-card">
+                            <div className="list-card-top">
+                              <strong>{item.exercise_name_snapshot || `운동 ${itemIndex + 1}`}</strong>
+                              {item.duration_minutes ? (
+                                <span className="pill">{item.duration_minutes}분</span>
+                              ) : null}
+                            </div>
+
+                            {item.memo ? (
+                              <div className="compact-text">메모: {item.memo}</div>
+                            ) : null}
+
+                            {(item.sets || []).length > 0 ? (
+                              <ul className="set-list">
+                                {(item.sets || []).map((setRow, setIndex) => (
+                                  <li key={setIndex}>
+                                    {setIndex + 1}세트 - {setRow.kg || '-'}kg / {setRow.reps || '-'}회
+                                  </li>
+                                ))}
+                              </ul>
+                            ) : (
+                              <div className="compact-text">세트 정보 없음</div>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
             </div>
           )}
         </div>
       )}
+    </section>
+  </div>
+)}
 
       {activeTab === '프로그램' && (
         <div className="stack-gap">
