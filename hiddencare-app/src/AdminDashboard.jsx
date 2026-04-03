@@ -247,6 +247,16 @@ const emptyCoachConditionForm = {
   support_needed: '',
   issue_note: '',
 }
+const emptyCoachGoalForm = {
+  coach_id: '',
+  goal_month: new Date().toISOString().slice(0, 7),
+  monthly_goal_revenue: '',
+  monthly_goal_new_leads: '',
+  monthly_goal_retention: '',
+  monthly_goal_content: '',
+  support_needed: '',
+  issue_note: '',
+}
 const emptyCoachReviewForm = {
   id: null,
   coach_id: '',
@@ -633,6 +643,7 @@ const [salesLogResultFilter, setSalesLogResultFilter] = useState('all')
 const [salesLogConversionFilter, setSalesLogConversionFilter] = useState('all')
 const [coachConditions, setCoachConditions] = useState([])
 const [coachConditionForm, setCoachConditionForm] = useState(emptyCoachConditionForm)
+  const [coachGoalForm, setCoachGoalForm] = useState(emptyCoachGoalForm)
 const [editingCoachConditionId, setEditingCoachConditionId] = useState(null)
 const [coachConditionMonth, setCoachConditionMonth] = useState(new Date().toISOString().slice(0, 7))
 const [coachConditionCoachFilter, setCoachConditionCoachFilter] = useState('')
@@ -6703,16 +6714,16 @@ const getSalesAutoFeedback = () => {
       <div className="card">
   <h3>이번 달 목표 설정</h3>
   <p className="sub-text">
-    이 영역은 이번 달 기준 목표를 적어두는 용도입니다. 오늘 컨디션 기록과는 별도로 생각하고 작성하세요.
+    이번 달 기준 목표만 따로 적어두는 영역입니다. 오늘 컨디션 기록과는 별도로 저장됩니다.
   </p>
 
   <div className="form-row">
     <input
       type="number"
       placeholder="월 매출 목표"
-      value={coachConditionForm.monthly_goal_revenue}
+      value={coachGoalForm.monthly_goal_revenue}
       onChange={(e) =>
-        setCoachConditionForm((prev) => ({
+        setCoachGoalForm((prev) => ({
           ...prev,
           monthly_goal_revenue: e.target.value,
         }))
@@ -6721,9 +6732,9 @@ const getSalesAutoFeedback = () => {
     <input
       type="number"
       placeholder="신규 상담 목표"
-      value={coachConditionForm.monthly_goal_new_leads}
+      value={coachGoalForm.monthly_goal_new_leads}
       onChange={(e) =>
-        setCoachConditionForm((prev) => ({
+        setCoachGoalForm((prev) => ({
           ...prev,
           monthly_goal_new_leads: e.target.value,
         }))
@@ -6732,9 +6743,9 @@ const getSalesAutoFeedback = () => {
     <input
       type="number"
       placeholder="회원 유지 목표"
-      value={coachConditionForm.monthly_goal_retention}
+      value={coachGoalForm.monthly_goal_retention}
       onChange={(e) =>
-        setCoachConditionForm((prev) => ({
+        setCoachGoalForm((prev) => ({
           ...prev,
           monthly_goal_retention: e.target.value,
         }))
@@ -6743,9 +6754,9 @@ const getSalesAutoFeedback = () => {
     <input
       type="number"
       placeholder="콘텐츠 업로드 목표"
-      value={coachConditionForm.monthly_goal_content}
+      value={coachGoalForm.monthly_goal_content}
       onChange={(e) =>
-        setCoachConditionForm((prev) => ({
+        setCoachGoalForm((prev) => ({
           ...prev,
           monthly_goal_content: e.target.value,
         }))
@@ -6757,15 +6768,36 @@ const getSalesAutoFeedback = () => {
     <span>지원이 필요한 부분</span>
     <textarea
       rows="4"
-      value={coachConditionForm.support_needed}
+      value={coachGoalForm.support_needed}
       onChange={(e) =>
-        setCoachConditionForm((prev) => ({
+        setCoachGoalForm((prev) => ({
           ...prev,
           support_needed: e.target.value,
         }))
       }
     />
   </label>
+
+  <label className="field">
+    <span>메모</span>
+    <textarea
+      rows="4"
+      value={coachGoalForm.issue_note}
+      onChange={(e) =>
+        setCoachGoalForm((prev) => ({
+          ...prev,
+          issue_note: e.target.value,
+        }))
+      }
+    />
+  </label>
+
+  <div className="inline-actions wrap">
+    <button className="secondary-btn" type="button">
+      이번 달 목표 저장
+    </button>
+  </div>
+</div>
 
   <label className="field">
     <span>메모</span>
