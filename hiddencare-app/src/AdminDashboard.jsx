@@ -2621,24 +2621,27 @@ const buildRoutineContent = (form) => {
 }
 
 const handleRoutineSave = async () => {
-  console.log('루틴저장 클릭됨', {
-    selectedMemberId,
-    routineForm,
-  })
+  alert('루틴저장 함수 실행됨')
+  console.log('루틴저장 함수 실행됨', { selectedMemberId, routineForm })
 
   if (!selectedMemberId) {
+    alert('selectedMemberId 없음')
     setMessage('루틴을 저장할 회원을 먼저 선택해주세요.')
     return
   }
 
   const payloadData = buildRoutinePayload(routineForm)
   console.log('payloadData', payloadData)
+  alert('payloadData 생성됨')
 
   const hasAnyItem = payloadData.weeks.some((week) =>
     week.days.some((day) => (day.items || []).length > 0)
   )
 
+  console.log('hasAnyItem', hasAnyItem)
+
   if (!hasAnyItem) {
+    alert('hasAnyItem false')
     setMessage('최소 1개 이상의 루틴 운동을 입력해주세요.')
     return
   }
@@ -2653,6 +2656,7 @@ const handleRoutineSave = async () => {
   }
 
   console.log('최종 payload', payload)
+  alert('payload 생성 완료')
 
   const { data: existingRoutine, error: existingError } = await supabase
     .from('member_routines')
@@ -2663,6 +2667,7 @@ const handleRoutineSave = async () => {
   console.log('existingRoutine', existingRoutine, existingError)
 
   if (existingError) {
+    alert(`루틴 확인 실패: ${existingError.message}`)
     setMessage(`루틴 확인 실패: ${existingError.message}`)
     return
   }
@@ -2676,10 +2681,12 @@ const handleRoutineSave = async () => {
     console.log('update error', error)
 
     if (error) {
+      alert(`루틴 수정 실패: ${error.message}`)
       setMessage(`루틴 수정 실패: ${error.message}`)
       return
     }
 
+    alert('루틴 수정 성공')
     setMessage('루틴이 수정되었습니다.')
   } else {
     const { error } = await supabase
@@ -2689,10 +2696,12 @@ const handleRoutineSave = async () => {
     console.log('insert error', error)
 
     if (error) {
+      alert(`루틴 저장 실패: ${error.message}`)
       setMessage(`루틴 저장 실패: ${error.message}`)
       return
     }
 
+    alert('루틴 저장 성공')
     setMessage('루틴이 저장되었습니다.')
   }
 }
