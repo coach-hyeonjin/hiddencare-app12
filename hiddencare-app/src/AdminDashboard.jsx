@@ -8,9 +8,10 @@ const TABS = [
   '기록작성',
   '운동DB',
   '식단',
-  '통계',
-'운영대시보드',
-'코치관리',
+ '통계',
+  '활동랭킹',
+  '운영대시보드',
+  '코치관리',
 '리포트',
 '코치스케줄',
   '매출기록',
@@ -975,7 +976,57 @@ const getBurnoutSignalText = (checks = []) => {
       )
     })
   }, [memberStats, memberDetailSearch])
+const activityRankingData = useMemo(() => {
+  const monthMembers = memberStats.map((member) => {
+    const totalActivity = Number(member.ptCount || 0) + Number(member.personalCount || 0)
+    const weightedScore = Number(member.ptCount || 0) * 2 + Number(member.personalCount || 0)
 
+    return {
+      ...member,
+      totalActivity,
+      weightedScore,
+    }
+  })
+
+  const ptRanking = [...monthMembers]
+    .filter((member) => member.ptCount > 0)
+    .sort((a, b) => {
+      if (b.ptCount !== a.ptCount) return b.ptCount - a.ptCount
+      return (a.name || '').localeCompare(b.name || '', 'ko-KR')
+    })
+
+  const personalRanking = [...monthMembers]
+    .filter((member) => member.personalCount > 0)
+    .sort((a, b) => {
+      if (b.personalCount !== a.personalCount) return b.personalCount - a.personalCount
+      return (a.name || '').localeCompare(b.name || '', 'ko-KR')
+    })
+
+  const totalRanking = [...monthMembers]
+    .filter((member) => member.totalActivity > 0)
+    .sort((a, b) => {
+      if (b.totalActivity !== a.totalActivity) return b.totalActivity - a.totalActivity
+      return (a.name || '').localeCompare(b.name || '', 'ko-KR')
+    })
+
+  const weightedRanking = [...monthMembers]
+    .filter((member) => member.weightedScore > 0)
+    .sort((a, b) => {
+      if (b.weightedScore !== a.weightedScore) return b.weightedScore - a.weightedScore
+      return (a.name || '').localeCompare(b.name || '', 'ko-KR')
+    })
+
+  return {
+    ptRanking,
+    personalRanking,
+    totalRanking,
+    weightedRanking,
+    topPtMember: ptRanking[0] || null,
+    topPersonalMember: personalRanking[0] || null,
+    topTotalMember: totalRanking[0] || null,
+    topWeightedMember: weightedRanking[0] || null,
+  }
+}, [memberStats])
  const monthlyStats = useMemo(() => {
   const monthKey = selectedStatsMonth
 
@@ -5547,7 +5598,173 @@ const getSalesAutoFeedback = () => {
     </div>
   </div>
 )}
+{activeTab === '활동랭킹' && (
+  <div className="stack-gap">
+    <div className="card">
+      <div className="section-head">
+        <div>
+          <h2>회원 활동랭킹</h2>
+          <p className="sub-text">
+            {selectedStatsMonth} 기준 PT 수업, 개인운동, 전체 활동 순위를 확인하는 화면입니다.
+          </p>
+        </div>
 
+        <div className="inline-row">
+          <input
+            type="month"
+            value={selectedStatsMonth}
+            onChange={(e) => setSelectedStatsMonth(e.target.value)}
+          />
+          <button
+            type="button"
+            className="secondary-btn"
+            onClick={() => setSelectedStatsMonth(new Date().toISOString().slice(0, 7))}
+          >
+            이번달
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <div className="stats-grid">
+      <div className="stat-card">
+        <span>{selectedStatsMonth} PT 1위</span>
+        <strong>
+          {activityRankingData.topPtMember
+            ? `${activityRankingData.topPtMember.name} (${activityRankingData.topPtMember.ptCount}회)`
+            : '-'}
+        </strong>
+      </div>
+
+      <div className="stat-card">
+        <span>{selectedStatsMonth} 개인운동 1위</span>
+        <strong>
+          {activityRankingData.topPersonalMember
+            ? `${activityRankingData.topPersonalMember.name} (${activityRankingData.topPersonalMember.personalCount}회)`
+            : '-'}
+        </strong>
+      </div>
+
+      <div className="stat-card">
+        <span>{selectedStatsMonth} 전체 활동 1위</span>
+        <strong>
+          {activityRankingData.topTotalMember
+            ? `${activityRankingData.topTotalMember.name} (${activityRankingData.topTotalMember.totalActivity}회)`
+            : '-'}
+        </strong>
+      </div>
+
+      <div className="stat-card">
+        <span>{selectedStatsMonth} 참여 점수 1위</span>
+        <strong>
+          {activityRankingData.topWeightedMember
+            ? `${activityRankingData.topWeightedMember.name} (${activityRankingData.topWeightedMember.weightedScore}점)`
+            : '-'}
+        </strong>
+      </div>
+    </div>
+
+    <div className="dashboard-main-grid">
+      <section className="card">
+        <h3>PT 수업 랭킹 TOP 10</h3>
+        <div className="list-stack">
+          {activityRankingData.ptRanking.length ? (
+            activityRankingData.ptRanking.slice(0, 10).map((member, index) => (
+              <div key={member.id} className="dashboard-row-card">
+                <div className="list-card-top">
+                  <strong>
+                    {index + 1}위 · {member.name}
+                  </strong>
+                  <span className="pill">PT {member.ptCount}회</span>
+                </div>
+                <div className="compact-text">
+                  개인운동 {member.personalCount}회 / 전체 활동 {member.totalActivity}회 / 남은 세션 {member.remainingSessions}회
+                </div>
+              </div>
+            ))
+          ) : (
+            <div className="workout-list-empty">이번 달 PT 기록이 없습니다.</div>
+          )}
+        </div>
+      </section>
+
+      <section className="card">
+        <h3>개인운동 랭킹 TOP 10</h3>
+        <div className="list-stack">
+          {activityRankingData.personalRanking.length ? (
+            activityRankingData.personalRanking.slice(0, 10).map((member, index) => (
+              <div key={member.id} className="dashboard-row-card">
+                <div className="list-card-top">
+                  <strong>
+                    {index + 1}위 · {member.name}
+                  </strong>
+                  <span className="pill">개인운동 {member.personalCount}회</span>
+                </div>
+                <div className="compact-text">
+                  PT {member.ptCount}회 / 전체 활동 {member.totalActivity}회 / 목표 {member.goal || '-'}
+                </div>
+              </div>
+            ))
+          ) : (
+            <div className="workout-list-empty">이번 달 개인운동 기록이 없습니다.</div>
+          )}
+        </div>
+      </section>
+    </div>
+
+    <div className="dashboard-main-grid">
+      <section className="card">
+        <h3>전체 활동 랭킹 TOP 10</h3>
+        <div className="list-stack">
+          {activityRankingData.totalRanking.length ? (
+            activityRankingData.totalRanking.slice(0, 10).map((member, index) => (
+              <div key={member.id} className="dashboard-row-card">
+                <div className="list-card-top">
+                  <strong>
+                    {index + 1}위 · {member.name}
+                  </strong>
+                  <span className="pill">총 {member.totalActivity}회</span>
+                </div>
+                <div className="compact-text">
+                  PT {member.ptCount}회 / 개인운동 {member.personalCount}회 / 남은 세션 {member.remainingSessions}회
+                </div>
+              </div>
+            ))
+          ) : (
+            <div className="workout-list-empty">이번 달 활동 기록이 없습니다.</div>
+          )}
+        </div>
+      </section>
+
+      <section className="card">
+        <h3>참여 점수 랭킹 TOP 10</h3>
+        <div className="compact-text" style={{ marginBottom: '12px' }}>
+          PT 1회 = 2점 / 개인운동 1회 = 1점 기준
+        </div>
+
+        <div className="list-stack">
+          {activityRankingData.weightedRanking.length ? (
+            activityRankingData.weightedRanking.slice(0, 10).map((member, index) => (
+              <div key={member.id} className="dashboard-row-card">
+                <div className="list-card-top">
+                  <strong>
+                    {index + 1}위 · {member.name}
+                  </strong>
+                  <span className="pill">{member.weightedScore}점</span>
+                </div>
+                <div className="compact-text">
+                  PT {member.ptCount}회 / 개인운동 {member.personalCount}회 / 총 활동 {member.totalActivity}회
+                </div>
+              </div>
+            ))
+          ) : (
+            <div className="workout-list-empty">이번 달 참여 점수 데이터가 없습니다.</div>
+          )}
+        </div>
+      </section>
+    </div>
+  </div>
+)}
       {activeTab === '매출기록' && (
         <div className="stack-gap">
           <div className="two-col">
