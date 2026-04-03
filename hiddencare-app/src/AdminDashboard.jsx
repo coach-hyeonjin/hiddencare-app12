@@ -2712,41 +2712,11 @@ const handleRoutineSave = async () => {
     return { ...prev, items: nextItems }
   })
 }
-const updateRoutineItemSelect = (itemIndex, exerciseId) => {
-  const found = exercises.find((exercise) => String(exercise.id) === String(exerciseId))
 
-  setRoutineForm((prev) => {
-    const nextItems = [...prev.items]
-    nextItems[itemIndex] = {
-      ...nextItems[itemIndex],
-      exercise_id: found?.id || '',
-      exercise_name_snapshot: found?.name || nextItems[itemIndex].exercise_name_snapshot,
-    }
-    return { ...prev, items: nextItems }
-  })
-}
 
-const updateRoutineItemName = (itemIndex, value) => {
-  setRoutineForm((prev) => {
-    const nextItems = [...prev.items]
-    nextItems[itemIndex] = {
-      ...nextItems[itemIndex],
-      exercise_name_snapshot: value,
-    }
-    return { ...prev, items: nextItems }
-  })
-}
 
-const updateRoutineItemField = (itemIndex, field, value) => {
-  setRoutineForm((prev) => {
-    const nextItems = [...prev.items]
-    nextItems[itemIndex] = {
-      ...nextItems[itemIndex],
-      [field]: value,
-    }
-    return { ...prev, items: nextItems }
-  })
-}
+
+
 
 const addRoutineWeek = () => {
   setRoutineForm((prev) => ({
@@ -2894,32 +2864,7 @@ const updateRoutineItemField = (weekIndex, dayIndex, itemIndex, field, value) =>
   })
 }
 
-const buildRoutineContent = (form) => {
-  const lines = (form.items || []).map((item, index) => {
-    const exerciseName = item.exercise_name_snapshot?.trim() || `운동 ${index + 1}`
-    const durationText = item.duration_minutes ? ` / 시간 ${item.duration_minutes}분` : ''
 
-    const setLines = (item.sets || [])
-      .filter((setRow) => setRow.kg !== '' || setRow.reps !== '')
-      .map((setRow, setIndex) => {
-        const kgText = setRow.kg ? `${setRow.kg}kg` : '-'
-        const repsText = setRow.reps ? `${setRow.reps}회` : '-'
-        return `  - ${setIndex + 1}세트: ${kgText} / ${repsText}`
-      })
-
-    const memoText = item.memo?.trim() ? `\n  - 메모: ${item.memo.trim()}` : ''
-
-    return [
-      `${index + 1}. ${exerciseName}${durationText}`,
-      ...(setLines.length ? setLines : []),
-      memoText ? memoText.trimEnd() : '',
-    ]
-      .filter(Boolean)
-      .join('\n')
-  })
-
-  return lines.join('\n\n')
-}
 const updateWorkoutItemName = (itemIndex, value) => {
   setWorkoutForm((prev) => {
     const nextItems = [...prev.items]
