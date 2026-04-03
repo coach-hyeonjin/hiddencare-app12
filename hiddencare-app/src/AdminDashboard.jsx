@@ -2621,14 +2621,21 @@ const buildRoutineContent = (form) => {
 }
 
 const handleRoutineSave = async () => {
+  console.log('루틴저장 클릭됨', {
+    selectedMemberId,
+    routineForm,
+  })
+
   if (!selectedMemberId) {
     setMessage('루틴을 저장할 회원을 먼저 선택해주세요.')
     return
   }
 
   const payloadData = buildRoutinePayload(routineForm)
+  console.log('payloadData', payloadData)
+
   const hasAnyItem = payloadData.weeks.some((week) =>
-    currentWeek.days.some((day) => (day.items || []).length > 0)
+    week.days.some((day) => (day.items || []).length > 0)
   )
 
   if (!hasAnyItem) {
@@ -2645,11 +2652,15 @@ const handleRoutineSave = async () => {
     gym_id: currentGymId || null,
   }
 
+  console.log('최종 payload', payload)
+
   const { data: existingRoutine, error: existingError } = await supabase
     .from('member_routines')
     .select('id')
     .eq('member_id', selectedMemberId)
     .maybeSingle()
+
+  console.log('existingRoutine', existingRoutine, existingError)
 
   if (existingError) {
     setMessage(`루틴 확인 실패: ${existingError.message}`)
@@ -2662,6 +2673,8 @@ const handleRoutineSave = async () => {
       .update(payload)
       .eq('id', existingRoutine.id)
 
+    console.log('update error', error)
+
     if (error) {
       setMessage(`루틴 수정 실패: ${error.message}`)
       return
@@ -2672,6 +2685,8 @@ const handleRoutineSave = async () => {
     const { error } = await supabase
       .from('member_routines')
       .insert(payload)
+
+    console.log('insert error', error)
 
     if (error) {
       setMessage(`루틴 저장 실패: ${error.message}`)
