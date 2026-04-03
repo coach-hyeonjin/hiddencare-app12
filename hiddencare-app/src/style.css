@@ -1458,3 +1458,84 @@ img {
     padding-right: 0;
   }
 }
+/* ===== 운영대시보드 확장 ===== */
+.dashboard-kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.dashboard-kpi-grid-inside {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.dashboard-kpi-card {
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 16px;
+  padding: 18px;
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.04);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.dashboard-kpi-card span {
+  font-size: 13px;
+  color: #6b7280;
+  font-weight: 700;
+}
+
+.dashboard-kpi-card strong {
+  font-size: 28px;
+  color: #111827;
+  line-height: 1.2;
+}
+
+.dashboard-main-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+.dashboard-row-card {
+  border: 1px solid #e5e7eb;
+  border-radius: 14px;
+  padding: 14px;
+  background: #ffffff;
+}
+
+.dashboard-row-warn {
+  border-color: #facc15;
+  background: #fffbeb;
+}
+
+.dashboard-row-danger {
+  border-color: #f87171;
+  background: #fef2f2;
+}
+
+@media (max-width: 1100px) {
+  .dashboard-kpi-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .dashboard-kpi-grid-inside {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .dashboard-main-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 640px) {
+  .dashboard-kpi-grid,
+  .dashboard-kpi-grid-inside {
+    grid-template-columns: 1fr;
+  }
+
+  .dashboard-kpi-card strong {
+    font-size: 24px;
+  }
+}
