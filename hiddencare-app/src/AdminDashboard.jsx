@@ -3558,7 +3558,7 @@ const handleCoachConditionSubmit = async (e) => {
     monthly_goal_retention: Number(coachConditionForm.monthly_goal_retention || 0),
         monthly_goal_content: Number(coachConditionForm.monthly_goal_content || 0),
 
-    condition_note: coachConditionForm.condition_note?.trim() || '',
+   condition_note: coachConditionForm.condition_note?.trim() || '',
     fatigue_note: coachConditionForm.fatigue_note?.trim() || '',
     stress_note: coachConditionForm.stress_note?.trim() || '',
     focus_note: coachConditionForm.focus_note?.trim() || '',
@@ -3568,9 +3568,10 @@ const handleCoachConditionSubmit = async (e) => {
     support_needed: coachConditionForm.support_needed?.trim() || '',
     issue_note: coachConditionForm.issue_note?.trim() || '',
     admin_id: currentAdminId || null,
+    gym_id: currentGymId || null,
+  }
 
   let error = null
-
   if (editingCoachConditionId) {
     const { error: updateError } = await supabase
       .from('coach_condition_logs')
@@ -3625,7 +3626,7 @@ setBurnoutRecoveryChecks(item.burnout_recovery_checks || [])
     monthly_goal_revenue: item.monthly_goal_revenue ?? '',
     monthly_goal_new_leads: item.monthly_goal_new_leads ?? '',
     monthly_goal_retention: item.monthly_goal_retention ?? '',
-       monthly_goal_content: item.monthly_goal_content ?? '',
+    monthly_goal_content: item.monthly_goal_content ?? '',
 
     condition_note: item.condition_note || '',
     fatigue_note: item.fatigue_note || '',
