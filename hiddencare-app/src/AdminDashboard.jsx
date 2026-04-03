@@ -6701,82 +6701,86 @@ const getSalesAutoFeedback = () => {
 </div>
 </div>
       <div className="card">
-       <h3>이번 달 목표(계획값)</h3>
-        <div className="form-row">
-          <input
-            type="number"
-            placeholder="월 매출 목표(계획)"
-            value={coachConditionForm.monthly_goal_revenue}
-            onChange={(e) =>
-              setCoachConditionForm((prev) => ({
-                ...prev,
-                monthly_goal_revenue: e.target.value,
-              }))
-            }
-          />
-          <input
-            type="number"
-            placeholder="신규 상담 목표(계획)"
-            value={coachConditionForm.monthly_goal_new_leads}
-            onChange={(e) =>
-              setCoachConditionForm((prev) => ({
-                ...prev,
-                monthly_goal_new_leads: e.target.value,
-              }))
-            }
-          />
-          <input
-            type="number"
-            placeholder="회원 유지 목표(계획)"
-            value={coachConditionForm.monthly_goal_retention}
-            onChange={(e) =>
-              setCoachConditionForm((prev) => ({
-                ...prev,
-                monthly_goal_retention: e.target.value,
-              }))
-            }
-          />
-          <input
-            type="number"
-            placeholder="콘텐츠 업로드 목표(계획)"
-            value={coachConditionForm.monthly_goal_content}
-            onChange={(e) =>
-              setCoachConditionForm((prev) => ({
-                ...prev,
-                monthly_goal_content: e.target.value,
-              }))
-            }
-          />
-        </div>
+  <h3>이번 달 목표 설정</h3>
+  <p className="sub-text">
+    이 영역은 이번 달 기준 목표를 적어두는 용도입니다. 오늘 컨디션 기록과는 별도로 생각하고 작성하세요.
+  </p>
 
-        <label className="field">
-          <span>지원이 필요한 부분</span>
-          <textarea
-            rows="4"
-            value={coachConditionForm.support_needed}
-            onChange={(e) =>
-              setCoachConditionForm((prev) => ({
-                ...prev,
-                support_needed: e.target.value,
-              }))
-            }
-          />
-        </label>
+  <div className="form-row">
+    <input
+      type="number"
+      placeholder="월 매출 목표"
+      value={coachConditionForm.monthly_goal_revenue}
+      onChange={(e) =>
+        setCoachConditionForm((prev) => ({
+          ...prev,
+          monthly_goal_revenue: e.target.value,
+        }))
+      }
+    />
+    <input
+      type="number"
+      placeholder="신규 상담 목표"
+      value={coachConditionForm.monthly_goal_new_leads}
+      onChange={(e) =>
+        setCoachConditionForm((prev) => ({
+          ...prev,
+          monthly_goal_new_leads: e.target.value,
+        }))
+      }
+    />
+    <input
+      type="number"
+      placeholder="회원 유지 목표"
+      value={coachConditionForm.monthly_goal_retention}
+      onChange={(e) =>
+        setCoachConditionForm((prev) => ({
+          ...prev,
+          monthly_goal_retention: e.target.value,
+        }))
+      }
+    />
+    <input
+      type="number"
+      placeholder="콘텐츠 업로드 목표"
+      value={coachConditionForm.monthly_goal_content}
+      onChange={(e) =>
+        setCoachConditionForm((prev) => ({
+          ...prev,
+          monthly_goal_content: e.target.value,
+        }))
+      }
+    />
+  </div>
 
-        <label className="field">
-          <span>메모</span>
-          <textarea
-            rows="4"
-            value={coachConditionForm.issue_note}
-            onChange={(e) =>
-              setCoachConditionForm((prev) => ({
-                ...prev,
-                issue_note: e.target.value,
-              }))
-            }
-          />
-        </label>
-      </div>
+  <label className="field">
+    <span>지원이 필요한 부분</span>
+    <textarea
+      rows="4"
+      value={coachConditionForm.support_needed}
+      onChange={(e) =>
+        setCoachConditionForm((prev) => ({
+          ...prev,
+          support_needed: e.target.value,
+        }))
+      }
+    />
+  </label>
+
+  <label className="field">
+    <span>메모</span>
+    <textarea
+      rows="4"
+      value={coachConditionForm.issue_note}
+      onChange={(e) =>
+        setCoachConditionForm((prev) => ({
+          ...prev,
+          issue_note: e.target.value,
+        }))
+      }
+    />
+  </label>
+</div>
     </div>
 
     <div className="inline-actions wrap">
@@ -6829,9 +6833,7 @@ const getSalesAutoFeedback = () => {
 
   {!collapsedCoachConditions[item.id] && (
     <>
-      <div className="compact-text">
-        계획 목표: 매출 {Number(item.monthly_goal_revenue || 0).toLocaleString()}원 / 신규상담 {item.monthly_goal_new_leads || 0}건 / 유지 {item.monthly_goal_retention || 0}건 / 콘텐츠 {item.monthly_goal_content || 0}건
-      </div>
+      
 
       <div className="compact-text">
         지원 필요: {item.support_needed || '-'}
