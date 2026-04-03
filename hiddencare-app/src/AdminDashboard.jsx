@@ -344,7 +344,35 @@ const PERFORMANCE_ACTION_SECTIONS = [
     ],
   },
 ]
+const COACH_LEVEL_META = {
+  top: {
+    label: '최상',
+    description: '컨디션과 집중도가 좋고, 피로와 스트레스가 안정적입니다.',
+    colorClass: 'good',
+  },
+  stable: {
+    label: '안정',
+    description: '전반적으로 무난한 상태입니다. 현재 루틴 유지가 좋습니다.',
+    colorClass: 'good',
+  },
+  caution: {
+    label: '주의',
+    description: '피로 또는 스트레스가 올라오고 있습니다. 일정 조절이 필요할 수 있습니다.',
+    colorClass: 'warn',
+  },
+  risk: {
+    label: '위험',
+    description: '회복이 우선인 상태입니다. 무리한 일정은 줄이는 것이 좋습니다.',
+    colorClass: 'danger',
+  },
+}
 
+const PERFORMANCE_LEVEL_META = [
+  { min: 0, max: 39, label: '매우 부족' },
+  { min: 40, max: 59, label: '기본' },
+  { min: 60, max: 79, label: '양호' },
+  { min: 80, max: 100, label: '고성과' },
+]
 const BURNOUT_RELIEF_GUIDE = [
   '오늘은 좀 어떠셨나요?',
   '최근 들어 수업, 상담, 회원 응대가 평소보다 버겁게 느껴졌다면 가볍게 체크해보세요.',
