@@ -2856,26 +2856,32 @@ const updateRoutineSetValue = (weekIndex, dayIndex, itemIndex, setIndex, field, 
 
 const updateRoutineItemField = (weekIndex, dayIndex, itemIndex, field, value) => {
   setRoutineForm((prev) => {
-    const nextWeeks = [...prev.weeks]
-    const targetWeek = { ...nextWeeks[weekIndex] }
-    const nextDays = [...targetWeek.days]
-    const targetDay = { ...nextDays[dayIndex] }
-    const nextItems = [...targetDay.items]
+    const currentWeeks = Array.isArray(prev?.weeks) ? [...prev.weeks] : [createEmptyRoutineWeek(1)]
+    const targetWeek = { ...(currentWeeks[weekIndex] || createEmptyRoutineWeek(weekIndex + 1)) }
 
-    nextItems[itemIndex] = {
-      ...nextItems[itemIndex],
+    const currentDays = Array.isArray(targetWeek.days) ? [...targetWeek.days] : []
+    const targetDay = {
+      ...(currentDays[dayIndex] || createEmptyRoutineDay('월')),
+    }
+
+    const currentItems = Array.isArray(targetDay.items) ? [...targetDay.items] : [createEmptyRoutineItem()]
+    const targetItem = {
+      ...(currentItems[itemIndex] || createEmptyRoutineItem()),
       [field]: value,
     }
 
-    targetDay.items = nextItems
-    nextDays[dayIndex] = targetDay
-    targetWeek.days = nextDays
-    nextWeeks[weekIndex] = targetWeek
+    currentItems[itemIndex] = targetItem
+    targetDay.items = currentItems
+    currentDays[dayIndex] = targetDay
+    targetWeek.days = currentDays
+    currentWeeks[weekIndex] = targetWeek
 
-    return { ...prev, weeks: nextWeeks }
+    return {
+      ...prev,
+      weeks: currentWeeks,
+    }
   })
 }
-
 
 const updateWorkoutItemName = (itemIndex, value) => {
   setWorkoutForm((prev) => {
@@ -4793,21 +4799,22 @@ const getSalesAutoFeedback = () => {
                         </select>
                       </label>
 
-                      <label className="field">
-                        <span>운동명 직접입력</span>
-                        <input
-                          value={item.exercise_name_snapshot || ''}
-                          onChange={(e) =>
-                            updateRoutineItemName(
-                              selectedRoutineWeek,
-                              dayIndex,
-                              itemIndex,
-                              e.target.value
-                            )
-                          }
-                          placeholder="예: 레그프레스, 햄스트링 스트레칭"
-                        />
-                      </label>
+                     <label className="field">
+  <span>운동명 직접입력</span>
+  <input
+    value={item.exercise_name_snapshot || ''}
+    onChange={(e) =>
+      updateRoutineItemField(
+        selectedRoutineWeek,
+        dayIndex,
+        itemIndex,
+        'exercise_name_snapshot',
+        e.target.value
+      )
+    }
+    placeholder="예: 레그프레스, 햄스트링 스트레칭"
+  />
+</label>
                     </div>
 
                     <div className="grid-2">
