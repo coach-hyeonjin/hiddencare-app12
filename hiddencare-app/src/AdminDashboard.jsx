@@ -695,19 +695,20 @@ const getCoachStatusLevelKey = ({ conditionScore, fatigueScore, stressScore, foc
   return 'risk'
 }
 
-const getCoachStatusText = ({ conditionScore, fatigueScore, stressScore, focusScore, performanceScore }) => {
+const getCoachStatusText = ({
+  conditionScore,
+  fatigueScore,
+  stressScore,
+  focusScore,
+  performanceScore,
+}) => {
   const levelKey = getCoachStatusLevelKey({
     conditionScore,
     fatigueScore,
     stressScore,
     focusScore,
   })
-const getSimpleStatus = (value) => {
-  if (value >= 4) return '좋음'
-  if (value >= 3) return '보통'
-  if (value >= 2) return '낮음'
-  return '위험'
-}
+
   const base = COACH_LEVEL_META[levelKey]?.description || ''
   const performanceLevel = getPerformanceLevel(performanceScore)
 
