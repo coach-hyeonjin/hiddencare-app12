@@ -237,6 +237,13 @@ const emptyCoachConditionForm = {
   monthly_goal_retention: '',
   monthly_goal_content: '',
 
+  condition_note: '',
+  fatigue_note: '',
+  stress_note: '',
+  focus_note: '',
+  burnout_note: '',
+  today_comment: '',
+
   support_needed: '',
   issue_note: '',
 }
@@ -3549,13 +3556,18 @@ const handleCoachConditionSubmit = async (e) => {
     monthly_goal_revenue: Number(coachConditionForm.monthly_goal_revenue || 0),
     monthly_goal_new_leads: Number(coachConditionForm.monthly_goal_new_leads || 0),
     monthly_goal_retention: Number(coachConditionForm.monthly_goal_retention || 0),
-    monthly_goal_content: Number(coachConditionForm.monthly_goal_content || 0),
+        monthly_goal_content: Number(coachConditionForm.monthly_goal_content || 0),
+
+    condition_note: coachConditionForm.condition_note?.trim() || '',
+    fatigue_note: coachConditionForm.fatigue_note?.trim() || '',
+    stress_note: coachConditionForm.stress_note?.trim() || '',
+    focus_note: coachConditionForm.focus_note?.trim() || '',
+    burnout_note: coachConditionForm.burnout_note?.trim() || '',
+    today_comment: coachConditionForm.today_comment?.trim() || '',
 
     support_needed: coachConditionForm.support_needed?.trim() || '',
     issue_note: coachConditionForm.issue_note?.trim() || '',
     admin_id: currentAdminId || null,
-    gym_id: currentGymId || null,
-  }
 
   let error = null
 
@@ -3613,7 +3625,14 @@ setBurnoutRecoveryChecks(item.burnout_recovery_checks || [])
     monthly_goal_revenue: item.monthly_goal_revenue ?? '',
     monthly_goal_new_leads: item.monthly_goal_new_leads ?? '',
     monthly_goal_retention: item.monthly_goal_retention ?? '',
-    monthly_goal_content: item.monthly_goal_content ?? '',
+       monthly_goal_content: item.monthly_goal_content ?? '',
+
+    condition_note: item.condition_note || '',
+    fatigue_note: item.fatigue_note || '',
+    stress_note: item.stress_note || '',
+    focus_note: item.focus_note || '',
+    burnout_note: item.burnout_note || '',
+    today_comment: item.today_comment || '',
 
     support_needed: item.support_needed || '',
     issue_note: item.issue_note || '',
@@ -6399,66 +6418,134 @@ const getSalesAutoFeedback = () => {
     </div>
 
     <div className="card">
-      <h3>상태 체크리스트</h3>
+  <h3>상태 체크리스트</h3>
 
-      <div className="stack-gap">
-        <div>
-          <strong>컨디션</strong>
-          {CONDITION_CHECKLIST.map((item) => (
-            <label key={item} className="checkbox-row">
-              <input
-                type="checkbox"
-                checked={(coachConditionForm.condition_checks || []).includes(item)}
-                onChange={() => toggleChecklistItem('condition_checks', item)}
-              />
-              <span>{item}</span>
-            </label>
-          ))}
-        </div>
-
-        <div>
-          <strong>피로도</strong>
-          {FATIGUE_CHECKLIST.map((item) => (
-            <label key={item} className="checkbox-row">
-              <input
-                type="checkbox"
-                checked={(coachConditionForm.fatigue_checks || []).includes(item)}
-                onChange={() => toggleChecklistItem('fatigue_checks', item)}
-              />
-              <span>{item}</span>
-            </label>
-          ))}
-        </div>
-
-        <div>
-          <strong>스트레스</strong>
-          {STRESS_CHECKLIST.map((item) => (
-            <label key={item} className="checkbox-row">
-              <input
-                type="checkbox"
-                checked={(coachConditionForm.stress_checks || []).includes(item)}
-                onChange={() => toggleChecklistItem('stress_checks', item)}
-              />
-              <span>{item}</span>
-            </label>
-          ))}
-        </div>
-
-        <div>
-          <strong>집중도</strong>
-          {FOCUS_CHECKLIST.map((item) => (
-            <label key={item} className="checkbox-row">
-              <input
-                type="checkbox"
-                checked={(coachConditionForm.focus_checks || []).includes(item)}
-                onChange={() => toggleChecklistItem('focus_checks', item)}
-              />
-              <span>{item}</span>
-            </label>
-          ))}
-        </div>
+  <div className="stack-gap">
+    <div className="stack-gap">
+      <div>
+        <strong>컨디션</strong>
+        {CONDITION_CHECKLIST.map((item) => (
+          <label key={item} className="checkbox-row">
+            <input
+              type="checkbox"
+              checked={(coachConditionForm.condition_checks || []).includes(item)}
+              onChange={() => toggleChecklistItem('condition_checks', item)}
+            />
+            <span>{item}</span>
+          </label>
+        ))}
       </div>
+
+      <label className="field">
+        <span>왜 몸 상태가 이런지 적어주세요</span>
+        <textarea
+          rows="3"
+          placeholder="예: 감기 기운, 수면 부족, 몸살 느낌, 허리/목 불편함 등"
+          value={coachConditionForm.condition_note || ''}
+          onChange={(e) =>
+            setCoachConditionForm((prev) => ({
+              ...prev,
+              condition_note: e.target.value,
+            }))
+          }
+        />
+      </label>
     </div>
+
+    <div className="stack-gap">
+      <div>
+        <strong>피로도</strong>
+        {FATIGUE_CHECKLIST.map((item) => (
+          <label key={item} className="checkbox-row">
+            <input
+              type="checkbox"
+              checked={(coachConditionForm.fatigue_checks || []).includes(item)}
+              onChange={() => toggleChecklistItem('fatigue_checks', item)}
+            />
+            <span>{item}</span>
+          </label>
+        ))}
+      </div>
+
+      <label className="field">
+        <span>피로한 이유를 적어주세요</span>
+        <textarea
+          rows="3"
+          placeholder="예: 수업이 몰림, 잠 부족, 회복 부족, 이동 많음 등"
+          value={coachConditionForm.fatigue_note || ''}
+          onChange={(e) =>
+            setCoachConditionForm((prev) => ({
+              ...prev,
+              fatigue_note: e.target.value,
+            }))
+          }
+        />
+      </label>
+    </div>
+
+    <div className="stack-gap">
+      <div>
+        <strong>스트레스</strong>
+        {STRESS_CHECKLIST.map((item) => (
+          <label key={item} className="checkbox-row">
+            <input
+              type="checkbox"
+              checked={(coachConditionForm.stress_checks || []).includes(item)}
+              onChange={() => toggleChecklistItem('stress_checks', item)}
+            />
+            <span>{item}</span>
+          </label>
+        ))}
+      </div>
+
+      <label className="field">
+        <span>스트레스 이유를 적어주세요</span>
+        <textarea
+          rows="3"
+          placeholder="예: 회원 응대, 세일즈 압박, 개인 일정, 운영 고민 등"
+          value={coachConditionForm.stress_note || ''}
+          onChange={(e) =>
+            setCoachConditionForm((prev) => ({
+              ...prev,
+              stress_note: e.target.value,
+            }))
+          }
+        />
+      </label>
+    </div>
+
+    <div className="stack-gap">
+      <div>
+        <strong>집중도</strong>
+        {FOCUS_CHECKLIST.map((item) => (
+          <label key={item} className="checkbox-row">
+            <input
+              type="checkbox"
+              checked={(coachConditionForm.focus_checks || []).includes(item)}
+              onChange={() => toggleChecklistItem('focus_checks', item)}
+            />
+            <span>{item}</span>
+          </label>
+        ))}
+      </div>
+
+      <label className="field">
+        <span>집중 상태에 영향을 준 이유</span>
+        <textarea
+          rows="3"
+          placeholder="예: 잠 부족, 머리가 복잡함, 컨디션 저하, 외부 일정 등"
+          value={coachConditionForm.focus_note || ''}
+          onChange={(e) =>
+            setCoachConditionForm((prev) => ({
+              ...prev,
+              focus_note: e.target.value,
+            }))
+          }
+        />
+      </label>
+    </div>
+  </div>
+</div>
     <div className="card">
   <h3>번아웃 여부 확인</h3>
   <p className="sub-text">
@@ -6483,7 +6570,20 @@ const getSalesAutoFeedback = () => {
       </label>
     ))}
   </div>
-
+<label className="field">
+  <span>요즘 가장 힘든 일이나 버거운 상황</span>
+  <textarea
+    rows="4"
+    placeholder="예: 회원 응대가 버겁다 / 세일즈 압박이 부담된다 / 수업은 많은데 회복 시간이 부족하다"
+    value={coachConditionForm.burnout_note || ''}
+    onChange={(e) =>
+      setCoachConditionForm((prev) => ({
+        ...prev,
+        burnout_note: e.target.value,
+      }))
+    }
+  />
+</label>
   <div className="detail-box" style={{ marginTop: '12px' }}>
     <p><strong>현재 상태:</strong> {getBurnoutSignalText(burnoutSignalChecks)}</p>
   </div>
@@ -6557,7 +6657,20 @@ const getSalesAutoFeedback = () => {
         ))}
       </div>
     </div>
-
+<label className="field">
+  <span>오늘 전체 상태 한 줄 메모</span>
+  <textarea
+    rows="4"
+    placeholder="예: 감기 기운 때문에 수업은 가능하지만 말 많이 하는 건 버거움 / 오늘은 무리하지 않고 유지가 목표"
+    value={coachConditionForm.today_comment || ''}
+    onChange={(e) =>
+      setCoachConditionForm((prev) => ({
+        ...prev,
+        today_comment: e.target.value,
+      }))
+    }
+  />
+</label>
     <div className="report-grid">
       <div className="card">
         <h3>자동 계산 결과</h3>
