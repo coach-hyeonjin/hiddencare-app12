@@ -1491,17 +1491,30 @@ const coachGoalSummary = useMemo(() => {
     }
   }
 
-  const total = filteredCoachConditions.length
+  const latestGoal = [...filteredCoachConditions]
+    .filter(
+      (item) =>
+        Number(item.monthly_goal_revenue || 0) > 0 ||
+        Number(item.monthly_goal_new_leads || 0) > 0 ||
+        Number(item.monthly_goal_retention || 0) > 0 ||
+        Number(item.monthly_goal_content || 0) > 0
+    )
+    .sort((a, b) => new Date(b.created_at || 0) - new Date(a.created_at || 0))[0]
+
+  if (!latestGoal) {
+    return {
+      revenueGoalAvg: 0,
+      newLeadGoalAvg: 0,
+      retentionGoalAvg: 0,
+      contentGoalAvg: 0,
+    }
+  }
 
   return {
-    revenueGoalAvg:
-      filteredCoachConditions.reduce((sum, item) => sum + Number(item.monthly_goal_revenue || 0), 0) / total,
-    newLeadGoalAvg:
-      filteredCoachConditions.reduce((sum, item) => sum + Number(item.monthly_goal_new_leads || 0), 0) / total,
-    retentionGoalAvg:
-      filteredCoachConditions.reduce((sum, item) => sum + Number(item.monthly_goal_retention || 0), 0) / total,
-    contentGoalAvg:
-      filteredCoachConditions.reduce((sum, item) => sum + Number(item.monthly_goal_content || 0), 0) / total,
+    revenueGoalAvg: Number(latestGoal.monthly_goal_revenue || 0),
+    newLeadGoalAvg: Number(latestGoal.monthly_goal_new_leads || 0),
+    retentionGoalAvg: Number(latestGoal.monthly_goal_retention || 0),
+    contentGoalAvg: Number(latestGoal.monthly_goal_content || 0),
   }
 }, [filteredCoachConditions])
   const coachActualSummary = useMemo(() => {
