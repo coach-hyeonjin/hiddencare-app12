@@ -2582,43 +2582,44 @@ const buildRoutinePayload = (form) => {
 }
 
 const buildRoutineContent = (form) => {
-  return (form.weeks || [])
-    .map((week) => {
-      const dayLines = (currentWeek.days || [])
+  const weeks = Array.isArray(form.weeks) ? form.weeks : []
+
+  return weeks
+    .map((week, weekIndex) => {
+      const days = Array.isArray(week.days) ? week.days : []
+
+      const dayText = days
         .map((day) => {
-          const items = (day.items || []).filter(
-            (item) => item.exercise_name_snapshot?.trim() || item.exercise_id
-          )
+          const items = Array.isArray(day.items) ? day.items : []
 
-          if (!items.length) return `${day.day_of_week}: 휴식 또는 미입력`
+          const itemText = items
+            .map((item, itemIndex) => {
+              const sets = Array.isArray(item.sets) ? item.sets : []
 
-          const itemLines = items.map((item, index) => {
-            const exerciseName = item.exercise_name_snapshot?.trim() || `운동 ${index + 1}`
-            const durationText = item.duration_minutes ? ` / 시간 ${item.duration_minutes}분` : ''
-            const setLines = (item.sets || [])
-              .filter((setRow) => setRow.kg !== '' || setRow.reps !== '')
-              .map((setRow, setIndex) => {
-                const kgText = setRow.kg ? `${setRow.kg}kg` : '-'
-                const repsText = setRow.reps ? `${setRow.reps}회` : '-'
-                return `    - ${setIndex + 1}세트: ${kgText} / ${repsText}`
-              })
+              const setText = sets
+                .map((setRow, setIndex) => {
+                  const kg = setRow.kg || '-'
+                  const reps = setRow.reps || '-'
+                  return `    - ${setIndex + 1}세트: ${kg}kg / ${reps}회`
+                })
+                .join('\n')
 
-            const memoLine = item.memo?.trim() ? `    - 메모: ${item.memo.trim()}` : ''
+              return [
+                `  ${itemIndex + 1}. ${item.exercise_name_snapshot || '운동명 없음'}`,
+                item.duration_minutes ? `    - 시간: ${item.duration_minutes}분` : '',
+                item.memo ? `    - 메모: ${item.memo}` : '',
+                setText,
+              ]
+                .filter(Boolean)
+                .join('\n')
+            })
+            .join('\n')
 
-            return [
-              `  ${index + 1}. ${exerciseName}${durationText}`,
-              ...setLines,
-              memoLine,
-            ]
-              .filter(Boolean)
-              .join('\n')
-          })
-
-          return [`${day.day_of_week}`, ...itemLines].join('\n')
+          return `${day.day_of_week}\n${itemText || '  - 운동 없음'}`
         })
         .join('\n\n')
 
-      return `${week.week_number}주차\n${dayLines}`
+      return `${week.week_number || weekIndex + 1}주차\n${dayText}`
     })
     .join('\n\n')
 }
