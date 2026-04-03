@@ -4699,11 +4699,7 @@ const getSalesAutoFeedback = () => {
     + 주차 추가
   </button>
 </div>
-<div className="inline-actions wrap">
-  <button className="secondary-btn" type="button" onClick={addRoutineWeek}>
-    주차 추가
-  </button>
-</div>
+
 
 <div className="list-stack">
   {(() => {
@@ -4919,6 +4915,8 @@ const getSalesAutoFeedback = () => {
     )
   })()}
 </div>
+      </div>
+    </div>
     <div className="sub-card">
       <h3>관리자 전용 메모</h3>
 
