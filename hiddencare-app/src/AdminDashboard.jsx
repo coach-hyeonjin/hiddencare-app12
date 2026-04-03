@@ -6793,9 +6793,9 @@ const getSalesAutoFeedback = () => {
   </label>
 
   <div className="inline-actions wrap">
-    <button className="secondary-btn" type="button">
-      이번 달 목표 저장
-    </button>
+    <button className="secondary-btn" type="button" onClick={handleCoachGoalSave}>
+  이번 달 목표 저장
+</button>
   </div>
 </div>
 
@@ -6867,13 +6867,7 @@ const getSalesAutoFeedback = () => {
     <>
       
 
-      <div className="compact-text">
-        지원 필요: {item.support_needed || '-'}
-      </div>
-
-      <div className="compact-text">
-        메모: {item.issue_note || '-'}
-      </div>
+      
 
       <div className="compact-text">
         자동 해석:{' '}
@@ -7450,20 +7444,7 @@ const getSalesAutoFeedback = () => {
           </div>
         </div>
 
-        <label className="field">
-          <span>메모</span>
-          <textarea
-            rows="4"
-            value={scheduleForm.memo}
-            onChange={(e) =>
-              setScheduleForm((prev) => ({
-                ...prev,
-                memo: e.target.value,
-              }))
-            }
-            placeholder="예: 오전 PT 집중 / 점심 이후 상담 가능 / 주말은 예약제"
-          />
-        </label>
+       
 
         <div className="inline-actions wrap">
           <button
