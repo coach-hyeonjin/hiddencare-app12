@@ -879,6 +879,21 @@ const [unreadNoticeCount, setUnreadNoticeCount] = useState(0)
   const [managerActionLogs, setManagerActionLogs] = useState([])
   const [managerTaskChecks, setManagerTaskChecks] = useState([])
   const [managerGoalSettings, setManagerGoalSettings] = useState(null)
+  const emptyCareerProfileForm = {
+  career_years: 0,
+  total_blog_posts: 0,
+  total_instagram_posts: 0,
+  total_blog_reviewnote_campaigns: 0,
+  total_instagram_campaigns: 0,
+  total_classes: 0,
+  total_consultations: 0,
+  total_certifications: 0,
+  total_collaborations: 0,
+  memo: '',
+}
+
+const [careerProfileForm, setCareerProfileForm] = useState(emptyCareerProfileForm)
+const [careerProfileId, setCareerProfileId] = useState(null)
 
   const [managerActionForm, setManagerActionForm] = useState({
     action_date: new Date().toISOString().slice(0, 10),
@@ -2353,6 +2368,7 @@ useEffect(() => {
       ['loadSalesLogs', () => loadSalesLogs()],
       ['loadSalesSummary', () => loadSalesSummary(saleMonth)],
       ['loadNotices', () => loadNotices()],
+      ['loadCareerProfile', () => loadCareerProfile()],
       ['loadInquiries', () => loadInquiries()],
             ['loadManagerActionLogs', () => loadManagerActionLogs()],
       ['loadManagerTaskChecks', () => loadManagerTaskChecks()],
@@ -4952,7 +4968,44 @@ const getSalesAutoFeedback = () => {
 
   setManagerTaskChecks(data || [])
 }
+const loadCareerProfile = async () => {
+  if (!currentAdminId) {
+    setCareerProfileForm(emptyCareerProfileForm)
+    setCareerProfileId(null)
+    return
+  }
 
+  const { data, error } = await supabase
+    .from('trainer_career_profiles')
+    .select('*')
+    .eq('admin_id', currentAdminId)
+    .maybeSingle()
+
+  if (error) {
+    console.error('trainer_career_profiles 불러오기 실패:', error)
+    return
+  }
+
+  if (!data) {
+    setCareerProfileForm(emptyCareerProfileForm)
+    setCareerProfileId(null)
+    return
+  }
+
+  setCareerProfileId(data.id)
+  setCareerProfileForm({
+    career_years: Number(data.career_years || 0),
+    total_blog_posts: Number(data.total_blog_posts || 0),
+    total_instagram_posts: Number(data.total_instagram_posts || 0),
+    total_blog_reviewnote_campaigns: Number(data.total_blog_reviewnote_campaigns || 0),
+    total_instagram_campaigns: Number(data.total_instagram_campaigns || 0),
+    total_classes: Number(data.total_classes || 0),
+    total_consultations: Number(data.total_consultations || 0),
+    total_certifications: Number(data.total_certifications || 0),
+    total_collaborations: Number(data.total_collaborations || 0),
+    memo: data.memo || '',
+  })
+}
   const loadManagerGoalSettings = async () => {
     if (!currentGymId) {
       setManagerGoalSettings(null)
@@ -5039,6 +5092,46 @@ const { data, error } = response
   })
 setEditingManagerActionId(null)
   await loadManagerActionLogs()
+}
+  const handleCareerProfileSave = async () => {
+  const targetGymId = currentGymId || currentAdminId
+
+  if (!currentAdminId) {
+    setMessage('관리자 정보를 찾을 수 없습니다.')
+    return
+  }
+
+  const payload = {
+    gym_id: targetGymId,
+    admin_id: currentAdminId,
+    career_years: Number(careerProfileForm.career_years || 0),
+    total_blog_posts: Number(careerProfileForm.total_blog_posts || 0),
+    total_instagram_posts: Number(careerProfileForm.total_instagram_posts || 0),
+    total_blog_reviewnote_campaigns: Number(careerProfileForm.total_blog_reviewnote_campaigns || 0),
+    total_instagram_campaigns: Number(careerProfileForm.total_instagram_campaigns || 0),
+    total_classes: Number(careerProfileForm.total_classes || 0),
+    total_consultations: Number(careerProfileForm.total_consultations || 0),
+    total_certifications: Number(careerProfileForm.total_certifications || 0),
+    total_collaborations: Number(careerProfileForm.total_collaborations || 0),
+    memo: careerProfileForm.memo || '',
+    updated_at: new Date().toISOString(),
+  }
+
+  const { data, error } = await supabase
+    .from('trainer_career_profiles')
+    .upsert(payload, { onConflict: 'admin_id' })
+    .select()
+    .single()
+
+  if (error) {
+    console.error('trainer_career_profiles 저장 실패:', error)
+    setMessage(`경력 프로필 저장 실패: ${error.message}`)
+    return
+  }
+
+  setCareerProfileId(data.id)
+  setMessage('트레이너 경력 프로필이 저장되었습니다.')
+  await loadCareerProfile()
 }
   const handleManagerActionDelete = async (id) => {
   const confirmDelete = window.confirm('이 로그를 삭제하시겠습니까?')
@@ -5912,7 +6005,196 @@ setEditingManagerActionId(null)
               </div>
             </div>
           </section>
+<section className="manager-section">
+  <div className="section-head">
+    <div>
+      <h3>누적 커리어 입력</h3>
+      <p className="sub-text">
+        지금까지 해온 기록을 직접 입력해두면, 이후 XP/등급 계산에 반영됩니다.
+      </p>
+    </div>
+  </div>
 
+  <div className="stack-gap">
+    <div className="grid-2">
+      <label className="field">
+        <span>트레이너 경력(년차)</span>
+        <input
+          type="number"
+          min="0"
+          value={careerProfileForm.career_years}
+          onChange={(e) =>
+            setCareerProfileForm((prev) => ({
+              ...prev,
+              career_years: e.target.value,
+            }))
+          }
+        />
+      </label>
+
+      <label className="field">
+        <span>누적 블로그 수</span>
+        <input
+          type="number"
+          min="0"
+          value={careerProfileForm.total_blog_posts}
+          onChange={(e) =>
+            setCareerProfileForm((prev) => ({
+              ...prev,
+              total_blog_posts: e.target.value,
+            }))
+          }
+        />
+      </label>
+    </div>
+
+    <div className="grid-2">
+      <label className="field">
+        <span>인스타 게시물 수</span>
+        <input
+          type="number"
+          min="0"
+          value={careerProfileForm.total_instagram_posts}
+          onChange={(e) =>
+            setCareerProfileForm((prev) => ({
+              ...prev,
+              total_instagram_posts: e.target.value,
+            }))
+          }
+        />
+      </label>
+
+      <label className="field">
+        <span>리뷰노트 블로그 체험단 수</span>
+        <input
+          type="number"
+          min="0"
+          value={careerProfileForm.total_blog_reviewnote_campaigns}
+          onChange={(e) =>
+            setCareerProfileForm((prev) => ({
+              ...prev,
+              total_blog_reviewnote_campaigns: e.target.value,
+            }))
+          }
+        />
+      </label>
+    </div>
+
+    <div className="grid-2">
+      <label className="field">
+        <span>인스타 체험단 수</span>
+        <input
+          type="number"
+          min="0"
+          value={careerProfileForm.total_instagram_campaigns}
+          onChange={(e) =>
+            setCareerProfileForm((prev) => ({
+              ...prev,
+              total_instagram_campaigns: e.target.value,
+            }))
+          }
+        />
+      </label>
+
+      <label className="field">
+        <span>총 수업 수</span>
+        <input
+          type="number"
+          min="0"
+          value={careerProfileForm.total_classes}
+          onChange={(e) =>
+            setCareerProfileForm((prev) => ({
+              ...prev,
+              total_classes: e.target.value,
+            }))
+          }
+        />
+      </label>
+    </div>
+
+    <div className="grid-2">
+      <label className="field">
+        <span>총 상담 수</span>
+        <input
+          type="number"
+          min="0"
+          value={careerProfileForm.total_consultations}
+          onChange={(e) =>
+            setCareerProfileForm((prev) => ({
+              ...prev,
+              total_consultations: e.target.value,
+            }))
+          }
+        />
+      </label>
+
+      <label className="field">
+        <span>자격증 수</span>
+        <input
+          type="number"
+          min="0"
+          value={careerProfileForm.total_certifications}
+          onChange={(e) =>
+            setCareerProfileForm((prev) => ({
+              ...prev,
+              total_certifications: e.target.value,
+            }))
+          }
+        />
+      </label>
+    </div>
+
+    <div className="grid-2">
+      <label className="field">
+        <span>협업 경험 수</span>
+        <input
+          type="number"
+          min="0"
+          value={careerProfileForm.total_collaborations}
+          onChange={(e) =>
+            setCareerProfileForm((prev) => ({
+              ...prev,
+              total_collaborations: e.target.value,
+            }))
+          }
+        />
+      </label>
+
+      <label className="field">
+        <span>프로필 저장 상태</span>
+        <input
+          value={careerProfileId ? '저장된 프로필 있음' : '아직 저장 전'}
+          disabled
+        />
+      </label>
+    </div>
+
+    <label className="field">
+      <span>메모</span>
+      <textarea
+        rows="4"
+        value={careerProfileForm.memo}
+        onChange={(e) =>
+          setCareerProfileForm((prev) => ({
+            ...prev,
+            memo: e.target.value,
+          }))
+        }
+        placeholder="예: 2022년부터 트레이너 활동 / 리뷰노트 블로그 체험단 경험 있음 / 수업 방식 특징"
+      />
+    </label>
+
+    <div className="inline-actions wrap">
+      <button
+        type="button"
+        className="primary-btn"
+        onClick={handleCareerProfileSave}
+      >
+        누적 커리어 저장
+      </button>
+    </div>
+  </div>
+</section>
           <section className="manager-thought-grid">
             {MANAGER_THOUGHT_CARDS.map((card) => (
               <article key={card.title} className="manager-thought-card">
