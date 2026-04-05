@@ -1431,6 +1431,47 @@ const completedTaskKeysToday = useMemo(() => {
     message,
   }
 }, [careerProfileForm, managerActionLogs, managerTaskChecks])
+  const recentXpLogs = useMemo(() => {
+  const actionTypeLabelMap = {
+    blog_post: '블로그 발행',
+    reel_upload: '릴스 업로드',
+    webapp_promo: '웹앱 홍보',
+    review_uploaded: '후기 업로드',
+    marketing_post: '마케팅 글 작성',
+  }
+
+  const actionXpMap = {
+    blog_post: 20,
+    reel_upload: 20,
+    webapp_promo: 25,
+    review_uploaded: 30,
+    marketing_post: 15,
+  }
+
+  const actionLogs = (managerActionLogs || []).map((log) => ({
+    id: `action-${log.id}`,
+    date: log.action_date || log.created_at || '',
+    title: actionTypeLabelMap[log.action_type] || '실행 로그',
+    xp: Number(actionXpMap[log.action_type] || 0),
+    description: log.title || log.description || log.channel || '-',
+    sourceType: 'action',
+  }))
+
+  const taskLogs = (managerTaskChecks || [])
+    .filter((item) => item.is_completed === true)
+    .map((item) => ({
+      id: `task-${item.id}`,
+      date: item.task_date || item.completed_at || '',
+      title: '과제 완료',
+      xp: 10,
+      description: item.memo || item.task_key || '-',
+      sourceType: 'task',
+    }))
+
+  return [...actionLogs, ...taskLogs]
+    .sort((a, b) => String(b.date).localeCompare(String(a.date)))
+    .slice(0, 10)
+}, [managerActionLogs, managerTaskChecks])
   const trainerLevelRoadmap = useMemo(() => {
   return TRAINER_LEVELS.map((level, index) => {
     const nextLevel = TRAINER_LEVELS[index + 1] || null
@@ -6494,6 +6535,40 @@ setEditingManagerActionId(null)
     </div>
   </div>
 </section>
+<section className="manager-section">
+  <div className="section-head">
+    <div>
+      <h3>최근 XP 적립 로그</h3>
+      <p className="sub-text">
+        어떤 행동이 성장 경험치로 반영됐는지 최근 기록 기준으로 보여줍니다.
+      </p>
+    </div>
+  </div>
+
+  <div className="list-stack">
+    {recentXpLogs.length === 0 ? (
+      <div className="workout-list-empty">아직 반영된 XP 로그가 없습니다.</div>
+    ) : null}
+
+    {recentXpLogs.map((log) => (
+      <div key={log.id} className="list-card">
+        <div className="list-card-top">
+          <strong>{log.title}</strong>
+          <span className="pill">+{log.xp}XP</span>
+        </div>
+
+        <div className="compact-text" style={{ marginBottom: '6px' }}>
+          날짜: {log.date || '-'}
+        </div>
+
+        <div className="compact-text">
+          내용: {log.description || '-'}
+        </div>
+      </div>
+    ))}
+  </div>
+</section>
+          
           <section className="manager-section">
   <div className="section-head">
     <div>
