@@ -1229,6 +1229,17 @@ const [editingManagerActionId, setEditingManagerActionId] = useState(null)
     },
   ]
 }, [members, workouts, dietLogs, inquiries, salesRecords, managerGoalSettings, managerActionLogs])
+ const todayTaskDate = new Date().toISOString().slice(0, 10)
+
+const completedTaskKeysToday = useMemo(() => {
+  return managerTaskChecks
+    .filter(
+      (item) =>
+        item.task_date === todayTaskDate &&
+        item.is_completed === true
+    )
+    .map((item) => item.task_key)
+}, [managerTaskChecks, todayTaskDate])
   const selectedMember = useMemo(
     () => members.find((member) => member.id === selectedMemberId) || null,
     [members, selectedMemberId],
@@ -5111,6 +5122,58 @@ setEditingManagerActionId(null)
     return
   }
 }
+  const handleManagerTaskComplete = async (task) => {
+  const targetGymId = currentGymId || currentAdminId
+
+  if (!targetGymId) {
+    setMessage('과제 완료 저장에 필요한 gym_id를 찾을 수 없습니다.')
+    return
+  }
+
+  const existingTask = managerTaskChecks.find(
+    (item) =>
+      item.task_key === task.actionKey &&
+      item.task_date === todayTaskDate
+  )
+
+  let response
+
+  if (existingTask) {
+    response = await supabase
+      .from('manager_task_checks')
+      .update({
+        is_completed: true,
+        completed_at: new Date().toISOString(),
+        memo: task.title,
+      })
+      .eq('id', existingTask.id)
+      .select()
+  } else {
+    response = await supabase
+      .from('manager_task_checks')
+      .insert({
+        gym_id: targetGymId,
+        admin_id: currentAdminId,
+        task_key: task.actionKey,
+        task_date: todayTaskDate,
+        is_completed: true,
+        completed_at: new Date().toISOString(),
+        memo: task.title,
+      })
+      .select()
+  }
+
+  const { error } = response
+
+  if (error) {
+    console.error('과제 완료 저장 실패:', error)
+    setMessage(`과제 완료 저장 실패: ${error.message}`)
+    return
+  }
+
+  setMessage(`"${task.title}" 완료 처리되었습니다.`)
+  await loadManagerTaskChecks()
+}
   if (loading) {
     return <div className="loading-card">데이터 불러오는 중...</div>
   }
@@ -5847,14 +5910,31 @@ setEditingManagerActionId(null)
                   <p>{task.description}</p>
 
                   <div className="manager-task-bottom">
-                    <button
-  type="button"
-  className="primary-btn"
-  onClick={() => handleManagerTaskAction(task)}
->
-  {task.action}
-</button>
-                  </div>
+  <div className="inline-actions wrap">
+    <button
+      type="button"
+      className="primary-btn"
+      onClick={() => handleManagerTaskAction(task)}
+    >
+      {task.action}
+    </button>
+
+    <button
+      type="button"
+      className="secondary-btn"
+      onClick={() => handleManagerTaskComplete(task)}
+      disabled={completedTaskKeysToday.includes(task.actionKey)}
+    >
+      {completedTaskKeysToday.includes(task.actionKey) ? '완료됨' : '완료'}
+    </button>
+  </div>
+
+  {completedTaskKeysToday.includes(task.actionKey) ? (
+    <div className="compact-text" style={{ marginTop: '8px' }}>
+      오늘 완료한 과제입니다.
+    </div>
+  ) : null}
+</div>
                 </article>
               ))}
             </div>
