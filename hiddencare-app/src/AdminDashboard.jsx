@@ -5179,6 +5179,38 @@ setEditingManagerActionId(null)
   setMessage(`"${task.title}" 완료 처리되었습니다.`)
   await loadManagerTaskChecks()
 }
+  const handleManagerTaskUncomplete = async (task) => {
+  const confirmUndo = window.confirm('이 과제의 완료 상태를 해제하시겠습니까?')
+  if (!confirmUndo) return
+
+  const existingTask = managerTaskChecks.find(
+    (item) =>
+      item.task_key === task.actionKey &&
+      item.task_date === todayTaskDate
+  )
+
+  if (!existingTask) {
+    setMessage('완료 상태를 찾지 못했습니다.')
+    return
+  }
+
+  const { error } = await supabase
+    .from('manager_task_checks')
+    .update({
+      is_completed: false,
+      completed_at: null,
+    })
+    .eq('id', existingTask.id)
+
+  if (error) {
+    console.error('과제 완료 해제 실패:', error)
+    setMessage(`과제 완료 해제 실패: ${error.message}`)
+    return
+  }
+
+  setMessage(`"${task.title}" 완료 해제되었습니다.`)
+  await loadManagerTaskChecks()
+}
   if (loading) {
     return <div className="loading-card">데이터 불러오는 중...</div>
   }
@@ -5916,29 +5948,38 @@ setEditingManagerActionId(null)
 
                   <div className="manager-task-bottom">
   <div className="inline-actions wrap">
+  <button
+    type="button"
+    className="primary-btn"
+    onClick={() => handleManagerTaskAction(task)}
+  >
+    {task.action}
+  </button>
+
+  {completedTaskKeysToday.includes(task.actionKey) ? (
     <button
       type="button"
-      className="primary-btn"
-      onClick={() => handleManagerTaskAction(task)}
+      className="secondary-btn"
+      onClick={() => handleManagerTaskUncomplete(task)}
     >
-      {task.action}
+      완료 해제
     </button>
-
+  ) : (
     <button
       type="button"
       className="secondary-btn"
       onClick={() => handleManagerTaskComplete(task)}
-      disabled={completedTaskKeysToday.includes(task.actionKey)}
     >
-      {completedTaskKeysToday.includes(task.actionKey) ? '완료됨' : '완료'}
+      완료
     </button>
-  </div>
+  )}
+</div>
 
-  {completedTaskKeysToday.includes(task.actionKey) ? (
-    <div className="compact-text" style={{ marginTop: '8px' }}>
-      오늘 완료한 과제입니다.
-    </div>
-  ) : null}
+ {completedTaskKeysToday.includes(task.actionKey) ? (
+  <div className="compact-text" style={{ marginTop: '8px' }}>
+    오늘 완료 처리된 과제입니다. 잘못 눌렀다면 완료 해제를 누르세요.
+  </div>
+) : null}
 </div>
                 </article>
               ))}
