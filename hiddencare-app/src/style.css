@@ -2196,6 +2196,15 @@ img {
   color: #6b7280;
   word-break: keep-all;
 }
+.trainer-level-roadmap-card.current-level {
+  border: 2px solid #6c63ff;
+  background: rgba(108, 99, 255, 0.06);
+}
+
+.trainer-level-roadmap-card.passed-level {
+  border: 1px solid rgba(108, 99, 255, 0.25);
+  background: rgba(108, 99, 255, 0.03);
+}
 
 @media (max-width: 1200px) {
   .manager-thought-grid,
