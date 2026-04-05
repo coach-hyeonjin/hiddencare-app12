@@ -1010,7 +1010,113 @@ const [editingManagerActionId, setEditingManagerActionId] = useState(null)
       },
     ]
   }, [managerActionLogs, managerGoalSettings])
-  
+  const managerTasks = useMemo(() => {
+  const today = new Date()
+  const todayStr = today.toISOString().slice(0, 10)
+
+  const riskMembers = members.filter((member) => {
+    const memberWorkouts = workouts.filter((workout) => workout.member_id === member.id)
+
+    if (memberWorkouts.length === 0) return true
+
+    const latestWorkoutDate = memberWorkouts
+      .map((workout) => workout.workout_date)
+      .filter(Boolean)
+      .sort()
+      .reverse()[0]
+
+    if (!latestWorkoutDate) return true
+
+    const diffDays = Math.floor(
+      (today - new Date(latestWorkoutDate)) / (1000 * 60 * 60 * 24)
+    )
+
+    return diffDays >= 7
+  })
+
+  const reofferMembers = members.filter((member) => {
+    const remaining =
+      Number(member.total_sessions || 0) - Number(member.used_sessions || 0)
+
+    return remaining > 0 && remaining <= 5
+  })
+
+  const dietRiskMembers = members.filter((member) => {
+    const memberDietLogs = dietLogs.filter((diet) => diet.member_id === member.id)
+
+    if (memberDietLogs.length === 0) return true
+
+    const latestDietDate = memberDietLogs
+      .map((diet) => diet.log_date)
+      .filter(Boolean)
+      .sort()
+      .reverse()[0]
+
+    if (!latestDietDate) return true
+
+    const diffDays = Math.floor(
+      (today - new Date(latestDietDate)) / (1000 * 60 * 60 * 24)
+    )
+
+    return diffDays >= 5
+  })
+
+  const pendingInquiries = inquiries.filter((item) => {
+    const status = item.status || ''
+    return status !== 'answered' && status !== 'done'
+  })
+
+  return [
+    {
+      category: '긴급',
+      title: `이탈 위험 회원 ${riskMembers.length}명 연락하기`,
+      description: '7일 이상 운동기록이 없는 회원부터 먼저 확인해보세요.',
+      due: '오늘',
+      action: '시작하기',
+      actionKey: 'go_members',
+    },
+    {
+      category: '매출',
+      title: `재등록 제안 대상 ${reofferMembers.length}명 확인하기`,
+      description: '잔여 세션이 적은 회원부터 재등록 흐름을 잡아야 합니다.',
+      due: '오늘',
+      action: '시작하기',
+      actionKey: 'go_sales',
+    },
+    {
+      category: '식단',
+      title: `식단 기록 점검 대상 ${dietRiskMembers.length}명 확인하기`,
+      description: '식단 로그가 끊긴 회원은 생활관리 연결이 약해졌을 가능성이 큽니다.',
+      due: '오늘',
+      action: '시작하기',
+      actionKey: 'go_diet',
+    },
+    {
+      category: '문의',
+      title: `미답변 문의 ${pendingInquiries.length}건 확인하기`,
+      description: '응답이 늦어질수록 상담 전환률이 떨어질 수 있습니다.',
+      due: '오늘',
+      action: '시작하기',
+      actionKey: 'go_inquiries',
+    },
+    {
+      category: '마케팅',
+      title: '블로그 글 1개 발행하기',
+      description: '실행 로그 입력으로 바로 이동해서 오늘 콘텐츠를 기록하세요.',
+      due: '오늘',
+      action: '시작하기',
+      actionKey: 'log_blog',
+    },
+    {
+      category: '콘텐츠',
+      title: '릴스 1개 업로드하기',
+      description: '오늘 올릴 릴스를 실행 로그에 바로 기록하세요.',
+      due: '오늘',
+      action: '시작하기',
+      actionKey: 'log_reel',
+    },
+  ]
+}, [members, workouts, dietLogs, inquiries])
   const selectedMember = useMemo(
     () => members.find((member) => member.id === selectedMemberId) || null,
     [members, selectedMemberId],
@@ -4853,7 +4959,15 @@ setEditingManagerActionId(null)
     setActiveTab('매출기록')
     return
   }
+  if (task.actionKey === 'go_diet') {
+    setActiveTab('식단')
+    return
+  }
 
+  if (task.actionKey === 'go_inquiries') {
+    setActiveTab('문의사항')
+    return
+  }
   if (task.actionKey === 'go_member_detail') {
     setActiveTab('회원상세')
     return
@@ -5608,7 +5722,7 @@ setEditingManagerActionId(null)
             </div>
 
             <div className="manager-task-grid">
-              {MANAGER_TASKS.map((task, index) => (
+              {managerTasks.map((task, index) => (
                 <article key={`${task.title}-${index}`} className="manager-task-card">
                   <div className="manager-task-top">
                     <span className={`manager-task-badge category-${task.category}`}>
