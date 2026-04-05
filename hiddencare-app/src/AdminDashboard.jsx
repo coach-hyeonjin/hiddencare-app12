@@ -4679,7 +4679,7 @@ const getSalesAutoFeedback = () => {
     const { data, error } = await supabase
       .from('manager_action_logs')
       .select('*')
-      .eq('gym_id', currentGymId)
+     .eq('gym_id', currentGymId || currentAdminId)
       .order('action_date', { ascending: false })
 
     if (error) {
@@ -4734,7 +4734,7 @@ const getSalesAutoFeedback = () => {
 
   const handleManagerActionSave = async () => {
   const payload = {
-    gym_id: currentGymId,
+   gym_id: currentGymId || currentAdminId,
     admin_id: currentAdminId,
     action_date: managerActionForm.action_date,
     action_type: managerActionForm.action_type,
