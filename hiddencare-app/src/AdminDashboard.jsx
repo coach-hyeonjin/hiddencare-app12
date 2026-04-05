@@ -1355,6 +1355,22 @@ const completedTaskKeysToday = useMemo(() => {
     xpToNextLevel: nextLevel ? Math.max(0, nextLevel.minXp - totalXp) : 0,
   }
 }, [careerProfileForm, managerActionLogs, managerTaskChecks])
+  const trainerLevelRoadmap = useMemo(() => {
+  return TRAINER_LEVELS.map((level, index) => {
+    const nextLevel = TRAINER_LEVELS[index + 1] || null
+    const isCurrent = level.key === trainerLevelSummary.currentLevel.key
+    const isPassed = trainerLevelSummary.totalXp >= level.minXp
+    const xpNeeded = Math.max(0, level.minXp - trainerLevelSummary.totalXp)
+
+    return {
+      ...level,
+      nextLevelName: nextLevel ? nextLevel.name : null,
+      isCurrent,
+      isPassed,
+      xpNeeded,
+    }
+  })
+}, [trainerLevelSummary])
   const selectedMember = useMemo(
     () => members.find((member) => member.id === selectedMemberId) || null,
     [members, selectedMemberId],
@@ -6320,6 +6336,55 @@ setEditingManagerActionId(null)
         누적 커리어 저장
       </button>
     </div>
+  </div>
+</section>
+          <section className="manager-section">
+  <div className="section-head">
+    <div>
+      <h3>트레이너 성장 단계</h3>
+      <p className="sub-text">
+        현재 위치와 다음 단계까지의 흐름을 한눈에 볼 수 있는 레벨 로드맵입니다.
+      </p>
+    </div>
+  </div>
+
+  <div className="list-stack">
+    {trainerLevelRoadmap.map((level) => (
+      <div
+        key={level.key}
+        className={`list-card trainer-level-roadmap-card ${
+          level.isCurrent ? 'current-level' : level.isPassed ? 'passed-level' : ''
+        }`}
+      >
+        <div className="list-card-top">
+          <strong>{level.name}</strong>
+          <span className="pill">
+            {level.isCurrent
+              ? '현재 레벨'
+              : level.isPassed
+              ? '달성'
+              : `${level.xpNeeded}XP 남음`}
+          </span>
+        </div>
+
+        <div className="compact-text" style={{ marginBottom: '6px' }}>
+          기준 XP: {level.minXp.toLocaleString()}
+        </div>
+
+        <div className="compact-text" style={{ marginBottom: '6px' }}>
+          {level.description}
+        </div>
+
+        {level.isCurrent ? (
+          <div className="compact-text">
+            다음 단계:{' '}
+            {trainerLevelSummary.nextLevel
+              ? trainerLevelSummary.nextLevel.name
+              : '최고 레벨'}
+          </div>
+        ) : null}
+      </div>
+    ))}
   </div>
 </section>
           <section className="manager-thought-grid">
