@@ -2234,3 +2234,21 @@ img {
     align-items: flex-start;
   }
 }
+.manager-log-form {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  margin-top: 12px;
+}
+
+.manager-log-form .field textarea {
+  min-height: 100px;
+}
+
+.manager-log-form .primary-btn {
+  min-width: 160px;
+}
+
+.manager-section .list-stack .list-card {
+  background: #fcfcff;
+}
