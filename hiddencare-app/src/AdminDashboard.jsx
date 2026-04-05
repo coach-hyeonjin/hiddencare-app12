@@ -883,6 +883,127 @@ const [unreadNoticeCount, setUnreadNoticeCount] = useState(0)
     link: '',
     status: 'done',
   })
+
+    const managerScoreCards = useMemo(() => {
+    const currentMonth = new Date().toISOString().slice(0, 7)
+
+    const monthlySales = salesRecords.filter(
+      (item) => (item.sale_date || '').slice(0, 7) === currentMonth
+    )
+
+    const totalSales = monthlySales.reduce(
+      (sum, item) => sum + Number(item.amount || 0),
+      0
+    )
+
+    const salesGoal = Number(managerGoalSettings?.sales_goal || 5000000)
+
+    const endingMembers = members.filter((member) => {
+      const remaining =
+        Number(member.total_sessions || 0) - Number(member.used_sessions || 0)
+      return remaining > 0 && remaining <= 5
+    })
+
+    const monthlyOtCount = salesLogs.filter((item) => {
+      const isCurrentMonth = (item.log_date || '').slice(0, 7) === currentMonth
+      return isCurrentMonth && !!item.ot_reason
+    }).length
+
+    const monthlyContentCount = managerActionLogs.filter((item) => {
+      const isCurrentMonth = (item.action_date || '').slice(0, 7) === currentMonth
+      return (
+        isCurrentMonth &&
+        ['blog_post', 'reel_upload', 'marketing_post', 'webapp_promo'].includes(item.action_type)
+      )
+    }).length
+
+    const reofferGoal = Number(managerGoalSettings?.reoffer_goal || 3)
+    const contentGoal =
+      Number(managerGoalSettings?.blog_goal || 4) +
+      Number(managerGoalSettings?.reel_goal || 4)
+
+    return [
+      {
+        label: '매출',
+        value: `${totalSales.toLocaleString()}원`,
+        sub: `목표 ${salesGoal.toLocaleString()}원`,
+        percent: salesGoal > 0 ? Math.min(100, Math.round((totalSales / salesGoal) * 100)) : 0,
+      },
+      {
+        label: '재등록 후보',
+        value: `${endingMembers.length}명`,
+        sub: `목표 ${reofferGoal}명 제안`,
+        percent: reofferGoal > 0
+          ? Math.min(100, Math.round((endingMembers.length / reofferGoal) * 100))
+          : 0,
+      },
+      {
+        label: '신규 OT',
+        value: `${monthlyOtCount}명`,
+        sub: '이번 달 OT 기록 기준',
+        percent: Math.min(100, monthlyOtCount * 10),
+      },
+      {
+        label: '콘텐츠 발행',
+        value: `${monthlyContentCount}개`,
+        sub: `목표 ${contentGoal}개`,
+        percent: contentGoal > 0
+          ? Math.min(100, Math.round((monthlyContentCount / contentGoal) * 100))
+          : 0,
+      },
+    ]
+  }, [salesRecords, members, salesLogs, managerActionLogs, managerGoalSettings])
+
+  const managerMissions = useMemo(() => {
+    const currentMonth = new Date().toISOString().slice(0, 7)
+
+    const blogCount = managerActionLogs.filter(
+      (item) =>
+        (item.action_date || '').slice(0, 7) === currentMonth &&
+        item.action_type === 'blog_post'
+    ).length
+
+    const reelCount = managerActionLogs.filter(
+      (item) =>
+        (item.action_date || '').slice(0, 7) === currentMonth &&
+        item.action_type === 'reel_upload'
+    ).length
+
+    const promoCount = managerActionLogs.filter(
+      (item) =>
+        (item.action_date || '').slice(0, 7) === currentMonth &&
+        item.action_type === 'webapp_promo'
+    ).length
+
+    const reviewCount = managerActionLogs.filter(
+      (item) =>
+        (item.action_date || '').slice(0, 7) === currentMonth &&
+        item.action_type === 'review_uploaded'
+    ).length
+
+    return [
+      {
+        title: '블로그 발행',
+        progress: `${blogCount} / ${Number(managerGoalSettings?.blog_goal || 4)}`,
+        reward: '+200XP',
+      },
+      {
+        title: '릴스 업로드',
+        progress: `${reelCount} / ${Number(managerGoalSettings?.reel_goal || 4)}`,
+        reward: '+200XP',
+      },
+      {
+        title: '웹앱 홍보 실행',
+        progress: `${promoCount} / ${Number(managerGoalSettings?.promo_goal || 3)}`,
+        reward: '+250XP',
+      },
+      {
+        title: '후기 업로드 확보',
+        progress: `${reviewCount} / ${Number(managerGoalSettings?.review_goal || 2)}`,
+        reward: '+300XP',
+      },
+    ]
+  }, [managerActionLogs, managerGoalSettings])
   
   const selectedMember = useMemo(
     () => members.find((member) => member.id === selectedMemberId) || null,
@@ -5422,7 +5543,7 @@ const getSalesAutoFeedback = () => {
             </div>
 
             <div className="manager-score-grid">
-              {MANAGER_SCORE_CARDS.map((card) => (
+              {managerScoreCards.map((card) => (
                 <article key={card.label} className="manager-score-card">
                   <span>{card.label}</span>
                   <strong>{card.value}</strong>
@@ -5453,7 +5574,7 @@ const getSalesAutoFeedback = () => {
               </div>
 
               <div className="manager-mission-list">
-                {MANAGER_MISSIONS.map((mission, index) => (
+                {managerMissions.map((mission, index) => (
                   <article key={`${mission.title}-${index}`} className="manager-mission-card">
                     <div>
                       <strong>{mission.title}</strong>
