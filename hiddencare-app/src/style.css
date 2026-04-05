@@ -2850,3 +2850,39 @@ textarea:focus {
     border-radius: 16px;
   }
 }
+/* 회원 목록 상단 (제목 + 회원수) */
+.member-list-title-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 12px;
+  flex-wrap: wrap;
+}
+
+/* 회원 수 뱃지 묶음 */
+.member-count-badges {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+/* 기본 뱃지 */
+.count-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 6px 12px;
+  border-radius: 999px;
+  background: #eef2ff;
+  color: #4f46e5;
+  font-size: 12px;
+  font-weight: 700;
+  border: 1px solid #dbe2ff;
+}
+
+/* 보조 뱃지 (현재 표시 수) */
+.count-badge.soft {
+  background: #f8fafc;
+  color: #475569;
+  border: 1px solid #e2e8f0;
+}
