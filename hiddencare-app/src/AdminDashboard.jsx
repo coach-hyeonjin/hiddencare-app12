@@ -4791,7 +4791,25 @@ const getSalesAutoFeedback = () => {
 
   await loadManagerActionLogs()
 }
-  
+  const handleManagerActionDelete = async (id) => {
+  const confirmDelete = window.confirm('이 로그를 삭제하시겠습니까?')
+
+  if (!confirmDelete) return
+
+  const { error } = await supabase
+    .from('manager_action_logs')
+    .delete()
+    .eq('id', id)
+
+  if (error) {
+    console.error('삭제 실패:', error)
+    setMessage('삭제 실패')
+    return
+  }
+
+  setMessage('삭제 완료')
+  await loadManagerActionLogs()
+}
   if (loading) {
     return <div className="loading-card">데이터 불러오는 중...</div>
   }
@@ -5759,9 +5777,20 @@ const getSalesAutoFeedback = () => {
               {managerActionLogs.slice(0, 10).map((log) => (
                 <div key={log.id} className="list-card">
                   <div className="list-card-top">
-                    <strong>{log.title || '제목 없음'}</strong>
-                    <span className="pill">{log.action_date || '-'}</span>
-                  </div>
+  <strong>{log.title || '제목 없음'}</strong>
+
+  <div className="inline-actions">
+    <span className="pill">{log.action_date || '-'}</span>
+
+    <button
+      type="button"
+      className="danger-btn"
+      onClick={() => handleManagerActionDelete(log.id)}
+    >
+      삭제
+    </button>
+  </div>
+</div>
 
                   <div className="compact-text">
                     종류: {log.action_type || '-'} / 채널: {log.channel || '-'}
