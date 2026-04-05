@@ -913,15 +913,6 @@ const [unreadNoticeCount, setUnreadNoticeCount] = useState(0)
 const [careerProfileForm, setCareerProfileForm] = useState(emptyCareerProfileForm)
 const [careerProfileId, setCareerProfileId] = useState(null)
 const [trainerLevelSettings, setTrainerLevelSettings] = useState([])
-  const [collapsedManagerSections, setCollapsedManagerSections] = useState({
-  career: true,
-  nextLevelGoal: true,
-  startup: true,
-  xpLogs: true,
-  levelRoadmap: true,
-  levelSettings: true,
-  actionLog: true,
-})
   const [managerActionForm, setManagerActionForm] = useState({
     action_date: new Date().toISOString().slice(0, 10),
     action_type: 'blog_post',
@@ -5615,12 +5606,6 @@ setEditingManagerActionId(null)
   setMessage(`"${task.title}" 완료 해제되었습니다.`)
   await loadManagerTaskChecks()
 }
-  const toggleManagerSection = (sectionKey) => {
-  setCollapsedManagerSections((prev) => ({
-    ...prev,
-    [sectionKey]: !prev[sectionKey],
-  }))
-}
   if (loading) {
     return <div className="loading-card">데이터 불러오는 중...</div>
   }
@@ -6350,500 +6335,418 @@ setEditingManagerActionId(null)
 </div>
           </section>
 <section className="manager-section">
-  <button
-    type="button"
-    className="manager-collapse-header"
-    onClick={() => toggleManagerSection('career')}
-  >
+  <div className="section-head">
     <div>
       <h3>누적 커리어 입력</h3>
       <p className="sub-text">
         지금까지 해온 기록을 직접 입력해두면, 이후 XP/등급 계산에 반영됩니다.
       </p>
     </div>
-    <span className="manager-collapse-icon">
-      {collapsedManagerSections.career ? '▼ 간략히보기' : '▲ 상세히보기'}
-    </span>
-  </button>
+  </div>
 
-  {!collapsedManagerSections.career && (
-    <div className="stack-gap">
-      <div className="grid-2">
-        <label className="field">
-          <span>트레이너 경력(년차)</span>
-          <input
-            type="number"
-            min="0"
-            value={careerProfileForm.career_years}
-            onChange={(e) =>
-              setCareerProfileForm((prev) => ({
-                ...prev,
-                career_years: e.target.value,
-              }))
-            }
-          />
-        </label>
-
-        <label className="field">
-          <span>누적 블로그 수</span>
-          <input
-            type="number"
-            min="0"
-            value={careerProfileForm.total_blog_posts}
-            onChange={(e) =>
-              setCareerProfileForm((prev) => ({
-                ...prev,
-                total_blog_posts: e.target.value,
-              }))
-            }
-          />
-        </label>
-      </div>
-
-      <div className="grid-2">
-        <label className="field">
-          <span>인스타 게시물 수</span>
-          <input
-            type="number"
-            min="0"
-            value={careerProfileForm.total_instagram_posts}
-            onChange={(e) =>
-              setCareerProfileForm((prev) => ({
-                ...prev,
-                total_instagram_posts: e.target.value,
-              }))
-            }
-          />
-        </label>
-
-        <label className="field">
-          <span>리뷰노트 블로그 체험단 수</span>
-          <input
-            type="number"
-            min="0"
-            value={careerProfileForm.total_blog_reviewnote_campaigns}
-            onChange={(e) =>
-              setCareerProfileForm((prev) => ({
-                ...prev,
-                total_blog_reviewnote_campaigns: e.target.value,
-              }))
-            }
-          />
-        </label>
-      </div>
-
-      <div className="grid-2">
-        <label className="field">
-          <span>인스타 체험단 수</span>
-          <input
-            type="number"
-            min="0"
-            value={careerProfileForm.total_instagram_campaigns}
-            onChange={(e) =>
-              setCareerProfileForm((prev) => ({
-                ...prev,
-                total_instagram_campaigns: e.target.value,
-              }))
-            }
-          />
-        </label>
-
-        <label className="field">
-          <span>총 수업 수</span>
-          <input
-            type="number"
-            min="0"
-            value={careerProfileForm.total_classes}
-            onChange={(e) =>
-              setCareerProfileForm((prev) => ({
-                ...prev,
-                total_classes: e.target.value,
-              }))
-            }
-          />
-        </label>
-      </div>
-
-      <div className="grid-2">
-        <label className="field">
-          <span>총 상담 수</span>
-          <input
-            type="number"
-            min="0"
-            value={careerProfileForm.total_consultations}
-            onChange={(e) =>
-              setCareerProfileForm((prev) => ({
-                ...prev,
-                total_consultations: e.target.value,
-              }))
-            }
-          />
-        </label>
-
-        <label className="field">
-          <span>자격증 수</span>
-          <input
-            type="number"
-            min="0"
-            value={careerProfileForm.total_certifications}
-            onChange={(e) =>
-              setCareerProfileForm((prev) => ({
-                ...prev,
-                total_certifications: e.target.value,
-              }))
-            }
-          />
-        </label>
-      </div>
-
-      <div className="grid-2">
-        <label className="field">
-          <span>협업 경험 수</span>
-          <input
-            type="number"
-            min="0"
-            value={careerProfileForm.total_collaborations}
-            onChange={(e) =>
-              setCareerProfileForm((prev) => ({
-                ...prev,
-                total_collaborations: e.target.value,
-              }))
-            }
-          />
-        </label>
-
-        <label className="field">
-          <span>프로필 저장 상태</span>
-          <input
-            value={careerProfileId ? '저장된 프로필 있음' : '아직 저장 전'}
-            disabled
-          />
-        </label>
-      </div>
-
+  <div className="stack-gap">
+    <div className="grid-2">
       <label className="field">
-        <span>메모</span>
-        <textarea
-          rows="4"
-          value={careerProfileForm.memo}
+        <span>트레이너 경력(년차)</span>
+        <input
+          type="number"
+          min="0"
+          value={careerProfileForm.career_years}
           onChange={(e) =>
             setCareerProfileForm((prev) => ({
               ...prev,
-              memo: e.target.value,
+              career_years: e.target.value,
             }))
           }
-          placeholder="예: 2022년부터 트레이너 활동 / 리뷰노트 블로그 체험단 경험 있음 / 수업 방식 특징"
         />
       </label>
 
-      <div className="inline-actions wrap">
-        <button
-          type="button"
-          className="primary-btn"
-          onClick={handleCareerProfileSave}
-        >
-          누적 커리어 저장
-        </button>
-      </div>
+      <label className="field">
+        <span>누적 블로그 수</span>
+        <input
+          type="number"
+          min="0"
+          value={careerProfileForm.total_blog_posts}
+          onChange={(e) =>
+            setCareerProfileForm((prev) => ({
+              ...prev,
+              total_blog_posts: e.target.value,
+            }))
+          }
+        />
+      </label>
     </div>
-  )}
-</section>
 
-<section className="manager-section">
-  <button
-    type="button"
-    className="manager-collapse-header"
-    onClick={() => toggleManagerSection('nextLevelGoal')}
-  >
+    <div className="grid-2">
+      <label className="field">
+        <span>인스타 게시물 수</span>
+        <input
+          type="number"
+          min="0"
+          value={careerProfileForm.total_instagram_posts}
+          onChange={(e) =>
+            setCareerProfileForm((prev) => ({
+              ...prev,
+              total_instagram_posts: e.target.value,
+            }))
+          }
+        />
+      </label>
+
+      <label className="field">
+        <span>리뷰노트 블로그 체험단 수</span>
+        <input
+          type="number"
+          min="0"
+          value={careerProfileForm.total_blog_reviewnote_campaigns}
+          onChange={(e) =>
+            setCareerProfileForm((prev) => ({
+              ...prev,
+              total_blog_reviewnote_campaigns: e.target.value,
+            }))
+          }
+        />
+      </label>
+    </div>
+
+    <div className="grid-2">
+      <label className="field">
+        <span>인스타 체험단 수</span>
+        <input
+          type="number"
+          min="0"
+          value={careerProfileForm.total_instagram_campaigns}
+          onChange={(e) =>
+            setCareerProfileForm((prev) => ({
+              ...prev,
+              total_instagram_campaigns: e.target.value,
+            }))
+          }
+        />
+      </label>
+
+      <label className="field">
+        <span>총 수업 수</span>
+        <input
+          type="number"
+          min="0"
+          value={careerProfileForm.total_classes}
+          onChange={(e) =>
+            setCareerProfileForm((prev) => ({
+              ...prev,
+              total_classes: e.target.value,
+            }))
+          }
+        />
+      </label>
+    </div>
+
+    <div className="grid-2">
+      <label className="field">
+        <span>총 상담 수</span>
+        <input
+          type="number"
+          min="0"
+          value={careerProfileForm.total_consultations}
+          onChange={(e) =>
+            setCareerProfileForm((prev) => ({
+              ...prev,
+              total_consultations: e.target.value,
+            }))
+          }
+        />
+      </label>
+
+      <label className="field">
+        <span>자격증 수</span>
+        <input
+          type="number"
+          min="0"
+          value={careerProfileForm.total_certifications}
+          onChange={(e) =>
+            setCareerProfileForm((prev) => ({
+              ...prev,
+              total_certifications: e.target.value,
+            }))
+          }
+        />
+      </label>
+    </div>
+
+    <div className="grid-2">
+      <label className="field">
+        <span>협업 경험 수</span>
+        <input
+          type="number"
+          min="0"
+          value={careerProfileForm.total_collaborations}
+          onChange={(e) =>
+            setCareerProfileForm((prev) => ({
+              ...prev,
+              total_collaborations: e.target.value,
+            }))
+          }
+        />
+      </label>
+
+      <label className="field">
+        <span>프로필 저장 상태</span>
+        <input
+          value={careerProfileId ? '저장된 프로필 있음' : '아직 저장 전'}
+          disabled
+        />
+      </label>
+    </div>
+
+    <label className="field">
+      <span>메모</span>
+      <textarea
+        rows="4"
+        value={careerProfileForm.memo}
+        onChange={(e) =>
+          setCareerProfileForm((prev) => ({
+            ...prev,
+            memo: e.target.value,
+          }))
+        }
+        placeholder="예: 2022년부터 트레이너 활동 / 리뷰노트 블로그 체험단 경험 있음 / 수업 방식 특징"
+      />
+    </label>
+
+    <div className="inline-actions wrap">
+      <button
+        type="button"
+        className="primary-btn"
+        onClick={handleCareerProfileSave}
+      >
+        누적 커리어 저장
+      </button>
+    </div>
+  </div>
+</section>
+          <section className="manager-section">
+  <div className="section-head">
     <div>
       <h3>다음 레벨 목표</h3>
       <p className="sub-text">
         현재 레벨에서 다음 단계로 가기 위해 얼마나 더 필요한지 보여주는 구간입니다.
       </p>
     </div>
-    <span className="manager-collapse-icon">
-      {collapsedManagerSections.nextLevelGoal ? '▼ 간략히보기' : '▲ 상세히보기'}
-    </span>
-  </button>
+  </div>
 
-  {!collapsedManagerSections.nextLevelGoal && (
-    <>
-      {trainerLevelSummary.nextLevel ? (
-        <div className="detail-box">
-          <p>
-            다음 레벨: <strong>{trainerLevelSummary.nextLevel.name}</strong>
-          </p>
-          <p>
-            남은 XP:{' '}
-            <strong>{trainerLevelSummary.xpToNextLevel.toLocaleString()} XP</strong>
-          </p>
+  {trainerLevelSummary.nextLevel ? (
+    <div className="detail-box">
+      <p>
+        다음 레벨: <strong>{trainerLevelSummary.nextLevel.name}</strong>
+      </p>
+      <p>
+        남은 XP: <strong>{trainerLevelSummary.xpToNextLevel.toLocaleString()} XP</strong>
+      </p>
 
-          <div className="manager-progress" style={{ marginTop: '12px' }}>
-            <div
-              className="manager-progress-fill"
-              style={{ width: `${trainerLevelSummary.progressPercent}%` }}
-            />
-          </div>
+      <div className="manager-progress" style={{ marginTop: '12px' }}>
+        <div
+          className="manager-progress-fill"
+          style={{ width: `${trainerLevelSummary.progressPercent}%` }}
+        />
+      </div>
 
-          <div className="manager-progress-text" style={{ marginTop: '8px' }}>
-            현재 진행률 {trainerLevelSummary.progressPercent}%
-          </div>
+      <div className="manager-progress-text" style={{ marginTop: '8px' }}>
+        현재 진행률 {trainerLevelSummary.progressPercent}%
+      </div>
 
-          <div className="compact-text" style={{ marginTop: '12px' }}>
-            추천 행동 예시:
-            <br />• 블로그 추가 작성
-            <br />• 수업 기록 누적
-            <br />• 후기/체험단 경험 정리
-            <br />• 실행 로그와 과제 완료 누적
-          </div>
-        </div>
-      ) : (
-        <div className="detail-box">
-          <p><strong>최고 레벨입니다.</strong></p>
-          <p>현재 단계에서는 창업 또는 브랜드 운영 확장을 준비해볼 수 있습니다.</p>
-        </div>
-      )}
-    </>
+      <div className="compact-text" style={{ marginTop: '12px' }}>
+        추천 행동 예시:
+        <br />• 블로그 추가 작성
+        <br />• 수업 기록 누적
+        <br />• 후기/체험단 경험 정리
+        <br />• 실행 로그와 과제 완료 누적
+      </div>
+    </div>
+  ) : (
+    <div className="detail-box">
+      <p><strong>최고 레벨입니다.</strong></p>
+      <p>현재 단계에서는 창업 또는 브랜드 운영 확장을 준비해볼 수 있습니다.</p>
+    </div>
   )}
 </section>
-
-<section className="manager-section">
-  <button
-    type="button"
-    className="manager-collapse-header"
-    onClick={() => toggleManagerSection('startup')}
-  >
+          <section className="manager-section">
+  <div className="section-head">
     <div>
       <h3>창업 준비도</h3>
       <p className="sub-text">
         현재 데이터를 기반으로 창업 가능 수준을 분석합니다.
       </p>
     </div>
-    <span className="manager-collapse-icon">
-      {collapsedManagerSections.startup ? '▼ 간략히보기' : '▲ 상세히보기'}
-    </span>
-  </button>
+  </div>
 
-  {!collapsedManagerSections.startup && (
-    <div className="detail-box">
-      <p>
-        준비도: <strong>{startupReadiness.percent}%</strong>
-      </p>
+  <div className="detail-box">
+    <p>
+      준비도: <strong>{startupReadiness.percent}%</strong>
+    </p>
 
-      <div className="manager-progress" style={{ marginTop: '10px' }}>
-        <div
-          className="manager-progress-fill"
-          style={{ width: `${startupReadiness.percent}%` }}
-        />
-      </div>
-
-      <div className="compact-text" style={{ marginTop: '10px' }}>
-        강점: {startupReadiness.strengths.join(', ') || '없음'}
-      </div>
-
-      <div className="compact-text">
-        보완 필요: {startupReadiness.부족.join(', ') || '없음'}
-      </div>
-
-      <div style={{ marginTop: '12px', fontWeight: '600' }}>
-        {startupReadiness.message}
-      </div>
+    <div className="manager-progress" style={{ marginTop: '10px' }}>
+      <div
+        className="manager-progress-fill"
+        style={{ width: `${startupReadiness.percent}%` }}
+      />
     </div>
-  )}
-</section>
 
+    <div className="compact-text" style={{ marginTop: '10px' }}>
+      강점: {startupReadiness.strengths.join(', ') || '없음'}
+    </div>
+
+    <div className="compact-text">
+      보완 필요: {startupReadiness.부족.join(', ') || '없음'}
+    </div>
+
+    <div style={{ marginTop: '12px', fontWeight: '600' }}>
+      {startupReadiness.message}
+    </div>
+  </div>
+</section>
 <section className="manager-section">
-  <button
-    type="button"
-    className="manager-collapse-header"
-    onClick={() => toggleManagerSection('xpLogs')}
-  >
+  <div className="section-head">
     <div>
       <h3>최근 XP 적립 로그</h3>
       <p className="sub-text">
         어떤 행동이 성장 경험치로 반영됐는지 최근 기록 기준으로 보여줍니다.
       </p>
     </div>
-    <span className="manager-collapse-icon">
-      {collapsedManagerSections.xpLogs ? '▼ 간략히보기' : '▲ 상세히보기'}
-    </span>
-  </button>
+  </div>
 
-  {!collapsedManagerSections.xpLogs && (
-    <div className="list-stack">
-      {recentXpLogs.length === 0 ? (
-        <div className="workout-list-empty">아직 반영된 XP 로그가 없습니다.</div>
-      ) : null}
+  <div className="list-stack">
+    {recentXpLogs.length === 0 ? (
+      <div className="workout-list-empty">아직 반영된 XP 로그가 없습니다.</div>
+    ) : null}
 
-      {recentXpLogs.map((log) => (
-        <div key={log.id} className="list-card">
-          <div className="list-card-top">
-            <strong>{log.title}</strong>
-            <span className="pill">+{log.xp}XP</span>
-          </div>
-
-          <div className="compact-text" style={{ marginBottom: '6px' }}>
-            날짜: {log.date || '-'}
-          </div>
-
-          <div className="compact-text">
-            내용: {log.description || '-'}
-          </div>
+    {recentXpLogs.map((log) => (
+      <div key={log.id} className="list-card">
+        <div className="list-card-top">
+          <strong>{log.title}</strong>
+          <span className="pill">+{log.xp}XP</span>
         </div>
-      ))}
-    </div>
-  )}
-</section>
 
-<section className="manager-section">
-  <button
-    type="button"
-    className="manager-collapse-header"
-    onClick={() => toggleManagerSection('levelRoadmap')}
-  >
+        <div className="compact-text" style={{ marginBottom: '6px' }}>
+          날짜: {log.date || '-'}
+        </div>
+
+        <div className="compact-text">
+          내용: {log.description || '-'}
+        </div>
+      </div>
+    ))}
+  </div>
+</section>
+          
+          <section className="manager-section">
+  <div className="section-head">
     <div>
       <h3>트레이너 성장 단계</h3>
       <p className="sub-text">
         현재 위치와 다음 단계까지의 흐름을 한눈에 볼 수 있는 레벨 로드맵입니다.
       </p>
     </div>
-    <span className="manager-collapse-icon">
-      {collapsedManagerSections.levelRoadmap ? '▼ 간략히보기' : '▲ 상세히보기'}
-    </span>
-  </button>
+  </div>
 
-  {!collapsedManagerSections.levelRoadmap && (
-    <div className="list-stack">
-      {trainerLevelRoadmap.map((level) => (
-        <div
-          key={level.key}
-          className={`list-card trainer-level-roadmap-card ${
-            level.isCurrent ? 'current-level' : level.isPassed ? 'passed-level' : ''
-          }`}
-        >
-          <div className="list-card-top">
-            <strong>{level.name}</strong>
-            <span className="pill">
-              {level.isCurrent
-                ? '현재 레벨'
-                : level.isPassed
-                ? '달성'
-                : `${level.xpNeeded}XP 남음`}
-            </span>
-          </div>
-
-          <div className="compact-text" style={{ marginBottom: '6px' }}>
-            기준 XP: {level.minXp.toLocaleString()}
-          </div>
-
-          <div className="compact-text" style={{ marginBottom: '6px' }}>
-            {level.description}
-          </div>
-
-          {level.isCurrent ? (
-            <div className="compact-text">
-              다음 단계:{' '}
-              {trainerLevelSummary.nextLevel
-                ? trainerLevelSummary.nextLevel.name
-                : '최고 레벨'}
-            </div>
-          ) : null}
+  <div className="list-stack">
+    {trainerLevelRoadmap.map((level) => (
+      <div
+        key={level.key}
+        className={`list-card trainer-level-roadmap-card ${
+          level.isCurrent ? 'current-level' : level.isPassed ? 'passed-level' : ''
+        }`}
+      >
+        <div className="list-card-top">
+          <strong>{level.name}</strong>
+          <span className="pill">
+            {level.isCurrent
+              ? '현재 레벨'
+              : level.isPassed
+              ? '달성'
+              : `${level.xpNeeded}XP 남음`}
+          </span>
         </div>
-      ))}
-    </div>
-  )}
-</section>
 
-<section className="manager-section">
-  <button
-    type="button"
-    className="manager-collapse-header"
-    onClick={() => toggleManagerSection('levelSettings')}
-  >
+        <div className="compact-text" style={{ marginBottom: '6px' }}>
+          기준 XP: {level.minXp.toLocaleString()}
+        </div>
+
+        <div className="compact-text" style={{ marginBottom: '6px' }}>
+          {level.description}
+        </div>
+
+        {level.isCurrent ? (
+          <div className="compact-text">
+            다음 단계:{' '}
+            {trainerLevelSummary.nextLevel
+              ? trainerLevelSummary.nextLevel.name
+              : '최고 레벨'}
+          </div>
+        ) : null}
+      </div>
+    ))}
+  </div>
+</section>
+          <section className="manager-thought-grid">
+            {MANAGER_THOUGHT_CARDS.map((card) => (
+              <article key={card.title} className="manager-thought-card">
+                <div className="manager-card-label">{card.title}</div>
+                <p>{card.text}</p>
+                <span>{card.tag}</span>
+              </article>
+            ))}
+          </section>
+
+          <section className="manager-section">
+  <div className="section-head">
     <div>
       <h3>레벨 기준 설정</h3>
       <p className="sub-text">
         각 단계의 이름, 최소 XP, 설명을 직접 수정하고 저장할 수 있습니다.
       </p>
     </div>
-    <span className="manager-collapse-icon">
-      {collapsedManagerSections.levelSettings ? '▼ 간략히보기' : '▲ 상세히보기'}
-    </span>
-  </button>
+  </div>
 
-  {!collapsedManagerSections.levelSettings && (
-    <div className="list-stack">
-      {trainerLevels.map((level) => (
-        <div key={level.key} className="list-card">
-          <div className="grid-2">
-            <label className="field">
-              <span>레벨 이름</span>
-              <input
-                value={level.name}
-                onChange={(e) =>
-                  setTrainerLevelSettings((prev) => {
-                    const hasCustom = prev.some((item) => item.level_key === level.key)
-                    if (!hasCustom) {
-                      return [
-                        ...prev,
-                        {
-                          level_key: level.key,
-                          level_name: e.target.value,
-                          min_xp: level.minXp,
-                          description: level.description,
-                          admin_id: currentAdminId,
-                        },
-                      ]
-                    }
+  <div className="list-stack">
+    {trainerLevels.map((level) => (
+      <div key={level.key} className="list-card">
+        <div className="grid-2">
+          <label className="field">
+            <span>레벨 이름</span>
+            <input
+              value={level.name}
+              onChange={(e) =>
+                setTrainerLevelSettings((prev) => {
+                  const hasCustom = prev.some((item) => item.level_key === level.key)
+                  if (!hasCustom) {
+                    return [
+                      ...prev,
+                      {
+                        level_key: level.key,
+                        level_name: e.target.value,
+                        min_xp: level.minXp,
+                        description: level.description,
+                        admin_id: currentAdminId,
+                      },
+                    ]
+                  }
 
-                    return prev.map((item) =>
-                      item.level_key === level.key
-                        ? { ...item, level_name: e.target.value }
-                        : item
-                    )
-                  })
-                }
-              />
-            </label>
-
-            <label className="field">
-              <span>최소 XP</span>
-              <input
-                type="number"
-                min="0"
-                value={level.minXp}
-                onChange={(e) =>
-                  setTrainerLevelSettings((prev) => {
-                    const hasCustom = prev.some((item) => item.level_key === level.key)
-                    if (!hasCustom) {
-                      return [
-                        ...prev,
-                        {
-                          level_key: level.key,
-                          level_name: level.name,
-                          min_xp: e.target.value,
-                          description: level.description,
-                          admin_id: currentAdminId,
-                        },
-                      ]
-                    }
-
-                    return prev.map((item) =>
-                      item.level_key === level.key
-                        ? { ...item, min_xp: e.target.value }
-                        : item
-                    )
-                  })
-                }
-              />
-            </label>
-          </div>
+                  return prev.map((item) =>
+                    item.level_key === level.key
+                      ? { ...item, level_name: e.target.value }
+                      : item
+                  )
+                })
+              }
+            />
+          </label>
 
           <label className="field">
-            <span>설명</span>
-            <textarea
-              rows="3"
-              value={level.description}
+            <span>최소 XP</span>
+            <input
+              type="number"
+              min="0"
+              value={level.minXp}
               onChange={(e) =>
                 setTrainerLevelSettings((prev) => {
                   const hasCustom = prev.some((item) => item.level_key === level.key)
@@ -6853,8 +6756,8 @@ setEditingManagerActionId(null)
                       {
                         level_key: level.key,
                         level_name: level.name,
-                        min_xp: level.minXp,
-                        description: e.target.value,
+                        min_xp: e.target.value,
+                        description: level.description,
                         admin_id: currentAdminId,
                       },
                     ]
@@ -6862,287 +6765,11 @@ setEditingManagerActionId(null)
 
                   return prev.map((item) =>
                     item.level_key === level.key
-                      ? { ...item, description: e.target.value }
+                      ? { ...item, min_xp: e.target.value }
                       : item
                   )
                 })
               }
-            />
-          </label>
-
-          <div className="inline-actions wrap">
-            <button
-              type="button"
-              className="primary-btn"
-              onClick={() =>
-                handleTrainerLevelSettingSave({
-                  key: level.key,
-                  name: level.name,
-                  minXp: level.minXp,
-                  description: level.description,
-                })
-              }
-            >
-              이 레벨 기준 저장
-            </button>
-          </div>
-        </div>
-      ))}
-    </div>
-  )}
-</section>
-
-<section className="manager-thought-grid">
-  {MANAGER_THOUGHT_CARDS.map((card) => (
-    <article key={card.title} className="manager-thought-card">
-      <div className="manager-card-label">{card.title}</div>
-      <p>{card.text}</p>
-      <span>{card.tag}</span>
-    </article>
-  ))}
-</section>
-
-<section className="manager-section">
-  <div className="section-head">
-    <div>
-      <h3>오늘의 우선 과제</h3>
-      <p className="sub-text">
-        지금 해야 할 일을 먼저 정리하고, 실행 중심으로 움직여보세요.
-      </p>
-    </div>
-  </div>
-
-  <div className="manager-task-grid">
-    {managerTasks.map((task, index) => (
-      <article key={`${task.title}-${index}`} className="manager-task-card">
-        <div className="manager-task-top">
-          <span className={`manager-task-badge category-${task.category}`}>
-            {task.category}
-          </span>
-          <span className="manager-task-due">{task.due}</span>
-        </div>
-
-        <h4>{task.title}</h4>
-        <p>{task.description}</p>
-
-        <div className="manager-task-bottom">
-          <div className="inline-actions wrap">
-            <button
-              type="button"
-              className="primary-btn"
-              onClick={() => handleManagerTaskAction(task)}
-            >
-              {task.action}
-            </button>
-
-            {completedTaskKeysToday.includes(task.actionKey) ? (
-              <button
-                type="button"
-                className="secondary-btn"
-                onClick={() => handleManagerTaskUncomplete(task)}
-              >
-                완료 해제
-              </button>
-            ) : (
-              <button
-                type="button"
-                className="secondary-btn"
-                onClick={() => handleManagerTaskComplete(task)}
-              >
-                완료
-              </button>
-            )}
-          </div>
-
-          {completedTaskKeysToday.includes(task.actionKey) ? (
-            <div className="compact-text" style={{ marginTop: '8px' }}>
-              오늘 완료 처리된 과제입니다. 잘못 눌렀다면 완료 해제를 누르세요.
-            </div>
-          ) : null}
-        </div>
-      </article>
-    ))}
-  </div>
-</section>
-
-<section className="manager-section">
-  <div className="section-head">
-    <div>
-      <h3>매니저 코멘트</h3>
-      <p className="sub-text">
-        식상한 응원이 아니라, 지금 필요한 방향을 생각하게 만드는 코멘트입니다.
-      </p>
-    </div>
-  </div>
-
-  <div className="manager-insight-grid">
-    {managerInsights.map((item, index) => (
-      <article key={`${item.title}-${index}`} className="manager-insight-card">
-        <div className="manager-card-label">{item.title}</div>
-        <p>{item.text}</p>
-      </article>
-    ))}
-  </div>
-</section>
-
-<section className="manager-section">
-  <div className="section-head">
-    <div>
-      <h3>이번 흐름 요약</h3>
-      <p className="sub-text">
-        숫자는 완벽한 정답이 아니라, 지금 어디에 힘을 써야 하는지 보여주는 힌트입니다.
-      </p>
-    </div>
-  </div>
-
-  <div className="manager-score-grid">
-    {managerScoreCards.map((card) => (
-      <article key={card.label} className="manager-score-card">
-        <span>{card.label}</span>
-        <strong>{card.value}</strong>
-        <div className="manager-score-sub">{card.sub}</div>
-
-        <div className="manager-progress">
-          <div
-            className="manager-progress-fill"
-            style={{ width: `${card.percent}%` }}
-          />
-        </div>
-
-        <div className="manager-progress-text">{card.percent}%</div>
-      </article>
-    ))}
-  </div>
-</section>
-
-<div className="manager-bottom-grid">
-  <section className="manager-section">
-    <div className="section-head">
-      <div>
-        <h3>레벨업 미션</h3>
-        <p className="sub-text">
-          단기 실행이 쌓여서 장기 성장 구조가 만들어집니다.
-        </p>
-      </div>
-    </div>
-
-    <div className="manager-mission-list">
-      {managerMissions.map((mission, index) => (
-        <article key={`${mission.title}-${index}`} className="manager-mission-card">
-          <div>
-            <strong>{mission.title}</strong>
-            <p>{mission.progress}</p>
-          </div>
-          <span className="manager-reward">{mission.reward}</span>
-        </article>
-      ))}
-    </div>
-  </section>
-
-  <section className="manager-section">
-    <div className="section-head">
-      <div>
-        <h3>앞으로의 방향</h3>
-        <p className="sub-text">
-          지금 해야 할 것과 앞으로 만들어야 할 구조를 같이 봅니다.
-        </p>
-      </div>
-    </div>
-
-    <div className="manager-roadmap-list">
-      {MANAGER_ROADMAP.map((item, index) => (
-        <article key={`${item.step}-${index}`} className="manager-roadmap-card">
-          <div className="manager-roadmap-step">{item.step}</div>
-          <h4>{item.title}</h4>
-          <p>{item.text}</p>
-        </article>
-      ))}
-    </div>
-  </section>
-</div>
-
-<section className="manager-section" id="manager-action-form">
-  <button
-    type="button"
-    className="manager-collapse-header"
-    onClick={() => toggleManagerSection('actionLog')}
-  >
-    <div>
-      <h3>실행 로그 입력</h3>
-      <p className="sub-text">
-        블로그, 릴스, 후기, 웹앱 홍보처럼 직접 실행한 행동을 기록하면
-        레벨업 미션과 콘텐츠 수치에 반영됩니다.
-      </p>
-    </div>
-    <span className="manager-collapse-icon">
-      {collapsedManagerSections.actionLog ? '▼ 간략히보기' : '▲ 상세히보기'}
-    </span>
-  </button>
-
-  {!collapsedManagerSections.actionLog && (
-    <>
-      <div className="manager-log-form">
-        <div className="grid-2">
-          <label className="field">
-            <span>날짜</span>
-            <input
-              type="date"
-              value={managerActionForm.action_date}
-              onChange={(e) =>
-                setManagerActionForm((prev) => ({
-                  ...prev,
-                  action_date: e.target.value,
-                }))
-              }
-            />
-          </label>
-
-          <label className="field">
-            <span>실행 종류</span>
-            <select
-              value={managerActionForm.action_type}
-              onChange={(e) =>
-                setManagerActionForm((prev) => ({
-                  ...prev,
-                  action_type: e.target.value,
-                }))
-              }
-            >
-              <option value="blog_post">블로그 발행</option>
-              <option value="reel_upload">릴스 업로드</option>
-              <option value="webapp_promo">웹앱 홍보</option>
-              <option value="review_uploaded">후기 업로드</option>
-              <option value="marketing_post">마케팅 글 작성</option>
-            </select>
-          </label>
-        </div>
-
-        <div className="grid-2">
-          <label className="field">
-            <span>채널</span>
-            <input
-              value={managerActionForm.channel}
-              onChange={(e) =>
-                setManagerActionForm((prev) => ({
-                  ...prev,
-                  channel: e.target.value,
-                }))
-              }
-              placeholder="예: 인스타그램 / 블로그 / 스레드"
-            />
-          </label>
-
-          <label className="field">
-            <span>제목</span>
-            <input
-              value={managerActionForm.title}
-              onChange={(e) =>
-                setManagerActionForm((prev) => ({
-                  ...prev,
-                  title: e.target.value,
-                }))
-              }
-              placeholder="예: 광주 화정동 저강도 PT 글 업로드"
             />
           </label>
         </div>
@@ -7151,28 +6778,30 @@ setEditingManagerActionId(null)
           <span>설명</span>
           <textarea
             rows="3"
-            value={managerActionForm.description}
+            value={level.description}
             onChange={(e) =>
-              setManagerActionForm((prev) => ({
-                ...prev,
-                description: e.target.value,
-              }))
-            }
-            placeholder="예: 부모님 PT 관련 블로그 작성 / 후기 기반 릴스 업로드"
-          />
-        </label>
+              setTrainerLevelSettings((prev) => {
+                const hasCustom = prev.some((item) => item.level_key === level.key)
+                if (!hasCustom) {
+                  return [
+                    ...prev,
+                    {
+                      level_key: level.key,
+                      level_name: level.name,
+                      min_xp: level.minXp,
+                      description: e.target.value,
+                      admin_id: currentAdminId,
+                    },
+                  ]
+                }
 
-        <label className="field">
-          <span>링크</span>
-          <input
-            value={managerActionForm.link}
-            onChange={(e) =>
-              setManagerActionForm((prev) => ({
-                ...prev,
-                link: e.target.value,
-              }))
+                return prev.map((item) =>
+                  item.level_key === level.key
+                    ? { ...item, description: e.target.value }
+                    : item
+                )
+              })
             }
-            placeholder="예: 게시글 링크나 릴스 링크"
           />
         </label>
 
@@ -7180,24 +6809,309 @@ setEditingManagerActionId(null)
           <button
             type="button"
             className="primary-btn"
-            onClick={handleManagerActionSave}
+            onClick={() =>
+              handleTrainerLevelSettingSave({
+                key: level.key,
+                name: level.name,
+                minXp: level.minXp,
+                description: level.description,
+              })
+            }
           >
-            {editingManagerActionId ? '수정 완료' : '실행 로그 저장'}
+            이 레벨 기준 저장
           </button>
         </div>
       </div>
+    ))}
+  </div>
+</section>
+          
+          <section className="manager-section">
+            <div className="section-head">
+              <div>
+                <h3>오늘의 우선 과제</h3>
+                <p className="sub-text">
+                  지금 해야 할 일을 먼저 정리하고, 실행 중심으로 움직여보세요.
+                </p>
+              </div>
+            </div>
 
-      <div className="list-stack">
-        {managerActionLogs.length === 0 ? (
-          <div className="workout-list-empty">
-            아직 기록된 실행 로그가 없습니다.
+            <div className="manager-task-grid">
+              {managerTasks.map((task, index) => (
+                <article key={`${task.title}-${index}`} className="manager-task-card">
+                  <div className="manager-task-top">
+                    <span className={`manager-task-badge category-${task.category}`}>
+                      {task.category}
+                    </span>
+                    <span className="manager-task-due">{task.due}</span>
+                  </div>
+
+                  <h4>{task.title}</h4>
+                  <p>{task.description}</p>
+
+                  <div className="manager-task-bottom">
+  <div className="inline-actions wrap">
+  <button
+    type="button"
+    className="primary-btn"
+    onClick={() => handleManagerTaskAction(task)}
+  >
+    {task.action}
+  </button>
+
+  {completedTaskKeysToday.includes(task.actionKey) ? (
+    <button
+      type="button"
+      className="secondary-btn"
+      onClick={() => handleManagerTaskUncomplete(task)}
+    >
+      완료 해제
+    </button>
+  ) : (
+    <button
+      type="button"
+      className="secondary-btn"
+      onClick={() => handleManagerTaskComplete(task)}
+    >
+      완료
+    </button>
+  )}
+</div>
+
+ {completedTaskKeysToday.includes(task.actionKey) ? (
+  <div className="compact-text" style={{ marginTop: '8px' }}>
+    오늘 완료 처리된 과제입니다. 잘못 눌렀다면 완료 해제를 누르세요.
+  </div>
+) : null}
+</div>
+                </article>
+              ))}
+            </div>
+          </section>
+
+          <section className="manager-section">
+            <div className="section-head">
+              <div>
+                <h3>매니저 코멘트</h3>
+                <p className="sub-text">
+                  식상한 응원이 아니라, 지금 필요한 방향을 생각하게 만드는 코멘트입니다.
+                </p>
+              </div>
+            </div>
+
+            <div className="manager-insight-grid">
+              {managerInsights.map((item, index) => (
+                <article key={`${item.title}-${index}`} className="manager-insight-card">
+                  <div className="manager-card-label">{item.title}</div>
+                  <p>{item.text}</p>
+                </article>
+              ))}
+            </div>
+          </section>
+
+          <section className="manager-section">
+            <div className="section-head">
+              <div>
+                <h3>이번 흐름 요약</h3>
+                <p className="sub-text">
+                  숫자는 완벽한 정답이 아니라, 지금 어디에 힘을 써야 하는지 보여주는 힌트입니다.
+                </p>
+              </div>
+            </div>
+
+            <div className="manager-score-grid">
+              {managerScoreCards.map((card) => (
+                <article key={card.label} className="manager-score-card">
+                  <span>{card.label}</span>
+                  <strong>{card.value}</strong>
+                  <div className="manager-score-sub">{card.sub}</div>
+
+                  <div className="manager-progress">
+                    <div
+                      className="manager-progress-fill"
+                      style={{ width: `${card.percent}%` }}
+                    />
+                  </div>
+
+                  <div className="manager-progress-text">{card.percent}%</div>
+                </article>
+              ))}
+            </div>
+          </section>
+
+          <div className="manager-bottom-grid">
+            <section className="manager-section">
+              <div className="section-head">
+                <div>
+                  <h3>레벨업 미션</h3>
+                  <p className="sub-text">
+                    단기 실행이 쌓여서 장기 성장 구조가 만들어집니다.
+                  </p>
+                </div>
+              </div>
+
+              <div className="manager-mission-list">
+                {managerMissions.map((mission, index) => (
+                  <article key={`${mission.title}-${index}`} className="manager-mission-card">
+                    <div>
+                      <strong>{mission.title}</strong>
+                      <p>{mission.progress}</p>
+                    </div>
+                    <span className="manager-reward">{mission.reward}</span>
+                  </article>
+                ))}
+              </div>
+            </section>
+
+            <section className="manager-section">
+              <div className="section-head">
+                <div>
+                  <h3>앞으로의 방향</h3>
+                  <p className="sub-text">
+                    지금 해야 할 것과 앞으로 만들어야 할 구조를 같이 봅니다.
+                  </p>
+                </div>
+              </div>
+
+              <div className="manager-roadmap-list">
+                {MANAGER_ROADMAP.map((item, index) => (
+                  <article key={`${item.step}-${index}`} className="manager-roadmap-card">
+                    <div className="manager-roadmap-step">{item.step}</div>
+                    <h4>{item.title}</h4>
+                    <p>{item.text}</p>
+                  </article>
+                ))}
+              </div>
+            </section>
           </div>
-        ) : null}
+                   <section className="manager-section" id="manager-action-form">
+            <div className="section-head">
+              <div>
+                <h3>실행 로그 입력</h3>
+                <p className="sub-text">
+                  블로그, 릴스, 후기, 웹앱 홍보처럼 직접 실행한 행동을 기록하면
+                  레벨업 미션과 콘텐츠 수치에 반영됩니다.
+                </p>
+              </div>
+            </div>
 
-        {managerActionLogs.slice(0, 10).map((log) => (
-          <div key={log.id} className="list-card">
-            <div className="list-card-top">
-              <strong>{log.title || '제목 없음'}</strong>
+            <div className="manager-log-form">
+              <div className="grid-2">
+                <label className="field">
+                  <span>날짜</span>
+                  <input
+                    type="date"
+                    value={managerActionForm.action_date}
+                    onChange={(e) =>
+                      setManagerActionForm((prev) => ({
+                        ...prev,
+                        action_date: e.target.value,
+                      }))
+                    }
+                  />
+                </label>
+
+                <label className="field">
+                  <span>실행 종류</span>
+                  <select
+                    value={managerActionForm.action_type}
+                    onChange={(e) =>
+                      setManagerActionForm((prev) => ({
+                        ...prev,
+                        action_type: e.target.value,
+                      }))
+                    }
+                  >
+                    <option value="blog_post">블로그 발행</option>
+                    <option value="reel_upload">릴스 업로드</option>
+                    <option value="webapp_promo">웹앱 홍보</option>
+                    <option value="review_uploaded">후기 업로드</option>
+                    <option value="marketing_post">마케팅 글 작성</option>
+                  </select>
+                </label>
+              </div>
+
+              <div className="grid-2">
+                <label className="field">
+                  <span>채널</span>
+                  <input
+                    value={managerActionForm.channel}
+                    onChange={(e) =>
+                      setManagerActionForm((prev) => ({
+                        ...prev,
+                        channel: e.target.value,
+                      }))
+                    }
+                    placeholder="예: 인스타그램 / 블로그 / 스레드"
+                  />
+                </label>
+
+                <label className="field">
+                  <span>제목</span>
+                  <input
+                    value={managerActionForm.title}
+                    onChange={(e) =>
+                      setManagerActionForm((prev) => ({
+                        ...prev,
+                        title: e.target.value,
+                      }))
+                    }
+                    placeholder="예: 광주 화정동 저강도 PT 글 업로드"
+                  />
+                </label>
+              </div>
+
+              <label className="field">
+                <span>설명</span>
+                <textarea
+                  rows="3"
+                  value={managerActionForm.description}
+                  onChange={(e) =>
+                    setManagerActionForm((prev) => ({
+                      ...prev,
+                      description: e.target.value,
+                    }))
+                  }
+                  placeholder="예: 부모님 PT 관련 블로그 작성 / 후기 기반 릴스 업로드"
+                />
+              </label>
+
+              <label className="field">
+                <span>링크</span>
+                <input
+                  value={managerActionForm.link}
+                  onChange={(e) =>
+                    setManagerActionForm((prev) => ({
+                      ...prev,
+                      link: e.target.value,
+                    }))
+                  }
+                  placeholder="예: 게시글 링크나 릴스 링크"
+                />
+              </label>
+
+              <div className="inline-actions wrap">
+                <button
+                  type="button"
+                  className="primary-btn"
+                  onClick={handleManagerActionSave}
+                >
+                  {editingManagerActionId ? '수정 완료' : '실행 로그 저장'}
+                </button>
+              </div>
+            </div>
+
+            <div className="list-stack">
+              {managerActionLogs.length === 0 ? (
+                <div className="workout-list-empty">
+                  아직 기록된 실행 로그가 없습니다.
+                </div>
+              ) : null}
+
+              {managerActionLogs.slice(0, 10).map((log) => (
+                <div key={log.id} className="list-card">
+                  <div className="list-card-top">
+  <strong>{log.title || '제목 없음'}</strong>
 
   <div className="inline-actions wrap">
     <span className="pill">{log.action_date || '-'}</span>
