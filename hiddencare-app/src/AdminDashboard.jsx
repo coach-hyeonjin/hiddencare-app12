@@ -8074,127 +8074,135 @@ setEditingManagerActionId(null)
     </div>
 
     <div className="dashboard-kpi-grid">
-      <div className="dashboard-kpi-card">
-        <span>오늘 매출</span>
-        <strong>{Number(dashboardOverview.todaySalesAmount || 0).toLocaleString()}원</strong>
-        <div className="compact-text">
-          오늘 결제 {dashboardOverview.todaySalesCount || 0}건
-        </div>
-      </div>
-
-      <div className="dashboard-kpi-card">
-        <span>이번 주 매출</span>
-        <strong>{Number(dashboardOverview.weekSalesAmount || 0).toLocaleString()}원</strong>
-        <div className="compact-text">
-          이번 주 결제 {dashboardOverview.weekSalesCount || 0}건
-        </div>
-      </div>
-
-      <div className="dashboard-kpi-card">
-        <span>이번 달 매출</span>
-        <strong>{Number(dashboardOverview.monthSalesAmount || 0).toLocaleString()}원</strong>
-        <div className="compact-text">
-          이번 달 결제 {dashboardOverview.monthSalesCount || 0}건
-        </div>
-      </div>
-
-      <div className="dashboard-kpi-card">
-        <span>전월 대비 매출</span>
-        <strong>
-          {dashboardOverview.monthRevenueChangeRate > 0 ? '+' : ''}
-          {dashboardOverview.monthRevenueChangeRate || 0}%
-        </strong>
-        <div className="compact-text">이번 달 매출 증감률</div>
-      </div>
-
-      <div className="dashboard-kpi-card">
-        <span>이번 달 PT 수업</span>
-        <strong>{dashboardOverview.ptCount || 0}회</strong>
-        <div className="compact-text">기록작성/운동기록 기준</div>
-      </div>
-
-      <div className="dashboard-kpi-card">
-        <span>이번 달 개인운동</span>
-        <strong>{dashboardOverview.personalCount || 0}회</strong>
-        <div className="compact-text">회원 입력 기준</div>
-      </div>
-
-      <div className="dashboard-kpi-card">
-        <span>전체 남은 세션</span>
-        <strong>{dashboardOverview.remainingSessionTotal || 0}회</strong>
-        <div className="compact-text">전체 회원 잔여 세션 합계</div>
-      </div>
-
-      <div className="dashboard-kpi-card">
-        <span>미답변 문의</span>
-        <strong>{dashboardOverview.pendingInquiries || 0}건</strong>
-        <div className="compact-text">
-          unread 문의 {dashboardOverview.unreadInquiryCount || 0}건 / unread 공지 {dashboardOverview.unreadNoticeCount || 0}건
-        </div>
-      </div>
+  <div className="dashboard-kpi-card kpi-blue">
+    <span>오늘 매출</span>
+    <strong>{Number(dashboardOverview.todaySalesAmount || 0).toLocaleString()}원</strong>
+    <div className="compact-text">
+      오늘 결제 {dashboardOverview.todaySalesCount || 0}건
     </div>
+  </div>
+
+  <div className="dashboard-kpi-card kpi-green">
+    <span>이번 주 매출</span>
+    <strong>{Number(dashboardOverview.weekSalesAmount || 0).toLocaleString()}원</strong>
+    <div className="compact-text">
+      이번 주 결제 {dashboardOverview.weekSalesCount || 0}건
+    </div>
+  </div>
+
+  <div className="dashboard-kpi-card kpi-violet">
+    <span>이번 달 매출</span>
+    <strong>{Number(dashboardOverview.monthSalesAmount || 0).toLocaleString()}원</strong>
+    <div className="compact-text">
+      이번 달 결제 {dashboardOverview.monthSalesCount || 0}건
+    </div>
+  </div>
+
+  <div
+    className={`dashboard-kpi-card ${
+      Number(dashboardOverview.monthRevenueChangeRate || 0) > 0
+        ? 'kpi-green'
+        : Number(dashboardOverview.monthRevenueChangeRate || 0) < 0
+        ? 'kpi-red'
+        : 'kpi-amber'
+    }`}
+  >
+    <span>전월 대비 매출</span>
+    <strong>
+      {dashboardOverview.monthRevenueChangeRate > 0 ? '+' : ''}
+      {dashboardOverview.monthRevenueChangeRate || 0}%
+    </strong>
+    <div className="compact-text">이번 달 매출 증감률</div>
+  </div>
+
+  <div className="dashboard-kpi-card kpi-blue">
+    <span>이번 달 PT 수업</span>
+    <strong>{dashboardOverview.ptCount || 0}회</strong>
+    <div className="compact-text">기록작성/운동기록 기준</div>
+  </div>
+
+  <div className="dashboard-kpi-card kpi-green">
+    <span>이번 달 개인운동</span>
+    <strong>{dashboardOverview.personalCount || 0}회</strong>
+    <div className="compact-text">회원 입력 기준</div>
+  </div>
+
+  <div className="dashboard-kpi-card kpi-amber">
+    <span>전체 남은 세션</span>
+    <strong>{dashboardOverview.remainingSessionTotal || 0}회</strong>
+    <div className="compact-text">전체 회원 잔여 세션 합계</div>
+  </div>
+
+  <div className="dashboard-kpi-card kpi-red">
+    <span>미답변 문의</span>
+    <strong>{dashboardOverview.pendingInquiries || 0}건</strong>
+    <div className="compact-text">
+      unread 문의 {dashboardOverview.unreadInquiryCount || 0}건 / unread 공지 {dashboardOverview.unreadNoticeCount || 0}건
+    </div>
+  </div>
+</div>
 
     <div className="dashboard-main-grid">
       <section className="card">
         <h3>코치 상태 요약</h3>
-        <div className="dashboard-kpi-grid dashboard-kpi-grid-inside">
-          <div className="dashboard-kpi-card">
-            <span>번아웃 의심 평균</span>
-            <strong>{Number(burnoutSummary.avgSignal || 0).toFixed(1)}</strong>
-            <div className="compact-text">
-              {burnoutSummary.avgSignal >= 3 ? '주의 필요' : '정상 범위'}
-            </div>
-          </div>
+       <div className="dashboard-kpi-grid dashboard-kpi-grid-inside">
+  <div className="dashboard-kpi-card kpi-amber">
+    <span>번아웃 의심 평균</span>
+    <strong>{Number(burnoutSummary.avgSignal || 0).toFixed(1)}</strong>
+    <div className="compact-text">
+      {burnoutSummary.avgSignal >= 3 ? '주의 필요' : '정상 범위'}
+    </div>
+  </div>
 
-          <div className="dashboard-kpi-card">
-            <span>회복 체크 평균</span>
-            <strong>{Number(burnoutSummary.avgRecovery || 0).toFixed(1)}</strong>
-            <div className="compact-text">
-              {burnoutSummary.avgRecovery >= 3 ? '회복 중' : '관리 필요'}
-            </div>
-          </div>
+  <div className="dashboard-kpi-card kpi-blue">
+    <span>회복 체크 평균</span>
+    <strong>{Number(burnoutSummary.avgRecovery || 0).toFixed(1)}</strong>
+    <div className="compact-text">
+      {burnoutSummary.avgRecovery >= 3 ? '회복 중' : '관리 필요'}
+    </div>
+  </div>
 
-          <div className="dashboard-kpi-card">
-            <span>주의 코치</span>
-            <strong>{dashboardOverview.cautionCoachCount || 0}명</strong>
-            <div className="compact-text">컨디션/스트레스 확인 필요</div>
-          </div>
+  <div className="dashboard-kpi-card kpi-amber">
+    <span>주의 코치</span>
+    <strong>{dashboardOverview.cautionCoachCount || 0}명</strong>
+    <div className="compact-text">컨디션/스트레스 확인 필요</div>
+  </div>
 
-          <div className="dashboard-kpi-card">
-            <span>위험 코치</span>
-            <strong>{dashboardOverview.riskCoachCount || 0}명</strong>
-            <div className="compact-text">즉시 일정 조정 검토</div>
-          </div>
-        </div>
+  <div className="dashboard-kpi-card kpi-red">
+    <span>위험 코치</span>
+    <strong>{dashboardOverview.riskCoachCount || 0}명</strong>
+    <div className="compact-text">즉시 일정 조정 검토</div>
+  </div>
+</div>
       </section>
 
       <section className="card">
         <h3>세일즈 요약</h3>
         <div className="dashboard-kpi-grid dashboard-kpi-grid-inside">
-          <div className="dashboard-kpi-card">
-            <span>세일즈일지 전체</span>
-            <strong>{salesLogSummary.total || 0}건</strong>
-            <div className="compact-text">현재 필터 기준</div>
-          </div>
+  <div className="dashboard-kpi-card kpi-blue">
+    <span>세일즈일지 전체</span>
+    <strong>{salesLogSummary.total || 0}건</strong>
+    <div className="compact-text">현재 필터 기준</div>
+  </div>
 
-          <div className="dashboard-kpi-card">
-            <span>결제완료</span>
-            <strong>{salesLogSummary.closed || 0}건</strong>
-            <div className="compact-text">신규 전환 완료</div>
-          </div>
+  <div className="dashboard-kpi-card kpi-green">
+    <span>결제완료</span>
+    <strong>{salesLogSummary.closed || 0}건</strong>
+    <div className="compact-text">신규 전환 완료</div>
+  </div>
 
-          <div className="dashboard-kpi-card">
-            <span>후속관리</span>
-            <strong>{salesLogSummary.followup || 0}건</strong>
-            <div className="compact-text">재접촉 필요</div>
-          </div>
+  <div className="dashboard-kpi-card kpi-amber">
+    <span>후속관리</span>
+    <strong>{salesLogSummary.followup || 0}건</strong>
+    <div className="compact-text">재접촉 필요</div>
+  </div>
 
-          <div className="dashboard-kpi-card">
-            <span>이탈</span>
-            <strong>{salesLogSummary.lost || 0}건</strong>
-            <div className="compact-text">보류/이탈 확인</div>
-          </div>
-        </div>
+  <div className="dashboard-kpi-card kpi-red">
+    <span>이탈</span>
+    <strong>{salesLogSummary.lost || 0}건</strong>
+    <div className="compact-text">보류/이탈 확인</div>
+  </div>
+</div>
       </section>
     </div>
 
@@ -8245,7 +8253,17 @@ setEditingManagerActionId(null)
               <div key={member.id} className="dashboard-row-card">
                 <div className="list-card-top">
                   <strong>{member.name}</strong>
-                  <span className="pill">남은 {member.remainingSessions}회</span>
+                  <span
+  className={`pill ${
+    Number(member.remainingSessions || 0) <= 5
+      ? 'pill-red'
+      : Number(member.remainingSessions || 0) <= 10
+      ? 'pill-amber'
+      : 'pill-blue'
+  }`}
+>
+  남은 {member.remainingSessions}회
+</span>
                 </div>
                 <div className="compact-text">
                   목표: {member.goal || '-'} / 프로그램: {member.programs?.name || '미지정'}
@@ -8292,7 +8310,7 @@ setEditingManagerActionId(null)
                 <div key={`risk-${item.id}`} className="dashboard-row-card dashboard-row-danger">
                   <div className="list-card-top">
                     <strong>{item.coachName}</strong>
-                    <span className="pill">위험</span>
+                    <span className="pill pill-red">위험</span>
                   </div>
                   <div className="compact-text">
                     컨디션 {item.condition_score || 0} / 피로 {item.fatigue_score || 0} / 스트레스 {item.stress_score || 0} / 집중도 {item.focus_score || 0}
@@ -8304,7 +8322,7 @@ setEditingManagerActionId(null)
                 <div key={`caution-${item.id}`} className="dashboard-row-card dashboard-row-warn">
                   <div className="list-card-top">
                     <strong>{item.coachName}</strong>
-                    <span className="pill">주의</span>
+                    <span className="pill pill-amber">주의</span>
                   </div>
                   <div className="compact-text">
                     컨디션 {item.condition_score || 0} / 피로 {item.fatigue_score || 0} / 스트레스 {item.stress_score || 0} / 집중도 {item.focus_score || 0}
@@ -8324,7 +8342,7 @@ setEditingManagerActionId(null)
               <div key={item.id} className="dashboard-row-card">
                 <div className="list-card-top">
                   <strong>{item.coachName}</strong>
-                  <span className="pill">총점 {Number(item.total_score || 0).toFixed(1)}</span>
+                  <span className="pill pill-violet">총점 {Number(item.total_score || 0).toFixed(1)}</span>
                 </div>
                 <div className="compact-text">
                   매출 {item.revenue_score || 0} / 활동 {item.activity_score || 0} / 세일즈 {item.sales_score || 0} / 태도 {item.attitude_score || 0}
