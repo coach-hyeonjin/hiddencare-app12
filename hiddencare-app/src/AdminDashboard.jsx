@@ -883,7 +883,7 @@ const [unreadNoticeCount, setUnreadNoticeCount] = useState(0)
     link: '',
     status: 'done',
   })
-const [managerActionForm, setManagerActionForm] = useState({
+const [editingManagerActionId, setEditingManagerActionId] = useState(null)
     const managerScoreCards = useMemo(() => {
     const currentMonth = new Date().toISOString().slice(0, 7)
 
