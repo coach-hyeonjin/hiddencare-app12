@@ -8215,7 +8215,7 @@ setEditingManagerActionId(null)
               <div key={item.label} className="dashboard-row-card">
                 <div className="list-card-top">
                   <strong>{item.label}</strong>
-                  <span className="pill">{Number(item.amount || 0).toLocaleString()}원</span>
+                  <span className="pill pill-blue">{Number(item.amount || 0).toLocaleString()}원</span>
                 </div>
               </div>
             ))
@@ -8233,7 +8233,7 @@ setEditingManagerActionId(null)
               <div key={item.name} className="dashboard-row-card">
                 <div className="list-card-top">
                   <strong>{item.name}</strong>
-                  <span className="pill">{Number(item.amount || 0).toLocaleString()}원</span>
+                  <span className="pill pill-violet">{Number(item.amount || 0).toLocaleString()}원</span>
                 </div>
               </div>
             ))
@@ -8284,7 +8284,7 @@ setEditingManagerActionId(null)
               <div key={member.id} className="dashboard-row-card">
                 <div className="list-card-top">
                   <strong>{member.name}</strong>
-                  <span className="pill">기록 {member.workoutCount}회</span>
+                 <span className="pill pill-green">기록 {member.workoutCount}회</span>
                 </div>
                 <div className="compact-text">
                   목표: {member.goal || '-'}
@@ -8365,7 +8365,7 @@ setEditingManagerActionId(null)
               <div key={sale.id} className="dashboard-row-card">
                 <div className="list-card-top">
                   <strong>{sale.members?.name || '회원명 없음'}</strong>
-                  <span className="pill">{Number(sale.amount || 0).toLocaleString()}원</span>
+                 <span className="pill pill-blue">{Number(sale.amount || 0).toLocaleString()}원</span>
                 </div>
                 <div className="compact-text">
                   {sale.sale_date || '-'} / {sale.programs?.name || '프로그램 미지정'} / {sale.payment_method || '-'}
@@ -8386,7 +8386,19 @@ setEditingManagerActionId(null)
               <div key={log.id} className="dashboard-row-card">
                 <div className="list-card-top">
                   <strong>{log.lead_name || '리드명 없음'}</strong>
-                  <span className="pill">{log.sales_result || '진행중'}</span>
+                  <span
+  className={`pill ${
+    log.sales_result === '결제완료'
+      ? 'pill-green'
+      : log.sales_result === '후속관리'
+      ? 'pill-amber'
+      : log.sales_result === '이탈'
+      ? 'pill-red'
+      : 'pill-blue'
+  }`}
+>
+  {log.sales_result || '진행중'}
+</span>
                 </div>
                 <div className="compact-text">
                   {log.log_date || '-'} / {log.coach_name || '-'} / {log.main_need || '-'} / 전환도 {log.conversion_score || '-'}
@@ -8409,7 +8421,17 @@ setEditingManagerActionId(null)
               <div key={item.id} className="dashboard-row-card">
                 <div className="list-card-top">
                   <strong>{item.title || item.member_name || '문의'}</strong>
-                  <span className="pill">{item.status || 'pending'}</span>
+                 <span
+  className={`pill ${
+    item.status === 'answered' || item.status === '답변완료'
+      ? 'pill-green'
+      : item.status === 'pending' || item.status === '대기중'
+      ? 'pill-amber'
+      : 'pill-blue'
+  }`}
+>
+  {item.status || 'pending'}
+</span>
                 </div>
                 <div className="compact-text">
                   {item.created_at || item.inquiry_date || '-'}
@@ -8430,7 +8452,7 @@ setEditingManagerActionId(null)
               <div key={item.id} className="dashboard-row-card">
                 <div className="list-card-top">
                   <strong>{item.title || '공지'}</strong>
-                  <span className="pill">{item.category || '공지'}</span>
+                  <span className="pill pill-violet">{item.category || '공지'}</span>
                 </div>
                 <div className="compact-text">
                   {item.starts_at || item.created_at || '-'}
