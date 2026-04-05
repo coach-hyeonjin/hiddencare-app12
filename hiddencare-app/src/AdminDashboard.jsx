@@ -728,7 +728,7 @@ export default function AdminDashboard({ profile, currentAdminId, currentGymId, 
   const totalMemberCount = Array.isArray(members) ? members.length : 0
 const visibleMemberCount = Array.isArray(filteredMemberStats) ? filteredMemberStats.length : 0
 
-const [memberHealthLogs, setMemberHealthLogs] = useState([])
+
 
   const [memberHealthLogs, setMemberHealthLogs] = useState([])
   const [collapsedHealthLogs, setCollapsedHealthLogs] = useState({})
@@ -5838,7 +5838,7 @@ setEditingManagerActionId(null)
             </form>
           </section>
 
-         <section className="card">
+        <section className="card">
   <div className="member-list-header">
     <div className="member-list-title-row">
       <h2>회원 목록</h2>
@@ -5856,7 +5856,10 @@ setEditingManagerActionId(null)
       />
 
       <div className="member-list-filter-row">
-        <select value={memberProgramFilter} onChange={(e) => setMemberProgramFilter(e.target.value)}>
+        <select
+          value={memberProgramFilter}
+          onChange={(e) => setMemberProgramFilter(e.target.value)}
+        >
           <option value="">전체 프로그램</option>
           {programs.map((p) => (
             <option key={p.id} value={p.id}>
@@ -5865,7 +5868,10 @@ setEditingManagerActionId(null)
           ))}
         </select>
 
-        <select value={memberStatusFilter} onChange={(e) => setMemberStatusFilter(e.target.value)}>
+        <select
+          value={memberStatusFilter}
+          onChange={(e) => setMemberStatusFilter(e.target.value)}
+        >
           <option value="all">전체</option>
           <option value="remaining">잔여 있음</option>
           <option value="ended">소진</option>
@@ -5874,25 +5880,75 @@ setEditingManagerActionId(null)
     </div>
   </div>
 
-      <div className="member-list-filter-row">
-        <select value={memberProgramFilter} onChange={(e) => setMemberProgramFilter(e.target.value)}>
-          <option value="">전체 프로그램</option>
-          {programs.map((p) => (
-            <option key={p.id} value={p.id}>
-              {p.name}
-            </option>
-          ))}
-        </select>
+  <div className="list-stack">
+    {filteredMemberStats.length === 0 ? (
+      <div className="workout-list-empty">검색 결과가 없습니다.</div>
+    ) : null}
 
-        <select value={memberStatusFilter} onChange={(e) => setMemberStatusFilter(e.target.value)}>
-          <option value="all">전체</option>
-          <option value="remaining">잔여 있음</option>
-          <option value="ended">소진</option>
-        </select>
-      </div>
-    </div>
+    {filteredMemberStats.map((member) => {
+      const isSelected = selectedMemberId === member.id
+
+      return (
+        <div
+          key={member.id}
+          className={`list-card ${isSelected ? 'selected' : ''}`}
+          onClick={() => {
+            setSelectedMemberId(member.id)
+            setActiveTab('회원상세')
+          }}
+        >
+          <div className="list-card-top">
+            <strong>{member.name}</strong>
+            <span className="pill">남은 {member.remainingSessions}회</span>
+          </div>
+
+          <div className="compact-text">
+            목표: {member.goal || '-'} / Access: {member.access_code}
+          </div>
+
+          <div className="compact-text">
+            PT {member.ptCount}회 / 개인운동 {member.personalCount}회 / 프로그램 {member.programs?.name || '-'}
+          </div>
+
+          <div className="inline-actions wrap">
+            <button
+              type="button"
+              className="secondary-btn"
+              onClick={(e) => {
+                e.stopPropagation()
+                handleMemberEdit(member)
+              }}
+            >
+              수정
+            </button>
+
+            <button
+              type="button"
+              className="secondary-btn"
+              onClick={(e) => {
+                e.stopPropagation()
+                copyMemberLink(member)
+              }}
+            >
+              링크 복사
+            </button>
+
+            <button
+              type="button"
+              className="danger-btn"
+              onClick={(e) => {
+                e.stopPropagation()
+                handleMemberDelete(member.id)
+              }}
+            >
+              삭제
+            </button>
+          </div>
+        </div>
+      )
+    })}
   </div>
-
+</section>
  <div className="list-stack">
 
   {filteredMemberStats.length === 0 ? (
