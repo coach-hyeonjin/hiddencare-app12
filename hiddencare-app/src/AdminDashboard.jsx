@@ -1273,6 +1273,21 @@ const completedTaskKeysToday = useMemo(() => {
     )
     .map((item) => item.task_key)
 }, [managerTaskChecks, todayTaskDate])
+  const TRAINER_LEVELS = [
+  { key: 'beginner_3', name: '초보 트레이너 3급', minXp: 0, description: '기록 습관과 기본 운영 감각을 만드는 단계입니다.' },
+  { key: 'beginner_2', name: '초보 트레이너 2급', minXp: 500, description: '기본 회원 관리와 실행 습관이 자리를 잡기 시작한 단계입니다.' },
+  { key: 'beginner_1', name: '초보 트레이너 1급', minXp: 1000, description: '수업 외에도 콘텐츠와 운영 흐름을 보기 시작한 단계입니다.' },
+
+  { key: 'intermediate_3', name: '중급 트레이너 3급', minXp: 2000, description: '회원 유지와 재등록 흐름을 함께 관리하기 시작한 단계입니다.' },
+  { key: 'intermediate_2', name: '중급 트레이너 2급', minXp: 4000, description: '매출과 실행 로그가 함께 쌓이며 운영 감각이 커지는 단계입니다.' },
+  { key: 'intermediate_1', name: '중급 트레이너 1급', minXp: 7000, description: '회원관리, 콘텐츠, 운영 흐름을 연결해서 보는 단계입니다.' },
+
+  { key: 'master_3', name: '마스터 트레이너 3급', minXp: 12000, description: '브랜딩과 운영 성과가 눈에 띄게 쌓이기 시작한 단계입니다.' },
+  { key: 'master_2', name: '마스터 트레이너 2급', minXp: 20000, description: '반복 가능한 운영 패턴과 콘텐츠 자산이 생기는 단계입니다.' },
+  { key: 'master_1', name: '마스터 트레이너 1급', minXp: 30000, description: '창업 또는 독립 운영을 준비해볼 수 있는 수준입니다.' },
+
+  { key: 'director', name: '대표 트레이너', minXp: 50000, description: '창업을 시도하거나 팀/브랜드를 이끌 준비가 된 단계입니다.' },
+]
   const trainerLevelSummary = useMemo(() => {
   const currentMonth = new Date().toISOString().slice(0, 7)
 
@@ -1299,9 +1314,8 @@ const completedTaskKeysToday = useMemo(() => {
     return sum + Number(actionMap[log.action_type] || 0)
   }, 0)
 
-  const taskXp = managerTaskChecks
-    .filter((item) => item.is_completed === true)
-    .length * 10
+  const taskXp =
+    managerTaskChecks.filter((item) => item.is_completed === true).length * 10
 
   const currentMonthActionXp = managerActionLogs
     .filter((log) => (log.action_date || '').slice(0, 7) === currentMonth)
@@ -1343,6 +1357,10 @@ const completedTaskKeysToday = useMemo(() => {
     ? Math.min(100, Math.round((progressValue / progressRange) * 100))
     : 100
 
+  const xpToNextLevel = nextLevel
+    ? Math.max(0, nextLevel.minXp - totalXp)
+    : 0
+
   return {
     totalXp,
     careerXp,
@@ -1352,7 +1370,7 @@ const completedTaskKeysToday = useMemo(() => {
     currentLevel,
     nextLevel,
     progressPercent,
-    xpToNextLevel: nextLevel ? Math.max(0, nextLevel.minXp - totalXp) : 0,
+    xpToNextLevel,
   }
 }, [careerProfileForm, managerActionLogs, managerTaskChecks])
   const trainerLevelRoadmap = useMemo(() => {
@@ -6337,6 +6355,51 @@ setEditingManagerActionId(null)
       </button>
     </div>
   </div>
+</section>
+          <section className="manager-section">
+  <div className="section-head">
+    <div>
+      <h3>다음 레벨 목표</h3>
+      <p className="sub-text">
+        현재 레벨에서 다음 단계로 가기 위해 얼마나 더 필요한지 보여주는 구간입니다.
+      </p>
+    </div>
+  </div>
+
+  {trainerLevelSummary.nextLevel ? (
+    <div className="detail-box">
+      <p>
+        다음 레벨: <strong>{trainerLevelSummary.nextLevel.name}</strong>
+      </p>
+      <p>
+        남은 XP: <strong>{trainerLevelSummary.xpToNextLevel.toLocaleString()} XP</strong>
+      </p>
+
+      <div className="manager-progress" style={{ marginTop: '12px' }}>
+        <div
+          className="manager-progress-fill"
+          style={{ width: `${trainerLevelSummary.progressPercent}%` }}
+        />
+      </div>
+
+      <div className="manager-progress-text" style={{ marginTop: '8px' }}>
+        현재 진행률 {trainerLevelSummary.progressPercent}%
+      </div>
+
+      <div className="compact-text" style={{ marginTop: '12px' }}>
+        추천 행동 예시:
+        <br />• 블로그 추가 작성
+        <br />• 수업 기록 누적
+        <br />• 후기/체험단 경험 정리
+        <br />• 실행 로그와 과제 완료 누적
+      </div>
+    </div>
+  ) : (
+    <div className="detail-box">
+      <p><strong>최고 레벨입니다.</strong></p>
+      <p>현재 단계에서는 창업 또는 브랜드 운영 확장을 준비해볼 수 있습니다.</p>
+    </div>
+  )}
 </section>
           <section className="manager-section">
   <div className="section-head">
