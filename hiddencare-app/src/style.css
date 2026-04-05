@@ -1802,3 +1802,435 @@ img {
     font-size: 22px;
   }
 }
+/* ===== 나만의 매니저 ===== */
+.manager-page {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.manager-hero {
+  display: grid;
+  grid-template-columns: 1.2fr 0.8fr;
+  gap: 18px;
+  padding: 24px;
+  border-radius: 22px;
+  background: linear-gradient(135deg, #111827 0%, #1e1b4b 55%, #312e81 100%);
+  color: #ffffff;
+  box-shadow: 0 16px 40px rgba(15, 23, 42, 0.18);
+}
+
+.manager-hero-left,
+.manager-hero-right {
+  min-width: 0;
+}
+
+.manager-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 30px;
+  padding: 6px 12px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.14);
+  color: #c7d2fe;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  margin-bottom: 12px;
+}
+
+.manager-hero h2 {
+  margin: 0 0 10px;
+  font-size: 32px;
+  line-height: 1.2;
+  font-weight: 800;
+}
+
+.manager-hero-text {
+  margin: 0;
+  color: rgba(255, 255, 255, 0.86);
+  font-size: 15px;
+  line-height: 1.7;
+  max-width: 620px;
+  word-break: keep-all;
+}
+
+.manager-level-card {
+  height: 100%;
+  padding: 20px;
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  backdrop-filter: blur(10px);
+}
+
+.manager-level-card span {
+  display: block;
+  font-size: 13px;
+  color: #c7d2fe;
+  font-weight: 700;
+  margin-bottom: 8px;
+}
+
+.manager-level-card strong {
+  display: block;
+  font-size: 24px;
+  line-height: 1.3;
+  margin-bottom: 10px;
+}
+
+.manager-level-card p {
+  margin: 0;
+  color: rgba(255, 255, 255, 0.84);
+  line-height: 1.7;
+  font-size: 14px;
+  word-break: keep-all;
+}
+
+.manager-thought-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.manager-thought-card {
+  background: linear-gradient(180deg, #ffffff 0%, #f8faff 100%);
+  border: 1px solid #e5e7eb;
+  border-radius: 18px;
+  padding: 18px;
+  box-shadow: 0 10px 28px rgba(15, 23, 42, 0.05);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.manager-thought-card p {
+  margin: 0;
+  color: #111827;
+  line-height: 1.7;
+  font-weight: 600;
+  word-break: keep-all;
+}
+
+.manager-thought-card span {
+  color: #6366f1;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.manager-section {
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 20px;
+  padding: 20px;
+  box-shadow: 0 10px 28px rgba(15, 23, 42, 0.04);
+}
+
+.manager-card-label {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 28px;
+  width: fit-content;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: #eef2ff;
+  color: #4338ca;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.manager-task-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.manager-task-card {
+  border: 1px solid #e5e7eb;
+  border-radius: 18px;
+  padding: 18px;
+  background: #fcfcff;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  transition: 0.2s ease;
+}
+
+.manager-task-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 12px 28px rgba(15, 23, 42, 0.08);
+  border-color: #c7d2fe;
+}
+
+.manager-task-top {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.manager-task-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 28px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.manager-task-badge.category-긴급 {
+  background: #fee2e2;
+  color: #b91c1c;
+}
+
+.manager-task-badge.category-매출 {
+  background: #dcfce7;
+  color: #166534;
+}
+
+.manager-task-badge.category-마케팅 {
+  background: #ede9fe;
+  color: #6d28d9;
+}
+
+.manager-task-badge.category-콘텐츠 {
+  background: #dbeafe;
+  color: #1d4ed8;
+}
+
+.manager-task-badge.category-성장 {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.manager-task-badge.category-루틴 {
+  background: #e0f2fe;
+  color: #0369a1;
+}
+
+.manager-task-due {
+  font-size: 12px;
+  font-weight: 700;
+  color: #6b7280;
+}
+
+.manager-task-card h4 {
+  margin: 0;
+  font-size: 18px;
+  line-height: 1.4;
+  color: #111827;
+}
+
+.manager-task-card p {
+  margin: 0;
+  color: #6b7280;
+  line-height: 1.7;
+  word-break: keep-all;
+}
+
+.manager-task-bottom {
+  margin-top: auto;
+}
+
+.manager-insight-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.manager-insight-card {
+  border-radius: 18px;
+  padding: 18px;
+  background: linear-gradient(180deg, #f8fafc 0%, #ffffff 100%);
+  border: 1px solid #e5e7eb;
+}
+
+.manager-insight-card p {
+  margin: 10px 0 0;
+  line-height: 1.8;
+  color: #111827;
+  word-break: keep-all;
+}
+
+.manager-score-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.manager-score-card {
+  border-radius: 18px;
+  padding: 18px;
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  box-shadow: 0 8px 22px rgba(15, 23, 42, 0.04);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.manager-score-card span {
+  color: #6b7280;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.manager-score-card strong {
+  font-size: 28px;
+  color: #111827;
+  line-height: 1.2;
+}
+
+.manager-score-sub {
+  color: #6b7280;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.manager-progress {
+  width: 100%;
+  height: 10px;
+  background: #eef2f7;
+  border-radius: 999px;
+  overflow: hidden;
+  margin-top: 4px;
+}
+
+.manager-progress-fill {
+  height: 100%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #6366f1 0%, #8b5cf6 100%);
+}
+
+.manager-progress-text {
+  font-size: 12px;
+  font-weight: 800;
+  color: #4f46e5;
+}
+
+.manager-bottom-grid {
+  display: grid;
+  grid-template-columns: 0.95fr 1.05fr;
+  gap: 16px;
+}
+
+.manager-mission-list,
+.manager-roadmap-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.manager-mission-card {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: center;
+  padding: 16px;
+  border-radius: 16px;
+  border: 1px solid #e5e7eb;
+  background: #fafafa;
+}
+
+.manager-mission-card strong {
+  display: block;
+  margin-bottom: 4px;
+  color: #111827;
+}
+
+.manager-mission-card p {
+  margin: 0;
+  font-size: 13px;
+  color: #6b7280;
+}
+
+.manager-reward {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 30px;
+  padding: 6px 12px;
+  border-radius: 999px;
+  background: #ede9fe;
+  color: #6d28d9;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.manager-roadmap-card {
+  border-radius: 16px;
+  padding: 16px;
+  background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
+  border: 1px solid #e5e7eb;
+}
+
+.manager-roadmap-step {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 28px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: #111827;
+  color: #ffffff;
+  font-size: 12px;
+  font-weight: 800;
+  margin-bottom: 10px;
+}
+
+.manager-roadmap-card h4 {
+  margin: 0 0 8px;
+  color: #111827;
+  font-size: 17px;
+}
+
+.manager-roadmap-card p {
+  margin: 0;
+  line-height: 1.7;
+  color: #6b7280;
+  word-break: keep-all;
+}
+
+@media (max-width: 1200px) {
+  .manager-thought-grid,
+  .manager-score-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .manager-bottom-grid,
+  .manager-hero,
+  .manager-task-grid,
+  .manager-insight-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 768px) {
+  .manager-thought-grid,
+  .manager-score-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .manager-hero {
+    padding: 20px;
+  }
+
+  .manager-hero h2 {
+    font-size: 28px;
+  }
+
+  .manager-section {
+    padding: 16px;
+  }
+
+  .manager-mission-card {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}
