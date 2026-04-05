@@ -4670,25 +4670,32 @@ const getSalesAutoFeedback = () => {
     setMessage('공지사항이 삭제되었습니다.')
   }
 
-    const loadManagerActionLogs = async () => {
-    if (!currentGymId) {
-      setManagerActionLogs([])
-      return
-    }
+   const loadManagerActionLogs = async () => {
+  const targetGymId = currentGymId || currentAdminId
 
-    const { data, error } = await supabase
-      .from('manager_action_logs')
-      .select('*')
-     .eq('gym_id', currentGymId || currentAdminId)
-      .order('action_date', { ascending: false })
-
-    if (error) {
-      console.error('manager_action_logs 불러오기 실패:', error)
-      return
-    }
-
-    setManagerActionLogs(data || [])
+  if (!targetGymId) {
+    setManagerActionLogs([])
+    return
   }
+
+  const { data, error } = await supabase
+    .from('manager_action_logs')
+    .select('*')
+    .eq('gym_id', targetGymId)
+    .order('created_at', { ascending: false })
+
+  console.log('loadManagerActionLogs targetGymId:', targetGymId)
+  console.log('loadManagerActionLogs data:', data)
+  console.log('loadManagerActionLogs error:', error)
+
+  if (error) {
+    console.error('manager_action_logs 불러오기 실패:', error)
+    setManagerActionLogs([])
+    return
+  }
+
+  setManagerActionLogs(data || [])
+}
 
   const loadManagerTaskChecks = async () => {
     if (!currentGymId) {
@@ -4732,9 +4739,17 @@ const getSalesAutoFeedback = () => {
     setManagerGoalSettings(data || null)
   }
 
-  const handleManagerActionSave = async () => {
+ const handleManagerActionSave = async () => {
+  const targetGymId = currentGymId || currentAdminId
+
+  if (!targetGymId) {
+    setMessage('gym_id를 찾을 수 없습니다.')
+    console.error('targetGymId 없음', { currentGymId, currentAdminId })
+    return
+  }
+
   const payload = {
-   gym_id: currentGymId || currentAdminId,
+    gym_id: targetGymId,
     admin_id: currentAdminId,
     action_date: managerActionForm.action_date,
     action_type: managerActionForm.action_type,
@@ -4745,18 +4760,25 @@ const getSalesAutoFeedback = () => {
     status: managerActionForm.status,
   }
 
-  console.log('currentGymId:', currentGymId)
+  console.log('handleManagerActionSave targetGymId:', targetGymId)
   console.log('manager payload:', payload)
 
-  const { error } = await supabase.from('manager_action_logs').insert(payload)
+  const { data, error } = await supabase
+    .from('manager_action_logs')
+    .insert(payload)
+    .select()
+
+  console.log('manager insert data:', data)
+  console.log('manager insert error:', error)
 
   if (error) {
     console.error('manager_action_logs 저장 실패:', error)
-    setMessage('매니저 실행 로그 저장 실패')
+    setMessage(`매니저 실행 로그 저장 실패: ${error.message}`)
     return
   }
 
   setMessage('매니저 실행 로그가 저장되었습니다.')
+
   setManagerActionForm({
     action_date: new Date().toISOString().slice(0, 10),
     action_type: 'blog_post',
