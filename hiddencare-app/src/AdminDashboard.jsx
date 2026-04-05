@@ -4933,23 +4933,25 @@ const getSalesAutoFeedback = () => {
 }
 
   const loadManagerTaskChecks = async () => {
-    if (!currentGymId) {
-      setManagerTaskChecks([])
-      return
-    }
+  const targetGymId = currentGymId || currentAdminId
 
-    const { data, error } = await supabase
-      .from('manager_task_checks')
-      .select('*')
-      .eq('gym_id', currentGymId)
-
-    if (error) {
-      console.error('manager_task_checks 불러오기 실패:', error)
-      return
-    }
-
-    setManagerTaskChecks(data || [])
+  if (!targetGymId) {
+    setManagerTaskChecks([])
+    return
   }
+
+  const { data, error } = await supabase
+    .from('manager_task_checks')
+    .select('*')
+    .eq('gym_id', targetGymId)
+
+  if (error) {
+    console.error('manager_task_checks 불러오기 실패:', error)
+    return
+  }
+
+  setManagerTaskChecks(data || [])
+}
 
   const loadManagerGoalSettings = async () => {
     if (!currentGymId) {
@@ -5123,6 +5125,9 @@ setEditingManagerActionId(null)
   }
 }
   const handleManagerTaskComplete = async (task) => {
+    const confirmComplete = window.confirm('이 과제를 완료 처리하시겠습니까?')
+  if (!confirmComplete) return
+
   const targetGymId = currentGymId || currentAdminId
 
   if (!targetGymId) {
