@@ -725,6 +725,10 @@ export default function AdminDashboard({ profile, currentAdminId, currentGymId, 
   const [memberDetailSearch, setMemberDetailSearch] = useState('')
   const [memberProgramFilter, setMemberProgramFilter] = useState('')
   const [memberStatusFilter, setMemberStatusFilter] = useState('all')
+  const totalMemberCount = Array.isArray(members) ? members.length : 0
+const visibleMemberCount = Array.isArray(filteredMemberStats) ? filteredMemberStats.length : 0
+
+const [memberHealthLogs, setMemberHealthLogs] = useState([])
 
   const [memberHealthLogs, setMemberHealthLogs] = useState([])
   const [collapsedHealthLogs, setCollapsedHealthLogs] = useState({})
@@ -5834,9 +5838,15 @@ setEditingManagerActionId(null)
             </form>
           </section>
 
-          <section className="card">
+         <section className="card">
   <div className="member-list-header">
-    <h2>회원 목록</h2>
+    <div className="member-list-title-row">
+      <h2>회원 목록</h2>
+      <div className="member-count-badges">
+        <span className="count-badge">총 {totalMemberCount}명</span>
+        <span className="count-badge soft">현재 표시 {visibleMemberCount}명</span>
+      </div>
+    </div>
 
     <div className="member-list-search-area">
       <input
@@ -5844,6 +5854,25 @@ setEditingManagerActionId(null)
         value={memberSearch}
         onChange={(e) => setMemberSearch(e.target.value)}
       />
+
+      <div className="member-list-filter-row">
+        <select value={memberProgramFilter} onChange={(e) => setMemberProgramFilter(e.target.value)}>
+          <option value="">전체 프로그램</option>
+          {programs.map((p) => (
+            <option key={p.id} value={p.id}>
+              {p.name}
+            </option>
+          ))}
+        </select>
+
+        <select value={memberStatusFilter} onChange={(e) => setMemberStatusFilter(e.target.value)}>
+          <option value="all">전체</option>
+          <option value="remaining">잔여 있음</option>
+          <option value="ended">소진</option>
+        </select>
+      </div>
+    </div>
+  </div>
 
       <div className="member-list-filter-row">
         <select value={memberProgramFilter} onChange={(e) => setMemberProgramFilter(e.target.value)}>
