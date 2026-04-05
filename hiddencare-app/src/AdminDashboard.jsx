@@ -3721,7 +3721,50 @@ const updateRoutineItemField = (weekIndex, dayIndex, itemIndex, field, value) =>
     }
   })
 }
+const updateRoutineItemSelect = (weekIndex, dayIndex, itemIndex, exerciseId) => {
+  const found = exercises.find(
+    (exercise) => String(exercise.id) === String(exerciseId)
+  )
 
+  setRoutineForm((prev) => {
+    const currentWeeks = Array.isArray(prev?.weeks)
+      ? [...prev.weeks]
+      : [createEmptyRoutineWeek(1)]
+
+    const targetWeek = {
+      ...(currentWeeks[weekIndex] || createEmptyRoutineWeek(weekIndex + 1)),
+    }
+
+    const currentDays = Array.isArray(targetWeek.days)
+      ? [...targetWeek.days]
+      : []
+
+    const targetDay = {
+      ...(currentDays[dayIndex] || createEmptyRoutineDay('월')),
+    }
+
+    const currentItems = Array.isArray(targetDay.items)
+      ? [...targetDay.items]
+      : [createEmptyRoutineItem()]
+
+    const targetItem = {
+      ...(currentItems[itemIndex] || createEmptyRoutineItem()),
+      exercise_id: exerciseId || '',
+      exercise_name_snapshot: found?.name || '',
+    }
+
+    currentItems[itemIndex] = targetItem
+    targetDay.items = currentItems
+    currentDays[dayIndex] = targetDay
+    targetWeek.days = currentDays
+    currentWeeks[weekIndex] = targetWeek
+
+    return {
+      ...prev,
+      weeks: currentWeeks,
+    }
+  })
+}
 const updateWorkoutItemName = (itemIndex, value) => {
   setWorkoutForm((prev) => {
     const nextItems = [...prev.items]
