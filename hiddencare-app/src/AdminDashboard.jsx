@@ -5607,6 +5607,152 @@ const getSalesAutoFeedback = () => {
               </div>
             </section>
           </div>
+                    <section className="manager-section">
+            <div className="section-head">
+              <div>
+                <h3>실행 로그 입력</h3>
+                <p className="sub-text">
+                  블로그, 릴스, 후기, 웹앱 홍보처럼 직접 실행한 행동을 기록하면
+                  레벨업 미션과 콘텐츠 수치에 반영됩니다.
+                </p>
+              </div>
+            </div>
+
+            <div className="manager-log-form">
+              <div className="grid-2">
+                <label className="field">
+                  <span>날짜</span>
+                  <input
+                    type="date"
+                    value={managerActionForm.action_date}
+                    onChange={(e) =>
+                      setManagerActionForm((prev) => ({
+                        ...prev,
+                        action_date: e.target.value,
+                      }))
+                    }
+                  />
+                </label>
+
+                <label className="field">
+                  <span>실행 종류</span>
+                  <select
+                    value={managerActionForm.action_type}
+                    onChange={(e) =>
+                      setManagerActionForm((prev) => ({
+                        ...prev,
+                        action_type: e.target.value,
+                      }))
+                    }
+                  >
+                    <option value="blog_post">블로그 발행</option>
+                    <option value="reel_upload">릴스 업로드</option>
+                    <option value="webapp_promo">웹앱 홍보</option>
+                    <option value="review_uploaded">후기 업로드</option>
+                    <option value="marketing_post">마케팅 글 작성</option>
+                  </select>
+                </label>
+              </div>
+
+              <div className="grid-2">
+                <label className="field">
+                  <span>채널</span>
+                  <input
+                    value={managerActionForm.channel}
+                    onChange={(e) =>
+                      setManagerActionForm((prev) => ({
+                        ...prev,
+                        channel: e.target.value,
+                      }))
+                    }
+                    placeholder="예: 인스타그램 / 블로그 / 스레드"
+                  />
+                </label>
+
+                <label className="field">
+                  <span>제목</span>
+                  <input
+                    value={managerActionForm.title}
+                    onChange={(e) =>
+                      setManagerActionForm((prev) => ({
+                        ...prev,
+                        title: e.target.value,
+                      }))
+                    }
+                    placeholder="예: 광주 화정동 저강도 PT 글 업로드"
+                  />
+                </label>
+              </div>
+
+              <label className="field">
+                <span>설명</span>
+                <textarea
+                  rows="3"
+                  value={managerActionForm.description}
+                  onChange={(e) =>
+                    setManagerActionForm((prev) => ({
+                      ...prev,
+                      description: e.target.value,
+                    }))
+                  }
+                  placeholder="예: 부모님 PT 관련 블로그 작성 / 후기 기반 릴스 업로드"
+                />
+              </label>
+
+              <label className="field">
+                <span>링크</span>
+                <input
+                  value={managerActionForm.link}
+                  onChange={(e) =>
+                    setManagerActionForm((prev) => ({
+                      ...prev,
+                      link: e.target.value,
+                    }))
+                  }
+                  placeholder="예: 게시글 링크나 릴스 링크"
+                />
+              </label>
+
+              <div className="inline-actions wrap">
+                <button
+                  type="button"
+                  className="primary-btn"
+                  onClick={handleManagerActionSave}
+                >
+                  실행 로그 저장
+                </button>
+              </div>
+            </div>
+
+            <div className="list-stack">
+              {managerActionLogs.length === 0 ? (
+                <div className="workout-list-empty">
+                  아직 기록된 실행 로그가 없습니다.
+                </div>
+              ) : null}
+
+              {managerActionLogs.slice(0, 10).map((log) => (
+                <div key={log.id} className="list-card">
+                  <div className="list-card-top">
+                    <strong>{log.title || '제목 없음'}</strong>
+                    <span className="pill">{log.action_date || '-'}</span>
+                  </div>
+
+                  <div className="compact-text">
+                    종류: {log.action_type || '-'} / 채널: {log.channel || '-'}
+                  </div>
+
+                  <div className="compact-text">
+                    설명: {log.description || '-'}
+                  </div>
+
+                  <div className="compact-text">
+                    링크: {log.link || '-'}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </section>
         </div>
       )}
       
