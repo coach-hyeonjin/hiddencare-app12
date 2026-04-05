@@ -9907,11 +9907,7 @@ function DietAdminCard({ diet, memberName, collapsed, onToggle, onSave, onDelete
         간략히보기: {diet.meal_type || '식단'} / {diet.meal_time || '-'} / {diet.content?.slice(0, 24) || ''}
         {diet.content?.length > 24 ? '...' : ''}
       </div>
-{workout.pain_enabled && workout.pain_logs?.length ? (
-  <div className="compact-text">
-    통증기록: {workout.pain_logs.map((pain) => `${pain.body_part || '부위미정'} ${pain.pain_score ?? 0}점`).join(' / ')}
-  </div>
-) : null}
+
       <div className="inline-actions wrap">
         <button type="button" className="secondary-btn" onClick={onToggle}>
           {collapsed ? '상세히보기' : '간략히보기'}
@@ -9921,19 +9917,14 @@ function DietAdminCard({ diet, memberName, collapsed, onToggle, onSave, onDelete
           삭제
         </button>
       </div>
-{workout.pain_enabled && workout.pain_logs?.length ? (
-  <div className="detail-box">
-    <p><strong>통증 기록</strong></p>
-    {workout.pain_logs.map((pain, index) => (
-      <p key={index}>
-        {index + 1}. [{pain.pain_type || '-'}] {pain.body_part || '-'} / {pain.movement_name || '-'} /
-        {pain.pain_timing || '-'} / VAS {pain.pain_score ?? 0} / {pain.pain_note || '-'}
-      </p>
-    ))}
-  </div>
-) : null}
+
       {!collapsed ? (
-        <DietFeedbackEditor diet={diet} feedback={feedback} setFeedback={setFeedback} onSave={onSave} />
+        <DietFeedbackEditor
+          diet={diet}
+          feedback={feedback}
+          setFeedback={setFeedback}
+          onSave={onSave}
+        />
       ) : null}
     </div>
   )
