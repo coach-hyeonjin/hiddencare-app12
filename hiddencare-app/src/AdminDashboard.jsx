@@ -582,6 +582,7 @@ const MANAGER_TASKS = [
     description: '7일 이상 미출석 회원이 있어요. 지금 한 마디가 돌아오게 할 수 있어요.',
     due: '오늘 18:00',
     action: '시작하기',
+    actionKey: 'go_members',
   },
   {
     category: '매출',
@@ -589,6 +590,7 @@ const MANAGER_TASKS = [
     description: '회원들이 변화는 느끼고 있어요. 타이밍을 놓치지 마세요.',
     due: '오늘 20:00',
     action: '시작하기',
+    actionKey: 'go_sales',
   },
   {
     category: '마케팅',
@@ -596,6 +598,7 @@ const MANAGER_TASKS = [
     description: '초보자를 위한 루틴, 통증관리, 저강도 운동 주제가 반응 좋을 수 있어요.',
     due: '오늘 23:59',
     action: '시작하기',
+    actionKey: 'log_blog',
   },
   {
     category: '콘텐츠',
@@ -603,6 +606,7 @@ const MANAGER_TASKS = [
     description: '회원 운동 후기나 관리 포인트 짧은 영상이 브랜드를 만듭니다.',
     due: '내일 12:00',
     action: '시작하기',
+    actionKey: 'log_reel',
   },
   {
     category: '성장',
@@ -610,6 +614,7 @@ const MANAGER_TASKS = [
     description: '고객은 특별함을 기억해요. 관계가 매출을 만듭니다.',
     due: '내일 18:00',
     action: '시작하기',
+    actionKey: 'go_member_detail',
   },
   {
     category: '루틴',
@@ -617,6 +622,7 @@ const MANAGER_TASKS = [
     description: '회원 반응을 보고 루틴을 조정해보세요. 디테일이 차이를 만듭니다.',
     due: 'D-2',
     action: '시작하기',
+    actionKey: 'go_member_detail',
   },
 ]
 
@@ -4837,6 +4843,48 @@ setEditingManagerActionId(null)
 
   window.scrollTo({ top: 0, behavior: 'smooth' })
 }
+  const handleManagerTaskAction = (task) => {
+  if (task.actionKey === 'go_members') {
+    setActiveTab('회원')
+    return
+  }
+
+  if (task.actionKey === 'go_sales') {
+    setActiveTab('매출기록')
+    return
+  }
+
+  if (task.actionKey === 'go_member_detail') {
+    setActiveTab('회원상세')
+    return
+  }
+
+  if (task.actionKey === 'log_blog') {
+    setManagerActionForm((prev) => ({
+      ...prev,
+      action_type: 'blog_post',
+    }))
+
+    const target = document.getElementById('manager-action-form')
+    if (target) {
+      target.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    }
+    return
+  }
+
+  if (task.actionKey === 'log_reel') {
+    setManagerActionForm((prev) => ({
+      ...prev,
+      action_type: 'reel_upload',
+    }))
+
+    const target = document.getElementById('manager-action-form')
+    if (target) {
+      target.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    }
+    return
+  }
+}
   if (loading) {
     return <div className="loading-card">데이터 불러오는 중...</div>
   }
@@ -5573,9 +5621,13 @@ setEditingManagerActionId(null)
                   <p>{task.description}</p>
 
                   <div className="manager-task-bottom">
-                    <button type="button" className="primary-btn">
-                      {task.action}
-                    </button>
+                    <button
+  type="button"
+  className="primary-btn"
+  onClick={() => handleManagerTaskAction(task)}
+>
+  {task.action}
+</button>
                   </div>
                 </article>
               ))}
@@ -5677,7 +5729,7 @@ setEditingManagerActionId(null)
               </div>
             </section>
           </div>
-                    <section className="manager-section">
+                   <section className="manager-section" id="manager-action-form">
             <div className="section-head">
               <div>
                 <h3>실행 로그 입력</h3>
