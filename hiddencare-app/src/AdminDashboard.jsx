@@ -8,12 +8,13 @@ const TABS = [
   '기록작성',
   '운동DB',
   '식단',
- '통계',
+  '통계',
   '활동랭킹',
   '운영대시보드',
   '코치관리',
-'리포트',
-'코치스케줄',
+  '리포트',
+  '나만의 매니저',
+  '코치스케줄',
   '매출기록',
   '세일즈일지',
   '프로그램',
@@ -550,6 +551,140 @@ function playAdminAlertSound() {
     console.error('알림음 재생 실패:', error)
   }
 }
+
+const MANAGER_THOUGHT_CARDS = [
+  {
+    title: '오늘의 한마디',
+    text: '회원 한 명의 인생을 바꿀 수 있는 강력한 하루를 만들어보세요.',
+    tag: '#작은변화가_브랜드가된다',
+  },
+  {
+    title: '기회는 준비된 사람의 것',
+    text: '지금 이 루틴이, 3개월 후 당신의 매출을 만든다.',
+    tag: '#꾸준함이_무기다',
+  },
+  {
+    title: '기록은 자산이다',
+    text: '오늘의 콘텐츠 1개가 미래의 회원 1명을 만든다.',
+    tag: '#기록이_브랜딩된다',
+  },
+  {
+    title: '성장은 선택이다',
+    text: '당신의 다음 레벨은 오늘의 선택으로 결정된다.',
+    tag: '#성장하는_트레이너',
+  },
+]
+
+const MANAGER_TASKS = [
+  {
+    category: '긴급',
+    title: '이탈 위험 회원 3명 연락하기',
+    description: '7일 이상 미출석 회원이 있어요. 지금 한 마디가 돌아오게 할 수 있어요.',
+    due: '오늘 18:00',
+    action: '시작하기',
+  },
+  {
+    category: '매출',
+    title: '재등록 제안 대상 2명에게 제안하기',
+    description: '회원들이 변화는 느끼고 있어요. 타이밍을 놓치지 마세요.',
+    due: '오늘 20:00',
+    action: '시작하기',
+  },
+  {
+    category: '마케팅',
+    title: '블로그 글 1개 발행하기',
+    description: '초보자를 위한 루틴, 통증관리, 저강도 운동 주제가 반응 좋을 수 있어요.',
+    due: '오늘 23:59',
+    action: '시작하기',
+  },
+  {
+    category: '콘텐츠',
+    title: '릴스 1개 업로드하기',
+    description: '회원 운동 후기나 관리 포인트 짧은 영상이 브랜드를 만듭니다.',
+    due: '내일 12:00',
+    action: '시작하기',
+  },
+  {
+    category: '성장',
+    title: 'VIP 회원 1:1 피드백 제공하기',
+    description: '고객은 특별함을 기억해요. 관계가 매출을 만듭니다.',
+    due: '내일 18:00',
+    action: '시작하기',
+  },
+  {
+    category: '루틴',
+    title: '이번 주 운동 프로그램 점검하기',
+    description: '회원 반응을 보고 루틴을 조정해보세요. 디테일이 차이를 만듭니다.',
+    due: 'D-2',
+    action: '시작하기',
+  },
+]
+
+const MANAGER_INSIGHTS = [
+  {
+    title: 'AI 매니저의 코멘트',
+    text: '지금은 관리보다 흐름을 만드는 시기예요. 회원들에게 메시지를 주고, 콘텐츠로 당신의 철학을 보여주세요.',
+  },
+  {
+    title: '회원 관리 인사이트',
+    text: '이탈 위험 회원이 보여요. 이 중 2명은 식단 기록도 멈췄어요. 지금 관심을 보여줄 타이밍입니다.',
+  },
+  {
+    title: '매출 인사이트',
+    text: '이번 달 목표 대비 매출 흐름이 아쉬워요. 재등록 2건만 더 성사되면 분위기를 바꿀 수 있어요.',
+  },
+  {
+    title: '마케팅 인사이트',
+    text: '블로그와 릴스는 단순 홍보가 아니라 신뢰를 쌓는 도구예요. 실력은 알려져야 자산이 됩니다.',
+  },
+  {
+    title: '오늘의 추천 행동',
+    text: '회원 후기 콘텐츠 하나를 만들어보세요. 진짜 이야기가 가장 강한 광고가 됩니다.',
+  },
+]
+
+const MANAGER_SCORE_CARDS = [
+  { label: '매출', value: '4,320,000원', sub: '목표 5,000,000원', percent: 86 },
+  { label: '재등록률', value: '46%', sub: '목표 60%', percent: 80 },
+  { label: '신규 OT', value: '12명', sub: '목표 20명', percent: 58 },
+  { label: '콘텐츠 발행', value: '6개', sub: '목표 12개', percent: 50 },
+]
+
+const MANAGER_MISSIONS = [
+  { title: '블로그 4개 발행', progress: '2 / 4', reward: '+200XP' },
+  { title: '재등록 3건 달성', progress: '1 / 3', reward: '+300XP' },
+  { title: '릴스 4개 업로드', progress: '1 / 4', reward: '+200XP' },
+  { title: '이탈률 10% 이하 유지', progress: '진행중', reward: '+500XP' },
+]
+
+const MANAGER_ROADMAP = [
+  {
+    step: '지금 (1개월)',
+    title: '관리 루틴 만들기',
+    text: '회원 이탈을 막고, 기본 운영 습관을 단단하게 만드는 시기입니다.',
+  },
+  {
+    step: '다음 (2~3개월)',
+    title: '매출 흐름 만들기',
+    text: '재등록과 신규 흐름을 함께 잡아 안정적인 매출 구조를 만듭니다.',
+  },
+  {
+    step: '그다음 (3~6개월)',
+    title: '브랜드 만들기',
+    text: '콘텐츠와 스토리로 당신을 알리고, 기억에 남는 코치가 되어야 합니다.',
+  },
+  {
+    step: '미래 (6개월+)',
+    title: '시스템 만들기',
+    text: '당신만의 방식으로 자동화와 확장 가능성을 만들어야 합니다.',
+  },
+  {
+    step: '최종 목표',
+    title: '자유로운 트레이너',
+    text: '지속 성장하는 브랜드를 갖고, 시간과 수익의 여유를 함께 만듭니다.',
+  },
+]
+
 export default function AdminDashboard({ profile, currentAdminId, currentGymId, onLogout }) {
   const [activeTab, setActiveTab] = useState('회원')
   const [loading, setLoading] = useState(true)
@@ -5075,7 +5210,171 @@ const getSalesAutoFeedback = () => {
     </div>
   </div>
 )}
+      {activeTab === '나만의 매니저' && (
+        <div className="manager-page">
+          <section className="manager-hero">
+            <div className="manager-hero-left">
+              <div className="manager-badge">MY MANAGER</div>
+              <h2>나만의 매니저</h2>
+              <p className="manager-hero-text">
+                회원관리, 매출, 콘텐츠, 브랜딩, 방향성까지
+                지금의 나를 움직이게 만드는 운영 코치 탭입니다.
+              </p>
+            </div>
 
+            <div className="manager-hero-right">
+              <div className="manager-level-card">
+                <span>현재 포지션</span>
+                <strong>성장 중인 트레이너</strong>
+                <p>
+                  지금은 단순히 수업을 많이 하는 단계가 아니라,
+                  운영 흐름을 만들고 브랜드를 쌓아가는 단계입니다.
+                </p>
+              </div>
+            </div>
+          </section>
+
+          <section className="manager-thought-grid">
+            {MANAGER_THOUGHT_CARDS.map((card) => (
+              <article key={card.title} className="manager-thought-card">
+                <div className="manager-card-label">{card.title}</div>
+                <p>{card.text}</p>
+                <span>{card.tag}</span>
+              </article>
+            ))}
+          </section>
+
+          <section className="manager-section">
+            <div className="section-head">
+              <div>
+                <h3>오늘의 우선 과제</h3>
+                <p className="sub-text">
+                  지금 해야 할 일을 먼저 정리하고, 실행 중심으로 움직여보세요.
+                </p>
+              </div>
+            </div>
+
+            <div className="manager-task-grid">
+              {MANAGER_TASKS.map((task, index) => (
+                <article key={`${task.title}-${index}`} className="manager-task-card">
+                  <div className="manager-task-top">
+                    <span className={`manager-task-badge category-${task.category}`}>
+                      {task.category}
+                    </span>
+                    <span className="manager-task-due">{task.due}</span>
+                  </div>
+
+                  <h4>{task.title}</h4>
+                  <p>{task.description}</p>
+
+                  <div className="manager-task-bottom">
+                    <button type="button" className="primary-btn">
+                      {task.action}
+                    </button>
+                  </div>
+                </article>
+              ))}
+            </div>
+          </section>
+
+          <section className="manager-section">
+            <div className="section-head">
+              <div>
+                <h3>매니저 코멘트</h3>
+                <p className="sub-text">
+                  식상한 응원이 아니라, 지금 필요한 방향을 생각하게 만드는 코멘트입니다.
+                </p>
+              </div>
+            </div>
+
+            <div className="manager-insight-grid">
+              {MANAGER_INSIGHTS.map((item, index) => (
+                <article key={`${item.title}-${index}`} className="manager-insight-card">
+                  <div className="manager-card-label">{item.title}</div>
+                  <p>{item.text}</p>
+                </article>
+              ))}
+            </div>
+          </section>
+
+          <section className="manager-section">
+            <div className="section-head">
+              <div>
+                <h3>이번 흐름 요약</h3>
+                <p className="sub-text">
+                  숫자는 완벽한 정답이 아니라, 지금 어디에 힘을 써야 하는지 보여주는 힌트입니다.
+                </p>
+              </div>
+            </div>
+
+            <div className="manager-score-grid">
+              {MANAGER_SCORE_CARDS.map((card) => (
+                <article key={card.label} className="manager-score-card">
+                  <span>{card.label}</span>
+                  <strong>{card.value}</strong>
+                  <div className="manager-score-sub">{card.sub}</div>
+
+                  <div className="manager-progress">
+                    <div
+                      className="manager-progress-fill"
+                      style={{ width: `${card.percent}%` }}
+                    />
+                  </div>
+
+                  <div className="manager-progress-text">{card.percent}%</div>
+                </article>
+              ))}
+            </div>
+          </section>
+
+          <div className="manager-bottom-grid">
+            <section className="manager-section">
+              <div className="section-head">
+                <div>
+                  <h3>레벨업 미션</h3>
+                  <p className="sub-text">
+                    단기 실행이 쌓여서 장기 성장 구조가 만들어집니다.
+                  </p>
+                </div>
+              </div>
+
+              <div className="manager-mission-list">
+                {MANAGER_MISSIONS.map((mission, index) => (
+                  <article key={`${mission.title}-${index}`} className="manager-mission-card">
+                    <div>
+                      <strong>{mission.title}</strong>
+                      <p>{mission.progress}</p>
+                    </div>
+                    <span className="manager-reward">{mission.reward}</span>
+                  </article>
+                ))}
+              </div>
+            </section>
+
+            <section className="manager-section">
+              <div className="section-head">
+                <div>
+                  <h3>앞으로의 방향</h3>
+                  <p className="sub-text">
+                    지금 해야 할 것과 앞으로 만들어야 할 구조를 같이 봅니다.
+                  </p>
+                </div>
+              </div>
+
+              <div className="manager-roadmap-list">
+                {MANAGER_ROADMAP.map((item, index) => (
+                  <article key={`${item.step}-${index}`} className="manager-roadmap-card">
+                    <div className="manager-roadmap-step">{item.step}</div>
+                    <h4>{item.title}</h4>
+                    <p>{item.text}</p>
+                  </article>
+                ))}
+              </div>
+            </section>
+          </div>
+        </div>
+      )}
+      
       {activeTab === '기록작성' && (
         <div className="two-col">
           <section className="card">
