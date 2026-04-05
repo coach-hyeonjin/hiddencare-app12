@@ -870,6 +870,20 @@ const [inquiryStatusFilter, setInquiryStatusFilter] = useState('all')
 const [adminAlerts, setAdminAlerts] = useState([])
 const [unreadInquiryCount, setUnreadInquiryCount] = useState(0)
 const [unreadNoticeCount, setUnreadNoticeCount] = useState(0)
+  const [managerActionLogs, setManagerActionLogs] = useState([])
+  const [managerTaskChecks, setManagerTaskChecks] = useState([])
+  const [managerGoalSettings, setManagerGoalSettings] = useState(null)
+
+  const [managerActionForm, setManagerActionForm] = useState({
+    action_date: new Date().toISOString().slice(0, 10),
+    action_type: 'blog_post',
+    channel: '',
+    title: '',
+    description: '',
+    link: '',
+    status: 'done',
+  })
+  
   const selectedMember = useMemo(
     () => members.find((member) => member.id === selectedMemberId) || null,
     [members, selectedMemberId],
@@ -1984,6 +1998,9 @@ useEffect(() => {
       ['loadSalesSummary', () => loadSalesSummary(saleMonth)],
       ['loadNotices', () => loadNotices()],
       ['loadInquiries', () => loadInquiries()],
+            ['loadManagerActionLogs', () => loadManagerActionLogs()],
+      ['loadManagerTaskChecks', () => loadManagerTaskChecks()],
+      ['loadManagerGoalSettings', () => loadManagerGoalSettings()],
     ]
 
     const results = await Promise.allSettled(
@@ -4532,6 +4549,103 @@ const getSalesAutoFeedback = () => {
     setMessage('공지사항이 삭제되었습니다.')
   }
 
+    const loadManagerActionLogs = async () => {
+    if (!currentGymId) {
+      setManagerActionLogs([])
+      return
+    }
+
+    const { data, error } = await supabase
+      .from('manager_action_logs')
+      .select('*')
+      .eq('gym_id', currentGymId)
+      .order('action_date', { ascending: false })
+
+    if (error) {
+      console.error('manager_action_logs 불러오기 실패:', error)
+      return
+    }
+
+    setManagerActionLogs(data || [])
+  }
+
+  const loadManagerTaskChecks = async () => {
+    if (!currentGymId) {
+      setManagerTaskChecks([])
+      return
+    }
+
+    const { data, error } = await supabase
+      .from('manager_task_checks')
+      .select('*')
+      .eq('gym_id', currentGymId)
+
+    if (error) {
+      console.error('manager_task_checks 불러오기 실패:', error)
+      return
+    }
+
+    setManagerTaskChecks(data || [])
+  }
+
+  const loadManagerGoalSettings = async () => {
+    if (!currentGymId) {
+      setManagerGoalSettings(null)
+      return
+    }
+
+    const monthKey = new Date().toISOString().slice(0, 7)
+
+    const { data, error } = await supabase
+      .from('manager_goal_settings')
+      .select('*')
+      .eq('gym_id', currentGymId)
+      .eq('target_month', monthKey)
+      .maybeSingle()
+
+    if (error) {
+      console.error('manager_goal_settings 불러오기 실패:', error)
+      return
+    }
+
+    setManagerGoalSettings(data || null)
+  }
+
+  const handleManagerActionSave = async () => {
+    const payload = {
+      gym_id: currentGymId,
+      admin_id: currentAdminId,
+      action_date: managerActionForm.action_date,
+      action_type: managerActionForm.action_type,
+      channel: managerActionForm.channel,
+      title: managerActionForm.title,
+      description: managerActionForm.description,
+      link: managerActionForm.link,
+      status: managerActionForm.status,
+    }
+
+    const { error } = await supabase.from('manager_action_logs').insert(payload)
+
+    if (error) {
+      console.error('manager_action_logs 저장 실패:', error)
+      setMessage('매니저 실행 로그 저장 실패')
+      return
+    }
+
+    setMessage('매니저 실행 로그가 저장되었습니다.')
+    setManagerActionForm({
+      action_date: new Date().toISOString().slice(0, 10),
+      action_type: 'blog_post',
+      channel: '',
+      title: '',
+      description: '',
+      link: '',
+      status: 'done',
+    })
+
+    await loadManagerActionLogs()
+  }
+  
   if (loading) {
     return <div className="loading-card">데이터 불러오는 중...</div>
   }
