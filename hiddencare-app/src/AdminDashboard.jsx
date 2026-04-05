@@ -1373,6 +1373,64 @@ const completedTaskKeysToday = useMemo(() => {
     xpToNextLevel,
   }
 }, [careerProfileForm, managerActionLogs, managerTaskChecks])
+  const startupReadiness = useMemo(() => {
+  const careerYears = Number(careerProfileForm.career_years || 0)
+  const blog = Number(careerProfileForm.total_blog_posts || 0)
+  const insta = Number(careerProfileForm.total_instagram_posts || 0)
+  const classes = Number(careerProfileForm.total_classes || 0)
+  const consult = Number(careerProfileForm.total_consultations || 0)
+  const cert = Number(careerProfileForm.total_certifications || 0)
+  const collab = Number(careerProfileForm.total_collaborations || 0)
+  const actions = managerActionLogs.length
+  const tasks = managerTaskChecks.filter(t => t.is_completed).length
+
+  const score =
+    careerYears * 5 +
+    blog * 0.2 +
+    insta * 0.1 +
+    classes * 0.01 +
+    consult * 0.02 +
+    cert * 3 +
+    collab * 2 +
+    actions * 1 +
+    tasks * 1
+
+  const percent = Math.min(100, Math.round(score))
+
+  const strengths = []
+  const 부족 = []
+
+  if (classes >= 3000) strengths.push('수업 경험')
+  else 부족.push('수업 경험')
+
+  if (blog >= 30) strengths.push('블로그')
+  else 부족.push('블로그')
+
+  if (insta >= 100) strengths.push('인스타')
+  else 부족.push('인스타')
+
+  if (consult >= 200) strengths.push('상담 경험')
+  else 부족.push('상담 경험')
+
+  if (cert >= 3) strengths.push('전문성')
+  else 부족.push('자격증')
+
+  let message = ''
+  if (percent >= 80) {
+    message = '창업을 시도해도 좋은 단계입니다.'
+  } else if (percent >= 60) {
+    message = '운영 구조를 조금 더 다듬으면 창업 가능합니다.'
+  } else {
+    message = '아직은 경험을 더 쌓는 것이 중요합니다.'
+  }
+
+  return {
+    percent,
+    strengths,
+    부족,
+    message,
+  }
+}, [careerProfileForm, managerActionLogs, managerTaskChecks])
   const trainerLevelRoadmap = useMemo(() => {
   return TRAINER_LEVELS.map((level, index) => {
     const nextLevel = TRAINER_LEVELS[index + 1] || null
@@ -6400,6 +6458,41 @@ setEditingManagerActionId(null)
       <p>현재 단계에서는 창업 또는 브랜드 운영 확장을 준비해볼 수 있습니다.</p>
     </div>
   )}
+</section>
+          <section className="manager-section">
+  <div className="section-head">
+    <div>
+      <h3>창업 준비도</h3>
+      <p className="sub-text">
+        현재 데이터를 기반으로 창업 가능 수준을 분석합니다.
+      </p>
+    </div>
+  </div>
+
+  <div className="detail-box">
+    <p>
+      준비도: <strong>{startupReadiness.percent}%</strong>
+    </p>
+
+    <div className="manager-progress" style={{ marginTop: '10px' }}>
+      <div
+        className="manager-progress-fill"
+        style={{ width: `${startupReadiness.percent}%` }}
+      />
+    </div>
+
+    <div className="compact-text" style={{ marginTop: '10px' }}>
+      강점: {startupReadiness.strengths.join(', ') || '없음'}
+    </div>
+
+    <div className="compact-text">
+      보완 필요: {startupReadiness.부족.join(', ') || '없음'}
+    </div>
+
+    <div style={{ marginTop: '12px', fontWeight: '600' }}>
+      {startupReadiness.message}
+    </div>
+  </div>
 </section>
           <section className="manager-section">
   <div className="section-head">
