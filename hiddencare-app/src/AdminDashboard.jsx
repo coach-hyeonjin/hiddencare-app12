@@ -1117,6 +1117,118 @@ const [editingManagerActionId, setEditingManagerActionId] = useState(null)
     },
   ]
 }, [members, workouts, dietLogs, inquiries])
+  const managerInsights = useMemo(() => {
+  const currentMonth = new Date().toISOString().slice(0, 7)
+
+  const monthlySales = salesRecords.filter(
+    (item) => (item.sale_date || '').slice(0, 7) === currentMonth
+  )
+
+  const totalSales = monthlySales.reduce(
+    (sum, item) => sum + Number(item.amount || 0),
+    0
+  )
+
+  const salesGoal = Number(managerGoalSettings?.sales_goal || 5000000)
+
+  const riskMembers = members.filter((member) => {
+    const memberWorkouts = workouts.filter((workout) => workout.member_id === member.id)
+
+    if (memberWorkouts.length === 0) return true
+
+    const latestWorkoutDate = memberWorkouts
+      .map((workout) => workout.workout_date)
+      .filter(Boolean)
+      .sort()
+      .reverse()[0]
+
+    if (!latestWorkoutDate) return true
+
+    const diffDays = Math.floor(
+      (new Date() - new Date(latestWorkoutDate)) / (1000 * 60 * 60 * 24)
+    )
+
+    return diffDays >= 7
+  })
+
+  const dietRiskMembers = members.filter((member) => {
+    const memberDietLogs = dietLogs.filter((diet) => diet.member_id === member.id)
+
+    if (memberDietLogs.length === 0) return true
+
+    const latestDietDate = memberDietLogs
+      .map((diet) => diet.log_date)
+      .filter(Boolean)
+      .sort()
+      .reverse()[0]
+
+    if (!latestDietDate) return true
+
+    const diffDays = Math.floor(
+      (new Date() - new Date(latestDietDate)) / (1000 * 60 * 60 * 24)
+    )
+
+    return diffDays >= 5
+  })
+
+  const monthlyContentCount = managerActionLogs.filter(
+    (item) =>
+      (item.action_date || '').slice(0, 7) === currentMonth &&
+      ['blog_post', 'reel_upload', 'marketing_post', 'webapp_promo'].includes(item.action_type)
+  ).length
+
+  const reofferMembers = members.filter((member) => {
+    const remaining =
+      Number(member.total_sessions || 0) - Number(member.used_sessions || 0)
+
+    return remaining > 0 && remaining <= 5
+  })
+
+  const pendingInquiries = inquiries.filter((item) => {
+    const status = item.status || ''
+    return status !== 'answered' && status !== 'done'
+  })
+
+  return [
+    {
+      title: 'AI 매니저 코멘트',
+      text:
+        riskMembers.length >= 3
+          ? `지금은 신규보다 기존 회원 관리가 먼저입니다. 이탈 위험 회원이 ${riskMembers.length}명 보여요.`
+          : '지금은 관리보다 흐름을 만드는 시기예요. 회원에게 메시지를 주고 콘텐츠로 당신의 철학을 보여주세요.',
+    },
+    {
+      title: '회원 관리 인사이트',
+      text:
+        dietRiskMembers.length >= 3
+          ? `식단 기록이 끊긴 회원이 ${dietRiskMembers.length}명 있습니다. 운동보다 생활관리 연결부터 다시 잡아야 합니다.`
+          : `이탈 위험 회원이 ${riskMembers.length}명 보여요. 지금 관심을 보여줄 타이밍입니다.`,
+    },
+    {
+      title: '매출 인사이트',
+      text:
+        totalSales < salesGoal * 0.5
+          ? `이번 달 매출은 목표 대비 아직 약합니다. 재등록 후보 ${reofferMembers.length}명부터 우선 접촉하세요.`
+          : `이번 달 매출 흐름은 나쁘지 않습니다. 재등록 후보 ${reofferMembers.length}명만 잘 연결해도 분위기를 더 끌어올릴 수 있어요.`,
+    },
+    {
+      title: '마케팅 인사이트',
+      text:
+        monthlyContentCount === 0
+          ? '이번 달 콘텐츠 실행 로그가 아직 없습니다. 실력이 있어도 노출이 멈추면 기회가 줄어듭니다.'
+          : `이번 달 콘텐츠 실행 로그가 ${monthlyContentCount}개 있습니다. 이제는 양보다 반응 좋은 주제를 반복하는 게 중요합니다.`,
+    },
+    {
+      title: '오늘의 추천 행동',
+      text:
+        pendingInquiries.length > 0
+          ? `미답변 문의 ${pendingInquiries.length}건부터 먼저 확인하세요. 응답 속도가 전환률에 직접 영향을 줍니다.`
+          : monthlyContentCount === 0
+          ? '오늘은 블로그나 릴스 중 하나를 꼭 올려보세요. 실행 로그 1개가 흐름을 바꾸기 시작합니다.'
+          : '오늘은 회원 후기나 피드백 콘텐츠 하나를 정리해보세요. 진짜 사례가 가장 강한 광고입니다.',
+    },
+  ]
+}, [members, workouts, dietLogs, inquiries, salesRecords, managerGoalSettings, managerActionLogs])
   const selectedMember = useMemo(
     () => members.find((member) => member.id === selectedMemberId) || null,
     [members, selectedMemberId],
@@ -5759,7 +5871,7 @@ setEditingManagerActionId(null)
             </div>
 
             <div className="manager-insight-grid">
-              {MANAGER_INSIGHTS.map((item, index) => (
+              {managerInsights.map((item, index) => (
                 <article key={`${item.title}-${index}`} className="manager-insight-card">
                   <div className="manager-card-label">{item.title}</div>
                   <p>{item.text}</p>
