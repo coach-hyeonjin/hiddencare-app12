@@ -690,7 +690,25 @@ const MANAGER_ROADMAP = [
     text: '지속 성장하는 브랜드를 갖고, 시간과 수익의 여유를 함께 만듭니다.',
   },
 ]
+const TRAINER_LEVELS = [
+  { key: 'beginner_3', name: '초보 트레이너 3급', minXp: 0, description: '기록 습관과 기본 운영 감각을 만드는 단계입니다.' },
+  { key: 'beginner_2', name: '초보 트레이너 2급', minXp: 80, description: '기본 회원 관리와 실행 습관이 자리를 잡기 시작한 단계입니다.' },
+  { key: 'beginner_1', name: '초보 트레이너 1급', minXp: 160, description: '수업 외에도 콘텐츠와 운영 흐름을 보기 시작한 단계입니다.' },
 
+  { key: 'intermediate_3', name: '중급 트레이너 3급', minXp: 260, description: '회원 유지와 재등록 흐름을 함께 관리하기 시작한 단계입니다.' },
+  { key: 'intermediate_2', name: '중급 트레이너 2급', minXp: 380, description: '매출과 실행 로그가 함께 쌓이며 운영 감각이 커지는 단계입니다.' },
+  { key: 'intermediate_1', name: '중급 트레이너 1급', minXp: 520, description: '회원관리, 콘텐츠, 운영 흐름을 연결해서 보는 단계입니다.' },
+
+  { key: 'advanced_3', name: '상급 트레이너 3급', minXp: 700, description: '브랜딩과 운영 성과가 눈에 띄게 쌓이기 시작한 단계입니다.' },
+  { key: 'advanced_2', name: '상급 트레이너 2급', minXp: 900, description: '반복 가능한 운영 패턴과 콘텐츠 자산이 생기는 단계입니다.' },
+  { key: 'advanced_1', name: '상급 트레이너 1급', minXp: 1150, description: '회원관리, 매출, 브랜드가 안정적으로 연결되는 단계입니다.' },
+
+  { key: 'master_3', name: '마스터 트레이너 3급', minXp: 1450, description: '시스템과 방향을 스스로 설계할 수 있는 단계입니다.' },
+  { key: 'master_2', name: '마스터 트레이너 2급', minXp: 1800, description: '운영, 콘텐츠, 회원관리의 밸런스가 높은 수준으로 올라온 단계입니다.' },
+  { key: 'master_1', name: '마스터 트레이너 1급', minXp: 2200, description: '창업 또는 독립 운영을 준비해볼 수 있는 수준입니다.' },
+
+  { key: 'director', name: '대표 트레이너', minXp: 2700, description: '창업을 시도하거나 팀/브랜드를 이끌 준비가 된 단계입니다.' },
+]
 export default function AdminDashboard({ profile, currentAdminId, currentGymId, onLogout }) {
   const [activeTab, setActiveTab] = useState('회원')
   const [loading, setLoading] = useState(true)
@@ -1255,6 +1273,88 @@ const completedTaskKeysToday = useMemo(() => {
     )
     .map((item) => item.task_key)
 }, [managerTaskChecks, todayTaskDate])
+  const trainerLevelSummary = useMemo(() => {
+  const currentMonth = new Date().toISOString().slice(0, 7)
+
+  const careerXp =
+    Number(careerProfileForm.career_years || 0) * 120 +
+    Number(careerProfileForm.total_blog_posts || 0) * 2 +
+    Number(careerProfileForm.total_instagram_posts || 0) * 1 +
+    Number(careerProfileForm.total_blog_reviewnote_campaigns || 0) * 15 +
+    Number(careerProfileForm.total_instagram_campaigns || 0) * 15 +
+    Math.floor(Number(careerProfileForm.total_classes || 0) / 100) * 30 +
+    Math.floor(Number(careerProfileForm.total_consultations || 0) / 50) * 20 +
+    Number(careerProfileForm.total_certifications || 0) * 25 +
+    Number(careerProfileForm.total_collaborations || 0) * 20
+
+  const actionXp = managerActionLogs.reduce((sum, log) => {
+    const actionMap = {
+      blog_post: 20,
+      reel_upload: 20,
+      webapp_promo: 25,
+      review_uploaded: 30,
+      marketing_post: 15,
+    }
+
+    return sum + Number(actionMap[log.action_type] || 0)
+  }, 0)
+
+  const taskXp = managerTaskChecks
+    .filter((item) => item.is_completed === true)
+    .length * 10
+
+  const currentMonthActionXp = managerActionLogs
+    .filter((log) => (log.action_date || '').slice(0, 7) === currentMonth)
+    .reduce((sum, log) => {
+      const actionMap = {
+        blog_post: 20,
+        reel_upload: 20,
+        webapp_promo: 25,
+        review_uploaded: 30,
+        marketing_post: 15,
+      }
+
+      return sum + Number(actionMap[log.action_type] || 0)
+    }, 0)
+
+  const totalXp = careerXp + actionXp + taskXp
+
+  let currentLevel = TRAINER_LEVELS[0]
+  let nextLevel = null
+
+  for (let i = 0; i < TRAINER_LEVELS.length; i += 1) {
+    const level = TRAINER_LEVELS[i]
+    const next = TRAINER_LEVELS[i + 1] || null
+
+    if (totalXp >= level.minXp) {
+      currentLevel = level
+      nextLevel = next
+    }
+  }
+
+  const currentLevelBaseXp = currentLevel.minXp
+  const nextLevelXp = nextLevel ? nextLevel.minXp : currentLevel.minXp
+  const progressRange = Math.max(1, nextLevelXp - currentLevelBaseXp)
+  const progressValue = nextLevel
+    ? totalXp - currentLevelBaseXp
+    : progressRange
+
+  const progressPercent = nextLevel
+    ? Math.min(100, Math.round((progressValue / progressRange) * 100))
+    : 100
+
+  return {
+    totalXp,
+    careerXp,
+    actionXp,
+    taskXp,
+    currentMonthActionXp,
+    currentLevel,
+    nextLevel,
+    progressPercent,
+    xpToNextLevel: nextLevel ? Math.max(0, nextLevel.minXp - totalXp) : 0,
+  }
+}, [careerProfileForm, managerActionLogs, managerTaskChecks])
   const selectedMember = useMemo(
     () => members.find((member) => member.id === selectedMemberId) || null,
     [members, selectedMemberId],
@@ -5994,16 +6094,43 @@ setEditingManagerActionId(null)
               </p>
             </div>
 
-            <div className="manager-hero-right">
-              <div className="manager-level-card">
-                <span>현재 포지션</span>
-                <strong>성장 중인 트레이너</strong>
-                <p>
-                  지금은 단순히 수업을 많이 하는 단계가 아니라,
-                  운영 흐름을 만들고 브랜드를 쌓아가는 단계입니다.
-                </p>
-              </div>
-            </div>
+           <div className="manager-hero-right">
+  <div className="manager-level-card">
+    <span>현재 포지션</span>
+    <strong>{trainerLevelSummary.currentLevel.name}</strong>
+
+    <p style={{ marginBottom: '10px' }}>
+      {trainerLevelSummary.currentLevel.description}
+    </p>
+
+    <div className="compact-text" style={{ marginBottom: '6px' }}>
+      총 XP: {trainerLevelSummary.totalXp.toLocaleString()}
+    </div>
+
+    <div className="compact-text" style={{ marginBottom: '6px' }}>
+      누적 커리어 XP: {trainerLevelSummary.careerXp.toLocaleString()} /
+      실행 XP: {trainerLevelSummary.actionXp.toLocaleString()} /
+      과제 XP: {trainerLevelSummary.taskXp.toLocaleString()}
+    </div>
+
+    <div className="compact-text" style={{ marginBottom: '12px' }}>
+      이번 달 실행 XP: {trainerLevelSummary.currentMonthActionXp.toLocaleString()}
+    </div>
+
+    <div className="manager-progress">
+      <div
+        className="manager-progress-fill"
+        style={{ width: `${trainerLevelSummary.progressPercent}%` }}
+      />
+    </div>
+
+    <div className="manager-progress-text" style={{ marginTop: '8px' }}>
+      {trainerLevelSummary.nextLevel
+        ? `다음 레벨 ${trainerLevelSummary.nextLevel.name}까지 ${trainerLevelSummary.xpToNextLevel}XP 남음`
+        : '최고 레벨입니다.'}
+    </div>
+  </div>
+</div>
           </section>
 <section className="manager-section">
   <div className="section-head">
