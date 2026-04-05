@@ -912,7 +912,7 @@ const [unreadNoticeCount, setUnreadNoticeCount] = useState(0)
 
 const [careerProfileForm, setCareerProfileForm] = useState(emptyCareerProfileForm)
 const [careerProfileId, setCareerProfileId] = useState(null)
-
+const [trainerLevelSettings, setTrainerLevelSettings] = useState([])
   const [managerActionForm, setManagerActionForm] = useState({
     action_date: new Date().toISOString().slice(0, 10),
     action_type: 'blog_post',
@@ -1273,7 +1273,27 @@ const completedTaskKeysToday = useMemo(() => {
     )
     .map((item) => item.task_key)
 }, [managerTaskChecks, todayTaskDate])
-  const TRAINER_LEVELS = [
+  const trainerLevels = useMemo(() => {
+  if (!trainerLevelSettings.length) {
+    return DEFAULT_TRAINER_LEVELS
+  }
+
+  return DEFAULT_TRAINER_LEVELS.map((defaultLevel) => {
+    const matched = trainerLevelSettings.find(
+      (item) => item.level_key === defaultLevel.key
+    )
+
+    if (!matched) return defaultLevel
+
+    return {
+      ...defaultLevel,
+      name: matched.level_name || defaultLevel.name,
+      minXp: Number(matched.min_xp ?? defaultLevel.minXp),
+      description: matched.description || defaultLevel.description,
+    }
+  }).sort((a, b) => a.minXp - b.minXp)
+}, [trainerLevelSettings])
+ const DEFAULT_TRAINER_LEVELS = [
   { key: 'beginner_3', name: '초보 트레이너 3급', minXp: 0, description: '기록 습관과 기본 운영 감각을 만드는 단계입니다.' },
   { key: 'beginner_2', name: '초보 트레이너 2급', minXp: 500, description: '기본 회원 관리와 실행 습관이 자리를 잡기 시작한 단계입니다.' },
   { key: 'beginner_1', name: '초보 트레이너 1급', minXp: 1000, description: '수업 외에도 콘텐츠와 운영 흐름을 보기 시작한 단계입니다.' },
@@ -1333,12 +1353,12 @@ const completedTaskKeysToday = useMemo(() => {
 
   const totalXp = careerXp + actionXp + taskXp
 
-  let currentLevel = TRAINER_LEVELS[0]
+  let currentLevel = trainerLevels[0]
   let nextLevel = null
 
-  for (let i = 0; i < TRAINER_LEVELS.length; i += 1) {
-    const level = TRAINER_LEVELS[i]
-    const next = TRAINER_LEVELS[i + 1] || null
+  for (let i = 0; i < trainerLevels.length; i += 1) {
+  const level = trainerLevels[i]
+  const next = trainerLevels[i + 1] || null
 
     if (totalXp >= level.minXp) {
       currentLevel = level
@@ -1372,7 +1392,7 @@ const completedTaskKeysToday = useMemo(() => {
     progressPercent,
     xpToNextLevel,
   }
-}, [careerProfileForm, managerActionLogs, managerTaskChecks])
+}, [careerProfileForm, managerActionLogs, managerTaskChecks, trainerLevels])
   const startupReadiness = useMemo(() => {
   const careerYears = Number(careerProfileForm.career_years || 0)
   const blog = Number(careerProfileForm.total_blog_posts || 0)
@@ -1473,8 +1493,8 @@ const completedTaskKeysToday = useMemo(() => {
     .slice(0, 10)
 }, [managerActionLogs, managerTaskChecks])
   const trainerLevelRoadmap = useMemo(() => {
-  return TRAINER_LEVELS.map((level, index) => {
-    const nextLevel = TRAINER_LEVELS[index + 1] || null
+  return trainerLevels.map((level, index) => {
+  const nextLevel = trainerLevels[index + 1] || null
     const isCurrent = level.key === trainerLevelSummary.currentLevel.key
     const isPassed = trainerLevelSummary.totalXp >= level.minXp
     const xpNeeded = Math.max(0, level.minXp - trainerLevelSummary.totalXp)
@@ -1487,7 +1507,7 @@ const completedTaskKeysToday = useMemo(() => {
       xpNeeded,
     }
   })
-}, [trainerLevelSummary])
+}, [trainerLevelSummary, trainerLevels])
   const selectedMember = useMemo(
     () => members.find((member) => member.id === selectedMemberId) || null,
     [members, selectedMemberId],
@@ -2602,6 +2622,7 @@ useEffect(() => {
       ['loadSalesSummary', () => loadSalesSummary(saleMonth)],
       ['loadNotices', () => loadNotices()],
       ['loadCareerProfile', () => loadCareerProfile()],
+      ['loadTrainerLevelSettings', () => loadTrainerLevelSettings()],
       ['loadInquiries', () => loadInquiries()],
             ['loadManagerActionLogs', () => loadManagerActionLogs()],
       ['loadManagerTaskChecks', () => loadManagerTaskChecks()],
@@ -5239,6 +5260,25 @@ const loadCareerProfile = async () => {
     memo: data.memo || '',
   })
 }
+  const loadTrainerLevelSettings = async () => {
+  if (!currentAdminId) {
+    setTrainerLevelSettings([])
+    return
+  }
+
+  const { data, error } = await supabase
+    .from('trainer_level_settings')
+    .select('*')
+    .eq('admin_id', currentAdminId)
+    .order('min_xp', { ascending: true })
+
+  if (error) {
+    console.error('trainer_level_settings 불러오기 실패:', error)
+    return
+  }
+
+  setTrainerLevelSettings(data || [])
+}
   const loadManagerGoalSettings = async () => {
     if (!currentGymId) {
       setManagerGoalSettings(null)
@@ -5365,6 +5405,34 @@ setEditingManagerActionId(null)
   setCareerProfileId(data.id)
   setMessage('트레이너 경력 프로필이 저장되었습니다.')
   await loadCareerProfile()
+}
+  const handleTrainerLevelSettingSave = async (level) => {
+  if (!currentAdminId) {
+    setMessage('관리자 정보를 찾을 수 없습니다.')
+    return
+  }
+
+  const payload = {
+    admin_id: currentAdminId,
+    level_key: level.key,
+    level_name: level.name,
+    min_xp: Number(level.minXp || 0),
+    description: level.description || '',
+    updated_at: new Date().toISOString(),
+  }
+
+  const { error } = await supabase
+    .from('trainer_level_settings')
+    .upsert(payload, { onConflict: 'admin_id,level_key' })
+
+  if (error) {
+    console.error('trainer_level_settings 저장 실패:', error)
+    setMessage(`레벨 기준 저장 실패: ${error.message}`)
+    return
+  }
+
+  setMessage(`${level.name} 기준이 저장되었습니다.`)
+  await loadTrainerLevelSettings()
 }
   const handleManagerActionDelete = async (id) => {
   const confirmDelete = window.confirm('이 로그를 삭제하시겠습니까?')
@@ -6628,6 +6696,135 @@ setEditingManagerActionId(null)
             ))}
           </section>
 
+          <section className="manager-section">
+  <div className="section-head">
+    <div>
+      <h3>레벨 기준 설정</h3>
+      <p className="sub-text">
+        각 단계의 이름, 최소 XP, 설명을 직접 수정하고 저장할 수 있습니다.
+      </p>
+    </div>
+  </div>
+
+  <div className="list-stack">
+    {trainerLevels.map((level) => (
+      <div key={level.key} className="list-card">
+        <div className="grid-2">
+          <label className="field">
+            <span>레벨 이름</span>
+            <input
+              value={level.name}
+              onChange={(e) =>
+                setTrainerLevelSettings((prev) => {
+                  const hasCustom = prev.some((item) => item.level_key === level.key)
+                  if (!hasCustom) {
+                    return [
+                      ...prev,
+                      {
+                        level_key: level.key,
+                        level_name: e.target.value,
+                        min_xp: level.minXp,
+                        description: level.description,
+                        admin_id: currentAdminId,
+                      },
+                    ]
+                  }
+
+                  return prev.map((item) =>
+                    item.level_key === level.key
+                      ? { ...item, level_name: e.target.value }
+                      : item
+                  )
+                })
+              }
+            />
+          </label>
+
+          <label className="field">
+            <span>최소 XP</span>
+            <input
+              type="number"
+              min="0"
+              value={level.minXp}
+              onChange={(e) =>
+                setTrainerLevelSettings((prev) => {
+                  const hasCustom = prev.some((item) => item.level_key === level.key)
+                  if (!hasCustom) {
+                    return [
+                      ...prev,
+                      {
+                        level_key: level.key,
+                        level_name: level.name,
+                        min_xp: e.target.value,
+                        description: level.description,
+                        admin_id: currentAdminId,
+                      },
+                    ]
+                  }
+
+                  return prev.map((item) =>
+                    item.level_key === level.key
+                      ? { ...item, min_xp: e.target.value }
+                      : item
+                  )
+                })
+              }
+            />
+          </label>
+        </div>
+
+        <label className="field">
+          <span>설명</span>
+          <textarea
+            rows="3"
+            value={level.description}
+            onChange={(e) =>
+              setTrainerLevelSettings((prev) => {
+                const hasCustom = prev.some((item) => item.level_key === level.key)
+                if (!hasCustom) {
+                  return [
+                    ...prev,
+                    {
+                      level_key: level.key,
+                      level_name: level.name,
+                      min_xp: level.minXp,
+                      description: e.target.value,
+                      admin_id: currentAdminId,
+                    },
+                  ]
+                }
+
+                return prev.map((item) =>
+                  item.level_key === level.key
+                    ? { ...item, description: e.target.value }
+                    : item
+                )
+              })
+            }
+          />
+        </label>
+
+        <div className="inline-actions wrap">
+          <button
+            type="button"
+            className="primary-btn"
+            onClick={() =>
+              handleTrainerLevelSettingSave({
+                key: level.key,
+                name: level.name,
+                minXp: level.minXp,
+                description: level.description,
+              })
+            }
+          >
+            이 레벨 기준 저장
+          </button>
+        </div>
+      </div>
+    ))}
+  </div>
+</section>
+          
           <section className="manager-section">
             <div className="section-head">
               <div>
