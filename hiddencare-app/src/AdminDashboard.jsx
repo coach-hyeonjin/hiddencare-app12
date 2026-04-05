@@ -1288,7 +1288,7 @@ const completedTaskKeysToday = useMemo(() => {
   { key: 'master_1', name: '마스터 트레이너 1급', minXp: 30000, description: '창업 또는 독립 운영을 준비해볼 수 있는 수준입니다.' },
 
   { key: 'director', name: '대표 트레이너', minXp: 50000, description: '창업을 시도하거나 팀/브랜드를 이끌 준비가 된 단계입니다.' },
-]0
+]
   const trainerLevels = useMemo(() => {
   if (!trainerLevelSettings.length) {
     return DEFAULT_TRAINER_LEVELS
