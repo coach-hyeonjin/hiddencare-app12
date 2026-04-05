@@ -883,7 +883,7 @@ const [unreadNoticeCount, setUnreadNoticeCount] = useState(0)
     link: '',
     status: 'done',
   })
-
+const [managerActionForm, setManagerActionForm] = useState({
     const managerScoreCards = useMemo(() => {
     const currentMonth = new Date().toISOString().slice(0, 7)
 
@@ -4763,10 +4763,22 @@ const getSalesAutoFeedback = () => {
   console.log('handleManagerActionSave targetGymId:', targetGymId)
   console.log('manager payload:', payload)
 
-  const { data, error } = await supabase
+  let response
+
+if (editingManagerActionId) {
+  response = await supabase
+    .from('manager_action_logs')
+    .update(payload)
+    .eq('id', editingManagerActionId)
+    .select()
+} else {
+  response = await supabase
     .from('manager_action_logs')
     .insert(payload)
     .select()
+}
+
+const { data, error } = response
 
   console.log('manager insert data:', data)
   console.log('manager insert error:', error)
@@ -4788,7 +4800,7 @@ const getSalesAutoFeedback = () => {
     link: '',
     status: 'done',
   })
-
+setEditingManagerActionId(null)
   await loadManagerActionLogs()
 }
   const handleManagerActionDelete = async (id) => {
@@ -4809,6 +4821,21 @@ const getSalesAutoFeedback = () => {
 
   setMessage('삭제 완료')
   await loadManagerActionLogs()
+}
+  const handleManagerActionEdit = (log) => {
+  setEditingManagerActionId(log.id)
+
+  setManagerActionForm({
+    action_date: log.action_date || '',
+    action_type: log.action_type || 'blog_post',
+    channel: log.channel || '',
+    title: log.title || '',
+    description: log.description || '',
+    link: log.link || '',
+    status: log.status || 'done',
+  })
+
+  window.scrollTo({ top: 0, behavior: 'smooth' })
 }
   if (loading) {
     return <div className="loading-card">데이터 불러오는 중...</div>
@@ -5762,7 +5789,7 @@ const getSalesAutoFeedback = () => {
                   className="primary-btn"
                   onClick={handleManagerActionSave}
                 >
-                  실행 로그 저장
+                  {editingManagerActionId ? '수정 완료' : '실행 로그 저장'}
                 </button>
               </div>
             </div>
@@ -5779,8 +5806,16 @@ const getSalesAutoFeedback = () => {
                   <div className="list-card-top">
   <strong>{log.title || '제목 없음'}</strong>
 
-  <div className="inline-actions">
+  <div className="inline-actions wrap">
     <span className="pill">{log.action_date || '-'}</span>
+
+    <button
+      type="button"
+      className="secondary-btn"
+      onClick={() => handleManagerActionEdit(log)}
+    >
+      수정
+    </button>
 
     <button
       type="button"
