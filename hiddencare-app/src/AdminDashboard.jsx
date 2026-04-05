@@ -5736,219 +5736,233 @@ setEditingManagerActionId(null)
       {message ? <div className="message success">{message}</div> : null}
 
       {activeTab === '회원' && (
-        <div className="two-col">
-          <section className="card">
-            <h2>회원 등록 / 수정</h2>
-            <form className="stack-gap" onSubmit={handleMemberSubmit}>
-              <label className="field">
-                <span>이름</span>
-                <input value={memberForm.name} onChange={(e) => setMemberForm({ ...memberForm, name: e.target.value })} />
-              </label>
+  <div className="two-col">
+    <section className="card">
+      <h2>회원 등록 / 수정</h2>
+      <form className="stack-gap" onSubmit={handleMemberSubmit}>
+        <label className="field">
+          <span>이름</span>
+          <input
+            value={memberForm.name}
+            onChange={(e) => setMemberForm({ ...memberForm, name: e.target.value })}
+          />
+        </label>
 
-              <label className="field">
-                <span>목표</span>
-                <input value={memberForm.goal} onChange={(e) => setMemberForm({ ...memberForm, goal: e.target.value })} />
-              </label>
+        <label className="field">
+          <span>목표</span>
+          <input
+            value={memberForm.goal}
+            onChange={(e) => setMemberForm({ ...memberForm, goal: e.target.value })}
+          />
+        </label>
 
-              <label className="field">
-                <span>현재 프로그램</span>
-                <select
-                  value={memberForm.current_program_id}
-                  onChange={(e) => setMemberForm({ ...memberForm, current_program_id: e.target.value })}
-                >
-                  <option value="">선택 안함</option>
-                  {programs.map((program) => (
-                    <option key={program.id} value={program.id}>
-                      {program.name}
-                    </option>
-                  ))}
-                </select>
-              </label>
+        <label className="field">
+          <span>현재 프로그램</span>
+          <select
+            value={memberForm.current_program_id}
+            onChange={(e) => setMemberForm({ ...memberForm, current_program_id: e.target.value })}
+          >
+            <option value="">선택 안함</option>
+            {programs.map((program) => (
+              <option key={program.id} value={program.id}>
+                {program.name}
+              </option>
+            ))}
+          </select>
+        </label>
 
-              <div className="grid-2">
-                <label className="field">
-                  <span>총 세션</span>
-                  <input
-                    type="number"
-                    value={memberForm.total_sessions}
-                    onChange={(e) => setMemberForm({ ...memberForm, total_sessions: e.target.value })}
-                  />
-                </label>
+        <div className="grid-2">
+          <label className="field">
+            <span>총 세션</span>
+            <input
+              type="number"
+              value={memberForm.total_sessions}
+              onChange={(e) => setMemberForm({ ...memberForm, total_sessions: e.target.value })}
+            />
+          </label>
 
-                <label className="field">
-                  <span>사용 세션</span>
-                  <input
-                    type="number"
-                    value={memberForm.used_sessions}
-                    onChange={(e) => setMemberForm({ ...memberForm, used_sessions: e.target.value })}
-                  />
-                </label>
-              </div>
+          <label className="field">
+            <span>사용 세션</span>
+            <input
+              type="number"
+              value={memberForm.used_sessions}
+              onChange={(e) => setMemberForm({ ...memberForm, used_sessions: e.target.value })}
+            />
+          </label>
+        </div>
 
-              <div className="grid-2">
-                <label className="field">
-                  <span>시작일</span>
-                  <input
-                    type="date"
-                    value={memberForm.start_date}
-                    onChange={(e) => setMemberForm({ ...memberForm, start_date: e.target.value })}
-                  />
-                </label>
+        <div className="grid-2">
+          <label className="field">
+            <span>시작일</span>
+            <input
+              type="date"
+              value={memberForm.start_date}
+              onChange={(e) => setMemberForm({ ...memberForm, start_date: e.target.value })}
+            />
+          </label>
 
-                <label className="field">
-                  <span>종료일</span>
-                  <input
-                    type="date"
-                    value={memberForm.end_date}
-                    onChange={(e) => setMemberForm({ ...memberForm, end_date: e.target.value })}
-                  />
-                </label>
-              </div>
+          <label className="field">
+            <span>종료일</span>
+            <input
+              type="date"
+              value={memberForm.end_date}
+              onChange={(e) => setMemberForm({ ...memberForm, end_date: e.target.value })}
+            />
+          </label>
+        </div>
 
-              <label className="field">
-                <span>회원 메모(회원에게 보임)</span>
-                <textarea rows="4" value={memberForm.memo} onChange={(e) => setMemberForm({ ...memberForm, memo: e.target.value })} />
-              </label>
+        <label className="field">
+          <span>회원 메모(회원에게 보임)</span>
+          <textarea
+            rows="4"
+            value={memberForm.memo}
+            onChange={(e) => setMemberForm({ ...memberForm, memo: e.target.value })}
+          />
+        </label>
 
-              <label className="field">
-                <span>Access Code</span>
-                <div className="inline-actions">
-                  <input
-                    value={memberForm.access_code}
-                    onChange={(e) => setMemberForm({ ...memberForm, access_code: e.target.value.toUpperCase() })}
-                  />
-                  <button
-                    type="button"
-                    className="secondary-btn"
-                    onClick={() => setMemberForm((prev) => ({ ...prev, access_code: randomCode() }))}
-                  >
-                    생성
-                  </button>
-                </div>
-              </label>
-
-              <div className="inline-actions wrap">
-                <button className="primary-btn" type="submit">
-                  {editingMemberId ? '회원 수정' : '회원 추가'}
-                </button>
-                <button type="button" className="secondary-btn" onClick={resetMemberForm}>
-                  초기화
-                </button>
-              </div>
-            </form>
-          </section>
-
-        <section className="card">
-  <div className="member-list-header">
-    <div className="member-list-title-row">
-      <h2>회원 목록</h2>
-      <div className="member-count-badges">
-        <span className="count-badge">총 {totalMemberCount}명</span>
-        <span className="count-badge soft">현재 표시 {visibleMemberCount}명</span>
-      </div>
-    </div>
-
-    <div className="member-list-search-area">
-      <input
-        placeholder="이름 / 목표 / 프로그램 검색"
-        value={memberSearch}
-        onChange={(e) => setMemberSearch(e.target.value)}
-      />
-
-      <div className="member-list-filter-row">
-        <select
-          value={memberProgramFilter}
-          onChange={(e) => setMemberProgramFilter(e.target.value)}
-        >
-          <option value="">전체 프로그램</option>
-          {programs.map((p) => (
-            <option key={p.id} value={p.id}>
-              {p.name}
-            </option>
-          ))}
-        </select>
-
-        <select
-          value={memberStatusFilter}
-          onChange={(e) => setMemberStatusFilter(e.target.value)}
-        >
-          <option value="all">전체</option>
-          <option value="remaining">잔여 있음</option>
-          <option value="ended">소진</option>
-        </select>
-      </div>
-    </div>
-  </div>
-
-  <div className="list-stack">
-    {filteredMemberStats.length === 0 ? (
-      <div className="workout-list-empty">검색 결과가 없습니다.</div>
-    ) : null}
-
-    {filteredMemberStats.map((member) => {
-      const isSelected = selectedMemberId === member.id
-
-      return (
-        <div
-          key={member.id}
-          className={`list-card ${isSelected ? 'selected' : ''}`}
-          onClick={() => {
-            setSelectedMemberId(member.id)
-            setActiveTab('회원상세')
-          }}
-        >
-          <div className="list-card-top">
-            <strong>{member.name}</strong>
-            <span className="pill">남은 {member.remainingSessions}회</span>
-          </div>
-
-          <div className="compact-text">
-            목표: {member.goal || '-'} / Access: {member.access_code}
-          </div>
-
-          <div className="compact-text">
-            PT {member.ptCount}회 / 개인운동 {member.personalCount}회 / 프로그램 {member.programs?.name || '-'}
-          </div>
-
-          <div className="inline-actions wrap">
+        <label className="field">
+          <span>Access Code</span>
+          <div className="inline-actions">
+            <input
+              value={memberForm.access_code}
+              onChange={(e) =>
+                setMemberForm({ ...memberForm, access_code: e.target.value.toUpperCase() })
+              }
+            />
             <button
               type="button"
               className="secondary-btn"
-              onClick={(e) => {
-                e.stopPropagation()
-                handleMemberEdit(member)
-              }}
+              onClick={() => setMemberForm((prev) => ({ ...prev, access_code: randomCode() }))}
             >
-              수정
+              생성
             </button>
+          </div>
+        </label>
 
-            <button
-              type="button"
-              className="secondary-btn"
-              onClick={(e) => {
-                e.stopPropagation()
-                copyMemberLink(member)
-              }}
-            >
-              링크 복사
-            </button>
+        <div className="inline-actions wrap">
+          <button className="primary-btn" type="submit">
+            {editingMemberId ? '회원 수정' : '회원 추가'}
+          </button>
+          <button type="button" className="secondary-btn" onClick={resetMemberForm}>
+            초기화
+          </button>
+        </div>
+      </form>
+    </section>
 
-            <button
-              type="button"
-              className="danger-btn"
-              onClick={(e) => {
-                e.stopPropagation()
-                handleMemberDelete(member.id)
-              }}
-            >
-              삭제
-            </button>
+    <section className="card">
+      <div className="member-list-header">
+        <div className="member-list-title-row">
+          <h2>회원 목록</h2>
+          <div className="member-count-badges">
+            <span className="count-badge">총 {totalMemberCount}명</span>
+            <span className="count-badge soft">현재 표시 {visibleMemberCount}명</span>
           </div>
         </div>
-      )
-    })}
+
+        <div className="member-list-search-area">
+          <input
+            placeholder="이름 / 목표 / 프로그램 검색"
+            value={memberSearch}
+            onChange={(e) => setMemberSearch(e.target.value)}
+          />
+
+          <div className="member-list-filter-row">
+            <select
+              value={memberProgramFilter}
+              onChange={(e) => setMemberProgramFilter(e.target.value)}
+            >
+              <option value="">전체 프로그램</option>
+              {programs.map((p) => (
+                <option key={p.id} value={p.id}>
+                  {p.name}
+                </option>
+              ))}
+            </select>
+
+            <select
+              value={memberStatusFilter}
+              onChange={(e) => setMemberStatusFilter(e.target.value)}
+            >
+              <option value="all">전체</option>
+              <option value="remaining">잔여 있음</option>
+              <option value="ended">소진</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <div className="list-stack">
+        {filteredMemberStats.length === 0 ? (
+          <div className="workout-list-empty">검색 결과가 없습니다.</div>
+        ) : null}
+
+        {filteredMemberStats.map((member) => {
+          const isSelected = selectedMemberId === member.id
+
+          return (
+            <div
+              key={member.id}
+              className={`list-card ${isSelected ? 'selected' : ''}`}
+              onClick={() => {
+                setSelectedMemberId(member.id)
+                setActiveTab('회원상세')
+              }}
+            >
+              <div className="list-card-top">
+                <strong>{member.name}</strong>
+                <span className="pill">남은 {member.remainingSessions}회</span>
+              </div>
+
+              <div className="compact-text">
+                목표: {member.goal || '-'} / Access: {member.access_code}
+              </div>
+
+              <div className="compact-text">
+                PT {member.ptCount}회 / 개인운동 {member.personalCount}회 / 프로그램 {member.programs?.name || '-'}
+              </div>
+
+              <div className="inline-actions wrap">
+                <button
+                  type="button"
+                  className="secondary-btn"
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    handleMemberEdit(member)
+                  }}
+                >
+                  수정
+                </button>
+
+                <button
+                  type="button"
+                  className="secondary-btn"
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    copyMemberLink(member)
+                  }}
+                >
+                  링크 복사
+                </button>
+
+                <button
+                  type="button"
+                  className="danger-btn"
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    handleMemberDelete(member.id)
+                  }}
+                >
+                  삭제
+                </button>
+              </div>
+            </div>
+          )
+        })}
+      </div>
+    </section>
   </div>
-</section>
+)}
  
 {activeTab === '회원상세' && selectedMember && (
   <div className="card">
