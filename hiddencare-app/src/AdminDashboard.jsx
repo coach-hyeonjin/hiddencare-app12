@@ -725,8 +725,7 @@ export default function AdminDashboard({ profile, currentAdminId, currentGymId, 
   const [memberDetailSearch, setMemberDetailSearch] = useState('')
   const [memberProgramFilter, setMemberProgramFilter] = useState('')
   const [memberStatusFilter, setMemberStatusFilter] = useState('all')
-  const totalMemberCount = Array.isArray(members) ? members.length : 0
-const visibleMemberCount = Array.isArray(filteredMemberStats) ? filteredMemberStats.length : 0
+ 
 
 
 
@@ -1799,7 +1798,8 @@ const getBurnoutSignalText = (checks = []) => {
     })
     .sort((a, b) => (a.name || '').localeCompare(b.name || '', 'ko-KR'))
 }, [memberStats, memberSearch, memberProgramFilter, memberStatusFilter])
-
+const totalMemberCount = Array.isArray(members) ? members.length : 0
+const visibleMemberCount = Array.isArray(filteredMemberStats) ? filteredMemberStats.length : 0
   const filteredMemberDetails = useMemo(() => {
     return memberStats.filter((member) => {
       return (
