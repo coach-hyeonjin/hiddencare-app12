@@ -2886,3 +2886,89 @@ textarea:focus {
   color: #475569;
   border: 1px solid #e2e8f0;
 }
+/* ===== 운영대시보드 KPI 상태색 ===== */
+.dashboard-kpi-card.kpi-blue {
+  background: linear-gradient(180deg, #eff6ff 0%, #f8fbff 100%);
+  border-color: #bfdbfe;
+}
+
+.dashboard-kpi-card.kpi-blue strong {
+  color: #1d4ed8;
+}
+
+.dashboard-kpi-card.kpi-green {
+  background: linear-gradient(180deg, #ecfdf5 0%, #f7fffb 100%);
+  border-color: #a7f3d0;
+}
+
+.dashboard-kpi-card.kpi-green strong {
+  color: #047857;
+}
+
+.dashboard-kpi-card.kpi-amber {
+  background: linear-gradient(180deg, #fffbeb 0%, #fffdf5 100%);
+  border-color: #fde68a;
+}
+
+.dashboard-kpi-card.kpi-amber strong {
+  color: #b45309;
+}
+
+.dashboard-kpi-card.kpi-red {
+  background: linear-gradient(180deg, #fef2f2 0%, #fff7f7 100%);
+  border-color: #fecaca;
+}
+
+.dashboard-kpi-card.kpi-red strong {
+  color: #b91c1c;
+}
+
+.dashboard-kpi-card.kpi-violet {
+  background: linear-gradient(180deg, #f5f3ff 0%, #faf8ff 100%);
+  border-color: #ddd6fe;
+}
+
+.dashboard-kpi-card.kpi-violet strong {
+  color: #6d28d9;
+}
+
+/* hover */
+.dashboard-kpi-card {
+  transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+}
+
+.dashboard-kpi-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 16px 32px rgba(15, 23, 42, 0.08);
+}
+
+/* 상태 pill */
+.pill.pill-green {
+  background: linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%);
+  color: #047857;
+  border: 1px solid #a7f3d0;
+}
+
+.pill.pill-amber {
+  background: linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%);
+  color: #b45309;
+  border: 1px solid #fde68a;
+}
+
+.pill.pill-red {
+  background: linear-gradient(135deg, #fef2f2 0%, #fee2e2 100%);
+  color: #b91c1c;
+  border: 1px solid #fecaca;
+}
+
+.pill.pill-blue {
+  background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
+  color: #1d4ed8;
+  border: 1px solid #bfdbfe;
+}
+
+.pill.pill-violet {
+  background: linear-gradient(135deg, #f5f3ff 0%, #ede9fe 100%);
+  color: #6d28d9;
+  border: 1px solid #ddd6fe;
+}
