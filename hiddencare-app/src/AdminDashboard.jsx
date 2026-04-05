@@ -6117,7 +6117,7 @@ setEditingManagerActionId(null)
                       <label className="field">
                         <span>운동 선택</span>
                         <select
-                          value={item.exercise_id || ''}
+                          value={String(item.exercise_id || '')}
                           onChange={(e) =>
                             updateRoutineItemSelect(
                               selectedRoutineWeek,
@@ -6129,7 +6129,7 @@ setEditingManagerActionId(null)
                         >
                           <option value="">운동DB에서 선택</option>
                           {exercises.map((exercise) => (
-                            <option key={exercise.id} value={exercise.id}>
+                            <option key={exercise.id} value={String(exercise.id)}>
                               [{exercise.body_part || '-'}] {exercise.name}
                             </option>
                           ))}
