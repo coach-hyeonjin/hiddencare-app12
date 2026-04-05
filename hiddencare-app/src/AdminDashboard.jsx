@@ -8470,7 +8470,7 @@ setEditingManagerActionId(null)
 {activeTab === '활동랭킹' && (
   <div className="stack-gap">
     <div className="card">
-      <div className="section-head">
+      <div className="section-head activity-filter-bar">
         <div>
           <h2>회원 활동랭킹</h2>
           <p className="sub-text">
@@ -8478,7 +8478,7 @@ setEditingManagerActionId(null)
           </p>
         </div>
 
-        <div className="inline-row">
+       <div className="activity-filter-actions">
           <input
             type="month"
             value={selectedStatsMonth}
@@ -8495,43 +8495,43 @@ setEditingManagerActionId(null)
       </div>
     </div>
 
-    <div className="stats-grid">
-      <div className="stat-card">
-        <span>{selectedStatsMonth} PT 1위</span>
-        <strong>
-          {activityRankingData.topPtMember
-            ? `${activityRankingData.topPtMember.name} (${activityRankingData.topPtMember.ptCount}회)`
-            : '-'}
-        </strong>
-      </div>
+    <div className="activity-top-grid">
+  <div className="activity-top-card top-pt">
+    <span>{selectedStatsMonth} PT 1위</span>
+    <strong>
+      {activityRankingData.topPtMember
+        ? `${activityRankingData.topPtMember.name} (${activityRankingData.topPtMember.ptCount}회)`
+        : '-'}
+    </strong>
+  </div>
 
-      <div className="stat-card">
-        <span>{selectedStatsMonth} 개인운동 1위</span>
-        <strong>
-          {activityRankingData.topPersonalMember
-            ? `${activityRankingData.topPersonalMember.name} (${activityRankingData.topPersonalMember.personalCount}회)`
-            : '-'}
-        </strong>
-      </div>
+  <div className="activity-top-card top-personal">
+    <span>{selectedStatsMonth} 개인운동 1위</span>
+    <strong>
+      {activityRankingData.topPersonalMember
+        ? `${activityRankingData.topPersonalMember.name} (${activityRankingData.topPersonalMember.personalCount}회)`
+        : '-'}
+    </strong>
+  </div>
 
-      <div className="stat-card">
-        <span>{selectedStatsMonth} 전체 활동 1위</span>
-        <strong>
-          {activityRankingData.topTotalMember
-            ? `${activityRankingData.topTotalMember.name} (${activityRankingData.topTotalMember.totalActivity}회)`
-            : '-'}
-        </strong>
-      </div>
+  <div className="activity-top-card top-total">
+    <span>{selectedStatsMonth} 전체 활동 1위</span>
+    <strong>
+      {activityRankingData.topTotalMember
+        ? `${activityRankingData.topTotalMember.name} (${activityRankingData.topTotalMember.totalActivity}회)`
+        : '-'}
+    </strong>
+  </div>
 
-      <div className="stat-card">
-        <span>{selectedStatsMonth} 참여 점수 1위</span>
-        <strong>
-          {activityRankingData.topWeightedMember
-            ? `${activityRankingData.topWeightedMember.name} (${activityRankingData.topWeightedMember.weightedScore}점)`
-            : '-'}
-        </strong>
-      </div>
-    </div>
+  <div className="activity-top-card top-score">
+    <span>{selectedStatsMonth} 참여 점수 1위</span>
+    <strong>
+      {activityRankingData.topWeightedMember
+        ? `${activityRankingData.topWeightedMember.name} (${activityRankingData.topWeightedMember.weightedScore}점)`
+        : '-'}
+    </strong>
+  </div>
+</div>
 
     <div className="dashboard-main-grid">
       <section className="card">
@@ -8539,12 +8539,17 @@ setEditingManagerActionId(null)
         <div className="list-stack">
           {activityRankingData.ptRanking.length ? (
             activityRankingData.ptRanking.slice(0, 10).map((member, index) => (
-              <div key={member.id} className="dashboard-row-card">
+              <div
+  key={member.id}
+  className={`activity-rank-item ${
+    index === 0 ? 'rank-1' : index === 1 ? 'rank-2' : index === 2 ? 'rank-3' : ''
+  }`}
+>
                 <div className="list-card-top">
                   <strong>
                     {index + 1}위 · {member.name}
                   </strong>
-                  <span className="pill">PT {member.ptCount}회</span>
+                  <span className="activity-rank-score score-pt">PT {member.ptCount}회</span>
                 </div>
                 <div className="compact-text">
                   개인운동 {member.personalCount}회 / 전체 활동 {member.totalActivity}회 / 남은 세션 {member.remainingSessions}회
@@ -8562,12 +8567,17 @@ setEditingManagerActionId(null)
         <div className="list-stack">
           {activityRankingData.personalRanking.length ? (
             activityRankingData.personalRanking.slice(0, 10).map((member, index) => (
-              <div key={member.id} className="dashboard-row-card">
+              <div
+  key={member.id}
+  className={`activity-rank-item ${
+    index === 0 ? 'rank-1' : index === 1 ? 'rank-2' : index === 2 ? 'rank-3' : ''
+  }`}
+>
                 <div className="list-card-top">
                   <strong>
                     {index + 1}위 · {member.name}
                   </strong>
-                  <span className="pill">개인운동 {member.personalCount}회</span>
+                 <span className="activity-rank-score score-personal">개인운동 {member.personalCount}회</span>
                 </div>
                 <div className="compact-text">
                   PT {member.ptCount}회 / 전체 활동 {member.totalActivity}회 / 목표 {member.goal || '-'}
@@ -8587,12 +8597,17 @@ setEditingManagerActionId(null)
         <div className="list-stack">
           {activityRankingData.totalRanking.length ? (
             activityRankingData.totalRanking.slice(0, 10).map((member, index) => (
-              <div key={member.id} className="dashboard-row-card">
+              <div
+  key={member.id}
+  className={`activity-rank-item ${
+    index === 0 ? 'rank-1' : index === 1 ? 'rank-2' : index === 2 ? 'rank-3' : ''
+  }`}
+>
                 <div className="list-card-top">
                   <strong>
                     {index + 1}위 · {member.name}
                   </strong>
-                  <span className="pill">총 {member.totalActivity}회</span>
+                 <span className="activity-rank-score score-total">총 {member.totalActivity}회</span>
                 </div>
                 <div className="compact-text">
                   PT {member.ptCount}회 / 개인운동 {member.personalCount}회 / 남은 세션 {member.remainingSessions}회
@@ -8614,12 +8629,17 @@ setEditingManagerActionId(null)
         <div className="list-stack">
           {activityRankingData.weightedRanking.length ? (
             activityRankingData.weightedRanking.slice(0, 10).map((member, index) => (
-              <div key={member.id} className="dashboard-row-card">
+             <div
+  key={member.id}
+  className={`activity-rank-item ${
+    index === 0 ? 'rank-1' : index === 1 ? 'rank-2' : index === 2 ? 'rank-3' : ''
+  }`}
+>
                 <div className="list-card-top">
                   <strong>
                     {index + 1}위 · {member.name}
                   </strong>
-                  <span className="pill">{member.weightedScore}점</span>
+                  <span className="activity-rank-score score-weighted">{member.weightedScore}점</span>
                 </div>
                 <div className="compact-text">
                   PT {member.ptCount}회 / 개인운동 {member.personalCount}회 / 총 활동 {member.totalActivity}회
