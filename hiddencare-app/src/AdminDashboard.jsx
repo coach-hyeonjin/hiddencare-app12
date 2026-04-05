@@ -5949,77 +5949,7 @@ setEditingManagerActionId(null)
     })}
   </div>
 </section>
- <div className="list-stack">
-
-  {filteredMemberStats.length === 0 ? (
-    <div className="workout-list-empty">검색 결과가 없습니다.</div>
-  ) : null}
-
-  {filteredMemberStats.map((member) => {
-                const isSelected = selectedMemberId === member.id
-                return (
-                  <div
-                    key={member.id}
-                    className={`list-card ${isSelected ? 'selected' : ''}`}
-                    onClick={() => {
-                      setSelectedMemberId(member.id)
-                      setActiveTab('회원상세')
-                   }}
-                  >
-                    <div className="list-card-top">
-                      <strong>{member.name}</strong>
-                      <span className="pill">남은 {member.remainingSessions}회</span>
-                    </div>
-
-                    <div className="compact-text">
-                      목표: {member.goal || '-'} / Access: {member.access_code}
-                    </div>
-                    <div className="compact-text">
-                      PT {member.ptCount}회 / 개인운동 {member.personalCount}회 / 프로그램 {member.programs?.name || '-'}
-                    </div>
-
-                    <div className="inline-actions wrap">
-                      <button
-                        type="button"
-                        className="secondary-btn"
-                        onClick={(e) => {
-                          e.stopPropagation()
-                          handleMemberEdit(member)
-                        }}
-                      >
-                        수정
-                      </button>
-
-                      <button
-                        type="button"
-                        className="secondary-btn"
-                        onClick={(e) => {
-                          e.stopPropagation()
-                          copyMemberLink(member)
-                        }}
-                      >
-                        링크 복사
-                      </button>
-
-                      <button
-                        type="button"
-                        className="danger-btn"
-                        onClick={(e) => {
-                          e.stopPropagation()
-                          handleMemberDelete(member.id)
-                        }}
-                      >
-                        삭제
-                      </button>
-                    </div>
-                  </div>
-                )
-              })}
-            </div>
-
-          </section>
-        </div>
-      )}
+ 
 {activeTab === '회원상세' && selectedMember && (
   <div className="card">
     <h2>회원 상세</h2>
