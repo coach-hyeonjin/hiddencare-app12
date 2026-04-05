@@ -4733,39 +4733,42 @@ const getSalesAutoFeedback = () => {
   }
 
   const handleManagerActionSave = async () => {
-    const payload = {
-      gym_id: currentGymId,
-      admin_id: currentAdminId,
-      action_date: managerActionForm.action_date,
-      action_type: managerActionForm.action_type,
-      channel: managerActionForm.channel,
-      title: managerActionForm.title,
-      description: managerActionForm.description,
-      link: managerActionForm.link,
-      status: managerActionForm.status,
-    }
-
-    const { error } = await supabase.from('manager_action_logs').insert(payload)
-
-    if (error) {
-      console.error('manager_action_logs 저장 실패:', error)
-      setMessage('매니저 실행 로그 저장 실패')
-      return
-    }
-
-    setMessage('매니저 실행 로그가 저장되었습니다.')
-    setManagerActionForm({
-      action_date: new Date().toISOString().slice(0, 10),
-      action_type: 'blog_post',
-      channel: '',
-      title: '',
-      description: '',
-      link: '',
-      status: 'done',
-    })
-
-    await loadManagerActionLogs()
+  const payload = {
+    gym_id: currentGymId,
+    admin_id: currentAdminId,
+    action_date: managerActionForm.action_date,
+    action_type: managerActionForm.action_type,
+    channel: managerActionForm.channel,
+    title: managerActionForm.title,
+    description: managerActionForm.description,
+    link: managerActionForm.link,
+    status: managerActionForm.status,
   }
+
+  console.log('currentGymId:', currentGymId)
+  console.log('manager payload:', payload)
+
+  const { error } = await supabase.from('manager_action_logs').insert(payload)
+
+  if (error) {
+    console.error('manager_action_logs 저장 실패:', error)
+    setMessage('매니저 실행 로그 저장 실패')
+    return
+  }
+
+  setMessage('매니저 실행 로그가 저장되었습니다.')
+  setManagerActionForm({
+    action_date: new Date().toISOString().slice(0, 10),
+    action_type: 'blog_post',
+    channel: '',
+    title: '',
+    description: '',
+    link: '',
+    status: 'done',
+  })
+
+  await loadManagerActionLogs()
+}
   
   if (loading) {
     return <div className="loading-card">데이터 불러오는 중...</div>
