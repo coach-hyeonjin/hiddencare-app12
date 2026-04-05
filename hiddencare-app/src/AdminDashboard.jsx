@@ -1273,6 +1273,22 @@ const completedTaskKeysToday = useMemo(() => {
     )
     .map((item) => item.task_key)
 }, [managerTaskChecks, todayTaskDate])
+  
+ const DEFAULT_TRAINER_LEVELS = [
+  { key: 'beginner_3', name: '초보 트레이너 3급', minXp: 0, description: '기록 습관과 기본 운영 감각을 만드는 단계입니다.' },
+  { key: 'beginner_2', name: '초보 트레이너 2급', minXp: 500, description: '기본 회원 관리와 실행 습관이 자리를 잡기 시작한 단계입니다.' },
+  { key: 'beginner_1', name: '초보 트레이너 1급', minXp: 1000, description: '수업 외에도 콘텐츠와 운영 흐름을 보기 시작한 단계입니다.' },
+
+  { key: 'intermediate_3', name: '중급 트레이너 3급', minXp: 2000, description: '회원 유지와 재등록 흐름을 함께 관리하기 시작한 단계입니다.' },
+  { key: 'intermediate_2', name: '중급 트레이너 2급', minXp: 4000, description: '매출과 실행 로그가 함께 쌓이며 운영 감각이 커지는 단계입니다.' },
+  { key: 'intermediate_1', name: '중급 트레이너 1급', minXp: 7000, description: '회원관리, 콘텐츠, 운영 흐름을 연결해서 보는 단계입니다.' },
+
+  { key: 'master_3', name: '마스터 트레이너 3급', minXp: 12000, description: '브랜딩과 운영 성과가 눈에 띄게 쌓이기 시작한 단계입니다.' },
+  { key: 'master_2', name: '마스터 트레이너 2급', minXp: 20000, description: '반복 가능한 운영 패턴과 콘텐츠 자산이 생기는 단계입니다.' },
+  { key: 'master_1', name: '마스터 트레이너 1급', minXp: 30000, description: '창업 또는 독립 운영을 준비해볼 수 있는 수준입니다.' },
+
+  { key: 'director', name: '대표 트레이너', minXp: 50000, description: '창업을 시도하거나 팀/브랜드를 이끌 준비가 된 단계입니다.' },
+]0
   const trainerLevels = useMemo(() => {
   if (!trainerLevelSettings.length) {
     return DEFAULT_TRAINER_LEVELS
@@ -1293,21 +1309,6 @@ const completedTaskKeysToday = useMemo(() => {
     }
   }).sort((a, b) => a.minXp - b.minXp)
 }, [trainerLevelSettings])
- const DEFAULT_TRAINER_LEVELS = [
-  { key: 'beginner_3', name: '초보 트레이너 3급', minXp: 0, description: '기록 습관과 기본 운영 감각을 만드는 단계입니다.' },
-  { key: 'beginner_2', name: '초보 트레이너 2급', minXp: 500, description: '기본 회원 관리와 실행 습관이 자리를 잡기 시작한 단계입니다.' },
-  { key: 'beginner_1', name: '초보 트레이너 1급', minXp: 1000, description: '수업 외에도 콘텐츠와 운영 흐름을 보기 시작한 단계입니다.' },
-
-  { key: 'intermediate_3', name: '중급 트레이너 3급', minXp: 2000, description: '회원 유지와 재등록 흐름을 함께 관리하기 시작한 단계입니다.' },
-  { key: 'intermediate_2', name: '중급 트레이너 2급', minXp: 4000, description: '매출과 실행 로그가 함께 쌓이며 운영 감각이 커지는 단계입니다.' },
-  { key: 'intermediate_1', name: '중급 트레이너 1급', minXp: 7000, description: '회원관리, 콘텐츠, 운영 흐름을 연결해서 보는 단계입니다.' },
-
-  { key: 'master_3', name: '마스터 트레이너 3급', minXp: 12000, description: '브랜딩과 운영 성과가 눈에 띄게 쌓이기 시작한 단계입니다.' },
-  { key: 'master_2', name: '마스터 트레이너 2급', minXp: 20000, description: '반복 가능한 운영 패턴과 콘텐츠 자산이 생기는 단계입니다.' },
-  { key: 'master_1', name: '마스터 트레이너 1급', minXp: 30000, description: '창업 또는 독립 운영을 준비해볼 수 있는 수준입니다.' },
-
-  { key: 'director', name: '대표 트레이너', minXp: 50000, description: '창업을 시도하거나 팀/브랜드를 이끌 준비가 된 단계입니다.' },
-]
   const trainerLevelSummary = useMemo(() => {
   const currentMonth = new Date().toISOString().slice(0, 7)
 
