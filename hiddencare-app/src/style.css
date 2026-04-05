@@ -2261,3 +2261,44 @@ img {
 .manager-section .list-stack .list-card {
   background: #fcfcff;
 }
+.manager-collapsible-section {
+  overflow: hidden;
+}
+
+.manager-toggle-btn {
+  width: 100%;
+  border: none;
+  background: transparent;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  text-align: left;
+  padding: 0;
+  cursor: pointer;
+}
+
+.manager-toggle-btn h3 {
+  margin: 0;
+}
+
+.manager-toggle-btn .sub-text {
+  margin-top: 6px;
+  margin-bottom: 0;
+}
+
+.manager-toggle-arrow {
+  flex-shrink: 0;
+  font-size: 18px;
+  font-weight: 700;
+  transition: transform 0.2s ease;
+}
+
+.manager-toggle-arrow.open {
+  transform: rotate(180deg);
+}
+
+.manager-collapsible-body {
+  margin-top: 18px;
+  padding-top: 4px;
+}
