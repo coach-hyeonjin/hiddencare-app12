@@ -8094,7 +8094,7 @@ setEditingManagerActionId(null)
           {workoutsByDate.map((workout) => {
             const collapsed = collapsedWorkouts[workout.id] ?? true
             return (
-             <div key={workout.id} className="list-card workout-list-card">
+              <div key={workout.id} className="list-card workout-list-card">
                 <div className="list-card-top">
                   <strong>
                     {workout.member?.name || '회원없음'} / {workout.workout_type === 'pt' ? 'PT' : '개인운동'}
@@ -8105,15 +8105,17 @@ setEditingManagerActionId(null)
                 <div className="compact-text">
                   간략히보기: 운동 {workout.items.length}개 / 총세트 {getTotalSetCount(workout.items)}세트
                 </div>
-{workout?.pain_enabled && (workout?.pain_logs?.length || 0) > 0 ? (
-  <div className="compact-text">
-    통증기록:{' '}
-    {workout.pain_logs
-      ?.filter((log) => log?.body_part || log?.pain_score !== null)
-      ?.map((log) => `${log?.body_part || '부위미입력'} ${log?.pain_score ?? '-'}점`)
-      ?.join(' / ')}
-  </div>
-) : null}
+
+                {workout?.pain_enabled && (workout?.pain_logs?.length || 0) > 0 ? (
+                  <div className="compact-text">
+                    통증기록:{' '}
+                    {workout.pain_logs
+                      ?.filter((log) => log?.body_part || log?.pain_score !== null)
+                      ?.map((log) => `${log?.body_part || '부위미입력'} ${log?.pain_score ?? '-'}점`)
+                      ?.join(' / ')}
+                  </div>
+                ) : null}
+
                 <div className="inline-actions wrap">
                   <button
                     type="button"
@@ -8128,114 +8130,126 @@ setEditingManagerActionId(null)
                     {collapsed ? '상세히보기' : '간략히보기'}
                   </button>
 
-                  <button type="button" className="secondary-btn" onClick={() => handleWorkoutEdit(workout)}>
+                  <button
+                    type="button"
+                    className="secondary-btn"
+                    onClick={() => handleWorkoutEdit(workout)}
+                  >
                     수정
                   </button>
 
-                  <button type="button" className="danger-btn" onClick={() => handleWorkoutDelete(workout)}>
+                  <button
+                    type="button"
+                    className="danger-btn"
+                    onClick={() => handleWorkoutDelete(workout)}
+                  >
                     삭제
                   </button>
                 </div>
 
                 {!collapsed ? (
                   <div className="detail-box">
-  <div className="workout-detail-items">
-    {workout.items.map((item, itemIndex) => (
-  <div key={item.id || itemIndex} className="record-item-box">
-    <div className="list-card-top">
-      <strong>
-        {item.training_method === 'superset'
-          ? `슈퍼세트 ${itemIndex + 1}`
-          : item.training_method === 'dropset'
-          ? `${item.exercise_name_snapshot || `운동 ${itemIndex + 1}`} (드롭세트)`
-          : item.exercise_name_snapshot || `운동 ${itemIndex + 1}`}
-      </strong>
+                    <div className="workout-detail-items">
+                      {workout.items.map((item, itemIndex) => (
+                        <div key={item.id || itemIndex} className="record-item-box">
+                          <div className="list-card-top">
+                            <strong>
+                              {item.training_method === 'superset'
+                                ? `슈퍼세트 ${itemIndex + 1}`
+                                : item.training_method === 'dropset'
+                                ? `${item.exercise_name_snapshot || `운동 ${itemIndex + 1}`} (드롭세트)`
+                                : item.exercise_name_snapshot || `운동 ${itemIndex + 1}`}
+                            </strong>
 
-      {item.training_method && item.training_method !== 'normal' ? (
-        <span className="pill">
-          {item.training_method === 'superset' ? '슈퍼세트' : '드롭세트'}
-        </span>
-      ) : null}
-    </div>
+                            {item.training_method && item.training_method !== 'normal' ? (
+                              <span className="pill">
+                                {item.training_method === 'superset' ? '슈퍼세트' : '드롭세트'}
+                              </span>
+                            ) : null}
+                          </div>
 
-    {item.is_cardio ? (
-      <div className="compact-text">유산소 {item.cardio_minutes || 0}분</div>
-    ) : item.training_method === 'superset' ? (
-      <div className="stack-gap" style={{ marginTop: '8px' }}>
-        {(item.sub_exercises || []).map((sub, subIndex) => (
-          <div key={subIndex} className="detail-box">
-            <p><strong>{subIndex === 0 ? '운동 A' : '운동 B'}:</strong> {sub.exercise_name_snapshot || '-'}</p>
+                          {item.is_cardio ? (
+                            <div className="compact-text">유산소 {item.cardio_minutes || 0}분</div>
+                          ) : item.training_method === 'superset' ? (
+                            <div className="stack-gap" style={{ marginTop: '8px' }}>
+                              {(item.sub_exercises || []).map((sub, subIndex) => (
+                                <div key={subIndex} className="detail-box">
+                                  <p>
+                                    <strong>{subIndex === 0 ? '운동 A' : '운동 B'}:</strong>{' '}
+                                    {sub.exercise_name_snapshot || '-'}
+                                  </p>
 
-            {(sub.sets || []).length > 0 ? (
-              <ul className="set-list">
-                {(sub.sets || []).map((setRow, idx) => (
-                  <li key={idx}>
-                    {idx + 1}세트 - {setRow.kg || '-'}kg / {setRow.reps || '-'}회
-                  </li>
-                ))}
-              </ul>
-            ) : (
-              <div className="compact-text">세트 정보 없음</div>
-            )}
-          </div>
-        ))}
+                                  {(sub.sets || []).length > 0 ? (
+                                    <ul className="set-list">
+                                      {(sub.sets || []).map((setRow, idx) => (
+                                        <li key={idx}>
+                                          {idx + 1}세트 - {setRow.kg || '-'}kg / {setRow.reps || '-'}회
+                                        </li>
+                                      ))}
+                                    </ul>
+                                  ) : (
+                                    <div className="compact-text">세트 정보 없음</div>
+                                  )}
+                                </div>
+                              ))}
 
-        {item.method_note ? (
-          <div className="compact-text">메모: {item.method_note}</div>
-        ) : null}
-      </div>
-    ) : (
-      <>
-        {(item.sets || []).length > 0 ? (
-          <ul className="set-list">
-            {(item.sets || []).map((setRow, idx) => (
-              <li key={idx}>
-                {idx + 1}세트 - {setRow.kg || '-'}kg / {setRow.reps || '-'}회
-              </li>
-            ))}
-          </ul>
-        ) : (
-          <div className="compact-text">세트 정보 없음</div>
-        )}
+                              {item.method_note ? (
+                                <div className="compact-text">메모: {item.method_note}</div>
+                              ) : null}
+                            </div>
+                          ) : (
+                            <>
+                              {(item.sets || []).length > 0 ? (
+                                <ul className="set-list">
+                                  {(item.sets || []).map((setRow, idx) => (
+                                    <li key={idx}>
+                                      {idx + 1}세트 - {setRow.kg || '-'}kg / {setRow.reps || '-'}회
+                                    </li>
+                                  ))}
+                                </ul>
+                              ) : (
+                                <div className="compact-text">세트 정보 없음</div>
+                              )}
 
-        {item.method_note ? (
-          <div className="compact-text">메모: {item.method_note}</div>
-        ) : null}
-      </>
-    )}
-  </div>
-))}
-  </div>
+                              {item.method_note ? (
+                                <div className="compact-text">메모: {item.method_note}</div>
+                              ) : null}
+                            </>
+                          )}
+                        </div>
+                      ))}
+                    </div>
 
-  <div className="workout-detail-summary">
-    <p><strong>잘한점:</strong> {workout.good || '-'}</p>
-    <p><strong>보완점:</strong> {workout.improve || '-'}</p>
-    {workout?.pain_enabled && (workout?.pain_logs?.length || 0) > 0 ? (
-  <div className="detail-box">
-    <p><strong>[통증 기록]</strong></p>
+                    <div className="workout-detail-summary">
+                      <p><strong>잘한점:</strong> {workout.good || '-'}</p>
+                      <p><strong>보완점:</strong> {workout.improve || '-'}</p>
 
-    {(workout.pain_logs || []).map((log, index) => (
-      <div key={index} className="compact-text">
-        {index + 1}. [{log?.pain_type || '-'}] {log?.body_part || '-'} /{' '}
-        {log?.movement_name || '-'} / {log?.pain_timing || '-'} / VAS{' '}
-        {log?.pain_score ?? '-'} / {log?.pain_note || '-'}
-      </div>
-    ))}
+                      {workout?.pain_enabled && (workout?.pain_logs?.length || 0) > 0 ? (
+                        <div className="detail-box">
+                          <p><strong>[통증 기록]</strong></p>
 
-    <div style={{ height: '8px' }} />
+                          {(workout.pain_logs || []).map((log, index) => (
+                            <div key={index} className="compact-text">
+                              {index + 1}. [{log?.pain_type || '-'}] {log?.body_part || '-'} /{' '}
+                              {log?.movement_name || '-'} / {log?.pain_timing || '-'} / VAS{' '}
+                              {log?.pain_score ?? '-'} / {log?.pain_note || '-'}
+                            </div>
+                          ))}
 
-    <p><strong>VAS 기준:</strong></p>
-    <div className="compact-text">0: 통증 없음</div>
-    <div className="compact-text">1~2: 거의 신경 쓰이지 않는 통증</div>
-    <div className="compact-text">3~4: 움직일 때 불편하지만 운동 가능</div>
-    <div className="compact-text">5~6: 운동 시 집중이 흐트러질 정도</div>
-    <div className="compact-text">7~8: 운동 수행이 어려움</div>
-    <div className="compact-text">9: 일상생활에서도 지속적인 통증</div>
-    <div className="compact-text">10: 견디기 힘든 극심한 통증</div>
-  </div>
-) : null}
-  </div>
-</div>
+                          <div style={{ height: '8px' }} />
+
+                          <p><strong>VAS 기준:</strong></p>
+                          <div className="compact-text">0: 통증 없음</div>
+                          <div className="compact-text">1~2: 거의 신경 쓰이지 않는 통증</div>
+                          <div className="compact-text">3~4: 움직일 때 불편하지만 운동 가능</div>
+                          <div className="compact-text">5~6: 운동 시 집중이 흐트러질 정도</div>
+                          <div className="compact-text">7~8: 운동 수행이 어려움</div>
+                          <div className="compact-text">9: 일상생활에서도 지속적인 통증</div>
+                          <div className="compact-text">10: 견디기 힘든 극심한 통증</div>
+                        </div>
+                      ) : null}
+                    </div>
+                  </div>
                 ) : null}
               </div>
             )
@@ -8245,9 +8259,9 @@ setEditingManagerActionId(null)
     ))}
   </div>
 </section>
-        </div>
-      )}
-
+    </div>
+  </div>
+)}
       {activeTab === '운동DB' && (
         <div className="two-col">
           <section className="card">
