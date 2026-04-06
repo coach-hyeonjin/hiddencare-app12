@@ -1943,274 +1943,443 @@ const updateSetValue = (itemIndex, setIndex, field, value, subIndex = null) => {
 )}
 
       {activeTab === '건강정보' && (
-        <div className="two-col">
-          <section className="card">
-            <h2>건강정보 입력 / 수정</h2>
+  <div className="member-health-page">
+    <section className="member-health-hero">
+      <div className="member-health-hero-left">
+        <div className="member-health-badge">BODY CHECK</div>
+        <h2>건강정보</h2>
+        <p className="member-health-hero-text">
+          체중, 체지방, 골격근량, 활동량, 병력사항까지 한 번에 정리하고
+          이전 기록과 비교하면서 내 몸 상태를 편하게 확인할 수 있습니다.
+        </p>
+      </div>
 
-            <form className="stack-gap" onSubmit={handleHealthSubmit}>
-  <label className="field">
-    <span>기록일</span>
-    <input
-      type="date"
-      value={healthForm.record_date}
-      onChange={(e) => setHealthForm({ ...healthForm, record_date: e.target.value })}
-    />
-  </label>
-
-  <div className="grid-2">
-    <label className="field">
-      <span>성별</span>
-      <select
-        value={healthForm.sex}
-        onChange={(e) => setHealthForm({ ...healthForm, sex: e.target.value })}
-      >
-        <option value="male">남성</option>
-        <option value="female">여성</option>
-      </select>
-    </label>
-
-    <label className="field">
-      <span>나이</span>
-      <input
-        type="number"
-        value={healthForm.age}
-        onChange={(e) => setHealthForm({ ...healthForm, age: e.target.value })}
-      />
-    </label>
-  </div>
-
-  <div className="grid-2">
-    <label className="field">
-      <span>키(cm)</span>
-      <input
-        type="number"
-        value={healthForm.height_cm}
-        onChange={(e) => setHealthForm({ ...healthForm, height_cm: e.target.value })}
-      />
-    </label>
-
-    <label className="field">
-      <span>체중(kg)</span>
-      <input
-        type="number"
-        value={healthForm.weight_kg}
-        onChange={(e) => setHealthForm({ ...healthForm, weight_kg: e.target.value })}
-      />
-    </label>
-  </div>
-
-  <div className="grid-2">
-    <label className="field">
-      <span>체지방률(%)</span>
-      <input
-        type="number"
-        value={healthForm.body_fat_percent}
-        onChange={(e) => setHealthForm({ ...healthForm, body_fat_percent: e.target.value })}
-      />
-    </label>
-
-    <label className="field">
-      <span>골격근량(kg)</span>
-      <input
-        type="number"
-        value={healthForm.skeletal_muscle_mass}
-        onChange={(e) => setHealthForm({ ...healthForm, skeletal_muscle_mass: e.target.value })}
-      />
-    </label>
-  </div>
-
-  <div className="grid-2">
-    <label className="field">
-      <span>체지방량(kg)</span>
-      <input
-        type="number"
-        value={healthForm.body_fat_mass}
-        onChange={(e) => setHealthForm({ ...healthForm, body_fat_mass: e.target.value })}
-      />
-    </label>
-
-    <label className="field">
-      <span>인바디점수</span>
-      <input
-        type="number"
-        value={healthForm.inbody_score}
-        onChange={(e) => setHealthForm({ ...healthForm, inbody_score: e.target.value })}
-      />
-    </label>
-  </div>
-
-  <div className="grid-2">
-    <label className="field">
-      <span>내장지방레벨</span>
-      <input
-        type="number"
-        value={healthForm.visceral_fat_level}
-        onChange={(e) => setHealthForm({ ...healthForm, visceral_fat_level: e.target.value })}
-      />
-    </label>
-
-    <label className="field">
-      <span>내장지방면적(cm²)</span>
-      <input
-        type="number"
-        value={healthForm.visceral_fat_area}
-        onChange={(e) => setHealthForm({ ...healthForm, visceral_fat_area: e.target.value })}
-      />
-    </label>
-  </div>
-
-  <div className="grid-2">
-    <label className="field">
-      <span>WHR(허리엉덩이비율)</span>
-      <input
-        type="number"
-        step="0.01"
-        value={healthForm.whr}
-        onChange={(e) => setHealthForm({ ...healthForm, whr: e.target.value })}
-      />
-    </label>
-
-    <label className="field">
-      <span>활동계수</span>
-      <select
-        value={healthForm.activity_factor}
-        onChange={(e) => setHealthForm({ ...healthForm, activity_factor: e.target.value })}
-      >
-        <option value="1.2">좌식 / 거의 운동 안함</option>
-        <option value="1.375">가벼운 활동 / 주 1~3회</option>
-        <option value="1.55">보통 활동 / 주 3~5회</option>
-        <option value="1.725">높은 활동 / 주 6~7회</option>
-        <option value="1.9">매우 높은 활동</option>
-      </select>
-    </label>
-  </div>
-
-  <div className="grid-2">
-    <label className="field">
-      <span>기초대사량(kcal)</span>
-      <input
-        type="number"
-        value={healthForm.bmr}
-        onChange={(e) => setHealthForm({ ...healthForm, bmr: e.target.value })}
-        placeholder="비워두면 자동 계산"
-      />
-    </label>
-
-    <label className="field">
-      <span>하루 권장 섭취열량(kcal)</span>
-      <input
-        type="number"
-        value={calculatedRecommendedKcal}
-        readOnly
-      />
-    </label>
-  </div>
-
-  <label className="field">
-    <span>병력사항</span>
-    <textarea
-      rows="4"
-      value={healthForm.medical_history}
-      onChange={(e) => setHealthForm({ ...healthForm, medical_history: e.target.value })}
-    />
-  </label>
-
-  <label className="field">
-    <span>개인 메모</span>
-    <textarea
-      rows="4"
-      value={healthForm.member_note}
-      onChange={(e) => setHealthForm({ ...healthForm, member_note: e.target.value })}
-    />
-  </label>
-
-  <label className="field">
-    <span>인바디 이미지 URL</span>
-    <input
-      value={healthForm.inbody_image_url}
-      onChange={(e) => setHealthForm({ ...healthForm, inbody_image_url: e.target.value })}
-      placeholder="이미지 링크를 넣어주세요"
-    />
-  </label>
-
-  <div className="inline-actions wrap">
-    <button className="primary-btn" type="submit">
-      {healthForm.id ? '건강정보 수정' : '건강정보 저장'}
-    </button>
-    <button type="button" className="secondary-btn" onClick={resetHealthForm}>
-      초기화
-    </button>
-  </div>
-</form>
-          </section>
-
-          <section className="card">
-            <h2>내 건강정보 기록</h2>
-
-            <div className="list-stack">
-              {healthLogs.map((health) => {
-                const collapsed = collapsedHealthLogs[health.id] ?? true
-                return (
-                  <div key={health.id} className="list-card">
-                    <div className="list-card-top">
-                      <strong>{health.record_date}</strong>
-                      <span className="pill">체중 {health.weight_kg || '-'}kg</span>
-                    </div>
-
-                    <div className="compact-text">
-                      간략히보기: 키 {health.height_cm || '-'} / 체지방 {health.body_fat_percent || '-'} / 골격근 {health.skeletal_muscle_mass || '-'} / BMR {health.bmr || '-'} / 권장열량 {health.recommended_kcal || '-'}
-                    </div>
-
-                    <div className="inline-actions wrap">
-                      <button
-                        type="button"
-                        className="secondary-btn"
-                        onClick={() =>
-                          setCollapsedHealthLogs((prev) => ({
-                            ...prev,
-                            [health.id]: !collapsed,
-                          }))
-                        }
-                      >
-                        {collapsed ? '상세히보기' : '간략히보기'}
-                      </button>
-
-                      <button type="button" className="secondary-btn" onClick={() => handleHealthEdit(health)}>
-                        수정
-                      </button>
-
-                      <button type="button" className="danger-btn" onClick={() => handleHealthDelete(health.id)}>
-                        삭제
-                      </button>
-                    </div>
-
-                    {!collapsed ? (
-                      <div className="detail-box">
-  <p><strong>성별:</strong> {health.sex === 'female' ? '여성' : health.sex === 'male' ? '남성' : '-'}</p>
-  <p><strong>나이:</strong> {health.age || '-'}</p>
-  <p><strong>키:</strong> {health.height_cm || '-'}</p>
-  <p><strong>체중:</strong> {health.weight_kg || '-'}</p>
-  <p><strong>체지방률:</strong> {health.body_fat_percent || '-'}</p>
-  <p><strong>골격근량:</strong> {health.skeletal_muscle_mass || '-'}</p>
-  <p><strong>체지방량:</strong> {health.body_fat_mass || '-'}</p>
-  <p><strong>내장지방레벨:</strong> {health.visceral_fat_level || '-'}</p>
-  <p><strong>내장지방면적:</strong> {health.visceral_fat_area || '-'}</p>
-  <p><strong>WHR:</strong> {health.whr || '-'}</p>
-  <p><strong>기초대사량:</strong> {health.bmr || '-'}</p>
-  <p><strong>하루 권장 섭취열량:</strong> {health.recommended_kcal || '-'}</p>
-  <p><strong>인바디점수:</strong> {health.inbody_score || '-'}</p>
-  <p><strong>병력사항:</strong> {health.medical_history || '-'}</p>
-  <p><strong>개인 메모:</strong> {health.member_note || '-'}</p>
-  <p><strong>인바디 이미지 URL:</strong> {health.inbody_image_url || '-'}</p>
-</div>
-                    ) : null}
-                  </div>
-                )
-              })}
-            </div>
-          </section>
+      <div className="member-health-hero-right">
+        <div className="member-health-hero-mini">
+          <span>현재 입력 상태</span>
+          <strong>{healthForm.id ? '기록 수정 중' : '새 기록 작성'}</strong>
+          <p>
+            {healthForm.id
+              ? '기존 건강정보를 수정하고 있어요.'
+              : '새로운 건강정보를 입력해보세요.'}
+          </p>
         </div>
-      )}
+
+        <div className="member-health-hero-mini">
+          <span>기준 날짜</span>
+          <strong>{healthForm.record_date || '-'}</strong>
+          <p>
+            체중 {healthForm.weight_kg || '-'}kg / 권장열량 {calculatedRecommendedKcal || '-'}kcal
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <section className="member-health-summary-grid">
+      <div className="member-health-summary-card">
+        <span>현재 체중</span>
+        <strong>{healthForm.weight_kg || '-'}</strong>
+        <p>kg 기준 입력값</p>
+      </div>
+
+      <div className="member-health-summary-card">
+        <span>체지방률</span>
+        <strong>{healthForm.body_fat_percent || '-'}</strong>
+        <p>% 기준 입력값</p>
+      </div>
+
+      <div className="member-health-summary-card">
+        <span>골격근량</span>
+        <strong>{healthForm.skeletal_muscle_mass || '-'}</strong>
+        <p>kg 기준 입력값</p>
+      </div>
+
+      <div className="member-health-summary-card highlight">
+        <span>권장 섭취열량</span>
+        <strong>{calculatedRecommendedKcal || '-'}</strong>
+        <p>활동계수 반영 자동 계산</p>
+      </div>
+    </section>
+
+    <div className="two-col member-health-layout">
+      <section className="card member-health-form-card">
+        <div className="member-health-section-head">
+          <div>
+            <div className="member-health-section-label">WRITE HEALTH</div>
+            <h2>건강정보 입력 / 수정</h2>
+            <p className="sub-text">
+              기본 신체 정보, 체성분 수치, 활동 정보, 병력 및 메모를 나눠서 기록합니다.
+            </p>
+          </div>
+        </div>
+
+        <form className="stack-gap" onSubmit={handleHealthSubmit}>
+          <div className="member-health-block">
+            <div className="member-health-block-title">기본 정보</div>
+
+            <label className="field">
+              <span>기록일</span>
+              <input
+                type="date"
+                value={healthForm.record_date}
+                onChange={(e) =>
+                  setHealthForm({ ...healthForm, record_date: e.target.value })
+                }
+              />
+            </label>
+
+            <div className="grid-2">
+              <label className="field">
+                <span>성별</span>
+                <select
+                  value={healthForm.sex}
+                  onChange={(e) =>
+                    setHealthForm({ ...healthForm, sex: e.target.value })
+                  }
+                >
+                  <option value="male">남성</option>
+                  <option value="female">여성</option>
+                </select>
+              </label>
+
+              <label className="field">
+                <span>나이</span>
+                <input
+                  type="number"
+                  value={healthForm.age}
+                  onChange={(e) =>
+                    setHealthForm({ ...healthForm, age: e.target.value })
+                  }
+                />
+              </label>
+            </div>
+
+            <div className="grid-2">
+              <label className="field">
+                <span>키(cm)</span>
+                <input
+                  type="number"
+                  value={healthForm.height_cm}
+                  onChange={(e) =>
+                    setHealthForm({ ...healthForm, height_cm: e.target.value })
+                  }
+                />
+              </label>
+
+              <label className="field">
+                <span>체중(kg)</span>
+                <input
+                  type="number"
+                  value={healthForm.weight_kg}
+                  onChange={(e) =>
+                    setHealthForm({ ...healthForm, weight_kg: e.target.value })
+                  }
+                />
+              </label>
+            </div>
+          </div>
+
+          <div className="member-health-block">
+            <div className="member-health-block-title">체성분 정보</div>
+
+            <div className="grid-2">
+              <label className="field">
+                <span>체지방률(%)</span>
+                <input
+                  type="number"
+                  value={healthForm.body_fat_percent}
+                  onChange={(e) =>
+                    setHealthForm({ ...healthForm, body_fat_percent: e.target.value })
+                  }
+                />
+              </label>
+
+              <label className="field">
+                <span>골격근량(kg)</span>
+                <input
+                  type="number"
+                  value={healthForm.skeletal_muscle_mass}
+                  onChange={(e) =>
+                    setHealthForm({ ...healthForm, skeletal_muscle_mass: e.target.value })
+                  }
+                />
+              </label>
+            </div>
+
+            <div className="grid-2">
+              <label className="field">
+                <span>체지방량(kg)</span>
+                <input
+                  type="number"
+                  value={healthForm.body_fat_mass}
+                  onChange={(e) =>
+                    setHealthForm({ ...healthForm, body_fat_mass: e.target.value })
+                  }
+                />
+              </label>
+
+              <label className="field">
+                <span>인바디점수</span>
+                <input
+                  type="number"
+                  value={healthForm.inbody_score}
+                  onChange={(e) =>
+                    setHealthForm({ ...healthForm, inbody_score: e.target.value })
+                  }
+                />
+              </label>
+            </div>
+
+            <div className="grid-2">
+              <label className="field">
+                <span>내장지방레벨</span>
+                <input
+                  type="number"
+                  value={healthForm.visceral_fat_level}
+                  onChange={(e) =>
+                    setHealthForm({ ...healthForm, visceral_fat_level: e.target.value })
+                  }
+                />
+              </label>
+
+              <label className="field">
+                <span>내장지방면적(cm²)</span>
+                <input
+                  type="number"
+                  value={healthForm.visceral_fat_area}
+                  onChange={(e) =>
+                    setHealthForm({ ...healthForm, visceral_fat_area: e.target.value })
+                  }
+                />
+              </label>
+            </div>
+
+            <div className="grid-2">
+              <label className="field">
+                <span>WHR(허리엉덩이비율)</span>
+                <input
+                  type="number"
+                  step="0.01"
+                  value={healthForm.whr}
+                  onChange={(e) =>
+                    setHealthForm({ ...healthForm, whr: e.target.value })
+                  }
+                />
+              </label>
+
+              <label className="field">
+                <span>활동계수</span>
+                <select
+                  value={healthForm.activity_factor}
+                  onChange={(e) =>
+                    setHealthForm({ ...healthForm, activity_factor: e.target.value })
+                  }
+                >
+                  <option value="1.2">좌식 / 거의 운동 안함</option>
+                  <option value="1.375">가벼운 활동 / 주 1~3회</option>
+                  <option value="1.55">보통 활동 / 주 3~5회</option>
+                  <option value="1.725">높은 활동 / 주 6~7회</option>
+                  <option value="1.9">매우 높은 활동</option>
+                </select>
+              </label>
+            </div>
+          </div>
+
+          <div className="member-health-block">
+            <div className="member-health-block-title">대사량 / 메모</div>
+
+            <div className="grid-2">
+              <label className="field">
+                <span>기초대사량(kcal)</span>
+                <input
+                  type="number"
+                  value={healthForm.bmr}
+                  onChange={(e) =>
+                    setHealthForm({ ...healthForm, bmr: e.target.value })
+                  }
+                  placeholder="비워두면 자동 계산"
+                />
+              </label>
+
+              <label className="field">
+                <span>하루 권장 섭취열량(kcal)</span>
+                <input
+                  type="number"
+                  value={calculatedRecommendedKcal}
+                  readOnly
+                />
+              </label>
+            </div>
+
+            <label className="field">
+              <span>병력사항</span>
+              <textarea
+                rows="4"
+                value={healthForm.medical_history}
+                onChange={(e) =>
+                  setHealthForm({ ...healthForm, medical_history: e.target.value })
+                }
+              />
+            </label>
+
+            <label className="field">
+              <span>개인 메모</span>
+              <textarea
+                rows="4"
+                value={healthForm.member_note}
+                onChange={(e) =>
+                  setHealthForm({ ...healthForm, member_note: e.target.value })
+                }
+              />
+            </label>
+
+            <label className="field">
+              <span>인바디 이미지 URL</span>
+              <input
+                value={healthForm.inbody_image_url}
+                onChange={(e) =>
+                  setHealthForm({ ...healthForm, inbody_image_url: e.target.value })
+                }
+                placeholder="이미지 링크를 넣어주세요"
+              />
+            </label>
+          </div>
+
+          <div className="inline-actions wrap">
+            <button className="primary-btn" type="submit">
+              {healthForm.id ? '건강정보 수정' : '건강정보 저장'}
+            </button>
+            <button
+              type="button"
+              className="secondary-btn"
+              onClick={resetHealthForm}
+            >
+              초기화
+            </button>
+          </div>
+        </form>
+      </section>
+
+      <section className="card member-health-list-card">
+        <div className="member-health-section-head">
+          <div>
+            <div className="member-health-section-label">MY BODY LOG</div>
+            <h2>내 건강정보 기록</h2>
+            <p className="sub-text">
+              저장된 건강정보를 날짜별로 확인하고, 필요하면 수정하거나 삭제할 수 있습니다.
+            </p>
+          </div>
+        </div>
+
+        <div className="list-stack">
+          {healthLogs.length === 0 ? (
+            <div className="empty-box">저장된 건강정보 기록이 없습니다.</div>
+          ) : (
+            healthLogs.map((health) => {
+              const isCollapsed = collapsedHealthLogs[health.id] ?? true
+
+              return (
+                <div key={health.id} className="member-health-record-card">
+                  <div className="member-health-record-head">
+                    <div>
+                      <h3>{health.record_date || '-'}</h3>
+                      <p>
+                        간략히보기: 키 {health.height_cm || '-'} / 체중 {health.weight_kg || '-'} /
+                        체지방 {health.body_fat_percent || '-'} / 골격근 {health.skeletal_muscle_mass || '-'} /
+                        BMR {health.bmr || '-'} / 권장열량 {health.recommended_kcal || '-'}
+                      </p>
+                    </div>
+
+                    <div className="member-health-record-pill">
+                      체중 {health.weight_kg || '-'}kg
+                    </div>
+                  </div>
+
+                  <div className="inline-actions wrap">
+                    <button
+                      type="button"
+                      className="secondary-btn"
+                      onClick={() =>
+                        setCollapsedHealthLogs((prev) => ({
+                          ...prev,
+                          [health.id]: !isCollapsed,
+                        }))
+                      }
+                    >
+                      {isCollapsed ? '상세보기' : '간략히보기'}
+                    </button>
+
+                    <button
+                      type="button"
+                      className="secondary-btn"
+                      onClick={() => handleHealthEdit(health)}
+                    >
+                      수정
+                    </button>
+
+                    <button
+                      type="button"
+                      className="danger-btn"
+                      onClick={() => handleHealthDelete(health.id)}
+                    >
+                      삭제
+                    </button>
+                  </div>
+
+                  {!isCollapsed && (
+                    <div className="member-health-record-body">
+                      <div className="member-health-record-grid">
+                        <div className="detail-box">
+                          <p><strong>성별:</strong> {health.sex === 'female' ? '여성' : '남성'}</p>
+                          <p><strong>나이:</strong> {health.age || '-'}</p>
+                          <p><strong>키:</strong> {health.height_cm || '-'} cm</p>
+                          <p><strong>체중:</strong> {health.weight_kg || '-'} kg</p>
+                        </div>
+
+                        <div className="detail-box">
+                          <p><strong>체지방률:</strong> {health.body_fat_percent || '-'} %</p>
+                          <p><strong>골격근량:</strong> {health.skeletal_muscle_mass || '-'} kg</p>
+                          <p><strong>체지방량:</strong> {health.body_fat_mass || '-'} kg</p>
+                          <p><strong>인바디점수:</strong> {health.inbody_score || '-'}</p>
+                        </div>
+
+                        <div className="detail-box">
+                          <p><strong>내장지방레벨:</strong> {health.visceral_fat_level || '-'}</p>
+                          <p><strong>내장지방면적:</strong> {health.visceral_fat_area || '-'} cm²</p>
+                          <p><strong>WHR:</strong> {health.whr || '-'}</p>
+                          <p><strong>활동계수:</strong> {health.activity_factor || '-'}</p>
+                        </div>
+
+                        <div className="detail-box">
+                          <p><strong>기초대사량:</strong> {health.bmr || '-'} kcal</p>
+                          <p><strong>권장 섭취열량:</strong> {health.recommended_kcal || '-'} kcal</p>
+                          <p><strong>병력사항:</strong> {health.medical_history || '-'}</p>
+                          <p><strong>개인 메모:</strong> {health.member_note || '-'}</p>
+                        </div>
+                      </div>
+
+                      {health.inbody_image_url ? (
+                        <div className="member-health-image-link">
+                          <a
+                            href={health.inbody_image_url}
+                            target="_blank"
+                            rel="noreferrer"
+                          >
+                            인바디 이미지 보기
+                          </a>
+                        </div>
+                      ) : null}
+                    </div>
+                  )}
+                </div>
+              )
+            })
+          )}
+        </div>
+      </section>
+    </div>
+  </div>
+)}
 
       {activeTab === '운동기록' && (
         <div className="card">
