@@ -5797,132 +5797,203 @@ setEditingManagerActionId(null)
     <div className="dashboard-main-scroll">
       {message ? <div className="message success">{message}</div> : null}
 
-      {activeTab === '회원' && (
-  <div className="two-col">
-    <section className="card">
-      <h2>회원 등록 / 수정</h2>
-      <form className="stack-gap" onSubmit={handleMemberSubmit}>
-        <label className="field">
-          <span>이름</span>
-          <input
-            value={memberForm.name}
-            onChange={(e) => setMemberForm({ ...memberForm, name: e.target.value })}
-          />
-        </label>
+     {activeTab === '회원' && (
+  <div className="member-page-modern">
+    <div className="member-page-hero">
+      <div className="member-page-hero-left">
+        <div className="member-page-badge">MEMBER MANAGEMENT</div>
+        <h2>회원 관리</h2>
+        <p className="member-page-hero-text">
+          신규 회원 등록, 기존 회원 수정, 프로그램 연결, 세션 현황 확인까지
+          한 화면에서 정리하는 회원 관리 영역입니다.
+        </p>
+      </div>
 
-        <label className="field">
-          <span>목표</span>
-          <input
-            value={memberForm.goal}
-            onChange={(e) => setMemberForm({ ...memberForm, goal: e.target.value })}
-          />
-        </label>
-
-        <label className="field">
-          <span>현재 프로그램</span>
-          <select
-            value={memberForm.current_program_id}
-            onChange={(e) => setMemberForm({ ...memberForm, current_program_id: e.target.value })}
-          >
-            <option value="">선택 안함</option>
-            {programs.map((program) => (
-              <option key={program.id} value={program.id}>
-                {program.name}
-              </option>
-            ))}
-          </select>
-        </label>
-
-        <div className="grid-2">
-          <label className="field">
-            <span>총 세션</span>
-            <input
-              type="number"
-              value={memberForm.total_sessions}
-              onChange={(e) => setMemberForm({ ...memberForm, total_sessions: e.target.value })}
-            />
-          </label>
-
-          <label className="field">
-            <span>사용 세션</span>
-            <input
-              type="number"
-              value={memberForm.used_sessions}
-              onChange={(e) => setMemberForm({ ...memberForm, used_sessions: e.target.value })}
-            />
-          </label>
+      <div className="member-page-hero-right">
+        <div className="member-page-hero-mini">
+          <span>전체 회원</span>
+          <strong>{totalMemberCount}명</strong>
+          <p>현재 등록된 전체 회원 수입니다.</p>
         </div>
 
-        <div className="grid-2">
-          <label className="field">
-            <span>시작일</span>
-            <input
-              type="date"
-              value={memberForm.start_date}
-              onChange={(e) => setMemberForm({ ...memberForm, start_date: e.target.value })}
-            />
-          </label>
+        <div className="member-page-hero-mini">
+          <span>현재 표시</span>
+          <strong>{visibleMemberCount}명</strong>
+          <p>검색 / 필터 조건에 맞는 회원 수입니다.</p>
+        </div>
+      </div>
+    </div>
 
-          <label className="field">
-            <span>종료일</span>
-            <input
-              type="date"
-              value={memberForm.end_date}
-              onChange={(e) => setMemberForm({ ...memberForm, end_date: e.target.value })}
-            />
-          </label>
+    <div className="member-page-grid">
+      <section className="card member-form-card-modern">
+        <div className="member-card-head">
+          <div>
+            <div className="member-card-label">MEMBER FORM</div>
+            <h3>{editingMemberId ? '회원 수정' : '회원 등록 / 수정'}</h3>
+            <p className="sub-text">
+              기본 정보, 프로그램, 세션, 기간, 회원 메모를 입력하는 영역입니다.
+            </p>
+          </div>
         </div>
 
-        <label className="field">
-          <span>회원 메모(회원에게 보임)</span>
-          <textarea
-            rows="4"
-            value={memberForm.memo}
-            onChange={(e) => setMemberForm({ ...memberForm, memo: e.target.value })}
-          />
-        </label>
+        <form className="stack-gap" onSubmit={handleMemberSubmit}>
+          <div className="member-form-block">
+            <div className="member-form-block-title">기본 정보</div>
 
-        <label className="field">
-          <span>Access Code</span>
-          <div className="inline-actions">
-            <input
-              value={memberForm.access_code}
-              onChange={(e) =>
-                setMemberForm({ ...memberForm, access_code: e.target.value.toUpperCase() })
-              }
-            />
-            <button
-              type="button"
-              className="secondary-btn"
-              onClick={() => setMemberForm((prev) => ({ ...prev, access_code: randomCode() }))}
-            >
-              생성
+            <div className="grid-2">
+              <label className="field">
+                <span>이름</span>
+                <input
+                  value={memberForm.name}
+                  onChange={(e) => setMemberForm({ ...memberForm, name: e.target.value })}
+                />
+              </label>
+
+              <label className="field">
+                <span>목표</span>
+                <input
+                  value={memberForm.goal}
+                  onChange={(e) => setMemberForm({ ...memberForm, goal: e.target.value })}
+                />
+              </label>
+            </div>
+
+            <label className="field">
+              <span>현재 프로그램</span>
+              <select
+                value={memberForm.current_program_id}
+                onChange={(e) =>
+                  setMemberForm({ ...memberForm, current_program_id: e.target.value })
+                }
+              >
+                <option value="">선택 안함</option>
+                {programs.map((program) => (
+                  <option key={program.id} value={program.id}>
+                    {program.name}
+                  </option>
+                ))}
+              </select>
+            </label>
+          </div>
+
+          <div className="member-form-block">
+            <div className="member-form-block-title">세션 / 기간</div>
+
+            <div className="grid-2">
+              <label className="field">
+                <span>총 세션</span>
+                <input
+                  type="number"
+                  value={memberForm.total_sessions}
+                  onChange={(e) =>
+                    setMemberForm({ ...memberForm, total_sessions: e.target.value })
+                  }
+                />
+              </label>
+
+              <label className="field">
+                <span>사용 세션</span>
+                <input
+                  type="number"
+                  value={memberForm.used_sessions}
+                  onChange={(e) =>
+                    setMemberForm({ ...memberForm, used_sessions: e.target.value })
+                  }
+                />
+              </label>
+            </div>
+
+            <div className="grid-2">
+              <label className="field">
+                <span>시작일</span>
+                <input
+                  type="date"
+                  value={memberForm.start_date}
+                  onChange={(e) =>
+                    setMemberForm({ ...memberForm, start_date: e.target.value })
+                  }
+                />
+              </label>
+
+              <label className="field">
+                <span>종료일</span>
+                <input
+                  type="date"
+                  value={memberForm.end_date}
+                  onChange={(e) =>
+                    setMemberForm({ ...memberForm, end_date: e.target.value })
+                  }
+                />
+              </label>
+            </div>
+          </div>
+
+          <div className="member-form-block">
+            <div className="member-form-block-title">메모 / 접속</div>
+
+            <label className="field">
+              <span>회원 메모(회원에게 보임)</span>
+              <textarea
+                rows="4"
+                value={memberForm.memo}
+                onChange={(e) => setMemberForm({ ...memberForm, memo: e.target.value })}
+              />
+            </label>
+
+            <label className="field">
+              <span>Access Code</span>
+              <div className="inline-actions member-access-row">
+                <input
+                  value={memberForm.access_code}
+                  onChange={(e) =>
+                    setMemberForm({
+                      ...memberForm,
+                      access_code: e.target.value.toUpperCase(),
+                    })
+                  }
+                />
+                <button
+                  type="button"
+                  className="secondary-btn"
+                  onClick={() =>
+                    setMemberForm((prev) => ({ ...prev, access_code: randomCode() }))
+                  }
+                >
+                  생성
+                </button>
+              </div>
+            </label>
+          </div>
+
+          <div className="inline-actions wrap">
+            <button className="primary-btn" type="submit">
+              {editingMemberId ? '회원 수정' : '회원 추가'}
+            </button>
+
+            <button type="button" className="secondary-btn" onClick={resetMemberForm}>
+              초기화
             </button>
           </div>
-        </label>
+        </form>
+      </section>
 
-        <div className="inline-actions wrap">
-          <button className="primary-btn" type="submit">
-            {editingMemberId ? '회원 수정' : '회원 추가'}
-          </button>
-          <button type="button" className="secondary-btn" onClick={resetMemberForm}>
-            초기화
-          </button>
-        </div>
-      </form>
-    </section>
+      <section className="card member-list-card-modern">
+        <div className="member-card-head">
+          <div>
+            <div className="member-card-label">MEMBER LIST</div>
+            <h3>회원 목록</h3>
+            <p className="sub-text">
+              회원 검색, 프로그램 필터, 잔여 세션 상태를 함께 확인할 수 있습니다.
+            </p>
+          </div>
 
-    <section className="card">
-      <div className="member-list-header">
-        <div className="member-list-title-row">
-          <h2>회원 목록</h2>
           <div className="member-count-badges">
             <span className="count-badge">총 {totalMemberCount}명</span>
             <span className="count-badge soft">현재 표시 {visibleMemberCount}명</span>
           </div>
         </div>
 
-        <div className="member-list-search-area">
+        <div className="member-list-modern-toolbar">
           <input
             placeholder="이름 / 목표 / 프로그램 검색"
             value={memberSearch}
@@ -5952,77 +6023,106 @@ setEditingManagerActionId(null)
             </select>
           </div>
         </div>
-      </div>
 
-      <div className="list-stack">
-        {filteredMemberStats.length === 0 ? (
-          <div className="workout-list-empty">검색 결과가 없습니다.</div>
-        ) : null}
+        <div className="list-stack">
+          {filteredMemberStats.length === 0 ? (
+            <div className="workout-list-empty">검색 결과가 없습니다.</div>
+          ) : null}
 
-        {filteredMemberStats.map((member) => {
-          const isSelected = selectedMemberId === member.id
+          {filteredMemberStats.map((member) => {
+            const isSelected = selectedMemberId === member.id
+            const remainingSessions = Number(member.remainingSessions || 0)
+            const statusClass =
+              remainingSessions <= 0
+                ? 'pill-red'
+                : remainingSessions <= 5
+                ? 'pill-amber'
+                : 'pill-green'
 
-          return (
-            <div
-              key={member.id}
-              className={`list-card ${isSelected ? 'selected' : ''}`}
-              onClick={() => {
-                setSelectedMemberId(member.id)
-                setActiveTab('회원상세')
-              }}
-            >
-              <div className="list-card-top">
-                <strong>{member.name}</strong>
-                <span className="pill">남은 {member.remainingSessions}회</span>
+            return (
+              <div
+                key={member.id}
+                className={`member-list-modern-card ${isSelected ? 'selected' : ''}`}
+                onClick={() => {
+                  setSelectedMemberId(member.id)
+                  setActiveTab('회원상세')
+                }}
+              >
+                <div className="member-list-modern-top">
+                  <div className="member-list-modern-name">
+                    <strong>{member.name}</strong>
+                    <span className={`pill ${statusClass}`}>
+                      남은 {remainingSessions}회
+                    </span>
+                  </div>
+
+                  <div className="member-list-modern-program">
+                    {member.programs?.name || '프로그램 없음'}
+                  </div>
+                </div>
+
+                <div className="member-list-modern-grid">
+                  <div className="member-mini-info">
+                    <span>목표</span>
+                    <strong>{member.goal || '-'}</strong>
+                  </div>
+
+                  <div className="member-mini-info">
+                    <span>Access</span>
+                    <strong>{member.access_code || '-'}</strong>
+                  </div>
+
+                  <div className="member-mini-info">
+                    <span>PT 수업</span>
+                    <strong>{member.ptCount}회</strong>
+                  </div>
+
+                  <div className="member-mini-info">
+                    <span>개인운동</span>
+                    <strong>{member.personalCount}회</strong>
+                  </div>
+                </div>
+
+                <div className="inline-actions wrap member-card-actions">
+                  <button
+                    type="button"
+                    className="secondary-btn"
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      handleMemberEdit(member)
+                    }}
+                  >
+                    수정
+                  </button>
+
+                  <button
+                    type="button"
+                    className="secondary-btn"
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      copyMemberLink(member)
+                    }}
+                  >
+                    링크 복사
+                  </button>
+
+                  <button
+                    type="button"
+                    className="danger-btn"
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      handleMemberDelete(member.id)
+                    }}
+                  >
+                    삭제
+                  </button>
+                </div>
               </div>
-
-              <div className="compact-text">
-                목표: {member.goal || '-'} / Access: {member.access_code}
-              </div>
-
-              <div className="compact-text">
-                PT {member.ptCount}회 / 개인운동 {member.personalCount}회 / 프로그램 {member.programs?.name || '-'}
-              </div>
-
-              <div className="inline-actions wrap">
-                <button
-                  type="button"
-                  className="secondary-btn"
-                  onClick={(e) => {
-                    e.stopPropagation()
-                    handleMemberEdit(member)
-                  }}
-                >
-                  수정
-                </button>
-
-                <button
-                  type="button"
-                  className="secondary-btn"
-                  onClick={(e) => {
-                    e.stopPropagation()
-                    copyMemberLink(member)
-                  }}
-                >
-                  링크 복사
-                </button>
-
-                <button
-                  type="button"
-                  className="danger-btn"
-                  onClick={(e) => {
-                    e.stopPropagation()
-                    handleMemberDelete(member.id)
-                  }}
-                >
-                  삭제
-                </button>
-              </div>
-            </div>
-          )
-        })}
-      </div>
-    </section>
+            )
+          })}
+        </div>
+      </section>
+    </div>
   </div>
 )}
  
