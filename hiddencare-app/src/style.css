@@ -5226,3 +5226,42 @@ textarea:focus {
 .alert-collapse-arrow.open {
   transform: rotate(180deg);
 }
+.member-hero-link-break {
+  display: block;
+  max-width: 100%;
+  white-space: normal;
+  word-break: break-all;
+  overflow-wrap: anywhere;
+  line-height: 1.7;
+}
+
+.member-hero-item,
+.member-hero-grid,
+.member-detail-modern-card,
+.routine-shell,
+.routine-week-card,
+.routine-day-card,
+.dashboard-main,
+.dashboard-main-scroll,
+.card,
+.sub-card,
+.detail-box {
+  min-width: 0;
+}
+@media (max-width: 720px) {
+  .member-hero-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .member-hero-item {
+    width: 100%;
+  }
+
+  .member-hero-link-break {
+    font-size: 13px;
+  }
+
+  .dashboard-main-scroll {
+    overflow-x: hidden;
+  }
+}
