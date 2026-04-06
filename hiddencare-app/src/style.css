@@ -3290,3 +3290,333 @@ textarea:focus {
     font-size: 22px;
   }
 }
+/* ===== 회원상세 / 루틴 현대화 ===== */
+.member-detail-modern-card {
+  padding: 20px;
+  background:
+    linear-gradient(180deg, rgba(255,255,255,0.98) 0%, rgba(248,250,253,0.98) 100%);
+  border: 1px solid #dfe7f2;
+  box-shadow: 0 14px 32px rgba(15, 23, 42, 0.05);
+}
+
+.member-hero-card {
+  padding: 24px;
+  border-radius: 22px;
+  background: linear-gradient(135deg, #111827 0%, #1e1b4b 55%, #312e81 100%);
+  color: #ffffff;
+  box-shadow: 0 18px 40px rgba(15, 23, 42, 0.18);
+}
+
+.member-hero-top {
+  display: flex;
+  justify-content: space-between;
+  gap: 18px;
+  align-items: flex-start;
+  flex-wrap: wrap;
+}
+
+.member-hero-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 30px;
+  padding: 6px 12px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.14);
+  color: #c7d2fe;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  margin-bottom: 12px;
+}
+
+.member-hero-card h3 {
+  margin: 0 0 8px;
+  font-size: 28px;
+  line-height: 1.2;
+  color: #ffffff;
+}
+
+.member-hero-subtext {
+  margin: 0;
+  color: rgba(255, 255, 255, 0.82);
+  font-size: 14px;
+  line-height: 1.7;
+  word-break: keep-all;
+}
+
+.member-hero-program {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 36px;
+  padding: 8px 14px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  color: #ffffff;
+  font-size: 13px;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.member-hero-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 14px;
+  margin-top: 18px;
+}
+
+.member-hero-item {
+  padding: 16px;
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  backdrop-filter: blur(8px);
+}
+
+.member-hero-item span {
+  display: block;
+  font-size: 12px;
+  color: #c7d2fe;
+  font-weight: 700;
+  margin-bottom: 8px;
+}
+
+.member-hero-item strong {
+  display: block;
+  font-size: 15px;
+  line-height: 1.6;
+  color: #ffffff;
+  word-break: keep-all;
+  overflow-wrap: break-word;
+}
+
+.member-hero-link {
+  font-size: 13px;
+}
+
+.member-hero-note {
+  margin-top: 16px;
+  padding: 16px 18px;
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+.member-hero-note span {
+  display: block;
+  font-size: 12px;
+  color: #c7d2fe;
+  font-weight: 700;
+  margin-bottom: 8px;
+}
+
+.member-hero-note p {
+  margin: 0;
+  line-height: 1.8;
+  color: rgba(255, 255, 255, 0.9);
+  word-break: keep-all;
+  overflow-wrap: break-word;
+}
+
+.routine-shell {
+  margin-top: 18px;
+  padding: 20px;
+  border-radius: 20px;
+  background: linear-gradient(180deg, #ffffff 0%, #f8fbff 100%);
+  border: 1px solid #e2eaf4;
+  box-shadow: 0 10px 24px rgba(15, 23, 42, 0.04);
+}
+
+.routine-shell-top h4 {
+  margin: 0 0 6px;
+  font-size: 20px;
+  color: #0f172a;
+  letter-spacing: -0.02em;
+}
+
+.routine-week-tabs {
+  margin-top: 6px;
+}
+
+.routine-week-card {
+  border-radius: 20px;
+  padding: 18px;
+  background: linear-gradient(180deg, #ffffff 0%, #fbfcff 100%);
+  border: 1px solid #dfe7f2;
+  box-shadow: 0 10px 24px rgba(15, 23, 42, 0.05);
+}
+
+.routine-week-card-top {
+  display: flex;
+  justify-content: space-between;
+  gap: 14px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.routine-week-label {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 28px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: #eef2ff;
+  color: #4338ca;
+  font-size: 12px;
+  font-weight: 800;
+  margin-bottom: 8px;
+}
+
+.routine-week-card-top strong {
+  font-size: 24px;
+  color: #0f172a;
+  letter-spacing: -0.02em;
+}
+
+.routine-day-card {
+  border-radius: 18px;
+  border: 1px solid #e2e8f0;
+  background: linear-gradient(180deg, #ffffff 0%, #fbfcfe 100%);
+  overflow: hidden;
+  box-shadow: 0 8px 20px rgba(15, 23, 42, 0.04);
+}
+
+.routine-day-toggle {
+  width: 100%;
+  border: none;
+  background: transparent;
+  padding: 16px 18px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 14px;
+  text-align: left;
+}
+
+.routine-day-left {
+  min-width: 0;
+}
+
+.routine-day-title-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.routine-day-title-row strong {
+  font-size: 18px;
+  color: #0f172a;
+}
+
+.routine-day-meta {
+  margin-top: 6px;
+  font-size: 13px;
+  color: #64748b;
+  line-height: 1.6;
+}
+
+.routine-day-arrow {
+  width: 38px;
+  height: 38px;
+  flex-shrink: 0;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(180deg, #f3f6fb 0%, #ebf0f6 100%);
+  color: #475569;
+  border: 1px solid #dde5ef;
+  font-size: 18px;
+  font-weight: 700;
+  transition: transform 0.2s ease;
+}
+
+.routine-day-arrow.open {
+  transform: rotate(180deg);
+}
+
+.routine-day-body {
+  padding: 0 18px 18px;
+  border-top: 1px solid #edf2f7;
+  background: rgba(248, 251, 255, 0.55);
+}
+
+.routine-exercise-card {
+  border-radius: 18px;
+  padding: 16px;
+  background: linear-gradient(180deg, #ffffff 0%, #f9fbff 100%);
+  border: 1px solid #e0e8f3;
+  box-shadow: 0 8px 18px rgba(15, 23, 42, 0.04);
+}
+
+.routine-exercise-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.routine-exercise-label {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 26px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: #f1f5f9;
+  color: #475569;
+  font-size: 11px;
+  font-weight: 800;
+  margin-bottom: 8px;
+}
+
+.routine-exercise-head strong {
+  font-size: 18px;
+  color: #111827;
+}
+
+.routine-set-row {
+  padding: 10px;
+  border-radius: 14px;
+  background: #f8fafc;
+  border: 1px solid #e5edf5;
+}
+
+@media (max-width: 1100px) {
+  .member-hero-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 720px) {
+  .member-hero-card,
+  .routine-shell,
+  .routine-week-card {
+    padding: 16px;
+    border-radius: 18px;
+  }
+
+  .member-hero-card h3 {
+    font-size: 24px;
+  }
+
+  .member-hero-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .routine-day-toggle,
+  .routine-exercise-head,
+  .routine-week-card-top {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .routine-day-arrow {
+    align-self: flex-end;
+  }
+}
