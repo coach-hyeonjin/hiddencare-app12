@@ -927,6 +927,7 @@ const [inquiryStatusFilter, setInquiryStatusFilter] = useState('all')
 const [adminAlerts, setAdminAlerts] = useState([])
 const [unreadInquiryCount, setUnreadInquiryCount] = useState(0)
 const [unreadNoticeCount, setUnreadNoticeCount] = useState(0)
+  const [collapsedAdminAlertBar, setCollapsedAdminAlertBar] = useState(false)
   const [managerActionLogs, setManagerActionLogs] = useState([])
   const [managerTaskChecks, setManagerTaskChecks] = useState([])
   const [managerGoalSettings, setManagerGoalSettings] = useState(null)
@@ -5681,69 +5682,83 @@ setEditingManagerActionId(null)
 
   return (
     <div className="dashboard-shell">
-      <div className="admin-alert-bar">
-  <div className="admin-alert-summary">
-    <strong>알림</strong>
-    <span>문의 {unreadInquiryCount}건 / 공지 {unreadNoticeCount}건</span>
-  </div>
-
-  <div className="admin-alert-settings">
-    <label className="checkbox-line">
-      <input
-        type="checkbox"
-        checked={adminAlertSettings.inquiry}
-        onChange={(e) => updateAdminAlertSetting('inquiry', e.target.checked)}
-      />
-      <span>문의 알림</span>
-    </label>
-
-    <label className="checkbox-line">
-      <input
-        type="checkbox"
-        checked={adminAlertSettings.notice}
-        onChange={(e) => updateAdminAlertSetting('notice', e.target.checked)}
-      />
-      <span>공지 알림</span>
-    </label>
-
-    <label className="checkbox-line">
-      <input
-        type="checkbox"
-        checked={adminAlertSettings.sound}
-        onChange={(e) => updateAdminAlertSetting('sound', e.target.checked)}
-      />
-      <span>소리</span>
-    </label>
-
-    <label className="checkbox-line">
-      <input
-        type="checkbox"
-        checked={adminAlertSettings.popup}
-        onChange={(e) => updateAdminAlertSetting('popup', e.target.checked)}
-      />
-      <span>팝업</span>
-    </label>
-
-    <button type="button" className="secondary-btn" onClick={clearAdminAlerts}>
-      알림 초기화
-    </button>
-  </div>
-
-  {adminAlerts.length > 0 && (
-    <div className="admin-alert-list">
-      {adminAlerts.map((alert) => (
-        <div key={alert.id} className={`admin-alert-item ${alert.type}`}>
-          <span>{alert.text}</span>
-          <button
-            type="button"
-            className="secondary-btn"
-            onClick={() => removeAdminAlert(alert.id)}
-          >
-            닫기
-          </button>
-        </div>
-      ))}
+      <div className="admin-alert-bar collapsible-alert-bar">
+  <button
+    type="button"
+    className="alert-collapse-toggle"
+    onClick={() => setCollapsedAdminAlertBar((prev) => !prev)}
+  >
+    <div className="alert-collapse-left">
+      <strong>알림</strong>
+      <span>문의 {unreadInquiryCount}건 / 공지 {unreadNoticeCount}건</span>
     </div>
+
+    <span className={`alert-collapse-arrow ${collapsedAdminAlertBar ? 'collapsed' : 'open'}`}>
+      ▾
+    </span>
+  </button>
+
+  {!collapsedAdminAlertBar && (
+    <>
+      <div className="admin-alert-settings">
+        <label className="checkbox-line">
+          <input
+            type="checkbox"
+            checked={adminAlertSettings.inquiry}
+            onChange={(e) => updateAdminAlertSetting('inquiry', e.target.checked)}
+          />
+          <span>문의 알림</span>
+        </label>
+
+        <label className="checkbox-line">
+          <input
+            type="checkbox"
+            checked={adminAlertSettings.notice}
+            onChange={(e) => updateAdminAlertSetting('notice', e.target.checked)}
+          />
+          <span>공지 알림</span>
+        </label>
+
+        <label className="checkbox-line">
+          <input
+            type="checkbox"
+            checked={adminAlertSettings.sound}
+            onChange={(e) => updateAdminAlertSetting('sound', e.target.checked)}
+          />
+          <span>소리</span>
+        </label>
+
+        <label className="checkbox-line">
+          <input
+            type="checkbox"
+            checked={adminAlertSettings.popup}
+            onChange={(e) => updateAdminAlertSetting('popup', e.target.checked)}
+          />
+          <span>팝업</span>
+        </label>
+
+        <button type="button" className="secondary-btn" onClick={clearAdminAlerts}>
+          알림 초기화
+        </button>
+      </div>
+
+      {adminAlerts.length > 0 && (
+        <div className="admin-alert-list">
+          {adminAlerts.map((alert) => (
+            <div key={alert.id} className={`admin-alert-item ${alert.type}`}>
+              <span>{alert.text}</span>
+              <button
+                type="button"
+                className="secondary-btn"
+                onClick={() => removeAdminAlert(alert.id)}
+              >
+                닫기
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
+    </>
   )}
 </div>
       <header className="topbar">
