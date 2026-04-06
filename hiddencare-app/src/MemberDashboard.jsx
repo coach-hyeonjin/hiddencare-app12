@@ -18,12 +18,25 @@ const TABS = [
   '사용방법',
 ]
 
+const createEmptyPersonalSet = () => ({ kg: '', reps: '' })
+
+const createEmptyPersonalSubExercise = () => ({
+  exercise_id: '',
+  exercise_name_snapshot: '',
+  sets: [createEmptyPersonalSet()],
+})
+
 const emptyPersonalItem = {
   exercise_id: '',
   exercise_name_snapshot: '',
   is_cardio: false,
   cardio_minutes: '',
-  sets: [{ kg: '', reps: '' }],
+  sets: [createEmptyPersonalSet()],
+
+  training_method: 'normal',
+  method_note: '',
+  sub_exercises: [createEmptyPersonalSubExercise(), createEmptyPersonalSubExercise()],
+  collapsed: false,
 }
 const emptyPainLog = {
   pain_type: '운동중',
@@ -40,7 +53,7 @@ const emptyPersonalForm = {
   improve: '',
   pain_enabled: false,
   pain_logs: [{ ...emptyPainLog }],
-  items: [{ ...emptyPersonalItem }],
+  items: [{ ...emptyPersonalItem, sub_exercises: [createEmptyPersonalSubExercise(), createEmptyPersonalSubExercise()] }],
 }
 
 const emptyDietForm = {
@@ -1031,252 +1044,420 @@ const clearMemberAlerts = () => {
     })
   }
 
-  const updatePersonalItemSelect = (itemIndex, exerciseId) => {
-    const found = exercises.find((exercise) => String(exercise.id) === String(exerciseId))
+  const updatePersonalItemField = (itemIndex, field, value) => {
+  setPersonalForm((prev) => {
+    const nextItems = [...prev.items]
+    nextItems[itemIndex] = {
+      ...nextItems[itemIndex],
+      [field]: value,
+    }
+    return { ...prev, items: nextItems }
+  })
+}
 
-    setPersonalForm((prev) => {
-      const nextItems = [...prev.items]
-      const isCardio = isCardioExercise(found)
+const togglePersonalItemCollapse = (itemIndex) => {
+  setPersonalForm((prev) => {
+    const nextItems = [...prev.items]
+    nextItems[itemIndex] = {
+      ...nextItems[itemIndex],
+      collapsed: !nextItems[itemIndex].collapsed,
+    }
+    return { ...prev, items: nextItems }
+  })
+}
+
+const updatePersonalTrainingMethod = (itemIndex, method) => {
+  setPersonalForm((prev) => {
+    const nextItems = [...prev.items]
+    const currentItem = nextItems[itemIndex]
+
+    nextItems[itemIndex] = {
+      ...currentItem,
+      training_method: method,
+      is_cardio: false,
+      cardio_minutes: '',
+      sets: currentItem.sets?.length ? currentItem.sets : [createEmptyPersonalSet()],
+      sub_exercises:
+        method === 'superset'
+          ? currentItem.sub_exercises?.length
+            ? currentItem.sub_exercises
+            : [createEmptyPersonalSubExercise(), createEmptyPersonalSubExercise()]
+          : [createEmptyPersonalSubExercise(), createEmptyPersonalSubExercise()],
+    }
+
+    return { ...prev, items: nextItems }
+  })
+}
+
+const updatePersonalItemSelect = (itemIndex, exerciseId) => {
+  const found = exercises.find((exercise) => String(exercise.id) === String(exerciseId))
+
+  setPersonalForm((prev) => {
+    const nextItems = [...prev.items]
+    const isCardio = isCardioExercise(found)
+
+    nextItems[itemIndex] = {
+      ...nextItems[itemIndex],
+      exercise_id: found?.id || '',
+      exercise_name_snapshot: found?.name || nextItems[itemIndex].exercise_name_snapshot,
+      is_cardio: isCardio,
+      cardio_minutes: isCardio ? nextItems[itemIndex].cardio_minutes || '' : '',
+      training_method: isCardio ? 'normal' : nextItems[itemIndex].training_method || 'normal',
+      sets: isCardio ? [createEmptyPersonalSet()] : nextItems[itemIndex].sets,
+    }
+
+    return { ...prev, items: nextItems }
+  })
+}
+
+const updatePersonalItemName = (itemIndex, value) => {
+  setPersonalForm((prev) => {
+    const nextItems = [...prev.items]
+    nextItems[itemIndex] = {
+      ...nextItems[itemIndex],
+      exercise_name_snapshot: value,
+    }
+    return { ...prev, items: nextItems }
+  })
+}
+
+const updatePersonalSubExerciseSelect = (itemIndex, subIndex, exerciseId) => {
+  const found = exercises.find((exercise) => String(exercise.id) === String(exerciseId))
+
+  setPersonalForm((prev) => {
+    const nextItems = [...prev.items]
+    const currentItem = nextItems[itemIndex]
+    const nextSubs = [...(currentItem.sub_exercises || [createEmptyPersonalSubExercise(), createEmptyPersonalSubExercise()])]
+
+    nextSubs[subIndex] = {
+      ...nextSubs[subIndex],
+      exercise_id: found?.id || '',
+      exercise_name_snapshot: found?.name || nextSubs[subIndex].exercise_name_snapshot,
+    }
+
+    nextItems[itemIndex] = {
+      ...currentItem,
+      sub_exercises: nextSubs,
+    }
+
+    return { ...prev, items: nextItems }
+  })
+}
+
+const updatePersonalSubExerciseName = (itemIndex, subIndex, value) => {
+  setPersonalForm((prev) => {
+    const nextItems = [...prev.items]
+    const currentItem = nextItems[itemIndex]
+    const nextSubs = [...(currentItem.sub_exercises || [createEmptyPersonalSubExercise(), createEmptyPersonalSubExercise()])]
+
+    nextSubs[subIndex] = {
+      ...nextSubs[subIndex],
+      exercise_name_snapshot: value,
+    }
+
+    nextItems[itemIndex] = {
+      ...currentItem,
+      sub_exercises: nextSubs,
+    }
+
+    return { ...prev, items: nextItems }
+  })
+}
+
+const togglePersonalItemCardio = (itemIndex, checked) => {
+  setPersonalForm((prev) => {
+    const nextItems = [...prev.items]
+    nextItems[itemIndex] = {
+      ...nextItems[itemIndex],
+      is_cardio: checked,
+      cardio_minutes: checked ? nextItems[itemIndex].cardio_minutes || '' : '',
+      training_method: checked ? 'normal' : nextItems[itemIndex].training_method || 'normal',
+      sets: checked
+        ? [createEmptyPersonalSet()]
+        : nextItems[itemIndex].sets?.length
+        ? nextItems[itemIndex].sets
+        : [createEmptyPersonalSet()],
+    }
+    return { ...prev, items: nextItems }
+  })
+}
+
+const addPersonalItem = () => {
+  setPersonalForm((prev) => ({
+    ...prev,
+    items: [
+      ...prev.items,
+      {
+        ...emptyPersonalItem,
+        sub_exercises: [createEmptyPersonalSubExercise(), createEmptyPersonalSubExercise()],
+      },
+    ],
+  }))
+}
+
+const removePersonalItem = (itemIndex) => {
+  setPersonalForm((prev) => ({
+    ...prev,
+    items:
+      prev.items.length === 1
+        ? [{ ...emptyPersonalItem, sub_exercises: [createEmptyPersonalSubExercise(), createEmptyPersonalSubExercise()] }]
+        : prev.items.filter((_, idx) => idx !== itemIndex),
+  }))
+}
+
+const addSet = (itemIndex, subIndex = null) => {
+  setPersonalForm((prev) => {
+    const nextItems = [...prev.items]
+    const currentItem = nextItems[itemIndex]
+
+    if (currentItem.training_method === 'superset' && subIndex !== null) {
+      const nextSubs = [...currentItem.sub_exercises]
+      nextSubs[subIndex] = {
+        ...nextSubs[subIndex],
+        sets: [...(nextSubs[subIndex].sets || []), createEmptyPersonalSet()],
+      }
 
       nextItems[itemIndex] = {
-        ...nextItems[itemIndex],
-        exercise_id: found?.id || '',
-        exercise_name_snapshot: found?.name || nextItems[itemIndex].exercise_name_snapshot,
-        is_cardio: isCardio,
-        cardio_minutes: isCardio ? nextItems[itemIndex].cardio_minutes || '' : '',
-        sets: isCardio ? [{ kg: '', reps: '' }] : nextItems[itemIndex].sets,
+        ...currentItem,
+        sub_exercises: nextSubs,
       }
-
-      return { ...prev, items: nextItems }
-    })
-  }
-
-  const updatePersonalItemName = (itemIndex, value) => {
-    setPersonalForm((prev) => {
-      const nextItems = [...prev.items]
+    } else {
       nextItems[itemIndex] = {
-        ...nextItems[itemIndex],
-        exercise_name_snapshot: value,
+        ...currentItem,
+        sets: [...(currentItem.sets || []), createEmptyPersonalSet()],
       }
-      return { ...prev, items: nextItems }
-    })
-  }
+    }
 
-  const togglePersonalItemCardio = (itemIndex, checked) => {
-    setPersonalForm((prev) => {
-      const nextItems = [...prev.items]
+    return { ...prev, items: nextItems }
+  })
+}
+
+const removeSet = (itemIndex, setIndex, subIndex = null) => {
+  setPersonalForm((prev) => {
+    const nextItems = [...prev.items]
+    const currentItem = nextItems[itemIndex]
+
+    if (currentItem.training_method === 'superset' && subIndex !== null) {
+      const nextSubs = [...currentItem.sub_exercises]
+      const currentSets = nextSubs[subIndex].sets || [createEmptyPersonalSet()]
+
+      nextSubs[subIndex] = {
+        ...nextSubs[subIndex],
+        sets:
+          currentSets.length === 1
+            ? [createEmptyPersonalSet()]
+            : currentSets.filter((_, idx) => idx !== setIndex),
+      }
+
       nextItems[itemIndex] = {
-        ...nextItems[itemIndex],
-        is_cardio: checked,
-        cardio_minutes: checked ? nextItems[itemIndex].cardio_minutes || '' : '',
-        sets: checked
-          ? [{ kg: '', reps: '' }]
-          : nextItems[itemIndex].sets?.length
-          ? nextItems[itemIndex].sets
-          : [{ kg: '', reps: '' }],
+        ...currentItem,
+        sub_exercises: nextSubs,
       }
-      return { ...prev, items: nextItems }
-    })
-  }
-
-  const addPersonalItem = () => {
-    setPersonalForm((prev) => ({
-      ...prev,
-      items: [...prev.items, { ...emptyPersonalItem }],
-    }))
-  }
-
-  const removePersonalItem = (itemIndex) => {
-    setPersonalForm((prev) => ({
-      ...prev,
-      items: prev.items.filter((_, idx) => idx !== itemIndex),
-    }))
-  }
-  const addPainLog = () => {
-    setPersonalForm((prev) => ({
-      ...prev,
-      pain_logs: [...(prev.pain_logs || []), { ...emptyPainLog }],
-    }))
-  }
-
-  const removePainLog = (painIndex) => {
-    setPersonalForm((prev) => ({
-      ...prev,
-      pain_logs:
-        (prev.pain_logs || []).length > 1
-          ? prev.pain_logs.filter((_, idx) => idx !== painIndex)
-          : [{ ...emptyPainLog }],
-    }))
-  }
-
-  const updatePainLogValue = (painIndex, field, value) => {
-    setPersonalForm((prev) => {
-      const nextPainLogs = [...(prev.pain_logs || [])]
-      nextPainLogs[painIndex] = {
-        ...nextPainLogs[painIndex],
-        [field]: field === 'pain_score' ? value : value,
-      }
-
-      return {
-        ...prev,
-        pain_logs: nextPainLogs,
-      }
-    })
-  }
-  const addSet = (itemIndex) => {
-    setPersonalForm((prev) => {
-      const nextItems = [...prev.items]
+    } else {
+      const currentSets = currentItem.sets || [createEmptyPersonalSet()]
       nextItems[itemIndex] = {
-        ...nextItems[itemIndex],
-        sets: [...nextItems[itemIndex].sets, { kg: '', reps: '' }],
+        ...currentItem,
+        sets:
+          currentSets.length === 1
+            ? [createEmptyPersonalSet()]
+            : currentSets.filter((_, idx) => idx !== setIndex),
       }
-      return { ...prev, items: nextItems }
-    })
-  }
+    }
 
-  const removeSet = (itemIndex, setIndex) => {
-    setPersonalForm((prev) => {
-      const nextItems = [...prev.items]
-      nextItems[itemIndex] = {
-        ...nextItems[itemIndex],
-        sets: nextItems[itemIndex].sets.filter((_, idx) => idx !== setIndex),
-      }
-      return { ...prev, items: nextItems }
-    })
-  }
+    return { ...prev, items: nextItems }
+  })
+}
 
-  const updateSetValue = (itemIndex, setIndex, field, value) => {
-    setPersonalForm((prev) => {
-      const nextItems = [...prev.items]
-      const nextSets = [...nextItems[itemIndex].sets]
+const updateSetValue = (itemIndex, setIndex, field, value, subIndex = null) => {
+  setPersonalForm((prev) => {
+    const nextItems = [...prev.items]
+    const currentItem = nextItems[itemIndex]
+
+    if (currentItem.training_method === 'superset' && subIndex !== null) {
+      const nextSubs = [...currentItem.sub_exercises]
+      const nextSets = [...(nextSubs[subIndex].sets || [])]
+
       nextSets[setIndex] = {
         ...nextSets[setIndex],
         [field]: value,
       }
-      nextItems[itemIndex] = {
-        ...nextItems[itemIndex],
+
+      nextSubs[subIndex] = {
+        ...nextSubs[subIndex],
         sets: nextSets,
       }
-      return { ...prev, items: nextItems }
-    })
-  }
+
+      nextItems[itemIndex] = {
+        ...currentItem,
+        sub_exercises: nextSubs,
+      }
+    } else {
+      const nextSets = [...(currentItem.sets || [])]
+      nextSets[setIndex] = {
+        ...nextSets[setIndex],
+        [field]: value,
+      }
+
+      nextItems[itemIndex] = {
+        ...currentItem,
+        sets: nextSets,
+      }
+    }
+
+    return { ...prev, items: nextItems }
+  })
+}
 
   const handlePersonalSubmit = async (e) => {
-    e.preventDefault()
+  e.preventDefault()
 
-    const cleanedItems = personalForm.items
-      .filter((item) => item.exercise_name_snapshot?.trim())
-      .map((item, index) => ({
-        exercise_id: item.exercise_id || null,
-        exercise_name_snapshot: item.exercise_name_snapshot.trim(),
-        sort_order: index,
-        is_cardio: !!item.is_cardio,
-        cardio_minutes: item.is_cardio ? Number(item.cardio_minutes || 0) : null,
-        sets: item.is_cardio ? [] : normalizeSets(item.sets),
-      }))
+  const cleanedItems = personalForm.items
+    .filter((item) => {
+      if (item.is_cardio) return item.exercise_name_snapshot?.trim()
+      if (item.training_method === 'superset') {
+        return (item.sub_exercises || []).some((sub) => sub.exercise_name_snapshot?.trim())
+      }
+      return item.exercise_name_snapshot?.trim()
+    })
+    .map((item, index) => ({
+      exercise_id: item.exercise_id || null,
+      exercise_name_snapshot: item.exercise_name_snapshot?.trim() || '',
+      sort_order: index,
+      is_cardio: !!item.is_cardio,
+      cardio_minutes: item.is_cardio ? Number(item.cardio_minutes || 0) : null,
+      sets: item.is_cardio ? [] : normalizeSets(item.sets || []),
 
-    if (cleanedItems.length === 0) {
-      setMessage('최소 1개의 운동을 입력해주세요.')
-      return
-    }
+      training_method: item.training_method || 'normal',
+      method_note: item.method_note?.trim() || '',
+      sub_exercises:
+        item.training_method === 'superset'
+          ? (item.sub_exercises || [])
+              .filter((sub) => sub.exercise_name_snapshot?.trim())
+              .map((sub) => ({
+                exercise_id: sub.exercise_id || null,
+                exercise_name_snapshot: sub.exercise_name_snapshot?.trim() || '',
+                sets: normalizeSets(sub.sets || []),
+              }))
+          : [],
+    }))
 
-    const cleanedPainLogs = personalForm.pain_enabled
-      ? (personalForm.pain_logs || [])
-          .filter(
-            (log) =>
-              log?.body_part?.trim() ||
-              log?.movement_name?.trim() ||
-              log?.pain_timing?.trim() ||
-              String(log?.pain_score ?? '').trim() ||
-              log?.pain_note?.trim(),
-          )
-          .map((log) => ({
-            pain_type: log?.pain_type || '운동중',
-            body_part: log?.body_part?.trim() || '',
-            movement_name: log?.movement_name?.trim() || '',
-            pain_timing: log?.pain_timing?.trim() || '',
-            pain_score:
-              log?.pain_score === '' || log?.pain_score === null || log?.pain_score === undefined
-                ? null
-                : Number(log.pain_score),
-            pain_note: log?.pain_note?.trim() || '',
-          }))
-      : []
+  if (cleanedItems.length === 0) {
+    setMessage('최소 1개의 운동을 입력해주세요.')
+    return
+  }
 
-    const payload = {
-      member_id: member.id,
-      workout_date: personalForm.workout_date,
-      workout_type: 'personal',
-      good: personalForm.good?.trim() || '',
-      improve: personalForm.improve?.trim() || '',
-      pain_enabled: !!personalForm.pain_enabled,
-      pain_logs: cleanedPainLogs,
-      created_by: null,
-      admin_id: currentAdminId || null,
-      gym_id: currentGymId || null,
-    }
+  const cleanedPainLogs = personalForm.pain_enabled
+    ? (personalForm.pain_logs || [])
+        .filter(
+          (log) =>
+            log?.body_part?.trim() ||
+            log?.movement_name?.trim() ||
+            log?.pain_timing?.trim() ||
+            String(log?.pain_score ?? '').trim() ||
+            log?.pain_note?.trim(),
+        )
+        .map((log) => ({
+          pain_type: log?.pain_type || '운동중',
+          body_part: log?.body_part?.trim() || '',
+          movement_name: log?.movement_name?.trim() || '',
+          pain_timing: log?.pain_timing?.trim() || '',
+          pain_score:
+            log?.pain_score === '' || log?.pain_score === null || log?.pain_score === undefined
+              ? null
+              : Number(log.pain_score),
+          pain_note: log?.pain_note?.trim() || '',
+        }))
+    : []
 
-    let workoutId = personalForm.id
-
-    if (personalForm.id) {
-      await supabase.from('workouts').update(payload).eq('id', personalForm.id)
-      await supabase.from('workout_items').delete().eq('workout_id', personalForm.id)
-    } else {
-      const { data } = await supabase.from('workouts').insert(payload).select().single()
-      workoutId = data.id
-    }
-
-    await supabase.from('workout_items').insert(
-  cleanedItems.map((item) => ({
-    ...item,
-    workout_id: workoutId,
+  const payload = {
+    member_id: member.id,
+    workout_date: personalForm.workout_date,
+    workout_type: 'personal',
+    good: personalForm.good?.trim() || '',
+    improve: personalForm.improve?.trim() || '',
+    pain_enabled: !!personalForm.pain_enabled,
+    pain_logs: cleanedPainLogs,
+    created_by: null,
     admin_id: currentAdminId || null,
     gym_id: currentGymId || null,
-  })),
-)
-
-    setMessage(personalForm.id ? '개인운동이 수정되었습니다.' : '개인운동이 저장되었습니다.')
-    resetPersonalForm()
-    await loadWorkouts()
-    setActiveTab('운동기록')
   }
+
+  let workoutId = personalForm.id
+
+  if (personalForm.id) {
+    await supabase.from('workouts').update(payload).eq('id', personalForm.id)
+    await supabase.from('workout_items').delete().eq('workout_id', personalForm.id)
+  } else {
+    const { data } = await supabase.from('workouts').insert(payload).select().single()
+    workoutId = data.id
+  }
+
+  await supabase.from('workout_items').insert(
+    cleanedItems.map((item) => ({
+      ...item,
+      workout_id: workoutId,
+      admin_id: currentAdminId || null,
+      gym_id: currentGymId || null,
+    })),
+  )
+
+  setMessage(personalForm.id ? '개인운동이 수정되었습니다.' : '개인운동이 저장되었습니다.')
+  resetPersonalForm()
+  await loadWorkouts()
+  setActiveTab('운동기록')
+}
 
   const handlePersonalEdit = (workout) => {
-    const items = workoutItemsMap[workout.id] || []
+  const items = workoutItemsMap[workout.id] || []
 
-        setPersonalForm({
-      id: workout.id,
-      workout_date: workout.workout_date,
-      good: workout.good || '',
-      improve: workout.improve || '',
-      pain_enabled: !!workout.pain_enabled,
-      pain_logs:
-        Array.isArray(workout.pain_logs) && workout.pain_logs.length > 0
-          ? workout.pain_logs.map((log) => ({
-              pain_type: log?.pain_type || '운동중',
-              body_part: log?.body_part || '',
-              movement_name: log?.movement_name || '',
-              pain_timing: log?.pain_timing || '',
-              pain_score: log?.pain_score ?? '',
-              pain_note: log?.pain_note || '',
-            }))
-          : [{ ...emptyPainLog }],
-      items:
-        items.length > 0
-          ? items.map((item) => ({
-              exercise_id: item.exercise_id || '',
-              exercise_name_snapshot: item.exercise_name_snapshot || '',
-              is_cardio: !!item.is_cardio,
-              cardio_minutes: item.cardio_minutes || '',
-              sets:
-                !item.is_cardio && Array.isArray(item.sets) && item.sets.length > 0
-                  ? item.sets
-                  : [{ kg: '', reps: '' }],
-            }))
-          : [{ ...emptyPersonalItem }],
-    })
-    setActiveTab('개인운동입력')
-  }
+  setPersonalForm({
+    id: workout.id,
+    workout_date: workout.workout_date,
+    good: workout.good || '',
+    improve: workout.improve || '',
+    pain_enabled: !!workout.pain_enabled,
+    pain_logs:
+      Array.isArray(workout.pain_logs) && workout.pain_logs.length > 0
+        ? workout.pain_logs.map((log) => ({
+            pain_type: log?.pain_type || '운동중',
+            body_part: log?.body_part || '',
+            movement_name: log?.movement_name || '',
+            pain_timing: log?.pain_timing || '',
+            pain_score: log?.pain_score ?? '',
+            pain_note: log?.pain_note || '',
+          }))
+        : [{ ...emptyPainLog }],
+    items:
+      items.length > 0
+        ? items.map((item) => ({
+            exercise_id: item.exercise_id || '',
+            exercise_name_snapshot: item.exercise_name_snapshot || '',
+            is_cardio: !!item.is_cardio,
+            cardio_minutes: item.cardio_minutes || '',
+            sets:
+              !item.is_cardio && Array.isArray(item.sets) && item.sets.length > 0
+                ? item.sets
+                : [createEmptyPersonalSet()],
+            training_method: item.training_method || 'normal',
+            method_note: item.method_note || '',
+            sub_exercises:
+              item.training_method === 'superset' && Array.isArray(item.sub_exercises) && item.sub_exercises.length > 0
+                ? item.sub_exercises.map((sub) => ({
+                    exercise_id: sub.exercise_id || '',
+                    exercise_name_snapshot: sub.exercise_name_snapshot || '',
+                    sets:
+                      Array.isArray(sub.sets) && sub.sets.length > 0
+                        ? sub.sets
+                        : [createEmptyPersonalSet()],
+                  }))
+                : [createEmptyPersonalSubExercise(), createEmptyPersonalSubExercise()],
+            collapsed: false,
+          }))
+        : [{ ...emptyPersonalItem, sub_exercises: [createEmptyPersonalSubExercise(), createEmptyPersonalSubExercise()] }],
+  })
+
+  setActiveTab('개인운동입력')
+}
 
   const handlePersonalDelete = async (workoutId) => {
     if (!window.confirm('개인운동 기록을 삭제할까요?')) return
@@ -2090,104 +2271,223 @@ const clearMemberAlerts = () => {
             </label>
 
             {personalForm.items.map((item, itemIndex) => (
-              <div key={itemIndex} className="sub-card">
-                <div className="list-card-top">
-                  <strong>운동 {itemIndex + 1}</strong>
-                  <button
-                    type="button"
-                    className="danger-btn"
-                    onClick={() => removePersonalItem(itemIndex)}
-                    disabled={personalForm.items.length === 1}
-                  >
-                    운동 삭제
-                  </button>
-                </div>
+  <div key={itemIndex} className="sub-card">
+    <div className="list-card-top">
+      <strong>운동 {itemIndex + 1}</strong>
+      <div className="inline-actions wrap">
+        <button
+          type="button"
+          className="secondary-btn"
+          onClick={() => togglePersonalItemCollapse(itemIndex)}
+        >
+          {item.collapsed ? '상세히보기' : '간략히보기'}
+        </button>
+        <button
+          type="button"
+          className="danger-btn"
+          onClick={() => removePersonalItem(itemIndex)}
+          disabled={personalForm.items.length === 1}
+        >
+          운동 삭제
+        </button>
+      </div>
+    </div>
 
-                <label className="field">
-                  <span>운동DB 선택</span>
-                  <select
-                    value={item.exercise_id}
-                    onChange={(e) => updatePersonalItemSelect(itemIndex, e.target.value)}
-                  >
-                    <option value="">선택 안함</option>
-                    {exercises.map((exercise) => (
-                      <option key={exercise.id} value={exercise.id}>
-                        [{exercise.brands?.name || '브랜드없음'}] {exercise.name}
-                      </option>
-                    ))}
-                  </select>
-                </label>
+    <div className="compact-text">
+      간략히보기:{' '}
+      {item.is_cardio
+        ? `유산소 / ${item.cardio_minutes || 0}분`
+        : item.training_method === 'superset'
+        ? '슈퍼세트'
+        : item.training_method === 'dropset'
+        ? '드롭세트'
+        : item.exercise_name_snapshot || '일반운동'}
+    </div>
 
-                <label className="field">
-                  <span>운동명 직접 입력</span>
-                  <input
-                    value={item.exercise_name_snapshot}
-                    onChange={(e) => updatePersonalItemName(itemIndex, e.target.value)}
-                    placeholder="예: 스쿼트, 힙힌지, 밴드 워크, 천국의 계단"
-                  />
-                </label>
+    {!item.collapsed && (
+      <div className="stack-gap" style={{ marginTop: '12px' }}>
+        <label className="field">
+          <span>훈련 방식</span>
+          <select
+            value={item.training_method || 'normal'}
+            onChange={(e) => updatePersonalTrainingMethod(itemIndex, e.target.value)}
+          >
+            <option value="normal">일반운동</option>
+            <option value="superset">슈퍼세트</option>
+            <option value="dropset">드롭세트</option>
+          </select>
+        </label>
 
-                <label className="checkbox-line">
-                  <input
-                    type="checkbox"
-                    checked={!!item.is_cardio}
-                    onChange={(e) => togglePersonalItemCardio(itemIndex, e.target.checked)}
-                  />
-                  <span>유산소 운동</span>
-                </label>
+        {(item.training_method === 'superset' || item.training_method === 'dropset') && (
+          <div className="detail-box">
+            <p>
+              <strong>{item.training_method === 'superset' ? '슈퍼세트' : '드롭세트'} 안내</strong>
+            </p>
+            <div className="compact-text">
+              {item.training_method === 'superset'
+                ? '슈퍼세트: 두 가지 운동을 쉬는 시간 없이 연속으로 수행하는 방식입니다.'
+                : '드롭세트: 같은 운동에서 무게를 낮춰가며 연속 수행하는 방식입니다.'}
+            </div>
+          </div>
+        )}
 
-                {item.is_cardio ? (
+        <label className="field">
+          <span>추가 메모</span>
+          <input
+            value={item.method_note || ''}
+            onChange={(e) => updatePersonalItemField(itemIndex, 'method_note', e.target.value)}
+            placeholder="예: A끝나고 바로 B / 마지막 세트 드롭"
+          />
+        </label>
+
+        {item.training_method === 'superset' ? (
+          <div className="stack-gap">
+            {[0, 1].map((subIndex) => {
+              const sub = item.sub_exercises?.[subIndex] || createEmptyPersonalSubExercise()
+
+              return (
+                <div key={subIndex} className="detail-box">
+                  <div className="list-card-top">
+                    <strong>{subIndex === 0 ? '운동 A' : '운동 B'}</strong>
+                  </div>
+
                   <label className="field">
-                    <span>유산소 시간(분)</span>
+                    <span>운동DB 선택</span>
+                    <select
+                      value={sub.exercise_id}
+                      onChange={(e) => updatePersonalSubExerciseSelect(itemIndex, subIndex, e.target.value)}
+                    >
+                      <option value="">선택 안함</option>
+                      {exercises.map((exercise) => (
+                        <option key={exercise.id} value={exercise.id}>
+                          [{exercise.brands?.name || '브랜드없음'}] {exercise.name}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+
+                  <label className="field">
+                    <span>운동명 직접 입력</span>
                     <input
-                      type="number"
-                      value={item.cardio_minutes || ''}
-                      onChange={(e) => {
-                        const value = e.target.value
-                        setPersonalForm((prev) => {
-                          const nextItems = [...prev.items]
-                          nextItems[itemIndex] = {
-                            ...nextItems[itemIndex],
-                            cardio_minutes: value,
-                          }
-                          return { ...prev, items: nextItems }
-                        })
-                      }}
-                      placeholder="예: 20"
+                      value={sub.exercise_name_snapshot}
+                      onChange={(e) => updatePersonalSubExerciseName(itemIndex, subIndex, e.target.value)}
+                      placeholder={subIndex === 0 ? '예: 스쿼트' : '예: 런지'}
                     />
                   </label>
-                ) : (
+
                   <div className="stack-gap">
-                    {item.sets.map((setRow, setIndex) => (
+                    {(sub.sets || []).map((setRow, setIndex) => (
                       <div className="set-row" key={setIndex}>
                         <input
                           placeholder="kg"
                           value={setRow.kg}
-                          onChange={(e) => updateSetValue(itemIndex, setIndex, 'kg', e.target.value)}
+                          onChange={(e) => updateSetValue(itemIndex, setIndex, 'kg', e.target.value, subIndex)}
                         />
                         <input
                           placeholder="reps"
                           value={setRow.reps}
-                          onChange={(e) => updateSetValue(itemIndex, setIndex, 'reps', e.target.value)}
+                          onChange={(e) => updateSetValue(itemIndex, setIndex, 'reps', e.target.value, subIndex)}
                         />
                         <button
                           type="button"
                           className="danger-btn"
-                          onClick={() => removeSet(itemIndex, setIndex)}
-                          disabled={item.sets.length === 1}
+                          onClick={() => removeSet(itemIndex, setIndex, subIndex)}
+                          disabled={(sub.sets || []).length === 1}
                         >
                           세트 삭제
                         </button>
                       </div>
                     ))}
 
-                    <button type="button" className="secondary-btn" onClick={() => addSet(itemIndex)}>
+                    <button type="button" className="secondary-btn" onClick={() => addSet(itemIndex, subIndex)}>
                       세트 추가
                     </button>
                   </div>
-                )}
+                </div>
+              )
+            })}
+          </div>
+        ) : (
+          <>
+            <label className="field">
+              <span>운동DB 선택</span>
+              <select
+                value={item.exercise_id}
+                onChange={(e) => updatePersonalItemSelect(itemIndex, e.target.value)}
+              >
+                <option value="">선택 안함</option>
+                {exercises.map((exercise) => (
+                  <option key={exercise.id} value={exercise.id}>
+                    [{exercise.brands?.name || '브랜드없음'}] {exercise.name}
+                  </option>
+                ))}
+              </select>
+            </label>
+
+            <label className="field">
+              <span>운동명 직접 입력</span>
+              <input
+                value={item.exercise_name_snapshot}
+                onChange={(e) => updatePersonalItemName(itemIndex, e.target.value)}
+                placeholder="예: 스쿼트, 힙힌지, 밴드 워크, 천국의 계단"
+              />
+            </label>
+
+            <label className="checkbox-line">
+              <input
+                type="checkbox"
+                checked={!!item.is_cardio}
+                onChange={(e) => togglePersonalItemCardio(itemIndex, e.target.checked)}
+              />
+              <span>유산소 운동</span>
+            </label>
+
+            {item.is_cardio ? (
+              <label className="field">
+                <span>유산소 시간(분)</span>
+                <input
+                  type="number"
+                  value={item.cardio_minutes || ''}
+                  onChange={(e) => updatePersonalItemField(itemIndex, 'cardio_minutes', e.target.value)}
+                  placeholder="예: 20"
+                />
+              </label>
+            ) : (
+              <div className="stack-gap">
+                {(item.sets || []).map((setRow, setIndex) => (
+                  <div className="set-row" key={setIndex}>
+                    <input
+                      placeholder="kg"
+                      value={setRow.kg}
+                      onChange={(e) => updateSetValue(itemIndex, setIndex, 'kg', e.target.value)}
+                    />
+                    <input
+                      placeholder="reps"
+                      value={setRow.reps}
+                      onChange={(e) => updateSetValue(itemIndex, setIndex, 'reps', e.target.value)}
+                    />
+                    <button
+                      type="button"
+                      className="danger-btn"
+                      onClick={() => removeSet(itemIndex, setIndex)}
+                      disabled={(item.sets || []).length === 1}
+                    >
+                      세트 삭제
+                    </button>
+                  </div>
+                ))}
+
+                <button type="button" className="secondary-btn" onClick={() => addSet(itemIndex)}>
+                  세트 추가
+                </button>
               </div>
-            ))}
+            )}
+          </>
+        )}
+      </div>
+    )}
+  </div>
+))}
 
             <button type="button" className="secondary-btn" onClick={addPersonalItem}>
               운동 추가
