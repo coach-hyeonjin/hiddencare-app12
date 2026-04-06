@@ -4198,389 +4198,792 @@ const updateSetValue = (itemIndex, setIndex, field, value, subIndex = null) => {
   </div>
 )}
       {activeTab === '제휴업체' && (
-        <div className="stack-gap">
-          <section className="card">
-            <h2>제휴업체</h2>
+  <div className="member-partner-page">
+    <section className="member-partner-hero">
+      <div className="member-partner-hero-left">
+        <div className="member-partner-badge">PARTNER BENEFIT</div>
+        <h2>제휴업체</h2>
+        <p className="member-partner-hero-text">
+          이용 가능한 제휴업체와 혜택을 한눈에 보고,
+          상세 내용 확인과 혜택 사용 요청까지 편하게 할 수 있습니다.
+        </p>
+      </div>
 
-            <div className="stack-gap">
-              <input
-                placeholder="업체명 / 카테고리 / 혜택 / 주소 검색"
-                value={partnerSearch}
-                onChange={(e) => setPartnerSearch(e.target.value)}
-              />
+      <div className="member-partner-hero-right">
+        <div className="member-partner-hero-mini">
+          <span>검색 결과</span>
+          <strong>{filteredPartners.length}</strong>
+          <p>현재 조건에 맞는 제휴업체 수입니다.</p>
+        </div>
 
-              <select
-                value={partnerCategoryFilter}
-                onChange={(e) => setPartnerCategoryFilter(e.target.value)}
+        <div className="member-partner-hero-mini">
+          <span>선택 업체</span>
+          <strong>{selectedPartner?.name || '-'}</strong>
+          <p>{selectedPartner ? '상세 정보 확인 가능' : '업체를 먼저 선택해주세요.'}</p>
+        </div>
+      </div>
+    </section>
+
+    <section className="member-partner-summary-grid">
+      <div className="member-partner-summary-card">
+        <span>전체 표시</span>
+        <strong>{filteredPartners.length}</strong>
+        <p>현재 화면에 보이는 제휴업체 수</p>
+      </div>
+
+      <div className="member-partner-summary-card">
+        <span>선택 카테고리</span>
+        <strong>{partnerCategoryFilter === 'all' ? '전체' : partnerCategoryFilter}</strong>
+        <p>현재 필터 기준</p>
+      </div>
+
+      <div className="member-partner-summary-card highlight">
+        <span>내 인증코드</span>
+        <strong>{accessCode || '-'}</strong>
+        <p>제휴 사용 시 확인용 코드</p>
+      </div>
+    </section>
+
+    <div className="member-partner-layout">
+      <section className="card member-partner-list-card">
+        <div className="member-partner-section-head">
+          <div>
+            <div className="member-partner-section-label">SEARCH PARTNER</div>
+            <h2>제휴업체 목록</h2>
+            <p className="sub-text">
+              업체명, 카테고리, 혜택, 주소 기준으로 검색해서 상세보기를 할 수 있습니다.
+            </p>
+          </div>
+        </div>
+
+        <div className="member-partner-filter-grid">
+          <input
+            placeholder="업체명 / 카테고리 / 혜택 / 주소 검색"
+            value={partnerSearch}
+            onChange={(e) => setPartnerSearch(e.target.value)}
+          />
+
+          <select
+            value={partnerCategoryFilter}
+            onChange={(e) => setPartnerCategoryFilter(e.target.value)}
+          >
+            <option value="all">전체 카테고리</option>
+            <option value="카페">카페</option>
+            <option value="병원">병원</option>
+            <option value="마사지">마사지</option>
+            <option value="식당">식당</option>
+            <option value="기타">기타</option>
+          </select>
+        </div>
+
+        <div className="list-stack">
+          {filteredPartners.length === 0 ? (
+            <div className="empty-box">이용 가능한 제휴업체가 없습니다.</div>
+          ) : (
+            filteredPartners.map((partner) => (
+              <div
+                key={partner.id}
+                className={`member-partner-record-card ${selectedPartnerId === partner.id ? 'selected' : ''}`}
               >
-                <option value="all">전체 카테고리</option>
-                <option value="카페">카페</option>
-                <option value="병원">병원</option>
-                <option value="마사지">마사지</option>
-                <option value="식당">식당</option>
-                <option value="기타">기타</option>
-              </select>
-            </div>
-
-            <div className="list-stack">
-              {filteredPartners.length === 0 ? (
-                <div className="workout-list-empty">이용 가능한 제휴업체가 없습니다.</div>
-              ) : null}
-
-              {filteredPartners.map((partner) => (
-                <div key={partner.id} className="list-card">
-                  <div className="list-card-top">
-                    <div>
-                      <strong>{partner.name || '-'}</strong>
-                      <div className="compact-text">
-                        {partner.category || '-'} / {partner.phone || '-'}
-                      </div>
-                    </div>
-
-                    <button
-                      type="button"
-                      className="secondary-btn"
-                      onClick={() => setSelectedPartnerId(partner.id)}
-                    >
-                      자세히보기
-                    </button>
+                <div className="member-partner-record-head">
+                  <div>
+                    <h3>{partner.name || '-'}</h3>
+                    <p>
+                      {partner.category || '-'} / {partner.phone || '-'}
+                    </p>
                   </div>
 
-                  <div className="compact-text">
-                    {(partner.benefit || '').slice(0, 60)}
-                    {(partner.benefit || '').length > 60 ? '...' : ''}
-                  </div>
+                  <button
+                    type="button"
+                    className="secondary-btn"
+                    onClick={() => setSelectedPartnerId(partner.id)}
+                  >
+                    자세히보기
+                  </button>
                 </div>
-              ))}
-            </div>
-          </section>
 
-          {selectedPartner ? (
-            <section className="card">
-              <h2>{selectedPartner.name || '제휴업체 상세'}</h2>
+                <div className="detail-box">
+                  <p>
+                    <strong>혜택:</strong>{' '}
+                    {(partner.benefit || '').slice(0, 80)}
+                    {(partner.benefit || '').length > 80 ? '...' : ''}
+                  </p>
+                </div>
+              </div>
+            ))
+          )}
+        </div>
+      </section>
 
-              <div className="detail-box stack-gap">
+      <section className="card member-partner-detail-card">
+        <div className="member-partner-section-head">
+          <div>
+            <div className="member-partner-section-label">PARTNER DETAIL</div>
+            <h2>{selectedPartner?.name || '제휴업체 상세'}</h2>
+            <p className="sub-text">
+              선택한 제휴업체의 혜택, 사용 조건, 사용 기록을 확인할 수 있습니다.
+            </p>
+          </div>
+        </div>
+
+        {selectedPartner ? (
+          <div className="stack-gap">
+            <div className="member-partner-detail-grid">
+              <div className="detail-box">
                 <p><strong>카테고리:</strong> {selectedPartner.category || '-'}</p>
                 <p><strong>한줄 소개:</strong> {selectedPartner.description || '-'}</p>
                 <p><strong>혜택:</strong> {selectedPartner.benefit || '-'}</p>
                 <p><strong>사용 조건:</strong> {selectedPartner.usage_condition || '-'}</p>
+              </div>
+
+              <div className="detail-box">
                 <p><strong>사용 방법:</strong> {selectedPartner.usage_guide || '-'}</p>
                 <p><strong>주의사항:</strong> {selectedPartner.caution || '-'}</p>
                 <p><strong>주소:</strong> {selectedPartner.address || '-'}</p>
                 <p><strong>연락처:</strong> {selectedPartner.phone || '-'}</p>
+              </div>
+
+              <div className="detail-box">
                 <p><strong>운영시간:</strong> {selectedPartner.business_hours || '-'}</p>
                 <p><strong>내 인증코드:</strong> {accessCode || '-'}</p>
+                <p><strong>승인 방식:</strong> {selectedPartner.approval_required ? '관리자 승인 필요' : '즉시 사용 처리'}</p>
+                <p><strong>최근 사용일:</strong> {selectedPartnerUsageSummary.recentUsedAt ? String(selectedPartnerUsageSummary.recentUsedAt).slice(0, 10) : '-'}</p>
+              </div>
+
+              <div className="detail-box">
                 <p><strong>이번 달 사용:</strong> {selectedPartnerUsageSummary.approvedCountThisMonth}회</p>
                 <p><strong>기본 가능 횟수:</strong> {selectedPartner.monthly_limit ?? 0}회</p>
                 <p><strong>추가 혜택 횟수:</strong> {selectedPartnerUsageSummary.extraLimit}회</p>
                 <p><strong>이번 달 총 가능 횟수:</strong> {selectedPartnerUsageSummary.totalLimit}회</p>
                 <p><strong>남은 횟수:</strong> {selectedPartnerUsageSummary.remainingCount}회</p>
-                <p>
-                  <strong>최근 사용일:</strong>{' '}
-                  {selectedPartnerUsageSummary.recentUsedAt
-                    ? String(selectedPartnerUsageSummary.recentUsedAt).slice(0, 10)
-                    : '-'}
-                </p>
-                <p><strong>승인 방식:</strong> {selectedPartner.approval_required ? '관리자 승인 필요' : '즉시 사용 처리'}</p>
-              </div>
-
-              <div className="sub-card stack-gap">
-                <h3>제휴 혜택 사용 요청</h3>
-
-                <label className="field">
-                  <span>메모 (선택)</span>
-                  <textarea
-                    rows="3"
-                    value={partnerUsageForm.note}
-                    onChange={(e) =>
-                      setPartnerUsageForm({ ...partnerUsageForm, note: e.target.value })
-                    }
-                    placeholder="예: 3월 혜택 사용 요청"
-                  />
-                </label>
-
-                <div className="inline-actions wrap">
-                  <button
-                    type="button"
-                    className="primary-btn"
-                    onClick={handlePartnerUsageSubmit}
-                  >
-                    혜택 사용 요청
-                  </button>
-                </div>
-              </div>
-
-              <div className="sub-card stack-gap">
-                <h3>내 제휴 사용 기록</h3>
-
-                <div className="list-stack">
-                  {partnerUsages.filter((usage) => usage.partner_id === selectedPartner.id).length === 0 ? (
-                    <div className="detail-box">
-                      <p>아직 이 업체 사용 기록이 없습니다.</p>
-                    </div>
-                  ) : null}
-
-                  {partnerUsages
-                    .filter((usage) => usage.partner_id === selectedPartner.id)
-                    .map((usage) => (
-                      <div key={usage.id} className="list-card">
-                        <div className="list-card-top">
-                          <strong>{String(usage.requested_at || '').slice(0, 10) || '-'}</strong>
-                          <span className="pill">
-                            {usage.status === 'approved'
-                              ? '승인완료'
-                              : usage.status === 'rejected'
-                              ? '반려'
-                              : '승인대기'}
-                          </span>
-                        </div>
-
-                        <div className="compact-text">
-                          요청일시: {usage.requested_at || '-'}
-                        </div>
-
-                        <div className="compact-text">
-                          승인일시: {usage.approved_at || '-'}
-                        </div>
-
-                        <div className="compact-text">
-                          메모: {usage.note || '-'}
-                        </div>
-                      </div>
-                    ))}
-                </div>
-              </div>
-            </section>
-          ) : null}
-        </div>
-      )}
-            {activeTab === '병의원·약국 소개' && (
-        <div className="medical-layout">
-          <section className="card">
-            <div className="section-head">
-              <div>
-                <h2>병의원·약국 소개</h2>
-                <p className="sub-text">운동 중 통증, 검사, 처방 상담이 필요할 때 참고할 수 있는 안내입니다.</p>
               </div>
             </div>
 
-            <div className="grid-2">
-              <label className="field">
-                <span>검색</span>
-                <input
-                  value={medicalPartnerSearch}
-                  onChange={(e) => setMedicalPartnerSearch(e.target.value)}
-                  placeholder="이름, 카테고리, 주소 검색"
-                />
-              </label>
+            <div className="member-partner-request-box">
+              <h3>제휴 혜택 사용 요청</h3>
 
               <label className="field">
-                <span>카테고리</span>
-                <select
-                  value={medicalPartnerCategoryFilter}
-                  onChange={(e) => setMedicalPartnerCategoryFilter(e.target.value)}
-                >
-                  <option value="all">전체</option>
-                  <option value="정형외과">정형외과</option>
-                  <option value="재활의학과">재활의학과</option>
-                  <option value="한의원">한의원</option>
-                  <option value="약국">약국</option>
-                  <option value="영상검사">영상검사</option>
-                  <option value="기타">기타</option>
-                </select>
-              </label>
-            </div>
-
-            <div className="list-stack">
-              {filteredMedicalPartners.map((item) => (
-                <div
-                  key={item.id}
-                 className={`list-card medical-list-card ${selectedMedicalPartnerId === item.id ? 'selected' : ''}`}
-                  onClick={() => setSelectedMedicalPartnerId(item.id)}
-                >
-                  <div className="list-card-top">
-                    <div>
-                      <strong>{item.name}</strong>
-                      <div className="compact-text">
-                        {item.place_type} · {item.category}
-                      </div>
-                      <div className="compact-text">{item.short_description || '-'}</div>
-                    </div>
-                    <span className="pill">안내</span>
-                  </div>
-                </div>
-              ))}
-
-              {filteredMedicalPartners.length === 0 && (
-                <div className="medical-empty">
-  안내 가능한 병의원·약국 정보가 없습니다.
-</div>
-              )}
-            </div>
-          </section>
-
-          <section className="card">
-            <div className="section-head">
-              <div>
-                <h2>상세 안내</h2>
-                <p className="sub-text">회원님의 상태에 따라 참고용으로 확인해주세요.</p>
-              </div>
-            </div>
-
-            {selectedMedicalPartner ? (
-              <div className="detail-box medical-detail-box">
-                <p><strong>이름:</strong> {selectedMedicalPartner.name || '-'}</p>
-                <p><strong>구분:</strong> {selectedMedicalPartner.place_type || '-'}</p>
-                <p><strong>카테고리:</strong> {selectedMedicalPartner.category || '-'}</p>
-                <p><strong>한줄 소개:</strong> {selectedMedicalPartner.short_description || '-'}</p>
-                <p><strong>추천 이유:</strong> {selectedMedicalPartner.recommend_reason || '-'}</p>
-                <p><strong>이런 분께 추천:</strong> {selectedMedicalPartner.recommended_for || '-'}</p>
-                <p><strong>주소:</strong> {selectedMedicalPartner.address || '-'}</p>
-                <p><strong>전화번호:</strong> {selectedMedicalPartner.phone || '-'}</p>
-                <p><strong>운영/진료 시간:</strong> {selectedMedicalPartner.business_hours || '-'}</p>
-                <p><strong>주차 안내:</strong> {selectedMedicalPartner.parking_info || '-'}</p>
-                <p><strong>예약 방법:</strong> {selectedMedicalPartner.reservation_guide || '-'}</p>
-                <p><strong>주의사항:</strong> {selectedMedicalPartner.caution || '-'}</p>
-              </div>
-            ) : (
-              <div className="detail-box">
-                <p>왼쪽에서 병의원·약국 항목을 선택해주세요.</p>
-              </div>
-            )}
-          </section>
-        </div>
-      )}
-      {activeTab === '문의사항' && (
-        <div className="two-col">
-          <section className="card">
-            <h2>문의 작성</h2>
-
-            <form className="stack-gap" onSubmit={handleInquirySubmit}>
-              <label className="field">
-                <span>이름</span>
-                <input
-                  value={inquiryForm.name}
-                  onChange={(e) => setInquiryForm({ ...inquiryForm, name: e.target.value })}
-                />
-              </label>
-
-              <label className="field">
-                <span>연락처</span>
-                <input
-                  value={inquiryForm.phone}
-                  onChange={(e) => setInquiryForm({ ...inquiryForm, phone: e.target.value })}
-                  placeholder="연락 가능한 번호"
-                />
-              </label>
-
-              <label className="field">
-                <span>문의 내용</span>
+                <span>메모 (선택)</span>
                 <textarea
-                  rows="8"
-                  value={inquiryForm.content}
-                  onChange={(e) => setInquiryForm({ ...inquiryForm, content: e.target.value })}
-                  placeholder="문의하실 내용을 적어주세요."
+                  rows="3"
+                  value={partnerUsageForm.note}
+                  onChange={(e) =>
+                    setPartnerUsageForm({ ...partnerUsageForm, note: e.target.value })
+                  }
+                  placeholder="예: 3월 혜택 사용 요청"
                 />
-              </label>
-
-              <label className="checkbox-line">
-                <input
-                  type="checkbox"
-                  checked={!!inquiryForm.is_private}
-                  onChange={(e) => setInquiryForm({ ...inquiryForm, is_private: e.target.checked })}
-                />
-                <span>코치님만 보이게</span>
               </label>
 
               <div className="inline-actions wrap">
-                <button className="primary-btn" type="submit">
-                  문의 등록
-                </button>
-                <button type="button" className="secondary-btn" onClick={resetInquiryForm}>
-                  초기화
+                <button
+                  type="button"
+                  className="primary-btn"
+                  onClick={handlePartnerUsageSubmit}
+                >
+                  혜택 사용 요청
                 </button>
               </div>
-            </form>
-          </section>
+            </div>
 
-          <section className="card">
-            <h2>내 문의내역</h2>
+            <div className="member-partner-history-box">
+              <h3>내 제휴 사용 기록</h3>
 
-            <div className="list-stack">
-              {inquiries.length === 0 ? (
-                <div className="detail-box">
-                  <p>등록된 문의가 없습니다.</p>
+              <div className="list-stack">
+                {partnerUsages.filter((usage) => usage.partner_id === selectedPartner.id).length === 0 ? (
+                  <div className="empty-box">아직 이 업체 사용 기록이 없습니다.</div>
+                ) : null}
+
+                {partnerUsages
+                  .filter((usage) => usage.partner_id === selectedPartner.id)
+                  .map((usage) => (
+                    <div key={usage.id} className="member-partner-history-card">
+                      <div className="member-partner-history-head">
+                        <strong>{String(usage.requested_at || '').slice(0, 10) || '-'}</strong>
+                        <span className="member-partner-status-pill">
+                          {usage.status === 'approved'
+                            ? '승인완료'
+                            : usage.status === 'rejected'
+                            ? '반려'
+                            : '승인대기'}
+                        </span>
+                      </div>
+
+                      <div className="detail-box">
+                        <p><strong>요청일시:</strong> {usage.requested_at || '-'}</p>
+                        <p><strong>승인일시:</strong> {usage.approved_at || '-'}</p>
+                        <p><strong>메모:</strong> {usage.note || '-'}</p>
+                      </div>
+                    </div>
+                  ))}
+              </div>
+            </div>
+          </div>
+        ) : (
+          <div className="empty-box">왼쪽에서 제휴업체를 선택해주세요.</div>
+        )}
+      </section>
+    </div>
+  </div>
+)}
+            {activeTab === '병의원·약국 소개' && (
+  <div className="member-medical-page">
+    <section className="member-medical-hero">
+      <div className="member-medical-hero-left">
+        <div className="member-medical-badge">MEDICAL GUIDE</div>
+        <h2>병의원·약국 소개</h2>
+        <p className="member-medical-hero-text">
+          운동 중 통증, 검사, 처방 상담이 필요할 때 참고할 수 있는 병의원·약국 정보를
+          보기 쉽게 정리한 안내 화면입니다.
+        </p>
+      </div>
+
+      <div className="member-medical-hero-right">
+        <div className="member-medical-hero-mini">
+          <span>검색 결과</span>
+          <strong>{filteredMedicalPartners.length}</strong>
+          <p>현재 조건에 맞는 안내 수입니다.</p>
+        </div>
+
+        <div className="member-medical-hero-mini">
+          <span>선택 항목</span>
+          <strong>{selectedMedicalPartner?.name || '-'}</strong>
+          <p>{selectedMedicalPartner ? '상세 안내 확인 가능' : '항목을 먼저 선택해주세요.'}</p>
+        </div>
+      </div>
+    </section>
+
+    <section className="member-medical-summary-grid">
+      <div className="member-medical-summary-card">
+        <span>전체 표시</span>
+        <strong>{filteredMedicalPartners.length}</strong>
+        <p>현재 화면에 보이는 안내 수</p>
+      </div>
+
+      <div className="member-medical-summary-card">
+        <span>선택 카테고리</span>
+        <strong>{medicalPartnerCategoryFilter === 'all' ? '전체' : medicalPartnerCategoryFilter}</strong>
+        <p>현재 필터 기준</p>
+      </div>
+
+      <div className="member-medical-summary-card highlight">
+        <span>상세 상태</span>
+        <strong>{selectedMedicalPartner ? '선택됨' : '미선택'}</strong>
+        <p>오른쪽 상세안내 표시 여부</p>
+      </div>
+    </section>
+
+    <div className="member-medical-layout">
+      <section className="card member-medical-list-card">
+        <div className="member-medical-section-head">
+          <div>
+            <div className="member-medical-section-label">SEARCH MEDICAL</div>
+            <h2>병의원·약국 목록</h2>
+            <p className="sub-text">
+              이름, 카테고리, 주소 기준으로 검색해서 항목을 선택할 수 있습니다.
+            </p>
+          </div>
+        </div>
+
+        <div className="member-medical-filter-grid">
+          <label className="field">
+            <span>검색</span>
+            <input
+              value={medicalPartnerSearch}
+              onChange={(e) => setMedicalPartnerSearch(e.target.value)}
+              placeholder="이름, 카테고리, 주소 검색"
+            />
+          </label>
+
+          <label className="field">
+            <span>카테고리</span>
+            <select
+              value={medicalPartnerCategoryFilter}
+              onChange={(e) => setMedicalPartnerCategoryFilter(e.target.value)}
+            >
+              <option value="all">전체</option>
+              <option value="정형외과">정형외과</option>
+              <option value="재활의학과">재활의학과</option>
+              <option value="한의원">한의원</option>
+              <option value="약국">약국</option>
+              <option value="영상검사">영상검사</option>
+              <option value="기타">기타</option>
+            </select>
+          </label>
+        </div>
+
+        <div className="list-stack">
+          {filteredMedicalPartners.length === 0 ? (
+            <div className="empty-box">안내 가능한 병의원·약국 정보가 없습니다.</div>
+          ) : (
+            filteredMedicalPartners.map((item) => (
+              <div
+                key={item.id}
+                className={`member-medical-record-card ${selectedMedicalPartnerId === item.id ? 'selected' : ''}`}
+                onClick={() => setSelectedMedicalPartnerId(item.id)}
+              >
+                <div className="member-medical-record-head">
+                  <div>
+                    <h3>{item.name}</h3>
+                    <p>{item.place_type} · {item.category}</p>
+                  </div>
+                  <span className="member-medical-type-pill">안내</span>
                 </div>
-              ) : null}
 
-              {inquiries.map((item) => {
-                const collapsed = collapsedInquiries[item.id] ?? true
+                <div className="detail-box">
+                  <p>{item.short_description || '-'}</p>
+                </div>
+              </div>
+            ))
+          )}
+        </div>
+      </section>
 
-                return (
-                  <div key={item.id} className="list-card">
-                    <div className="list-card-top">
-                      <strong>{item.created_at?.slice(0, 10) || '문의내역'}</strong>
-                      <span className="pill">{item.answer ? '답변완료' : '답변대기'}</span>
+      <section className="card member-medical-detail-card">
+        <div className="member-medical-section-head">
+          <div>
+            <div className="member-medical-section-label">MEDICAL DETAIL</div>
+            <h2>상세 안내</h2>
+            <p className="sub-text">회원님의 상태에 따라 참고용으로 확인해주세요.</p>
+          </div>
+        </div>
+
+        {selectedMedicalPartner ? (
+          <div className="member-medical-detail-grid">
+            <div className="detail-box">
+              <p><strong>이름:</strong> {selectedMedicalPartner.name || '-'}</p>
+              <p><strong>구분:</strong> {selectedMedicalPartner.place_type || '-'}</p>
+              <p><strong>카테고리:</strong> {selectedMedicalPartner.category || '-'}</p>
+              <p><strong>한줄 소개:</strong> {selectedMedicalPartner.short_description || '-'}</p>
+            </div>
+
+            <div className="detail-box">
+              <p><strong>추천 이유:</strong> {selectedMedicalPartner.recommend_reason || '-'}</p>
+              <p><strong>이런 분께 추천:</strong> {selectedMedicalPartner.recommended_for || '-'}</p>
+              <p><strong>주의사항:</strong> {selectedMedicalPartner.caution || '-'}</p>
+            </div>
+
+            <div className="detail-box">
+              <p><strong>주소:</strong> {selectedMedicalPartner.address || '-'}</p>
+              <p><strong>전화번호:</strong> {selectedMedicalPartner.phone || '-'}</p>
+              <p><strong>운영/진료 시간:</strong> {selectedMedicalPartner.business_hours || '-'}</p>
+            </div>
+
+            <div className="detail-box">
+              <p><strong>주차 안내:</strong> {selectedMedicalPartner.parking_info || '-'}</p>
+              <p><strong>예약 방법:</strong> {selectedMedicalPartner.reservation_guide || '-'}</p>
+            </div>
+          </div>
+        ) : (
+          <div className="empty-box">왼쪽에서 병의원·약국 항목을 선택해주세요.</div>
+        )}
+      </section>
+    </div>
+  </div>
+)}
+      {activeTab === '문의사항' && (
+  <div className="member-inquiry-page">
+    <section className="member-inquiry-hero">
+      <div className="member-inquiry-hero-left">
+        <div className="member-inquiry-badge">INQUIRY</div>
+        <h2>문의사항</h2>
+        <p className="member-inquiry-hero-text">
+          문의를 바로 작성하고, 내가 남긴 문의 내역과 답변 상태를 함께 확인할 수 있습니다.
+          모바일에서도 입력하기 쉽게 구성했습니다.
+        </p>
+      </div>
+
+      <div className="member-inquiry-hero-right">
+        <div className="member-inquiry-hero-mini">
+          <span>등록 문의 수</span>
+          <strong>{inquiries.length}</strong>
+          <p>지금까지 등록된 전체 문의 수입니다.</p>
+        </div>
+
+        <div className="member-inquiry-hero-mini">
+          <span>답변 완료</span>
+          <strong>{inquiries.filter((item) => item.answer).length}</strong>
+          <p>답변이 등록된 문의 수입니다.</p>
+        </div>
+      </div>
+    </section>
+
+    <section className="member-inquiry-summary-grid">
+      <div className="member-inquiry-summary-card">
+        <span>전체 문의</span>
+        <strong>{inquiries.length}</strong>
+        <p>내가 등록한 문의 전체 수</p>
+      </div>
+
+      <div className="member-inquiry-summary-card">
+        <span>답변 대기</span>
+        <strong>{inquiries.filter((item) => !item.answer).length}</strong>
+        <p>아직 답변이 없는 문의 수</p>
+      </div>
+
+      <div className="member-inquiry-summary-card highlight">
+        <span>답변 완료</span>
+        <strong>{inquiries.filter((item) => item.answer).length}</strong>
+        <p>답변이 등록된 문의 수</p>
+      </div>
+    </section>
+
+    <div className="member-inquiry-layout">
+      <section className="card member-inquiry-form-card">
+        <div className="member-inquiry-section-head">
+          <div>
+            <div className="member-inquiry-section-label">WRITE INQUIRY</div>
+            <h2>문의 작성</h2>
+            <p className="sub-text">
+              이름, 연락처, 문의 내용을 입력하고 코치님만 보기 여부를 선택할 수 있습니다.
+            </p>
+          </div>
+        </div>
+
+        <form className="stack-gap" onSubmit={handleInquirySubmit}>
+          <label className="field">
+            <span>이름</span>
+            <input
+              value={inquiryForm.name}
+              onChange={(e) => setInquiryForm({ ...inquiryForm, name: e.target.value })}
+            />
+          </label>
+
+          <label className="field">
+            <span>연락처</span>
+            <input
+              value={inquiryForm.phone}
+              onChange={(e) => setInquiryForm({ ...inquiryForm, phone: e.target.value })}
+              placeholder="연락 가능한 번호"
+            />
+          </label>
+
+          <label className="field">
+            <span>문의 내용</span>
+            <textarea
+              rows="8"
+              value={inquiryForm.content}
+              onChange={(e) => setInquiryForm({ ...inquiryForm, content: e.target.value })}
+              placeholder="문의하실 내용을 적어주세요."
+            />
+          </label>
+
+          <label className="checkbox-line">
+            <input
+              type="checkbox"
+              checked={!!inquiryForm.is_private}
+              onChange={(e) => setInquiryForm({ ...inquiryForm, is_private: e.target.checked })}
+            />
+            <span>코치님만 보이게</span>
+          </label>
+
+          <div className="inline-actions wrap">
+            <button className="primary-btn" type="submit">
+              문의 등록
+            </button>
+            <button type="button" className="secondary-btn" onClick={resetInquiryForm}>
+              초기화
+            </button>
+          </div>
+        </form>
+      </section>
+
+      <section className="card member-inquiry-list-card">
+        <div className="member-inquiry-section-head">
+          <div>
+            <div className="member-inquiry-section-label">MY INQUIRIES</div>
+            <h2>내 문의내역</h2>
+            <p className="sub-text">
+              문의별 답변 여부를 확인하고, 필요하면 상세보기 또는 삭제를 할 수 있습니다.
+            </p>
+          </div>
+        </div>
+
+        <div className="list-stack">
+          {inquiries.length === 0 ? (
+            <div className="empty-box">등록된 문의가 없습니다.</div>
+          ) : (
+            inquiries.map((item) => {
+              const collapsed = collapsedInquiries[item.id] ?? true
+
+              return (
+                <div key={item.id} className="member-inquiry-record-card">
+                  <div className="member-inquiry-record-head">
+                    <div>
+                      <div className="member-inquiry-record-topline">
+                        <span className="member-inquiry-date-pill">
+                          {item.created_at?.slice(0, 10) || '문의내역'}
+                        </span>
+                      </div>
+
+                      <h3>{item.answer ? '답변완료 문의' : '답변대기 문의'}</h3>
+
+                      <p>
+                        간략히보기: {(item.content || '').slice(0, 50)}
+                        {(item.content || '').length > 50 ? '...' : ''}
+                      </p>
+
+                      <p>
+                        {item.is_private ? '코치님만 보기 문의' : '일반 문의'} /{' '}
+                        {item.is_secret_reply ? '비밀답변' : '일반답변'}
+                      </p>
                     </div>
 
-                    <div className="compact-text">
-                      간략히보기: {(item.content || '').slice(0, 40)}
-                      {(item.content || '').length > 40 ? '...' : ''}
-                    </div>
+                    <span className={`member-inquiry-status-pill ${item.answer ? 'done' : 'wait'}`}>
+                      {item.answer ? '답변완료' : '답변대기'}
+                    </span>
+                  </div>
 
-                    <div className="compact-text">
-                      {item.is_private ? '코치님만 보기 문의' : '일반 문의'} / {item.is_secret_reply ? '비밀답변' : '일반답변'}
-                    </div>
+                  <div className="inline-actions wrap">
+                    <button
+                      type="button"
+                      className="secondary-btn"
+                      onClick={() =>
+                        setCollapsedInquiries((prev) => ({
+                          ...prev,
+                          [item.id]: !collapsed,
+                        }))
+                      }
+                    >
+                      {collapsed ? '상세히보기' : '간략히보기'}
+                    </button>
 
-                    <div className="inline-actions wrap">
-                      <button
-                        type="button"
-                        className="secondary-btn"
-                        onClick={() =>
-                          setCollapsedInquiries((prev) => ({
-                            ...prev,
-                            [item.id]: !collapsed,
-                          }))
-                        }
-                      >
-                        {collapsed ? '상세히보기' : '간략히보기'}
-                      </button>
+                    <button
+                      type="button"
+                      className="danger-btn"
+                      onClick={() => handleInquiryDelete(item.id)}
+                    >
+                      삭제
+                    </button>
+                  </div>
 
-                      <button
-                        type="button"
-                        className="danger-btn"
-                        onClick={() => handleInquiryDelete(item.id)}
-                      >
-                        삭제
-                      </button>
-                    </div>
-
-                    {!collapsed ? (
+                  {!collapsed ? (
+                    <div className="member-inquiry-detail-grid">
                       <div className="detail-box">
                         <p><strong>이름:</strong> {item.name || '-'}</p>
                         <p><strong>연락처:</strong> {item.phone || '-'}</p>
-                        <p><strong>문의 내용:</strong> {item.content || '-'}</p>
                         <p><strong>문의유형:</strong> {item.is_private ? '코치님만 보기' : '일반 문의'}</p>
+                      </div>
+
+                      <div className="detail-box">
                         <p><strong>답변유형:</strong> {item.is_secret_reply ? '비밀답변' : '일반답변'}</p>
                         <p><strong>답변:</strong> {item.answer || '아직 답변이 없습니다.'}</p>
                       </div>
-                    ) : null}
-                  </div>
-                )
-              })}
-            </div>
-          </section>
-        </div>
-      )}
 
-      {activeTab === '사용방법' && (
-        <div className="card">
-          <h2>{manual?.title || '사용방법'}</h2>
-          <div className="detail-box">
-            <pre className="pre-text">{manual?.content || '아직 등록된 사용방법이 없습니다.'}</pre>
+                      <div className="detail-box member-inquiry-detail-full">
+                        <p><strong>문의 내용:</strong> {item.content || '-'}</p>
+                      </div>
+                    </div>
+                  ) : null}
+                </div>
+              )
+            })
+          )}
+        </div>
+      </section>
+    </div>
+  </div>
+)}
+
+      {activeTab === '문의사항' && (
+  <div className="member-inquiry-page">
+    <section className="member-inquiry-hero">
+      <div className="member-inquiry-hero-left">
+        <div className="member-inquiry-badge">INQUIRY</div>
+        <h2>문의사항</h2>
+        <p className="member-inquiry-hero-text">
+          문의를 바로 작성하고, 내가 남긴 문의 내역과 답변 상태를 함께 확인할 수 있습니다.
+          모바일에서도 입력하기 쉽게 구성했습니다.
+        </p>
+      </div>
+
+      <div className="member-inquiry-hero-right">
+        <div className="member-inquiry-hero-mini">
+          <span>등록 문의 수</span>
+          <strong>{inquiries.length}</strong>
+          <p>지금까지 등록된 전체 문의 수입니다.</p>
+        </div>
+
+        <div className="member-inquiry-hero-mini">
+          <span>답변 완료</span>
+          <strong>{inquiries.filter((item) => item.answer).length}</strong>
+          <p>답변이 등록된 문의 수입니다.</p>
+        </div>
+      </div>
+    </section>
+
+    <section className="member-inquiry-summary-grid">
+      <div className="member-inquiry-summary-card">
+        <span>전체 문의</span>
+        <strong>{inquiries.length}</strong>
+        <p>내가 등록한 문의 전체 수</p>
+      </div>
+
+      <div className="member-inquiry-summary-card">
+        <span>답변 대기</span>
+        <strong>{inquiries.filter((item) => !item.answer).length}</strong>
+        <p>아직 답변이 없는 문의 수</p>
+      </div>
+
+      <div className="member-inquiry-summary-card highlight">
+        <span>답변 완료</span>
+        <strong>{inquiries.filter((item) => item.answer).length}</strong>
+        <p>답변이 등록된 문의 수</p>
+      </div>
+    </section>
+
+    <div className="member-inquiry-layout">
+      <section className="card member-inquiry-form-card">
+        <div className="member-inquiry-section-head">
+          <div>
+            <div className="member-inquiry-section-label">WRITE INQUIRY</div>
+            <h2>문의 작성</h2>
+            <p className="sub-text">
+              이름, 연락처, 문의 내용을 입력하고 코치님만 보기 여부를 선택할 수 있습니다.
+            </p>
           </div>
         </div>
-      )}
+
+        <form className="stack-gap" onSubmit={handleInquirySubmit}>
+          <label className="field">
+            <span>이름</span>
+            <input
+              value={inquiryForm.name}
+              onChange={(e) => setInquiryForm({ ...inquiryForm, name: e.target.value })}
+            />
+          </label>
+
+          <label className="field">
+            <span>연락처</span>
+            <input
+              value={inquiryForm.phone}
+              onChange={(e) => setInquiryForm({ ...inquiryForm, phone: e.target.value })}
+              placeholder="연락 가능한 번호"
+            />
+          </label>
+
+          <label className="field">
+            <span>문의 내용</span>
+            <textarea
+              rows="8"
+              value={inquiryForm.content}
+              onChange={(e) => setInquiryForm({ ...inquiryForm, content: e.target.value })}
+              placeholder="문의하실 내용을 적어주세요."
+            />
+          </label>
+
+          <label className="checkbox-line">
+            <input
+              type="checkbox"
+              checked={!!inquiryForm.is_private}
+              onChange={(e) => setInquiryForm({ ...inquiryForm, is_private: e.target.checked })}
+            />
+            <span>코치님만 보이게</span>
+          </label>
+
+          <div className="inline-actions wrap">
+            <button className="primary-btn" type="submit">
+              문의 등록
+            </button>
+            <button type="button" className="secondary-btn" onClick={resetInquiryForm}>
+              초기화
+            </button>
+          </div>
+        </form>
+      </section>
+
+      <section className="card member-inquiry-list-card">
+        <div className="member-inquiry-section-head">
+          <div>
+            <div className="member-inquiry-section-label">MY INQUIRIES</div>
+            <h2>내 문의내역</h2>
+            <p className="sub-text">
+              문의별 답변 여부를 확인하고, 필요하면 상세보기 또는 삭제를 할 수 있습니다.
+            </p>
+          </div>
+        </div>
+
+        <div className="list-stack">
+          {inquiries.length === 0 ? (
+            <div className="empty-box">등록된 문의가 없습니다.</div>
+          ) : (
+            inquiries.map((item) => {
+              const collapsed = collapsedInquiries[item.id] ?? true
+
+              return (
+                <div key={item.id} className="member-inquiry-record-card">
+                  <div className="member-inquiry-record-head">
+                    <div>
+                      <div className="member-inquiry-record-topline">
+                        <span className="member-inquiry-date-pill">
+                          {item.created_at?.slice(0, 10) || '문의내역'}
+                        </span>
+                      </div>
+
+                      <h3>{item.answer ? '답변완료 문의' : '답변대기 문의'}</h3>
+
+                      <p>
+                        간략히보기: {(item.content || '').slice(0, 50)}
+                        {(item.content || '').length > 50 ? '...' : ''}
+                      </p>
+
+                      <p>
+                        {item.is_private ? '코치님만 보기 문의' : '일반 문의'} /{' '}
+                        {item.is_secret_reply ? '비밀답변' : '일반답변'}
+                      </p>
+                    </div>
+
+                    <span className={`member-inquiry-status-pill ${item.answer ? 'done' : 'wait'}`}>
+                      {item.answer ? '답변완료' : '답변대기'}
+                    </span>
+                  </div>
+
+                  <div className="inline-actions wrap">
+                    <button
+                      type="button"
+                      className="secondary-btn"
+                      onClick={() =>
+                        setCollapsedInquiries((prev) => ({
+                          ...prev,
+                          [item.id]: !collapsed,
+                        }))
+                      }
+                    >
+                      {collapsed ? '상세히보기' : '간략히보기'}
+                    </button>
+
+                    <button
+                      type="button"
+                      className="danger-btn"
+                      onClick={() => handleInquiryDelete(item.id)}
+                    >
+                      삭제
+                    </button>
+                  </div>
+
+                  {!collapsed ? (
+                    <div className="member-inquiry-detail-grid">
+                      <div className="detail-box">
+                        <p><strong>이름:</strong> {item.name || '-'}</p>
+                        <p><strong>연락처:</strong> {item.phone || '-'}</p>
+                        <p><strong>문의유형:</strong> {item.is_private ? '코치님만 보기' : '일반 문의'}</p>
+                      </div>
+
+                      <div className="detail-box">
+                        <p><strong>답변유형:</strong> {item.is_secret_reply ? '비밀답변' : '일반답변'}</p>
+                        <p><strong>답변:</strong> {item.answer || '아직 답변이 없습니다.'}</p>
+                      </div>
+
+                      <div className="detail-box member-inquiry-detail-full">
+                        <p><strong>문의 내용:</strong> {item.content || '-'}</p>
+                      </div>
+                    </div>
+                  ) : null}
+                </div>
+              )
+            })
+          )}
+        </div>
+      </section>
     </div>
-  )
-}
+  </div>
+)}
