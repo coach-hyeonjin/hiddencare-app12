@@ -229,8 +229,9 @@ export default function MemberDashboard({ member, accessCode, onLogout }) {
   const [healthForm, setHealthForm] = useState(emptyHealthForm)
 
   const [routine, setRoutine] = useState(null)
-  const [selectedRoutineWeek, setSelectedRoutineWeek] = useState(0)
-  const [manual, setManual] = useState(null)
+const [selectedRoutineWeek, setSelectedRoutineWeek] = useState(0)
+const [collapsedRoutineDays, setCollapsedRoutineDays] = useState({})
+const [manual, setManual] = useState(null)
 
   const [programs, setPrograms] = useState([])
   const [currentProgram, setCurrentProgram] = useState(null)
@@ -469,6 +470,14 @@ const calculatedRecommendedKcal = useMemo(() => {
   const currentRoutineWeek = useMemo(() => {
   return routine?.weeks?.[selectedRoutineWeek] || null
 }, [routine, selectedRoutineWeek])
+  const toggleRoutineDay = (weekNumber, dayIndex) => {
+  const key = `${weekNumber}-${dayIndex}`
+
+  setCollapsedRoutineDays((prev) => ({
+    ...prev,
+    [key]: !(prev[key] ?? true),
+  }))
+}
   const publishedNotices = useMemo(() => {
     return notices
       .filter((notice) => notice.is_published)
@@ -2588,51 +2597,71 @@ const clearMemberAlerts = () => {
               </div>
 
               <div className="list-stack" style={{ marginTop: '12px' }}>
-                {(currentRoutineWeek.days || []).map((day, dayIndex) => (
-                  <div
-                    key={`${currentRoutineWeek.week_number}-${day.day_of_week}-${dayIndex}`}
-                    className="record-item-box"
-                  >
-                    <div className="list-card-top">
-                      <strong>{day.day_of_week}요일</strong>
-                      <span className="pill">{(day.items || []).length}개 운동</span>
-                    </div>
+  {(currentRoutineWeek.days || []).map((day, dayIndex) => {
+    const routineDayKey = `${currentRoutineWeek.week_number}-${day.day_of_week}-${dayIndex}`
+    const isCollapsed = collapsedRoutineDays[routineDayKey] ?? true
 
-                    {(day.items || []).length === 0 ? (
-                      <div className="compact-text">등록된 운동이 없습니다.</div>
-                    ) : (
-                      <div className="list-stack" style={{ marginTop: '12px' }}>
-                        {(day.items || []).map((item, itemIndex) => (
-                          <div key={itemIndex} className="sub-card">
-                            <div className="list-card-top">
-                              <strong>{item.exercise_name_snapshot || `운동 ${itemIndex + 1}`}</strong>
-                              {item.duration_minutes ? (
-                                <span className="pill">{item.duration_minutes}분</span>
-                              ) : null}
-                            </div>
+    return (
+      <div
+        key={routineDayKey}
+        className="record-item-box"
+      >
+        <div
+          className="list-card-top"
+          style={{ cursor: 'pointer' }}
+          onClick={() =>
+            toggleRoutineDay(
+              currentRoutineWeek.week_number,
+              day.day_of_week,
+              dayIndex,
+            )
+          }
+        >
+          <strong>{day.day_of_week}요일</strong>
+          <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+            <span className="pill">{(day.items || []).length}개 운동</span>
+            <span className="pill">{isCollapsed ? '간략히보기' : '상세히보기'}</span>
+          </div>
+        </div>
 
-                            {item.memo ? (
-                              <div className="compact-text">메모: {item.memo}</div>
-                            ) : null}
+        {isCollapsed ? null : (day.items || []).length === 0 ? (
+          <div className="compact-text" style={{ marginTop: '10px' }}>
+            등록된 운동이 없습니다.
+          </div>
+        ) : (
+          <div className="list-stack" style={{ marginTop: '12px' }}>
+            {(day.items || []).map((item, itemIndex) => (
+              <div key={itemIndex} className="sub-card">
+                <div className="list-card-top">
+                  <strong>{item.exercise_name_snapshot || `운동 ${itemIndex + 1}`}</strong>
+                  {item.duration_minutes ? (
+                    <span className="pill">{item.duration_minutes}분</span>
+                  ) : null}
+                </div>
 
-                            {(item.sets || []).length > 0 ? (
-                              <ul className="set-list">
-                                {(item.sets || []).map((setRow, setIndex) => (
-                                  <li key={setIndex}>
-                                    {setIndex + 1}세트 - {setRow.kg || '-'}kg / {setRow.reps || '-'}회
-                                  </li>
-                                ))}
-                              </ul>
-                            ) : (
-                              <div className="compact-text">세트 정보 없음</div>
-                            )}
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                ))}
+                {item.memo ? (
+                  <div className="compact-text">메모: {item.memo}</div>
+                ) : null}
+
+                {(item.sets || []).length > 0 ? (
+                  <ul className="set-list">
+                    {(item.sets || []).map((setRow, setIndex) => (
+                      <li key={setIndex}>
+                        {setIndex + 1}세트 - {setRow.kg || '-'}kg / {setRow.reps || '-'}회
+                      </li>
+                    ))}
+                  </ul>
+                ) : (
+                  <div className="compact-text">세트 정보 없음</div>
+                )}
               </div>
+            ))}
+          </div>
+        )}
+      </div>
+    )
+  })}
+</div>
             </div>
           )}
         </div>
