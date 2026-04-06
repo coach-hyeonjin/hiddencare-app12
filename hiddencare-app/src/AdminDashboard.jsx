@@ -7569,47 +7569,93 @@ setEditingManagerActionId(null)
   </div>
 )}
       
-      {activeTab === '기록작성' && (
-        <div className="two-col">
-          <section className="card">
-            <h2>운동 기록 작성 / 수정</h2>
+     {activeTab === '기록작성' && (
+  <div className="record-page-modern">
+    <div className="record-page-hero">
+      <div className="record-page-hero-left">
+        <div className="record-page-badge">WORKOUT LOG</div>
+        <h2>운동 기록 관리</h2>
+        <p className="record-page-hero-text">
+          회원별 운동 기록 작성, 세트 입력, 통증 기록, 저장된 운동 로그 확인까지
+          한 화면에서 관리하는 영역입니다.
+        </p>
+      </div>
 
-            <form className="stack-gap" onSubmit={handleWorkoutSubmit}>
-              <div className="grid-2">
-                <label className="field">
-                  <span>회원 선택</span>
-                  <select value={workoutForm.member_id} onChange={(e) => setWorkoutForm({ ...workoutForm, member_id: e.target.value })}>
-                    <option value="">회원 선택</option>
-                    {members.map((member) => (
-                      <option key={member.id} value={member.id}>
-                        {member.name}
-                      </option>
-                    ))}
-                  </select>
-                </label>
+      <div className="record-page-hero-right">
+        <div className="record-page-hero-mini">
+          <span>오늘 선택 날짜</span>
+          <strong>{workoutForm.workout_date || '-'}</strong>
+          <p>현재 작성 중인 운동 기록 날짜입니다.</p>
+        </div>
 
-                <label className="field">
-                  <span>날짜</span>
-                  <input
-                    type="date"
-                    value={workoutForm.workout_date}
-                    onChange={(e) => setWorkoutForm({ ...workoutForm, workout_date: e.target.value })}
-                  />
-                </label>
-              </div>
+        <div className="record-page-hero-mini">
+          <span>운동 개수</span>
+          <strong>{workoutForm.items?.length || 0}개</strong>
+          <p>현재 입력 중인 운동 카드 수입니다.</p>
+        </div>
+      </div>
+    </div>
 
-              <label className="field">
-                <span>기록 타입</span>
-                <select value={workoutForm.workout_type} onChange={(e) => setWorkoutForm({ ...workoutForm, workout_type: e.target.value })}>
-                  <option value="pt">PT</option>
-                  <option value="personal">개인운동</option>
-                </select>
-              </label>
+    <div className="two-col">
+         <section className="card record-form-card-modern">
+  <div className="record-card-head">
+    <div>
+      <div className="record-card-label">WRITE LOG</div>
+      <h3>운동 기록 작성 / 수정</h3>
+      <p className="sub-text">
+        회원 선택, 운동 입력, 세트 구성, 통증 기록까지 순서대로 작성합니다.
+      </p>
+    </div>
+  </div>
+
+  <form className="stack-gap" onSubmit={handleWorkoutSubmit}>
+              <div className="record-top-grid">
+  <label className="field">
+    <span>회원 선택</span>
+    <select
+      value={workoutForm.member_id}
+      onChange={(e) =>
+        setWorkoutForm({ ...workoutForm, member_id: e.target.value })
+      }
+    >
+      <option value="">회원 선택</option>
+      {members.map((member) => (
+        <option key={member.id} value={member.id}>
+          {member.name}
+        </option>
+      ))}
+    </select>
+  </label>
+
+  <label className="field">
+    <span>날짜</span>
+    <input
+      type="date"
+      value={workoutForm.workout_date}
+      onChange={(e) =>
+        setWorkoutForm({ ...workoutForm, workout_date: e.target.value })
+      }
+    />
+  </label>
+
+  <label className="field">
+    <span>기록 타입</span>
+    <select
+      value={workoutForm.workout_type}
+      onChange={(e) =>
+        setWorkoutForm({ ...workoutForm, workout_type: e.target.value })
+      }
+    >
+      <option value="pt">PT</option>
+      <option value="personal">개인운동</option>
+    </select>
+  </label>
+</div>
 
               <div className="stack-gap">
                 {workoutForm.items.map((item, itemIndex) => (
-  <div key={itemIndex} className="sub-card">
-    <div className="list-card-top">
+  <div key={itemIndex} className="record-exercise-card">
+   <div className="record-exercise-head">
       <strong>운동 {itemIndex + 1}</strong>
       <div className="inline-actions wrap">
         <button
@@ -7630,7 +7676,7 @@ setEditingManagerActionId(null)
       </div>
     </div>
 
-    <div className="compact-text">
+    <div className="record-exercise-summary">
       간략히보기:{' '}
       {item.is_cardio
         ? `유산소 / ${item.cardio_minutes || 0}분`
@@ -7642,7 +7688,7 @@ setEditingManagerActionId(null)
     </div>
 
     {!item.collapsed && (
-      <div className="stack-gap" style={{ marginTop: '12px' }}>
+      <div className="stack-gap record-exercise-body">
         <label className="field">
           <span>훈련 방식</span>
           <select
@@ -7827,12 +7873,16 @@ setEditingManagerActionId(null)
                 <span>보완점</span>
                 <textarea rows="3" value={workoutForm.improve} onChange={(e) => setWorkoutForm({ ...workoutForm, improve: e.target.value })} />
               </label>
-<div className="card">
-  <h3>통증 기록</h3>
-  <p className="sub-text">
-    재활 회원이거나 평소 통증이 있는 경우, 또는 운동 중 새 통증이 생긴 경우만 기록합니다.
-  </p>
-
+<div className="record-pain-card">
+  <div className="record-card-head">
+    <div>
+      <div className="record-card-label">PAIN LOG</div>
+      <h3>통증 기록</h3>
+      <p className="sub-text">
+        재활 회원이거나 평소 통증이 있는 경우, 또는 운동 중 새 통증이 생긴 경우만 기록합니다.
+      </p>
+    </div>
+  </div>
   <label className="checkbox-line">
     <input
       type="checkbox"
@@ -7972,8 +8022,16 @@ setEditingManagerActionId(null)
             </form>
           </section>
 
-          <section className="card">
-  <h2>운동 기록 목록</h2>
+          <section className="card record-list-card-modern">
+  <div className="record-card-head">
+    <div>
+      <div className="record-card-label">LOG LIST</div>
+      <h3>운동 기록 목록</h3>
+      <p className="sub-text">
+        날짜별로 저장된 운동 기록을 확인하고 수정 / 삭제할 수 있습니다.
+      </p>
+    </div>
+  </div>
 
   <div className="stack-gap">
     <div className="workout-filter-grid">
