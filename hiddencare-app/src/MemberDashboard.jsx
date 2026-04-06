@@ -337,30 +337,38 @@ const calculatedRecommendedKcal = useMemo(() => {
   }, [coachSchedules, scheduleMonth])
 
   const workoutCards = useMemo(() => {
-    return workouts
-      .map((workout) => {
-        const items = workoutItemsMap[workout.id] || []
-        const searchText = [
-          workout.workout_type,
-          workout.workout_date,
-          workout.good,
-          workout.improve,
-          ...items.map((item) => item.exercise_name_snapshot),
-          ...items.map((item) => (item.is_cardio ? `유산소 ${item.cardio_minutes || ''}` : '')),
-        ].join(' ')
+  return workouts
+    .map((workout) => {
+      const items = workoutItemsMap[workout.id] || []
 
-        return {
-          ...workout,
-          items,
-          searchText,
-        }
-      })
-      .filter((workout) => {
-        const matchesKeyword = !workoutSearch.trim() || textIncludes(workout.searchText, workoutSearch)
-        const matchesType = workoutTypeFilter === 'all' || workout.workout_type === workoutTypeFilter
-        return matchesKeyword && matchesType
-      })
-  }, [workouts, workoutItemsMap, workoutSearch, workoutTypeFilter])
+      const searchText = [
+        workout.workout_type,
+        workout.workout_date,
+        workout.good,
+        workout.improve,
+        ...items.map((item) => item.exercise_name_snapshot || ''),
+        ...items.flatMap((item) =>
+          Array.isArray(item.sub_exercises)
+            ? item.sub_exercises.map((sub) => sub.exercise_name_snapshot || '')
+            : []
+        ),
+        ...items.map((item) => (item.is_cardio ? `유산소 ${item.cardio_minutes || ''}` : '')),
+        ...items.map((item) => item.training_method || ''),
+        ...items.map((item) => item.method_note || ''),
+      ].join(' ')
+
+      return {
+        ...workout,
+        items,
+        searchText,
+      }
+    })
+    .filter((workout) => {
+      const matchesKeyword = !workoutSearch.trim() || textIncludes(workout.searchText, workoutSearch)
+      const matchesType = workoutTypeFilter === 'all' || workout.workout_type === workoutTypeFilter
+      return matchesKeyword && matchesType
+    })
+}, [workouts, workoutItemsMap, workoutSearch, workoutTypeFilter])
 
   const displayedDietLogs = useMemo(() => {
     return dietLogs.filter((diet) => {
@@ -2204,23 +2212,71 @@ const updateSetValue = (itemIndex, setIndex, field, value, subIndex = null) => {
 
                   {!collapsed ? (
                     <div className="detail-box">
-                      {workout.items.map((item) => (
-                        <div key={item.id} className="record-item-box">
-                          <strong>{item.exercise_name_snapshot}</strong>
+                      {workout.items.map((item, itemIndex) => (
+  <div key={item.id || itemIndex} className="record-item-box">
+    <div className="list-card-top">
+      <strong>
+        {item.training_method === 'superset'
+          ? `슈퍼세트 ${itemIndex + 1}`
+          : item.training_method === 'dropset'
+          ? `${item.exercise_name_snapshot || `운동 ${itemIndex + 1}`} (드롭세트)`
+          : item.exercise_name_snapshot || `운동 ${itemIndex + 1}`}
+      </strong>
 
-                          {item.is_cardio ? (
-                            <div className="compact-text">유산소 {item.cardio_minutes || 0}분</div>
-                          ) : (
-                            <ul className="set-list">
-                              {(item.sets || []).map((setRow, idx) => (
-                                <li key={idx}>
-                                  {idx + 1}세트 - {setRow.kg || '-'}kg / {setRow.reps || '-'}회
-                                </li>
-                              ))}
-                            </ul>
-                          )}
-                        </div>
-                      ))}
+      {item.training_method && item.training_method !== 'normal' ? (
+        <span className="pill">
+          {item.training_method === 'superset' ? '슈퍼세트' : '드롭세트'}
+        </span>
+      ) : null}
+    </div>
+
+    {item.is_cardio ? (
+      <div className="compact-text">유산소 {item.cardio_minutes || 0}분</div>
+    ) : item.training_method === 'superset' ? (
+      <div className="stack-gap" style={{ marginTop: '8px' }}>
+        {(item.sub_exercises || []).map((sub, subIndex) => (
+          <div key={subIndex} className="detail-box">
+            <p><strong>{subIndex === 0 ? '운동 A' : '운동 B'}:</strong> {sub.exercise_name_snapshot || '-'}</p>
+
+            {(sub.sets || []).length > 0 ? (
+              <ul className="set-list">
+                {(sub.sets || []).map((setRow, idx) => (
+                  <li key={idx}>
+                    {idx + 1}세트 - {setRow.kg || '-'}kg / {setRow.reps || '-'}회
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <div className="compact-text">세트 정보 없음</div>
+            )}
+          </div>
+        ))}
+
+        {item.method_note ? (
+          <div className="compact-text">메모: {item.method_note}</div>
+        ) : null}
+      </div>
+    ) : (
+      <>
+        {(item.sets || []).length > 0 ? (
+          <ul className="set-list">
+            {(item.sets || []).map((setRow, idx) => (
+              <li key={idx}>
+                {idx + 1}세트 - {setRow.kg || '-'}kg / {setRow.reps || '-'}회
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <div className="compact-text">세트 정보 없음</div>
+        )}
+
+        {item.method_note ? (
+          <div className="compact-text">메모: {item.method_note}</div>
+        ) : null}
+      </>
+    )}
+  </div>
+))}
                       <p><strong>잘한점:</strong> {workout.good || '-'}</p>
                       <p><strong>보완점:</strong> {workout.improve || '-'}</p>
                                             {workout?.pain_enabled && (workout?.pain_logs?.length || 0) > 0 ? (
