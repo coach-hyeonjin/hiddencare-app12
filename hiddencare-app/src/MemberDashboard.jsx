@@ -1836,53 +1836,111 @@ const updateSetValue = (itemIndex, setIndex, field, value, subIndex = null) => {
 
       {message ? <div className="message success">{message}</div> : null}
 
-      {activeTab === '내정보' && (
-        <div className="stack-gap">
-          <div className="two-col">
-            <section className="card">
-              <h2>내 정보</h2>
-              <div className="detail-box">
-                <p><strong>이름:</strong> {memberInfo?.name}</p>
-                <p><strong>목표:</strong> {memberInfo?.goal || '-'}</p>
-                <p><strong>시작일:</strong> {memberInfo?.start_date || '-'}</p>
-                <p><strong>종료일:</strong> {memberInfo?.end_date || '-'}</p>
-                <p><strong>회원 메모:</strong> {memberInfo?.memo || '-'}</p>
-              </div>
-            </section>
+     {activeTab === '내정보' && (
+  <div className="member-home-page">
+    <section className="member-home-hero">
+      <div className="member-home-hero-left">
+        <div className="member-home-badge">MY DASHBOARD</div>
+        <h2>내 정보</h2>
+        <p className="member-home-hero-text">
+          내 목표, 이용 기간, 세션 진행 현황을 한눈에 보고
+          현재 운동 진행 상태까지 편하게 확인할 수 있습니다.
+        </p>
 
-            <section className="card">
-              <h2>세션 진행 현황</h2>
-              <div className="detail-box">
-                <p><strong>총 세션:</strong> {memberInfo?.total_sessions || 0}회</p>
-                <p><strong>사용 세션:</strong> {memberInfo?.used_sessions || 0}회</p>
-                <p><strong>남은 세션:</strong> {stats.remainingSessions}회</p>
-              </div>
-
-              <div className="progress-wrap">
-                <div className="progress-bar">
-                  <div className="progress-fill" style={{ width: `${progressPercent}%` }} />
-                </div>
-                <span>{progressPercent}% 진행</span>
-              </div>
-            </section>
+        <div className="member-home-profile-card">
+          <div className="member-home-profile-top">
+            <div>
+              <span>회원명</span>
+              <strong>{memberInfo?.name || '-'}</strong>
+            </div>
+            <div className="member-home-goal-pill">
+              {memberInfo?.goal || '목표 미설정'}
+            </div>
           </div>
 
-          <div className="stats-grid">
-            <div className="stat-card">
-              <span>내 PT 횟수</span>
-              <strong>{stats.ptCount}</strong>
+          <div className="member-home-info-grid">
+            <div className="member-home-info-item">
+              <span>시작일</span>
+              <strong>{memberInfo?.start_date || '-'}</strong>
             </div>
-            <div className="stat-card">
-              <span>내 개인운동 횟수</span>
-              <strong>{stats.personalCount}</strong>
+            <div className="member-home-info-item">
+              <span>종료일</span>
+              <strong>{memberInfo?.end_date || '-'}</strong>
             </div>
-            <div className="stat-card">
-              <span>남은 세션</span>
-              <strong>{stats.remainingSessions}</strong>
+            <div className="member-home-info-item full">
+              <span>회원 메모</span>
+              <strong>{memberInfo?.memo || '초기 상태 회원입니다.'}</strong>
             </div>
           </div>
         </div>
-      )}
+      </div>
+
+      <div className="member-home-hero-right">
+        <div className="member-home-progress-card">
+          <span>세션 진행 현황</span>
+          <strong>{progressPercent}%</strong>
+          <p>
+            총 {memberInfo?.total_sessions || 0}회 중 {memberInfo?.used_sessions || 0}회 사용
+          </p>
+
+          <div className="member-home-progress-bar">
+            <div
+              className="member-home-progress-fill"
+              style={{ width: `${progressPercent}%` }}
+            />
+          </div>
+
+          <div className="member-home-progress-meta">
+            <div>
+              <span>총 세션</span>
+              <strong>{memberInfo?.total_sessions || 0}회</strong>
+            </div>
+            <div>
+              <span>사용 세션</span>
+              <strong>{memberInfo?.used_sessions || 0}회</strong>
+            </div>
+            <div>
+              <span>남은 세션</span>
+              <strong>{stats.remainingSessions}회</strong>
+            </div>
+          </div>
+        </div>
+
+        <div className="member-home-mini-card">
+          <span>현재 이용 상태</span>
+          <strong>
+            {stats.remainingSessions > 0 ? '진행 중' : '세션 소진'}
+          </strong>
+          <p>
+            남은 세션 {stats.remainingSessions}회 /
+            PT {stats.ptCount}회 /
+            개인운동 {stats.personalCount}회
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <section className="member-home-summary-grid">
+      <div className="member-home-summary-card">
+        <span>내 PT 횟수</span>
+        <strong>{stats.ptCount}</strong>
+        <p>지금까지 등록된 PT 운동 기록 횟수입니다.</p>
+      </div>
+
+      <div className="member-home-summary-card">
+        <span>내 개인운동 횟수</span>
+        <strong>{stats.personalCount}</strong>
+        <p>직접 입력한 개인운동 기록 횟수입니다.</p>
+      </div>
+
+      <div className="member-home-summary-card highlight">
+        <span>남은 세션</span>
+        <strong>{stats.remainingSessions}</strong>
+        <p>현재 이용 가능한 잔여 세션입니다.</p>
+      </div>
+    </section>
+  </div>
+)}
 
       {activeTab === '건강정보' && (
         <div className="two-col">
