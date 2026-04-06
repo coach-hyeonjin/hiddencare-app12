@@ -4783,207 +4783,61 @@ const updateSetValue = (itemIndex, setIndex, field, value, subIndex = null) => {
     </div>
   </div>
 )}
-
-      {activeTab === '문의사항' && (
-  <div className="member-inquiry-page">
-    <section className="member-inquiry-hero">
-      <div className="member-inquiry-hero-left">
-        <div className="member-inquiry-badge">INQUIRY</div>
-        <h2>문의사항</h2>
-        <p className="member-inquiry-hero-text">
-          문의를 바로 작성하고, 내가 남긴 문의 내역과 답변 상태를 함께 확인할 수 있습니다.
-          모바일에서도 입력하기 쉽게 구성했습니다.
+{activeTab === '사용방법' && (
+  <div className="member-manual-page">
+    <section className="member-manual-hero">
+      <div className="member-manual-hero-left">
+        <div className="member-manual-badge">USER GUIDE</div>
+        <h2>{manual?.title || '사용방법'}</h2>
+        <p className="member-manual-hero-text">
+          회원 화면에서 각 탭을 어떻게 활용하면 되는지 한 번에 확인할 수 있는 안내 화면입니다.
         </p>
       </div>
 
-      <div className="member-inquiry-hero-right">
-        <div className="member-inquiry-hero-mini">
-          <span>등록 문의 수</span>
-          <strong>{inquiries.length}</strong>
-          <p>지금까지 등록된 전체 문의 수입니다.</p>
+      <div className="member-manual-hero-right">
+        <div className="member-manual-hero-mini">
+          <span>안내 상태</span>
+          <strong>{manual?.content ? '등록됨' : '미등록'}</strong>
+          <p>{manual?.content ? '현재 사용방법 안내가 등록되어 있습니다.' : '아직 등록된 사용방법이 없습니다.'}</p>
         </div>
 
-        <div className="member-inquiry-hero-mini">
-          <span>답변 완료</span>
-          <strong>{inquiries.filter((item) => item.answer).length}</strong>
-          <p>답변이 등록된 문의 수입니다.</p>
+        <div className="member-manual-hero-mini">
+          <span>문서 제목</span>
+          <strong>{manual?.title || '사용방법'}</strong>
+          <p>관리자가 작성한 회원 안내 문서입니다.</p>
         </div>
       </div>
     </section>
 
-    <section className="member-inquiry-summary-grid">
-      <div className="member-inquiry-summary-card">
-        <span>전체 문의</span>
-        <strong>{inquiries.length}</strong>
-        <p>내가 등록한 문의 전체 수</p>
+    <section className="member-manual-summary-grid">
+      <div className="member-manual-summary-card">
+        <span>제목</span>
+        <strong>{manual?.title || '-'}</strong>
+        <p>현재 표시 중인 안내 문서 제목</p>
       </div>
 
-      <div className="member-inquiry-summary-card">
-        <span>답변 대기</span>
-        <strong>{inquiries.filter((item) => !item.answer).length}</strong>
-        <p>아직 답변이 없는 문의 수</p>
-      </div>
-
-      <div className="member-inquiry-summary-card highlight">
-        <span>답변 완료</span>
-        <strong>{inquiries.filter((item) => item.answer).length}</strong>
-        <p>답변이 등록된 문의 수</p>
+      <div className="member-manual-summary-card highlight">
+        <span>안내 상태</span>
+        <strong>{manual?.content ? '사용 가능' : '비어 있음'}</strong>
+        <p>등록 여부 기준</p>
       </div>
     </section>
 
-    <div className="member-inquiry-layout">
-      <section className="card member-inquiry-form-card">
-        <div className="member-inquiry-section-head">
-          <div>
-            <div className="member-inquiry-section-label">WRITE INQUIRY</div>
-            <h2>문의 작성</h2>
-            <p className="sub-text">
-              이름, 연락처, 문의 내용을 입력하고 코치님만 보기 여부를 선택할 수 있습니다.
-            </p>
-          </div>
+    <section className="card member-manual-content-card">
+      <div className="member-manual-section-head">
+        <div>
+          <div className="member-manual-section-label">MANUAL CONTENT</div>
+          <h2>{manual?.title || '사용방법'}</h2>
+          <p className="sub-text">
+            아래 내용을 읽고 회원 화면을 이용해주세요.
+          </p>
         </div>
+      </div>
 
-        <form className="stack-gap" onSubmit={handleInquirySubmit}>
-          <label className="field">
-            <span>이름</span>
-            <input
-              value={inquiryForm.name}
-              onChange={(e) => setInquiryForm({ ...inquiryForm, name: e.target.value })}
-            />
-          </label>
-
-          <label className="field">
-            <span>연락처</span>
-            <input
-              value={inquiryForm.phone}
-              onChange={(e) => setInquiryForm({ ...inquiryForm, phone: e.target.value })}
-              placeholder="연락 가능한 번호"
-            />
-          </label>
-
-          <label className="field">
-            <span>문의 내용</span>
-            <textarea
-              rows="8"
-              value={inquiryForm.content}
-              onChange={(e) => setInquiryForm({ ...inquiryForm, content: e.target.value })}
-              placeholder="문의하실 내용을 적어주세요."
-            />
-          </label>
-
-          <label className="checkbox-line">
-            <input
-              type="checkbox"
-              checked={!!inquiryForm.is_private}
-              onChange={(e) => setInquiryForm({ ...inquiryForm, is_private: e.target.checked })}
-            />
-            <span>코치님만 보이게</span>
-          </label>
-
-          <div className="inline-actions wrap">
-            <button className="primary-btn" type="submit">
-              문의 등록
-            </button>
-            <button type="button" className="secondary-btn" onClick={resetInquiryForm}>
-              초기화
-            </button>
-          </div>
-        </form>
-      </section>
-
-      <section className="card member-inquiry-list-card">
-        <div className="member-inquiry-section-head">
-          <div>
-            <div className="member-inquiry-section-label">MY INQUIRIES</div>
-            <h2>내 문의내역</h2>
-            <p className="sub-text">
-              문의별 답변 여부를 확인하고, 필요하면 상세보기 또는 삭제를 할 수 있습니다.
-            </p>
-          </div>
-        </div>
-
-        <div className="list-stack">
-          {inquiries.length === 0 ? (
-            <div className="empty-box">등록된 문의가 없습니다.</div>
-          ) : (
-            inquiries.map((item) => {
-              const collapsed = collapsedInquiries[item.id] ?? true
-
-              return (
-                <div key={item.id} className="member-inquiry-record-card">
-                  <div className="member-inquiry-record-head">
-                    <div>
-                      <div className="member-inquiry-record-topline">
-                        <span className="member-inquiry-date-pill">
-                          {item.created_at?.slice(0, 10) || '문의내역'}
-                        </span>
-                      </div>
-
-                      <h3>{item.answer ? '답변완료 문의' : '답변대기 문의'}</h3>
-
-                      <p>
-                        간략히보기: {(item.content || '').slice(0, 50)}
-                        {(item.content || '').length > 50 ? '...' : ''}
-                      </p>
-
-                      <p>
-                        {item.is_private ? '코치님만 보기 문의' : '일반 문의'} /{' '}
-                        {item.is_secret_reply ? '비밀답변' : '일반답변'}
-                      </p>
-                    </div>
-
-                    <span className={`member-inquiry-status-pill ${item.answer ? 'done' : 'wait'}`}>
-                      {item.answer ? '답변완료' : '답변대기'}
-                    </span>
-                  </div>
-
-                  <div className="inline-actions wrap">
-                    <button
-                      type="button"
-                      className="secondary-btn"
-                      onClick={() =>
-                        setCollapsedInquiries((prev) => ({
-                          ...prev,
-                          [item.id]: !collapsed,
-                        }))
-                      }
-                    >
-                      {collapsed ? '상세히보기' : '간략히보기'}
-                    </button>
-
-                    <button
-                      type="button"
-                      className="danger-btn"
-                      onClick={() => handleInquiryDelete(item.id)}
-                    >
-                      삭제
-                    </button>
-                  </div>
-
-                  {!collapsed ? (
-                    <div className="member-inquiry-detail-grid">
-                      <div className="detail-box">
-                        <p><strong>이름:</strong> {item.name || '-'}</p>
-                        <p><strong>연락처:</strong> {item.phone || '-'}</p>
-                        <p><strong>문의유형:</strong> {item.is_private ? '코치님만 보기' : '일반 문의'}</p>
-                      </div>
-
-                      <div className="detail-box">
-                        <p><strong>답변유형:</strong> {item.is_secret_reply ? '비밀답변' : '일반답변'}</p>
-                        <p><strong>답변:</strong> {item.answer || '아직 답변이 없습니다.'}</p>
-                      </div>
-
-                      <div className="detail-box member-inquiry-detail-full">
-                        <p><strong>문의 내용:</strong> {item.content || '-'}</p>
-                      </div>
-                    </div>
-                  ) : null}
-                </div>
-              )
-            })
-          )}
-        </div>
-      </section>
-    </div>
+      <div className="member-manual-pre-wrap">
+        <pre className="pre-text">{manual?.content || '아직 등록된 사용방법이 없습니다.'}</pre>
+      </div>
+    </section>
   </div>
 )}
+     
