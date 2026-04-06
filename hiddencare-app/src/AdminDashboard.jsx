@@ -82,7 +82,7 @@ const emptyWorkoutForm = {
   workout_type: 'pt',
   good: '',
   improve: '',
-  items: [{ ...emptyWorkoutItem }],
+items: [{ ...emptyWorkoutItem, sub_exercises: [createEmptySubExercise(), createEmptySubExercise()] }],
   pain_enabled: false,
 pain_logs: [],
 }
