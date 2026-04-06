@@ -2704,222 +2704,387 @@ const updateSetValue = (itemIndex, setIndex, field, value, subIndex = null) => {
         </div>
       )}
 
-      {activeTab === '식단' && (
-        <div className="two-col">
-          <section className="card">
-            <h2>식단 입력 / 수정</h2>
-
-            <form className="stack-gap" onSubmit={handleDietSubmit}>
-              <div className="grid-2">
-                <label className="field">
-                  <span>날짜</span>
-                  <input
-                    type="date"
-                    value={dietForm.log_date}
-                    onChange={(e) => setDietForm({ ...dietForm, log_date: e.target.value })}
-                  />
-                </label>
-
-                <label className="field">
-                  <span>식사 종류</span>
-                  <select
-                    value={dietForm.meal_type}
-                    onChange={(e) => setDietForm({ ...dietForm, meal_type: e.target.value })}
-                  >
-                    <option value="아침">아침</option>
-                    <option value="점심">점심</option>
-                    <option value="저녁">저녁</option>
-                    <option value="간식">간식</option>
-                  </select>
-                </label>
-              </div>
-
-              <div className="grid-2">
-                <label className="field">
-                  <span>먹은 시간</span>
-                  <input
-                    type="time"
-                    value={dietForm.meal_time}
-                    onChange={(e) => setDietForm({ ...dietForm, meal_time: e.target.value })}
-                  />
-                </label>
-
-                <label className="field">
-                  <span>식사 유형</span>
-                  <select
-                    value={dietForm.meal_category}
-                    onChange={(e) => setDietForm({ ...dietForm, meal_category: e.target.value })}
-                  >
-                    <option value="일반식">일반식</option>
-                    <option value="집밥">집밥</option>
-                    <option value="외식">외식</option>
-                    <option value="제품">제품</option>
-                  </select>
-                </label>
-              </div>
-
-              <label className="field">
-                <span>내용</span>
-                <textarea
-                  rows="4"
-                  value={dietForm.content}
-                  onChange={(e) => setDietForm({ ...dietForm, content: e.target.value })}
-                />
-              </label>
-
-              <div className="grid-3">
-                <label className="field">
-                  <span>탄수화물(g)</span>
-                  <input
-                    type="number"
-                    value={dietForm.carb_g}
-                    onChange={(e) => setDietForm({ ...dietForm, carb_g: e.target.value })}
-                  />
-                </label>
-
-                <label className="field">
-                  <span>단백질(g)</span>
-                  <input
-                    type="number"
-                    value={dietForm.protein_g}
-                    onChange={(e) => setDietForm({ ...dietForm, protein_g: e.target.value })}
-                  />
-                </label>
-
-                <label className="field">
-                  <span>지방(g)</span>
-                  <input
-                    type="number"
-                    value={dietForm.fat_g}
-                    onChange={(e) => setDietForm({ ...dietForm, fat_g: e.target.value })}
-                  />
-                </label>
-              </div>
-
-              <div className="grid-2">
-                <label className="field">
-                  <span>제품 브랜드</span>
-                  <input
-                    value={dietForm.product_brand}
-                    onChange={(e) => setDietForm({ ...dietForm, product_brand: e.target.value })}
-                  />
-                </label>
-
-                <label className="field">
-                  <span>제품 이름</span>
-                  <input
-                    value={dietForm.product_name}
-                    onChange={(e) => setDietForm({ ...dietForm, product_name: e.target.value })}
-                  />
-                </label>
-              </div>
-
-              <label className="field">
-                <span>배고픔 정도 (0~10)</span>
-                <input
-                  type="number"
-                  min="0"
-                  max="10"
-                  value={dietForm.hunger_level}
-                  onChange={(e) => setDietForm({ ...dietForm, hunger_level: e.target.value })}
-                />
-              </label>
-
-              <label className="field">
-                <span>개인 메모</span>
-                <textarea
-                  rows="3"
-                  value={dietForm.member_note}
-                  onChange={(e) => setDietForm({ ...dietForm, member_note: e.target.value })}
-                />
-              </label>
-
-              <div className="inline-actions wrap">
-                <button className="primary-btn" type="submit">
-                  {dietForm.id ? '식단 수정' : '식단 저장'}
-                </button>
-                <button type="button" className="secondary-btn" onClick={resetDietForm}>
-                  초기화
-                </button>
-              </div>
-            </form>
-          </section>
-
-          <section className="card">
-            <h2>내 식단 기록</h2>
-
-            <div className="stack-gap">
-              <input
-                value={dietSearch}
-                onChange={(e) => setDietSearch(e.target.value)}
-                placeholder="내용 / 제품명 / 피드백 검색"
-              />
-
-              <select value={dietMealFilter} onChange={(e) => setDietMealFilter(e.target.value)}>
-                <option value="all">전체 식사</option>
-                <option value="아침">아침</option>
-                <option value="점심">점심</option>
-                <option value="저녁">저녁</option>
-                <option value="간식">간식</option>
-              </select>
+           {activeTab === '식단' && (
+        <div className="member-diet-page">
+          <section className="member-diet-hero">
+            <div className="member-diet-hero-left">
+              <div className="member-diet-badge">MEAL TRACKER</div>
+              <h2>식단 기록</h2>
+              <p className="member-diet-hero-text">
+                단순히 먹은 것만 적는 화면이 아니라,
+                식사 시간, 영양 구성, 배고픔 정도, 메모까지 함께 남기는 기록 공간입니다.
+              </p>
             </div>
 
-            <div className="list-stack">
-              {displayedDietLogs.map((diet) => {
-                const collapsed = collapsedDiets[diet.id] ?? true
+            <div className="member-diet-hero-right">
+              <div className="member-diet-hero-mini">
+                <span>이번 입력 상태</span>
+                <strong>{dietForm.id ? '수정 중' : '새 기록 작성'}</strong>
+                <p>{dietForm.id ? '기존 식단 기록을 수정하고 있어요.' : '새로운 식단 기록을 남겨보세요.'}</p>
+              </div>
 
-                return (
-                  <div key={diet.id} className="list-card">
-                    <div className="list-card-top">
-                      <strong>{diet.meal_type}</strong>
-                      <span className="pill">{diet.log_date}</span>
-                    </div>
+              <div className="member-diet-hero-mini">
+                <span>현재 식사 설정</span>
+                <strong>{dietForm.meal_type || '아침'} / {dietForm.meal_category || '일반식'}</strong>
+                <p>날짜 {dietForm.log_date || '-'}</p>
+              </div>
+            </div>
+          </section>
 
-                    <div className="compact-text">
-                      간략히보기: {diet.meal_time || '-'} / {diet.content?.slice(0, 26) || ''}
-                      {diet.content?.length > 26 ? '...' : ''}
-                    </div>
+          <div className="two-col member-diet-layout">
+            <section className="card member-diet-form-card">
+              <div className="member-diet-section-head">
+                <div>
+                  <div className="member-diet-section-label">WRITE MEAL</div>
+                  <h2>식단 입력 / 수정</h2>
+                  <p className="sub-text">
+                    식사 기본 정보, 영양 정보, 제품 정보, 개인 메모를 나눠서 기록할 수 있습니다.
+                  </p>
+                </div>
+              </div>
 
-                    <div className="inline-actions wrap">
-                      <button
-                        type="button"
-                        className="secondary-btn"
-                        onClick={() =>
-                          setCollapsedDiets((prev) => ({
-                            ...prev,
-                            [diet.id]: !collapsed,
-                          }))
-                        }
-                      >
-                        {collapsed ? '상세히보기' : '간략히보기'}
-                      </button>
+              <form className="stack-gap" onSubmit={handleDietSubmit}>
+                <div className="member-diet-chip-row">
+                  {['아침', '점심', '저녁', '간식'].map((meal) => (
+                    <button
+                      key={meal}
+                      type="button"
+                      className={`member-diet-chip ${dietForm.meal_type === meal ? 'active' : ''}`}
+                      onClick={() => setDietForm({ ...dietForm, meal_type: meal })}
+                    >
+                      {meal}
+                    </button>
+                  ))}
+                </div>
 
-                      <button type="button" className="secondary-btn" onClick={() => handleDietEdit(diet)}>
-                        수정
-                      </button>
+                <div className="member-diet-block">
+                  <div className="member-diet-block-title">기본 정보</div>
 
-                      <button type="button" className="danger-btn" onClick={() => handleDietDelete(diet.id)}>
-                        삭제
-                      </button>
-                    </div>
+                  <div className="grid-2">
+                    <label className="field">
+                      <span>날짜</span>
+                      <input
+                        type="date"
+                        value={dietForm.log_date}
+                        onChange={(e) => setDietForm({ ...dietForm, log_date: e.target.value })}
+                      />
+                    </label>
 
-                    {!collapsed ? (
-                      <div className="detail-box">
-                        <p><strong>시간:</strong> {diet.meal_time || '-'}</p>
-                        <p><strong>내용:</strong> {diet.content || '-'}</p>
-                        <p><strong>탄수/단백질/지방:</strong> {diet.carb_g || 0}g / {diet.protein_g || 0}g / {diet.fat_g || 0}g</p>
-                        <p><strong>브랜드/제품:</strong> {diet.product_brand || '-'} / {diet.product_name || '-'}</p>
-                        <p><strong>식사 유형:</strong> {diet.meal_category || '-'}</p>
-                        <p><strong>배고픔 정도:</strong> {diet.hunger_level || 0}</p>
-                        <p><strong>개인 메모:</strong> {diet.member_note || '-'}</p>
-                        <p><strong>코치 피드백:</strong> {diet.coach_feedback || '아직 피드백이 없습니다.'}</p>
-                      </div>
-                    ) : null}
+                    <label className="field">
+                      <span>먹은 시간</span>
+                      <input
+                        type="time"
+                        value={dietForm.meal_time}
+                        onChange={(e) => setDietForm({ ...dietForm, meal_time: e.target.value })}
+                      />
+                    </label>
                   </div>
-                )
-              })}
-            </div>
-          </section>
+
+                  <div className="grid-2">
+                    <label className="field">
+                      <span>식사 종류</span>
+                      <select
+                        value={dietForm.meal_type}
+                        onChange={(e) => setDietForm({ ...dietForm, meal_type: e.target.value })}
+                      >
+                        <option value="아침">아침</option>
+                        <option value="점심">점심</option>
+                        <option value="저녁">저녁</option>
+                        <option value="간식">간식</option>
+                      </select>
+                    </label>
+
+                    <label className="field">
+                      <span>식사 유형</span>
+                      <select
+                        value={dietForm.meal_category}
+                        onChange={(e) => setDietForm({ ...dietForm, meal_category: e.target.value })}
+                      >
+                        <option value="일반식">일반식</option>
+                        <option value="집밥">집밥</option>
+                        <option value="외식">외식</option>
+                        <option value="제품">제품</option>
+                      </select>
+                    </label>
+                  </div>
+
+                  <label className="field">
+                    <span>먹은 내용</span>
+                    <textarea
+                      rows="5"
+                      value={dietForm.content}
+                      onChange={(e) => setDietForm({ ...dietForm, content: e.target.value })}
+                      placeholder="예: 현미밥 1공기, 닭가슴살 150g, 계란 2개, 김치 조금"
+                    />
+                  </label>
+                </div>
+
+                <div className="member-diet-block">
+                  <div className="member-diet-block-title">영양 정보</div>
+
+                  <div className="grid-3">
+                    <label className="field">
+                      <span>탄수화물(g)</span>
+                      <input
+                        type="number"
+                        value={dietForm.carb_g}
+                        onChange={(e) => setDietForm({ ...dietForm, carb_g: e.target.value })}
+                        placeholder="예: 45"
+                      />
+                    </label>
+
+                    <label className="field">
+                      <span>단백질(g)</span>
+                      <input
+                        type="number"
+                        value={dietForm.protein_g}
+                        onChange={(e) => setDietForm({ ...dietForm, protein_g: e.target.value })}
+                        placeholder="예: 30"
+                      />
+                    </label>
+
+                    <label className="field">
+                      <span>지방(g)</span>
+                      <input
+                        type="number"
+                        value={dietForm.fat_g}
+                        onChange={(e) => setDietForm({ ...dietForm, fat_g: e.target.value })}
+                        placeholder="예: 12"
+                      />
+                    </label>
+                  </div>
+
+                  <label className="field">
+                    <span>배고픔 정도</span>
+                    <div className="member-diet-hunger-box">
+                      <input
+                        type="range"
+                        min="0"
+                        max="10"
+                        value={dietForm.hunger_level}
+                        onChange={(e) => setDietForm({ ...dietForm, hunger_level: e.target.value })}
+                      />
+                      <div className="member-diet-hunger-meta">
+                        <strong>{dietForm.hunger_level || 0}점</strong>
+                        <span>
+                          {Number(dietForm.hunger_level || 0) <= 3
+                            ? '배고픔이 크지 않았어요'
+                            : Number(dietForm.hunger_level || 0) <= 7
+                            ? '적당히 배고픈 상태였어요'
+                            : '배고픔이 큰 상태였어요'}
+                        </span>
+                      </div>
+                    </div>
+                  </label>
+                </div>
+
+                <div className="member-diet-block">
+                  <div className="member-diet-block-title">제품 / 추가 정보</div>
+
+                  <div className="grid-2">
+                    <label className="field">
+                      <span>제품 브랜드</span>
+                      <input
+                        value={dietForm.product_brand}
+                        onChange={(e) => setDietForm({ ...dietForm, product_brand: e.target.value })}
+                        placeholder="예: 랭킹닭컴, 오트밀 브랜드명"
+                      />
+                    </label>
+
+                    <label className="field">
+                      <span>제품 이름</span>
+                      <input
+                        value={dietForm.product_name}
+                        onChange={(e) => setDietForm({ ...dietForm, product_name: e.target.value })}
+                        placeholder="예: 닭가슴살 볶음밥, 프로틴 음료"
+                      />
+                    </label>
+                  </div>
+
+                  <label className="field">
+                    <span>개인 메모</span>
+                    <textarea
+                      rows="4"
+                      value={dietForm.member_note}
+                      onChange={(e) => setDietForm({ ...dietForm, member_note: e.target.value })}
+                      placeholder="예: 운동 전이라 가볍게 먹음 / 저녁 늦게 먹어서 양 조절함"
+                    />
+                  </label>
+                </div>
+
+                <div className="inline-actions wrap">
+                  <button className="primary-btn" type="submit">
+                    {dietForm.id ? '식단 수정' : '식단 저장'}
+                  </button>
+
+                  <button type="button" className="secondary-btn" onClick={resetDietForm}>
+                    초기화
+                  </button>
+                </div>
+              </form>
+            </section>
+
+            <section className="card member-diet-log-card">
+              <div className="member-diet-section-head">
+                <div>
+                  <div className="member-diet-section-label">MY MEAL LOG</div>
+                  <h2>내 식단 기록</h2>
+                  <p className="sub-text">
+                    날짜, 식사 종류, 식단 내용, 코치 피드백까지 한눈에 확인할 수 있습니다.
+                  </p>
+                </div>
+              </div>
+
+              <div className="stack-gap">
+                <input
+                  value={dietSearch}
+                  onChange={(e) => setDietSearch(e.target.value)}
+                  placeholder="내용 / 제품명 / 피드백 검색"
+                />
+
+                <select value={dietMealFilter} onChange={(e) => setDietMealFilter(e.target.value)}>
+                  <option value="all">전체 식사</option>
+                  <option value="아침">아침</option>
+                  <option value="점심">점심</option>
+                  <option value="저녁">저녁</option>
+                  <option value="간식">간식</option>
+                </select>
+              </div>
+
+              <div className="list-stack">
+                {displayedDietLogs.map((diet) => {
+                  const collapsed = collapsedDiets[diet.id] ?? true
+                  const macroTotal =
+                    Number(diet.carb_g || 0) +
+                    Number(diet.protein_g || 0) +
+                    Number(diet.fat_g || 0)
+
+                  return (
+                    <div key={diet.id} className="member-diet-log-item">
+                      <div className="member-diet-log-top">
+                        <div>
+                          <div className="member-diet-log-title-row">
+                            <strong>{diet.meal_type}</strong>
+                            <span className="pill">{diet.log_date}</span>
+                            {diet.meal_category ? (
+                              <span className="pill pill-blue">{diet.meal_category}</span>
+                            ) : null}
+                          </div>
+
+                          <div className="member-diet-log-summary">
+                            {diet.meal_time || '-'} · {diet.content?.slice(0, 42) || ''}
+                            {diet.content?.length > 42 ? '...' : ''}
+                          </div>
+                        </div>
+
+                        <div className="member-diet-log-right">
+                          <div className="member-diet-mini-chip">
+                            배고픔 {diet.hunger_level || 0}
+                          </div>
+                          <div className="member-diet-mini-chip soft">
+                            영양합계 {macroTotal}g
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="inline-actions wrap">
+                        <button
+                          type="button"
+                          className="secondary-btn"
+                          onClick={() =>
+                            setCollapsedDiets((prev) => ({
+                              ...prev,
+                              [diet.id]: !collapsed,
+                            }))
+                          }
+                        >
+                          {collapsed ? '상세히보기' : '간략히보기'}
+                        </button>
+
+                        <button
+                          type="button"
+                          className="secondary-btn"
+                          onClick={() => handleDietEdit(diet)}
+                        >
+                          수정
+                        </button>
+
+                        <button
+                          type="button"
+                          className="danger-btn"
+                          onClick={() => handleDietDelete(diet.id)}
+                        >
+                          삭제
+                        </button>
+                      </div>
+
+                      {!collapsed ? (
+                        <div className="member-diet-detail-box">
+                          <div className="member-diet-detail-grid">
+                            <div className="member-diet-detail-card">
+                              <span>식사 시간</span>
+                              <strong>{diet.meal_time || '-'}</strong>
+                            </div>
+
+                            <div className="member-diet-detail-card">
+                              <span>식사 유형</span>
+                              <strong>{diet.meal_category || '-'}</strong>
+                            </div>
+
+                            <div className="member-diet-detail-card">
+                              <span>배고픔 정도</span>
+                              <strong>{diet.hunger_level || 0}점</strong>
+                            </div>
+
+                            <div className="member-diet-detail-card">
+                              <span>브랜드 / 제품</span>
+                              <strong>
+                                {diet.product_brand || '-'} / {diet.product_name || '-'}
+                              </strong>
+                            </div>
+                          </div>
+
+                          <div className="member-diet-content-box">
+                            <span>먹은 내용</span>
+                            <p>{diet.content || '-'}</p>
+                          </div>
+
+                          <div className="member-diet-macro-grid">
+                            <div className="member-diet-macro-card carb">
+                              <span>탄수화물</span>
+                              <strong>{diet.carb_g || 0}g</strong>
+                            </div>
+                            <div className="member-diet-macro-card protein">
+                              <span>단백질</span>
+                              <strong>{diet.protein_g || 0}g</strong>
+                            </div>
+                            <div className="member-diet-macro-card fat">
+                              <span>지방</span>
+                              <strong>{diet.fat_g || 0}g</strong>
+                            </div>
+                          </div>
+
+                          <div className="member-diet-content-box">
+                            <span>개인 메모</span>
+                            <p>{diet.member_note || '-'}</p>
+                          </div>
+
+                          <div className="member-diet-feedback-box">
+                            <span>코치 피드백</span>
+                            <p>{diet.coach_feedback || '아직 피드백이 없습니다.'}</p>
+                          </div>
+                        </div>
+                      ) : null}
+                    </div>
+                  )
+                })}
+
+                {displayedDietLogs.length === 0 ? (
+                  <div className="workout-list-empty">등록된 식단 기록이 없습니다.</div>
+                ) : null}
+              </div>
+            </section>
+          </div>
         </div>
       )}
 
