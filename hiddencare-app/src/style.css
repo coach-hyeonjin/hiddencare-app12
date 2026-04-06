@@ -3796,3 +3796,301 @@ textarea:focus {
     margin-top: 6px;
   }
 }
+/* ===== 운영대시보드 프리미엄 업그레이드 ===== */
+
+.dashboard-main-grid {
+  gap: 18px;
+}
+
+.dashboard-kpi-grid {
+  gap: 16px;
+}
+
+.dashboard-kpi-card {
+  position: relative;
+  overflow: hidden;
+  border-radius: 20px;
+  padding: 20px 20px 18px;
+  background: linear-gradient(180deg, rgba(255,255,255,0.96) 0%, rgba(248,250,253,0.98) 100%);
+  border: 1px solid #dfe7f2;
+  box-shadow: 0 14px 28px rgba(15, 23, 42, 0.05);
+}
+
+.dashboard-kpi-card::before {
+  content: '';
+  position: absolute;
+  inset: 0 0 auto 0;
+  height: 4px;
+  opacity: 0.95;
+}
+
+.dashboard-kpi-card span {
+  display: block;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+  color: #64748b;
+  margin-bottom: 10px;
+}
+
+.dashboard-kpi-card strong {
+  display: block;
+  font-size: 38px;
+  line-height: 1.05;
+  font-weight: 900;
+  letter-spacing: -0.04em;
+  margin-bottom: 8px;
+}
+
+.dashboard-kpi-card .compact-text,
+.dashboard-kpi-card p,
+.dashboard-kpi-card small {
+  color: #7b8798;
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+.dashboard-kpi-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 18px 34px rgba(15, 23, 42, 0.08);
+}
+
+/* KPI 컬러 톤 - 원색 말고 고급스럽게 */
+.dashboard-kpi-card.kpi-blue {
+  background:
+    radial-gradient(circle at top right, rgba(59, 130, 246, 0.10), transparent 30%),
+    linear-gradient(180deg, #f8fbff 0%, #f2f7ff 100%);
+  border-color: #cfe0fb;
+}
+
+.dashboard-kpi-card.kpi-blue::before {
+  background: linear-gradient(90deg, #60a5fa 0%, #2563eb 100%);
+}
+
+.dashboard-kpi-card.kpi-blue strong {
+  color: #1d4ed8;
+}
+
+.dashboard-kpi-card.kpi-green {
+  background:
+    radial-gradient(circle at top right, rgba(16, 185, 129, 0.10), transparent 30%),
+    linear-gradient(180deg, #f7fffb 0%, #eefcf5 100%);
+  border-color: #cceedd;
+}
+
+.dashboard-kpi-card.kpi-green::before {
+  background: linear-gradient(90deg, #34d399 0%, #059669 100%);
+}
+
+.dashboard-kpi-card.kpi-green strong {
+  color: #047857;
+}
+
+.dashboard-kpi-card.kpi-amber {
+  background:
+    radial-gradient(circle at top right, rgba(245, 158, 11, 0.10), transparent 30%),
+    linear-gradient(180deg, #fffdf7 0%, #fff7e8 100%);
+  border-color: #f7dfaa;
+}
+
+.dashboard-kpi-card.kpi-amber::before {
+  background: linear-gradient(90deg, #fbbf24 0%, #d97706 100%);
+}
+
+.dashboard-kpi-card.kpi-amber strong {
+  color: #b45309;
+}
+
+.dashboard-kpi-card.kpi-red {
+  background:
+    radial-gradient(circle at top right, rgba(239, 68, 68, 0.09), transparent 30%),
+    linear-gradient(180deg, #fffafa 0%, #fff2f2 100%);
+  border-color: #f4d1d1;
+}
+
+.dashboard-kpi-card.kpi-red::before {
+  background: linear-gradient(90deg, #f87171 0%, #dc2626 100%);
+}
+
+.dashboard-kpi-card.kpi-red strong {
+  color: #c2410c;
+}
+
+.dashboard-kpi-card.kpi-violet {
+  background:
+    radial-gradient(circle at top right, rgba(139, 92, 246, 0.10), transparent 30%),
+    linear-gradient(180deg, #faf8ff 0%, #f4f0ff 100%);
+  border-color: #ddd2fb;
+}
+
+.dashboard-kpi-card.kpi-violet::before {
+  background: linear-gradient(90deg, #8b5cf6 0%, #6d28d9 100%);
+}
+
+.dashboard-kpi-card.kpi-violet strong {
+  color: #7c3aed;
+}
+
+/* 큰 섹션 박스 */
+.dashboard-row-card {
+  border-radius: 22px;
+  padding: 20px;
+  background:
+    linear-gradient(180deg, rgba(255,255,255,0.98) 0%, rgba(248,250,253,0.98) 100%);
+  border: 1px solid #dfe7f2;
+  box-shadow: 0 14px 28px rgba(15, 23, 42, 0.05);
+}
+
+.dashboard-row-card h3,
+.dashboard-row-card h2 {
+  margin-top: 0;
+  margin-bottom: 14px;
+  color: #0f172a;
+  font-size: 22px;
+  letter-spacing: -0.03em;
+}
+
+.dashboard-row-card .sub-text {
+  color: #6b7280;
+}
+
+/* 내부 작은 요약 카드 */
+.coach-summary-card,
+.mini-stat-card {
+  position: relative;
+  overflow: hidden;
+  border-radius: 18px;
+  padding: 18px;
+  border: 1px solid #dfe7f2;
+  background: linear-gradient(180deg, #ffffff 0%, #f9fbfe 100%);
+  box-shadow: 0 10px 22px rgba(15, 23, 42, 0.04);
+}
+
+.coach-summary-card::before,
+.mini-stat-card::before {
+  content: '';
+  position: absolute;
+  inset: 0 0 auto 0;
+  height: 3px;
+  background: linear-gradient(90deg, #dbe4f0 0%, #cbd5e1 100%);
+}
+
+.coach-summary-card span,
+.mini-stat-card span {
+  font-size: 12px;
+  color: #64748b;
+  font-weight: 800;
+  display: block;
+  margin-bottom: 8px;
+}
+
+.coach-summary-card strong,
+.mini-stat-card strong {
+  display: block;
+  font-size: 34px;
+  line-height: 1.05;
+  font-weight: 900;
+  letter-spacing: -0.04em;
+  margin-bottom: 6px;
+}
+
+.coach-summary-card .compact-text,
+.mini-stat-card .compact-text {
+  color: #7c8798;
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+/* 코치 상태 요약 전용 색 */
+.coach-summary-card.summary-blue {
+  background: linear-gradient(180deg, #f8fbff 0%, #f2f7ff 100%);
+  border-color: #cfe0fb;
+}
+.coach-summary-card.summary-blue::before {
+  background: linear-gradient(90deg, #60a5fa 0%, #2563eb 100%);
+}
+.coach-summary-card.summary-blue strong {
+  color: #2563eb;
+}
+
+.coach-summary-card.summary-green {
+  background: linear-gradient(180deg, #f7fffb 0%, #eefcf5 100%);
+  border-color: #cceedd;
+}
+.coach-summary-card.summary-green::before {
+  background: linear-gradient(90deg, #34d399 0%, #059669 100%);
+}
+.coach-summary-card.summary-green strong {
+  color: #059669;
+}
+
+.coach-summary-card.summary-amber {
+  background: linear-gradient(180deg, #fffdf7 0%, #fff7e8 100%);
+  border-color: #f7dfaa;
+}
+.coach-summary-card.summary-amber::before {
+  background: linear-gradient(90deg, #fbbf24 0%, #d97706 100%);
+}
+.coach-summary-card.summary-amber strong {
+  color: #d97706;
+}
+
+.coach-summary-card.summary-red {
+  background: linear-gradient(180deg, #fffafa 0%, #fff2f2 100%);
+  border-color: #f4d1d1;
+}
+.coach-summary-card.summary-red::before {
+  background: linear-gradient(90deg, #f87171 0%, #dc2626 100%);
+}
+.coach-summary-card.summary-red strong {
+  color: #dc2626;
+}
+
+/* 운영대시보드 큰 제목도 매니저 느낌으로 */
+.admin-section .section-head {
+  padding: 18px 20px;
+  border-radius: 20px;
+  background: linear-gradient(135deg, #ffffff 0%, #f8fbff 100%);
+  border: 1px solid #dfe7f2;
+  box-shadow: 0 10px 24px rgba(15, 23, 42, 0.04);
+}
+
+.admin-section .section-head h2 {
+  font-size: 30px;
+  letter-spacing: -0.04em;
+  margin-bottom: 6px;
+}
+
+.admin-section .section-head .sub-text {
+  font-size: 14px;
+  line-height: 1.7;
+}
+
+/* 반응형 */
+@media (max-width: 1100px) {
+  .dashboard-kpi-card strong,
+  .coach-summary-card strong,
+  .mini-stat-card strong {
+    font-size: 30px;
+  }
+}
+
+@media (max-width: 720px) {
+  .dashboard-kpi-card,
+  .dashboard-row-card,
+  .coach-summary-card,
+  .mini-stat-card {
+    padding: 16px;
+    border-radius: 18px;
+  }
+
+  .dashboard-kpi-card strong,
+  .coach-summary-card strong,
+  .mini-stat-card strong {
+    font-size: 28px;
+  }
+
+  .admin-section .section-head h2 {
+    font-size: 24px;
+  }
+}
