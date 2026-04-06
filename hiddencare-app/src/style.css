@@ -5200,3 +5200,29 @@ textarea:focus {
     grid-template-columns: 1fr;
   }
 }
+.collapsible-alert-bar {
+  padding: 14px 16px;
+}
+
+.alert-collapse-toggle {
+  width: 100%;
+  border: none;
+  background: transparent;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.alert-collapse-left {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.alert-collapse-arrow {
+  transition: transform 0.2s;
+}
+
+.alert-collapse-arrow.open {
+  transform: rotate(180deg);
+}
