@@ -37,12 +37,25 @@ const emptyMemberForm = {
   current_program_id: '',
 }
 
+const createEmptySet = () => ({ kg: '', reps: '' })
+
+const createEmptySubExercise = () => ({
+  exercise_id: '',
+  exercise_name_snapshot: '',
+  sets: [createEmptySet()],
+})
+
 const emptyWorkoutItem = {
   exercise_id: '',
   exercise_name_snapshot: '',
   is_cardio: false,
   cardio_minutes: '',
-  sets: [{ kg: '', reps: '' }],
+  sets: [createEmptySet()],
+
+  training_method: 'normal', // normal | superset | dropset
+  method_note: '',
+  sub_exercises: [createEmptySubExercise(), createEmptySubExercise()],
+  collapsed: false,
 }
 const emptyPainLog = {
   pain_type: 'existing',
@@ -3534,237 +3547,79 @@ const handleRoutineSave = async () => {
   }
 
   const resetWorkoutForm = () => {
-    setWorkoutForm(emptyWorkoutForm)
-  }
+  setWorkoutForm({
+    ...emptyWorkoutForm,
+    items: [{ ...emptyWorkoutItem, sub_exercises: [createEmptySubExercise(), createEmptySubExercise()] }],
+  })
+}
 
-  const updateWorkoutItemSelect = (itemIndex, exerciseId) => {
-  const found = exercises.find((exercise) => String(exercise.id) === String(exerciseId))
-
+const updateWorkoutItemField = (itemIndex, field, value) => {
   setWorkoutForm((prev) => {
     const nextItems = [...prev.items]
-    const isCardio = found?.category === '유산소'
-
     nextItems[itemIndex] = {
       ...nextItems[itemIndex],
-      exercise_id: found?.id || '',
-      exercise_name_snapshot: found?.name || nextItems[itemIndex].exercise_name_snapshot,
-      is_cardio: !!isCardio,
-      cardio_minutes: isCardio ? nextItems[itemIndex].cardio_minutes || '' : '',
-      sets: isCardio ? [{ kg: '', reps: '' }] : nextItems[itemIndex].sets,
+      [field]: value,
+    }
+    return { ...prev, items: nextItems }
+  })
+}
+
+const toggleWorkoutItemCollapse = (itemIndex) => {
+  setWorkoutForm((prev) => {
+    const nextItems = [...prev.items]
+    nextItems[itemIndex] = {
+      ...nextItems[itemIndex],
+      collapsed: !nextItems[itemIndex].collapsed,
+    }
+    return { ...prev, items: nextItems }
+  })
+}
+
+const updateWorkoutTrainingMethod = (itemIndex, method) => {
+  setWorkoutForm((prev) => {
+    const nextItems = [...prev.items]
+    const currentItem = nextItems[itemIndex]
+
+    nextItems[itemIndex] = {
+      ...currentItem,
+      training_method: method,
+      is_cardio: false,
+      cardio_minutes: '',
+      sets: currentItem.sets?.length ? currentItem.sets : [createEmptySet()],
+      sub_exercises:
+        method === 'superset'
+          ? currentItem.sub_exercises?.length
+            ? currentItem.sub_exercises
+            : [createEmptySubExercise(), createEmptySubExercise()]
+          : [createEmptySubExercise(), createEmptySubExercise()],
     }
 
     return { ...prev, items: nextItems }
   })
 }
 
+const updateWorkoutItemSelect = (itemIndex, exerciseId) => {
+  const found = exercises.find((exercise) => String(exercise.id) === String(exerciseId))
 
+  setWorkoutForm((prev) => {
+    const nextItems = [...prev.items]
+    const currentItem = nextItems[itemIndex]
+    const isCardio = found?.category === '유산소'
 
-
-
-
-const addRoutineWeek = () => {
-  setRoutineForm((prev) => {
-    const currentWeeks = Array.isArray(prev?.weeks) ? prev.weeks : []
-    return {
-      ...prev,
-      weeks: [...currentWeeks, createEmptyRoutineWeek(currentWeeks.length + 1)],
-    }
-  })
-}
-
-const removeRoutineWeek = (weekIndex) => {
-  setRoutineForm((prev) => {
-    const currentWeeks = Array.isArray(prev?.weeks) ? prev.weeks : []
-
-    const nextWeeks =
-      currentWeeks.length <= 1
-        ? [createEmptyRoutineWeek(1)]
-        : currentWeeks
-            .filter((_, idx) => idx !== weekIndex)
-            .map((week, idx) => ({
-              ...week,
-              week_number: idx + 1,
-            }))
-
-    return { ...prev, weeks: nextWeeks }
-  })
-}
-
-const addRoutineItem = (weekIndex, dayIndex) => {
-  setRoutineForm((prev) => {
-    const nextWeeks = [...prev.weeks]
-    const targetWeek = { ...nextWeeks[weekIndex] }
-    const nextDays = [...targetWeek.days]
-    const targetDay = { ...nextDays[dayIndex] }
-
-    targetDay.items = [...(targetDay.items || []), createEmptyRoutineItem()]
-    nextDays[dayIndex] = targetDay
-    targetWeek.days = nextDays
-    nextWeeks[weekIndex] = targetWeek
-
-    return { ...prev, weeks: nextWeeks }
-  })
-}
-
-const removeRoutineItem = (weekIndex, dayIndex, itemIndex) => {
-  setRoutineForm((prev) => {
-    const nextWeeks = [...prev.weeks]
-    const targetWeek = { ...nextWeeks[weekIndex] }
-    const nextDays = [...targetWeek.days]
-    const targetDay = { ...nextDays[dayIndex] }
-
-    targetDay.items =
-      targetDay.items.length === 1
-        ? [createEmptyRoutineItem()]
-        : targetDay.items.filter((_, idx) => idx !== itemIndex)
-
-    nextDays[dayIndex] = targetDay
-    targetWeek.days = nextDays
-    nextWeeks[weekIndex] = targetWeek
-
-    return { ...prev, weeks: nextWeeks }
-  })
-}
-
-const addRoutineSet = (weekIndex, dayIndex, itemIndex) => {
-  setRoutineForm((prev) => {
-    const nextWeeks = [...prev.weeks]
-    const targetWeek = { ...nextWeeks[weekIndex] }
-    const nextDays = [...targetWeek.days]
-    const targetDay = { ...nextDays[dayIndex] }
-    const nextItems = [...targetDay.items]
-    const targetItem = { ...nextItems[itemIndex] }
-
-    targetItem.sets = [...(targetItem.sets || []), createEmptyRoutineSet()]
-    nextItems[itemIndex] = targetItem
-    targetDay.items = nextItems
-    nextDays[dayIndex] = targetDay
-    targetWeek.days = nextDays
-    nextWeeks[weekIndex] = targetWeek
-
-    return { ...prev, weeks: nextWeeks }
-  })
-}
-
-const removeRoutineSet = (weekIndex, dayIndex, itemIndex, setIndex) => {
-  setRoutineForm((prev) => {
-    const nextWeeks = [...prev.weeks]
-    const targetWeek = { ...nextWeeks[weekIndex] }
-    const nextDays = [...targetWeek.days]
-    const targetDay = { ...nextDays[dayIndex] }
-    const nextItems = [...targetDay.items]
-    const targetItem = { ...nextItems[itemIndex] }
-    const currentSets = targetItem.sets || [createEmptyRoutineSet()]
-
-    targetItem.sets =
-      currentSets.length === 1
-        ? [createEmptyRoutineSet()]
-        : currentSets.filter((_, idx) => idx !== setIndex)
-
-    nextItems[itemIndex] = targetItem
-    targetDay.items = nextItems
-    nextDays[dayIndex] = targetDay
-    targetWeek.days = nextDays
-    nextWeeks[weekIndex] = targetWeek
-
-    return { ...prev, weeks: nextWeeks }
-  })
-}
-
-const updateRoutineSetValue = (weekIndex, dayIndex, itemIndex, setIndex, field, value) => {
-  setRoutineForm((prev) => {
-    const nextWeeks = [...prev.weeks]
-    const targetWeek = { ...nextWeeks[weekIndex] }
-    const nextDays = [...targetWeek.days]
-    const targetDay = { ...nextDays[dayIndex] }
-    const nextItems = [...targetDay.items]
-    const targetItem = { ...nextItems[itemIndex] }
-    const nextSets = [...(targetItem.sets || [])]
-
-    nextSets[setIndex] = { ...nextSets[setIndex], [field]: value }
-    targetItem.sets = nextSets
-    nextItems[itemIndex] = targetItem
-    targetDay.items = nextItems
-    nextDays[dayIndex] = targetDay
-    targetWeek.days = nextDays
-    nextWeeks[weekIndex] = targetWeek
-
-    return { ...prev, weeks: nextWeeks }
-  })
-}
-
-const updateRoutineItemField = (weekIndex, dayIndex, itemIndex, field, value) => {
-  setRoutineForm((prev) => {
-    const currentWeeks = Array.isArray(prev?.weeks) ? [...prev.weeks] : [createEmptyRoutineWeek(1)]
-    const targetWeek = { ...(currentWeeks[weekIndex] || createEmptyRoutineWeek(weekIndex + 1)) }
-
-    const currentDays = Array.isArray(targetWeek.days) ? [...targetWeek.days] : []
-    const targetDay = {
-      ...(currentDays[dayIndex] || createEmptyRoutineDay('월')),
+    nextItems[itemIndex] = {
+      ...currentItem,
+      exercise_id: found?.id || '',
+      exercise_name_snapshot: found?.name || currentItem.exercise_name_snapshot,
+      is_cardio: !!isCardio,
+      cardio_minutes: isCardio ? currentItem.cardio_minutes || '' : '',
+      training_method: isCardio ? 'normal' : currentItem.training_method || 'normal',
+      sets: isCardio ? [createEmptySet()] : currentItem.sets?.length ? currentItem.sets : [createEmptySet()],
     }
 
-    const currentItems = Array.isArray(targetDay.items) ? [...targetDay.items] : [createEmptyRoutineItem()]
-    const targetItem = {
-      ...(currentItems[itemIndex] || createEmptyRoutineItem()),
-      [field]: value,
-    }
-
-    currentItems[itemIndex] = targetItem
-    targetDay.items = currentItems
-    currentDays[dayIndex] = targetDay
-    targetWeek.days = currentDays
-    currentWeeks[weekIndex] = targetWeek
-
-    return {
-      ...prev,
-      weeks: currentWeeks,
-    }
+    return { ...prev, items: nextItems }
   })
 }
-const updateRoutineItemSelect = (weekIndex, dayIndex, itemIndex, exerciseId) => {
-  const found = exercises.find(
-    (exercise) => String(exercise.id) === String(exerciseId)
-  )
 
-  setRoutineForm((prev) => {
-    const currentWeeks = Array.isArray(prev?.weeks)
-      ? [...prev.weeks]
-      : [createEmptyRoutineWeek(1)]
-
-    const targetWeek = {
-      ...(currentWeeks[weekIndex] || createEmptyRoutineWeek(weekIndex + 1)),
-    }
-
-    const currentDays = Array.isArray(targetWeek.days)
-      ? [...targetWeek.days]
-      : []
-
-    const targetDay = {
-      ...(currentDays[dayIndex] || createEmptyRoutineDay('월')),
-    }
-
-    const currentItems = Array.isArray(targetDay.items)
-      ? [...targetDay.items]
-      : [createEmptyRoutineItem()]
-
-    const targetItem = {
-      ...(currentItems[itemIndex] || createEmptyRoutineItem()),
-      exercise_id: exerciseId || '',
-      exercise_name_snapshot: found?.name || '',
-    }
-
-    currentItems[itemIndex] = targetItem
-    targetDay.items = currentItems
-    currentDays[dayIndex] = targetDay
-    targetWeek.days = currentDays
-    currentWeeks[weekIndex] = targetWeek
-
-    return {
-      ...prev,
-      weeks: currentWeeks,
-    }
-  })
-}
 const updateWorkoutItemName = (itemIndex, value) => {
   setWorkoutForm((prev) => {
     const nextItems = [...prev.items]
@@ -3776,190 +3631,323 @@ const updateWorkoutItemName = (itemIndex, value) => {
   })
 }
 
+const updateWorkoutSubExerciseSelect = (itemIndex, subIndex, exerciseId) => {
+  const found = exercises.find((exercise) => String(exercise.id) === String(exerciseId))
+
+  setWorkoutForm((prev) => {
+    const nextItems = [...prev.items]
+    const currentItem = nextItems[itemIndex]
+    const nextSubs = [...(currentItem.sub_exercises || [createEmptySubExercise(), createEmptySubExercise()])]
+
+    nextSubs[subIndex] = {
+      ...nextSubs[subIndex],
+      exercise_id: found?.id || '',
+      exercise_name_snapshot: found?.name || nextSubs[subIndex].exercise_name_snapshot,
+    }
+
+    nextItems[itemIndex] = {
+      ...currentItem,
+      sub_exercises: nextSubs,
+    }
+
+    return { ...prev, items: nextItems }
+  })
+}
+
+const updateWorkoutSubExerciseName = (itemIndex, subIndex, value) => {
+  setWorkoutForm((prev) => {
+    const nextItems = [...prev.items]
+    const currentItem = nextItems[itemIndex]
+    const nextSubs = [...(currentItem.sub_exercises || [createEmptySubExercise(), createEmptySubExercise()])]
+
+    nextSubs[subIndex] = {
+      ...nextSubs[subIndex],
+      exercise_name_snapshot: value,
+    }
+
+    nextItems[itemIndex] = {
+      ...currentItem,
+      sub_exercises: nextSubs,
+    }
+
+    return { ...prev, items: nextItems }
+  })
+}
+
 const addWorkoutItem = () => {
   setWorkoutForm((prev) => ({
     ...prev,
-    items: [...prev.items, { ...emptyWorkoutItem }],
+    items: [
+      ...prev.items,
+      {
+        ...emptyWorkoutItem,
+        sub_exercises: [createEmptySubExercise(), createEmptySubExercise()],
+      },
+    ],
   }))
 }
 
 const removeWorkoutItem = (itemIndex) => {
   setWorkoutForm((prev) => ({
     ...prev,
-    items: prev.items.filter((_, idx) => idx !== itemIndex),
-  }))
-}
-const addPainLog = () => {
-  setWorkoutForm((prev) => ({
-    ...prev,
-    pain_enabled: true,
-    pain_logs: [...(prev.pain_logs || []), { ...emptyPainLog }],
+    items:
+      prev.items.length === 1
+        ? [{ ...emptyWorkoutItem, sub_exercises: [createEmptySubExercise(), createEmptySubExercise()] }]
+        : prev.items.filter((_, idx) => idx !== itemIndex),
   }))
 }
 
-const updatePainLog = (index, field, value) => {
-  setWorkoutForm((prev) => ({
-    ...prev,
-    pain_logs: (prev.pain_logs || []).map((log, i) =>
-      i === index ? { ...log, [field]: value } : log
-    ),
-  }))
-}
-
-const removePainLog = (index) => {
-  setWorkoutForm((prev) => {
-    const nextLogs = (prev.pain_logs || []).filter((_, i) => i !== index)
-    return {
-      ...prev,
-      pain_logs: nextLogs,
-      pain_enabled: nextLogs.length > 0 ? prev.pain_enabled : false,
-    }
-  })
-}
-const addSet = (itemIndex) => {
+const addSet = (itemIndex, subIndex = null) => {
   setWorkoutForm((prev) => {
     const nextItems = [...prev.items]
-    nextItems[itemIndex] = {
-      ...nextItems[itemIndex],
-      sets: [...nextItems[itemIndex].sets, { kg: '', reps: '' }],
+    const currentItem = nextItems[itemIndex]
+
+    if (currentItem.training_method === 'superset' && subIndex !== null) {
+      const nextSubs = [...currentItem.sub_exercises]
+      nextSubs[subIndex] = {
+        ...nextSubs[subIndex],
+        sets: [...(nextSubs[subIndex].sets || []), createEmptySet()],
+      }
+
+      nextItems[itemIndex] = {
+        ...currentItem,
+        sub_exercises: nextSubs,
+      }
+    } else {
+      nextItems[itemIndex] = {
+        ...currentItem,
+        sets: [...(currentItem.sets || []), createEmptySet()],
+      }
     }
+
     return { ...prev, items: nextItems }
   })
 }
 
-const removeSet = (itemIndex, setIndex) => {
+const removeSet = (itemIndex, setIndex, subIndex = null) => {
   setWorkoutForm((prev) => {
     const nextItems = [...prev.items]
-    nextItems[itemIndex] = {
-      ...nextItems[itemIndex],
-      sets: nextItems[itemIndex].sets.filter((_, idx) => idx !== setIndex),
+    const currentItem = nextItems[itemIndex]
+
+    if (currentItem.training_method === 'superset' && subIndex !== null) {
+      const nextSubs = [...currentItem.sub_exercises]
+      const currentSets = nextSubs[subIndex].sets || [createEmptySet()]
+
+      nextSubs[subIndex] = {
+        ...nextSubs[subIndex],
+        sets:
+          currentSets.length === 1
+            ? [createEmptySet()]
+            : currentSets.filter((_, idx) => idx !== setIndex),
+      }
+
+      nextItems[itemIndex] = {
+        ...currentItem,
+        sub_exercises: nextSubs,
+      }
+    } else {
+      const currentSets = currentItem.sets || [createEmptySet()]
+      nextItems[itemIndex] = {
+        ...currentItem,
+        sets:
+          currentSets.length === 1
+            ? [createEmptySet()]
+            : currentSets.filter((_, idx) => idx !== setIndex),
+      }
     }
+
     return { ...prev, items: nextItems }
   })
 }
 
-const updateSetValue = (itemIndex, setIndex, field, value) => {
+const updateSetValue = (itemIndex, setIndex, field, value, subIndex = null) => {
   setWorkoutForm((prev) => {
     const nextItems = [...prev.items]
-    const nextSets = [...nextItems[itemIndex].sets]
-    nextSets[setIndex] = { ...nextSets[setIndex], [field]: value }
-    nextItems[itemIndex] = { ...nextItems[itemIndex], sets: nextSets }
+    const currentItem = nextItems[itemIndex]
+
+    if (currentItem.training_method === 'superset' && subIndex !== null) {
+      const nextSubs = [...currentItem.sub_exercises]
+      const nextSets = [...(nextSubs[subIndex].sets || [])]
+
+      nextSets[setIndex] = {
+        ...nextSets[setIndex],
+        [field]: value,
+      }
+
+      nextSubs[subIndex] = {
+        ...nextSubs[subIndex],
+        sets: nextSets,
+      }
+
+      nextItems[itemIndex] = {
+        ...currentItem,
+        sub_exercises: nextSubs,
+      }
+    } else {
+      const nextSets = [...(currentItem.sets || [])]
+      nextSets[setIndex] = {
+        ...nextSets[setIndex],
+        [field]: value,
+      }
+
+      nextItems[itemIndex] = {
+        ...currentItem,
+        sets: nextSets,
+      }
+    }
+
     return { ...prev, items: nextItems }
   })
 }
 
   const handleWorkoutSubmit = async (e) => {
-    e.preventDefault()
+  e.preventDefault()
 
-    if (!workoutForm.member_id) {
-      setMessage('회원을 선택해주세요.')
+  if (!workoutForm.member_id) {
+    setMessage('회원을 선택해주세요.')
+    return
+  }
+
+  const cleanedItems = workoutForm.items
+    .filter((item) => {
+      if (item.is_cardio) {
+        return item.exercise_name_snapshot?.trim()
+      }
+
+      if (item.training_method === 'superset') {
+        return (item.sub_exercises || []).some((sub) => sub.exercise_name_snapshot?.trim())
+      }
+
+      return item.exercise_name_snapshot?.trim()
+    })
+    .map((item, index) => ({
+      workout_id: workoutForm.id || null,
+      exercise_id: item.exercise_id || null,
+      exercise_name_snapshot: item.exercise_name_snapshot?.trim() || '',
+      sort_order: index,
+      is_cardio: !!item.is_cardio,
+      cardio_minutes: item.is_cardio ? Number(item.cardio_minutes || 0) : null,
+      sets: item.is_cardio ? [] : normalizeSets(item.sets || []),
+
+      training_method: item.training_method || 'normal',
+      method_note: item.method_note?.trim() || '',
+      sub_exercises:
+        item.training_method === 'superset'
+          ? (item.sub_exercises || [])
+              .filter((sub) => sub.exercise_name_snapshot?.trim())
+              .map((sub) => ({
+                exercise_id: sub.exercise_id || null,
+                exercise_name_snapshot: sub.exercise_name_snapshot?.trim() || '',
+                sets: normalizeSets(sub.sets || []),
+              }))
+          : [],
+    }))
+
+  if (cleanedItems.length === 0) {
+    setMessage('최소 1개의 운동을 입력해주세요.')
+    return
+  }
+
+  const payload = {
+    member_id: workoutForm.member_id,
+    workout_date: workoutForm.workout_date,
+    workout_type: workoutForm.workout_type,
+    good: workoutForm.good?.trim() || '',
+    improve: workoutForm.improve?.trim() || '',
+    pain_enabled: !!workoutForm.pain_enabled,
+    pain_logs: workoutForm.pain_enabled ? (workoutForm.pain_logs || []) : [],
+    created_by: profile?.id || null,
+    admin_id: currentAdminId || null,
+    gym_id: currentGymId || null,
+  }
+
+  let targetWorkoutId = workoutForm.id
+
+  if (workoutForm.id) {
+    const { error } = await supabase.from('workouts').update(payload).eq('id', workoutForm.id)
+    if (error) {
+      setMessage(error.message)
       return
     }
-
-    const cleanedItems = workoutForm.items
-  .filter((item) => item.exercise_name_snapshot?.trim())
-  .map((item, index) => ({
-    workout_id: workoutForm.id || null,
-    exercise_id: item.exercise_id || null,
-    exercise_name_snapshot: item.exercise_name_snapshot.trim(),
-    sort_order: index,
-    is_cardio: !!item.is_cardio,
-    cardio_minutes: item.is_cardio ? Number(item.cardio_minutes || 0) : null,
-    sets: item.is_cardio ? [] : normalizeSets(item.sets),
-  }))
-    if (cleanedItems.length === 0) {
-      setMessage('최소 1개의 운동을 입력해주세요.')
+    await supabase.from('workout_items').delete().eq('workout_id', workoutForm.id)
+  } else {
+    const { data, error } = await supabase.from('workouts').insert(payload).select().single()
+    if (error || !data) {
+      setMessage(error?.message || '운동 기록 저장에 실패했습니다.')
       return
     }
+    targetWorkoutId = data.id
+  }
 
-   const payload = {
-  member_id: workoutForm.member_id,
-  workout_date: workoutForm.workout_date,
-  workout_type: workoutForm.workout_type,
-  good: workoutForm.good?.trim() || '',
-  improve: workoutForm.improve?.trim() || '',
-     pain_enabled: !!workoutForm.pain_enabled,
-  pain_logs: workoutForm.pain_enabled ? (workoutForm.pain_logs || []) : [],
-  created_by: profile?.id || null,
-  admin_id: currentAdminId || null,
-  gym_id: currentGymId || null,
+  await supabase.from('workout_items').insert(
+    cleanedItems.map((item) => ({
+      ...item,
+      workout_id: targetWorkoutId,
+    })),
+  )
+
+  await loadWorkouts()
+
+  if (workoutForm.workout_type === 'pt') {
+    const { data: freshWorkouts } = await supabase
+      .from('workouts')
+      .select('*')
+      .eq('member_id', workoutForm.member_id)
+
+    const freshPtCount = (freshWorkouts || []).filter((workout) => workout.workout_type === 'pt').length
+
+    await supabase
+      .from('members')
+      .update({ used_sessions: freshPtCount })
+      .eq('id', workoutForm.member_id)
+
+    await loadMembers()
+  }
+
+  setMessage(workoutForm.id ? '운동 기록이 수정되었습니다.' : '운동 기록이 저장되었습니다.')
+  resetWorkoutForm()
 }
 
-    let targetWorkoutId = workoutForm.id
-
-    if (workoutForm.id) {
-      const { error } = await supabase.from('workouts').update(payload).eq('id', workoutForm.id)
-      if (error) {
-        setMessage(error.message)
-        return
-      }
-      await supabase.from('workout_items').delete().eq('workout_id', workoutForm.id)
-    } else {
-      const { data, error } = await supabase.from('workouts').insert(payload).select().single()
-      if (error || !data) {
-        setMessage(error?.message || '운동 기록 저장에 실패했습니다.')
-        return
-      }
-      targetWorkoutId = data.id
-    }
-
-    await supabase.from('workout_items').insert(
-      cleanedItems.map((item) => ({
-        ...item,
-        workout_id: targetWorkoutId,
-      })),
-    )
-
-    await loadWorkouts()
-
-    if (workoutForm.workout_type === 'pt') {
-      const { data: freshWorkouts } = await supabase
-        .from('workouts')
-        .select('*')
-        .eq('member_id', workoutForm.member_id)
-
-      const freshPtCount = (freshWorkouts || []).filter((workout) => workout.workout_type === 'pt').length
-
-      await supabase
-        .from('members')
-        .update({ used_sessions: freshPtCount })
-        .eq('id', workoutForm.member_id)
-
-      await loadMembers()
-    }
-
-    setMessage(workoutForm.id ? '운동 기록이 수정되었습니다.' : '운동 기록이 저장되었습니다.')
-    resetWorkoutForm()
-  }
-
   const handleWorkoutEdit = (workout) => {
-    const items = workoutItemsMap[workout.id] || []
-    setWorkoutForm({
-      id: workout.id,
-      member_id: workout.member_id,
-      workout_date: workout.workout_date,
-      workout_type: workout.workout_type,
-      good: workout.good || '',
-      improve: workout.improve || '',
-      pain_enabled: !!workout.pain_enabled,
-pain_logs: workout.pain_logs || [],
-      items:
-  items.length > 0
-    ? items.map((item) => ({
-        exercise_id: item.exercise_id || '',
-        exercise_name_snapshot: item.exercise_name_snapshot || '',
-        is_cardio: !!item.is_cardio,
-        cardio_minutes: item.cardio_minutes || '',
-        sets:
-          !item.is_cardio && Array.isArray(item.sets) && item.sets.length > 0
-            ? item.sets
-            : [{ kg: '', reps: '' }],
-      }))
-    : [{ ...emptyWorkoutItem }],
-    })
+  const items = workoutItemsMap[workout.id] || []
 
-    setActiveTab('기록작성')
-  }
+  setWorkoutForm({
+    id: workout.id,
+    member_id: workout.member_id,
+    workout_date: workout.workout_date,
+    workout_type: workout.workout_type,
+    good: workout.good || '',
+    improve: workout.improve || '',
+    pain_enabled: !!workout.pain_enabled,
+    pain_logs: workout.pain_logs || [],
+    items:
+      items.length > 0
+        ? items.map((item) => ({
+            exercise_id: item.exercise_id || '',
+            exercise_name_snapshot: item.exercise_name_snapshot || '',
+            is_cardio: !!item.is_cardio,
+            cardio_minutes: item.cardio_minutes || '',
+            sets:
+              !item.is_cardio && Array.isArray(item.sets) && item.sets.length > 0
+                ? item.sets
+                : [createEmptySet()],
+            training_method: item.training_method || 'normal',
+            method_note: item.method_note || '',
+            sub_exercises:
+              item.training_method === 'superset' && Array.isArray(item.sub_exercises) && item.sub_exercises.length > 0
+                ? item.sub_exercises.map((sub) => ({
+                    exercise_id: sub.exercise_id || '',
+                    exercise_name_snapshot: sub.exercise_name_snapshot || '',
+                    sets: Array.isArray(sub.sets) && sub.sets.length > 0 ? sub.sets : [createEmptySet()],
+                  }))
+                : [createEmptySubExercise(), createEmptySubExercise()],
+            collapsed: false,
+          }))
+        : [{ ...emptyWorkoutItem, sub_exercises: [createEmptySubExercise(), createEmptySubExercise()] }],
+  })
+
+  setActiveTab('기록작성')
+}
 
   const handleWorkoutDelete = async (workout) => {
     if (!window.confirm('이 운동 기록을 삭제할까요?')) return
@@ -7395,91 +7383,211 @@ setEditingManagerActionId(null)
 
               <div className="stack-gap">
                 {workoutForm.items.map((item, itemIndex) => (
-                  <div key={itemIndex} className="sub-card">
-                    <div className="list-card-top">
-                      <strong>운동 {itemIndex + 1}</strong>
-                      <button
-                        type="button"
-                        className="danger-btn"
-                        onClick={() => removeWorkoutItem(itemIndex)}
-                        disabled={workoutForm.items.length === 1}
-                      >
-                        운동 삭제
-                      </button>
-                    </div>
-
-                    <label className="field">
-                      <span>운동DB 선택</span>
-                      <select value={item.exercise_id} onChange={(e) => updateWorkoutItemSelect(itemIndex, e.target.value)}>
-                        <option value="">선택 안함</option>
-                        {exercises.map((exercise) => (
-                          <option key={exercise.id} value={exercise.id}>
-                            [{exercise.brands?.name || '브랜드없음'}] {exercise.name}
-                          </option>
-                        ))}
-                      </select>
-                    </label>
-
-                    <label className="field">
-                      <span>운동명 직접 입력</span>
-                      <input
-                        value={item.exercise_name_snapshot}
-                        onChange={(e) => updateWorkoutItemName(itemIndex, e.target.value)}
-                        placeholder="예: 힙쓰러스트, 밴드 워크, 스쿼트"
-                      />
-                    </label>
-{item.is_cardio ? (
-  <label className="field">
-    <span>유산소 시간(분)</span>
-    <input
-      type="number"
-      value={item.cardio_minutes || ''}
-      onChange={(e) => {
-        const value = e.target.value
-        setWorkoutForm((prev) => {
-          const nextItems = [...prev.items]
-          nextItems[itemIndex] = {
-            ...nextItems[itemIndex],
-            cardio_minutes: value,
-          }
-          return { ...prev, items: nextItems }
-        })
-      }}
-      placeholder="예: 20"
-    />
-  </label>
-) : (
-  <div className="stack-gap">
-    {item.sets.map((setRow, setIndex) => (
-      <div className="set-row" key={setIndex}>
-        <input
-          placeholder="kg"
-          value={setRow.kg}
-          onChange={(e) => updateSetValue(itemIndex, setIndex, 'kg', e.target.value)}
-        />
-        <input
-          placeholder="reps"
-          value={setRow.reps}
-          onChange={(e) => updateSetValue(itemIndex, setIndex, 'reps', e.target.value)}
-        />
+  <div key={itemIndex} className="sub-card">
+    <div className="list-card-top">
+      <strong>운동 {itemIndex + 1}</strong>
+      <div className="inline-actions wrap">
+        <button
+          type="button"
+          className="secondary-btn"
+          onClick={() => toggleWorkoutItemCollapse(itemIndex)}
+        >
+          {item.collapsed ? '상세히보기' : '간략히보기'}
+        </button>
         <button
           type="button"
           className="danger-btn"
-          onClick={() => removeSet(itemIndex, setIndex)}
-          disabled={item.sets.length === 1}
+          onClick={() => removeWorkoutItem(itemIndex)}
+          disabled={workoutForm.items.length === 1}
         >
-          세트 삭제
+          운동 삭제
         </button>
       </div>
-    ))}
+    </div>
 
-    <button type="button" className="secondary-btn" onClick={() => addSet(itemIndex)}>
-      세트 추가
-    </button>
-  </div>
-)}
+    <div className="compact-text">
+      간략히보기:{' '}
+      {item.is_cardio
+        ? `유산소 / ${item.cardio_minutes || 0}분`
+        : item.training_method === 'superset'
+        ? '슈퍼세트'
+        : item.training_method === 'dropset'
+        ? '드롭세트'
+        : item.exercise_name_snapshot || '일반운동'}
+    </div>
+
+    {!item.collapsed && (
+      <div className="stack-gap" style={{ marginTop: '12px' }}>
+        <label className="field">
+          <span>훈련 방식</span>
+          <select
+            value={item.training_method || 'normal'}
+            onChange={(e) => updateWorkoutTrainingMethod(itemIndex, e.target.value)}
+          >
+            <option value="normal">일반운동</option>
+            <option value="superset">슈퍼세트</option>
+            <option value="dropset">드롭세트</option>
+          </select>
+        </label>
+
+        {(item.training_method === 'superset' || item.training_method === 'dropset') && (
+          <div className="detail-box">
+            <p>
+              <strong>{item.training_method === 'superset' ? '슈퍼세트' : '드롭세트'} 안내</strong>
+            </p>
+            <div className="compact-text">
+              {item.training_method === 'superset'
+                ? '슈퍼세트: 두 가지 운동을 쉬는 시간 없이 연속으로 수행하는 방식입니다.'
+                : '드롭세트: 같은 운동에서 무게를 낮춰가며 연속 수행하는 방식입니다.'}
+            </div>
+          </div>
+        )}
+
+        <label className="field">
+          <span>추가 메모</span>
+          <input
+            value={item.method_note || ''}
+            onChange={(e) => updateWorkoutItemField(itemIndex, 'method_note', e.target.value)}
+            placeholder="예: A끝나고 바로 B / 마지막 세트 드롭"
+          />
+        </label>
+
+        {item.training_method === 'superset' ? (
+          <div className="stack-gap">
+            {[0, 1].map((subIndex) => {
+              const sub = item.sub_exercises?.[subIndex] || createEmptySubExercise()
+
+              return (
+                <div key={subIndex} className="detail-box">
+                  <div className="list-card-top">
+                    <strong>{subIndex === 0 ? '운동 A' : '운동 B'}</strong>
+                  </div>
+
+                  <label className="field">
+                    <span>운동DB 선택</span>
+                    <select
+                      value={sub.exercise_id}
+                      onChange={(e) => updateWorkoutSubExerciseSelect(itemIndex, subIndex, e.target.value)}
+                    >
+                      <option value="">선택 안함</option>
+                      {exercises.map((exercise) => (
+                        <option key={exercise.id} value={exercise.id}>
+                          [{exercise.brands?.name || '브랜드없음'}] {exercise.name}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+
+                  <label className="field">
+                    <span>운동명 직접 입력</span>
+                    <input
+                      value={sub.exercise_name_snapshot}
+                      onChange={(e) => updateWorkoutSubExerciseName(itemIndex, subIndex, e.target.value)}
+                      placeholder={subIndex === 0 ? '예: 랫풀다운' : '예: 시티드로우'}
+                    />
+                  </label>
+
+                  <div className="stack-gap">
+                    {(sub.sets || []).map((setRow, setIndex) => (
+                      <div className="set-row" key={setIndex}>
+                        <input
+                          placeholder="kg"
+                          value={setRow.kg}
+                          onChange={(e) => updateSetValue(itemIndex, setIndex, 'kg', e.target.value, subIndex)}
+                        />
+                        <input
+                          placeholder="reps"
+                          value={setRow.reps}
+                          onChange={(e) => updateSetValue(itemIndex, setIndex, 'reps', e.target.value, subIndex)}
+                        />
+                        <button
+                          type="button"
+                          className="danger-btn"
+                          onClick={() => removeSet(itemIndex, setIndex, subIndex)}
+                          disabled={(sub.sets || []).length === 1}
+                        >
+                          세트 삭제
+                        </button>
+                      </div>
+                    ))}
+
+                    <button type="button" className="secondary-btn" onClick={() => addSet(itemIndex, subIndex)}>
+                      세트 추가
+                    </button>
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+        ) : (
+          <>
+            <label className="field">
+              <span>운동DB 선택</span>
+              <select value={item.exercise_id} onChange={(e) => updateWorkoutItemSelect(itemIndex, e.target.value)}>
+                <option value="">선택 안함</option>
+                {exercises.map((exercise) => (
+                  <option key={exercise.id} value={exercise.id}>
+                    [{exercise.brands?.name || '브랜드없음'}] {exercise.name}
+                  </option>
+                ))}
+              </select>
+            </label>
+
+            <label className="field">
+              <span>운동명 직접 입력</span>
+              <input
+                value={item.exercise_name_snapshot}
+                onChange={(e) => updateWorkoutItemName(itemIndex, e.target.value)}
+                placeholder="예: 힙쓰러스트, 밴드 워크, 스쿼트"
+              />
+            </label>
+
+            {item.is_cardio ? (
+              <label className="field">
+                <span>유산소 시간(분)</span>
+                <input
+                  type="number"
+                  value={item.cardio_minutes || ''}
+                  onChange={(e) => updateWorkoutItemField(itemIndex, 'cardio_minutes', e.target.value)}
+                  placeholder="예: 20"
+                />
+              </label>
+            ) : (
+              <div className="stack-gap">
+                {(item.sets || []).map((setRow, setIndex) => (
+                  <div className="set-row" key={setIndex}>
+                    <input
+                      placeholder="kg"
+                      value={setRow.kg}
+                      onChange={(e) => updateSetValue(itemIndex, setIndex, 'kg', e.target.value)}
+                    />
+                    <input
+                      placeholder="reps"
+                      value={setRow.reps}
+                      onChange={(e) => updateSetValue(itemIndex, setIndex, 'reps', e.target.value)}
+                    />
+                    <button
+                      type="button"
+                      className="danger-btn"
+                      onClick={() => removeSet(itemIndex, setIndex)}
+                      disabled={(item.sets || []).length === 1}
+                    >
+                      세트 삭제
+                    </button>
                   </div>
                 ))}
+
+                <button type="button" className="secondary-btn" onClick={() => addSet(itemIndex)}>
+                  세트 추가
+                </button>
+              </div>
+            )}
+          </>
+        )}
+      </div>
+    )}
+  </div>
+))}
                 <button type="button" className="secondary-btn" onClick={addWorkoutItem}>
                   운동 추가
                 </button>
