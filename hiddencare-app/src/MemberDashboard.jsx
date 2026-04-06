@@ -491,13 +491,18 @@ const calculatedRecommendedKcal = useMemo(() => {
   const currentRoutineWeek = useMemo(() => {
   return routine?.weeks?.[selectedRoutineWeek] || null
 }, [routine, selectedRoutineWeek])
-  const toggleRoutineDay = (weekNumber, dayIndex) => {
-  const key = `${weekNumber}-${dayIndex}`
+  const toggleRoutineDay = (weekNumber, dayName, dayIndex) => {
+  const key = `${weekNumber}-${dayName}-${dayIndex}`
 
-  setCollapsedRoutineDays((prev) => ({
-    ...prev,
-    [key]: !(prev[key] ?? true),
-  }))
+  setCollapsedRoutineDays((prev) => {
+    const next = {
+      ...prev,
+      [key]: !(prev[key] ?? true),
+    }
+
+    console.log('toggleRoutineDay', key, 'before:', prev[key], 'after:', next[key])
+    return next
+  })
 }
   const publishedNotices = useMemo(() => {
     return notices
@@ -2955,8 +2960,12 @@ const updateSetValue = (itemIndex, setIndex, field, value, subIndex = null) => {
               <div className="list-stack" style={{ marginTop: '12px' }}>
   {(currentRoutineWeek.days || []).map((day, dayIndex) => {
     const routineDayKey = `${currentRoutineWeek.week_number}-${day.day_of_week}-${dayIndex}`
-    const isCollapsed = collapsedRoutineDays[routineDayKey] ?? true
+    const isCollapsed =
+  typeof collapsedRoutineDays[routineDayKey] === 'boolean'
+    ? collapsedRoutineDays[routineDayKey]
+    : true
 
+console.log('render routineDayKey:', routineDayKey, 'isCollapsed:', isCollapsed)
     return (
       <div
         key={routineDayKey}
