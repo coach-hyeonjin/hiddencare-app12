@@ -5564,3 +5564,210 @@ textarea:focus {
     align-items: stretch;
   }
 }
+/* ===== 기록작성 탭 현대화 ===== */
+.record-page-modern {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.record-page-hero {
+  display: grid;
+  grid-template-columns: 1.15fr 0.85fr;
+  gap: 18px;
+  padding: 24px;
+  border-radius: 24px;
+  background: linear-gradient(135deg, #111827 0%, #1e1b4b 55%, #312e81 100%);
+  color: #ffffff;
+  box-shadow: 0 18px 42px rgba(15, 23, 42, 0.18);
+}
+
+.record-page-hero-left,
+.record-page-hero-right {
+  min-width: 0;
+}
+
+.record-page-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 30px;
+  padding: 6px 12px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.14);
+  color: #c7d2fe;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  margin-bottom: 12px;
+}
+
+.record-page-hero h2 {
+  margin: 0 0 10px;
+  font-size: 32px;
+  line-height: 1.2;
+  color: #ffffff;
+}
+
+.record-page-hero-text {
+  margin: 0;
+  color: rgba(255, 255, 255, 0.84);
+  font-size: 15px;
+  line-height: 1.8;
+  word-break: keep-all;
+}
+
+.record-page-hero-right {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 12px;
+}
+
+.record-page-hero-mini {
+  padding: 18px;
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  backdrop-filter: blur(10px);
+}
+
+.record-page-hero-mini span {
+  display: block;
+  font-size: 12px;
+  color: #c7d2fe;
+  font-weight: 800;
+  margin-bottom: 8px;
+}
+
+.record-page-hero-mini strong {
+  display: block;
+  font-size: 26px;
+  line-height: 1.25;
+  color: #ffffff;
+  margin-bottom: 8px;
+  letter-spacing: -0.03em;
+}
+
+.record-page-hero-mini p {
+  margin: 0;
+  color: rgba(255, 255, 255, 0.82);
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+.record-form-card-modern,
+.record-list-card-modern {
+  border-radius: 22px;
+  padding: 20px;
+}
+
+.record-card-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 14px;
+  align-items: flex-start;
+  flex-wrap: wrap;
+  margin-bottom: 16px;
+}
+
+.record-card-label {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 28px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: #eef2ff;
+  color: #4338ca;
+  font-size: 12px;
+  font-weight: 800;
+  margin-bottom: 8px;
+}
+
+.record-form-card-modern h3,
+.record-list-card-modern h3,
+.record-pain-card h3 {
+  margin: 0 0 6px;
+  font-size: 24px;
+  color: #0f172a;
+  letter-spacing: -0.03em;
+}
+
+.record-top-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.record-exercise-card {
+  border-radius: 20px;
+  border: 1px solid #e1e9f2;
+  background: linear-gradient(180deg, #ffffff 0%, #fbfcfe 100%);
+  box-shadow: 0 8px 20px rgba(15, 23, 42, 0.04);
+  padding: 18px;
+}
+
+.record-exercise-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: flex-start;
+  flex-wrap: wrap;
+}
+
+.record-exercise-head strong {
+  font-size: 18px;
+  color: #111827;
+}
+
+.record-exercise-summary {
+  margin-top: 8px;
+  font-size: 13px;
+  color: #64748b;
+  line-height: 1.7;
+}
+
+.record-exercise-body {
+  margin-top: 12px;
+}
+
+.record-pain-card {
+  padding: 20px;
+  border-radius: 20px;
+  background: linear-gradient(180deg, #ffffff 0%, #f8fbff 100%);
+  border: 1px solid #e2eaf4;
+  box-shadow: 0 10px 24px rgba(15, 23, 42, 0.04);
+}
+
+@media (max-width: 1200px) {
+  .record-page-hero {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 900px) {
+  .record-top-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 720px) {
+  .record-page-hero,
+  .record-form-card-modern,
+  .record-list-card-modern,
+  .record-pain-card,
+  .record-exercise-card {
+    padding: 16px;
+    border-radius: 18px;
+  }
+
+  .record-page-hero h2 {
+    font-size: 26px;
+  }
+
+  .record-exercise-head,
+  .record-card-head {
+    flex-direction: column;
+    align-items: stretch;
+  }
+}
