@@ -8370,160 +8370,197 @@ setEditingManagerActionId(null)
   </div>
 )}
 {activeTab === '운영대시보드' && (
-  <div className="admin-section">
-    <div className="section-head">
-      <div>
+  <div className="admin-section premium-dashboard-page">
+    <div className="dashboard-hero">
+      <div className="dashboard-hero-left">
+        <div className="dashboard-hero-badge">OPERATION OVERVIEW</div>
         <h2>운영 대시보드</h2>
-        <p className="sub-text">
-          코치관리, 매출기록, 세일즈일지, 문의사항 데이터를 한 화면에서 요약해서 보는 화면입니다.
+        <p className="dashboard-hero-text">
+          코치 상태, 매출 흐름, 세일즈 전환, 회원 활동, 문의/공지까지
+          지금 확인해야 할 운영 지표를 한 화면에서 빠르게 보는 요약 화면입니다.
         </p>
+      </div>
+
+      <div className="dashboard-hero-right">
+        <div className="dashboard-hero-mini">
+          <span>이번 달 핵심 매출</span>
+          <strong>{Number(dashboardOverview.monthSalesAmount || 0).toLocaleString()}원</strong>
+          <p>전월 대비 {dashboardOverview.monthRevenueChangeRate > 0 ? '+' : ''}{dashboardOverview.monthRevenueChangeRate || 0}%</p>
+        </div>
+
+        <div className="dashboard-hero-mini">
+          <span>미답변 / 위험 체크</span>
+          <strong>{dashboardOverview.pendingInquiries || 0}건 / {dashboardOverview.riskCoachCount || 0}명</strong>
+          <p>문의 응답과 코치 일정 조정 우선 확인</p>
+        </div>
       </div>
     </div>
 
     <div className="dashboard-kpi-grid">
-  <div className="dashboard-kpi-card kpi-blue">
-    <span>오늘 매출</span>
-    <strong>{Number(dashboardOverview.todaySalesAmount || 0).toLocaleString()}원</strong>
-    <div className="compact-text">
-      오늘 결제 {dashboardOverview.todaySalesCount || 0}건
+      <div className="dashboard-kpi-card kpi-blue">
+        <span>오늘 매출</span>
+        <strong>{Number(dashboardOverview.todaySalesAmount || 0).toLocaleString()}원</strong>
+        <div className="compact-text">
+          오늘 결제 {dashboardOverview.todaySalesCount || 0}건
+        </div>
+      </div>
+
+      <div className="dashboard-kpi-card kpi-green">
+        <span>이번 주 매출</span>
+        <strong>{Number(dashboardOverview.weekSalesAmount || 0).toLocaleString()}원</strong>
+        <div className="compact-text">
+          이번 주 결제 {dashboardOverview.weekSalesCount || 0}건
+        </div>
+      </div>
+
+      <div className="dashboard-kpi-card kpi-violet">
+        <span>이번 달 매출</span>
+        <strong>{Number(dashboardOverview.monthSalesAmount || 0).toLocaleString()}원</strong>
+        <div className="compact-text">
+          이번 달 결제 {dashboardOverview.monthSalesCount || 0}건
+        </div>
+      </div>
+
+      <div
+        className={`dashboard-kpi-card ${
+          Number(dashboardOverview.monthRevenueChangeRate || 0) > 0
+            ? 'kpi-green'
+            : Number(dashboardOverview.monthRevenueChangeRate || 0) < 0
+            ? 'kpi-red'
+            : 'kpi-amber'
+        }`}
+      >
+        <span>전월 대비 매출</span>
+        <strong>
+          {dashboardOverview.monthRevenueChangeRate > 0 ? '+' : ''}
+          {dashboardOverview.monthRevenueChangeRate || 0}%
+        </strong>
+        <div className="compact-text">이번 달 매출 증감률</div>
+      </div>
+
+      <div className="dashboard-kpi-card kpi-blue">
+        <span>이번 달 PT 수업</span>
+        <strong>{dashboardOverview.ptCount || 0}회</strong>
+        <div className="compact-text">기록작성/운동기록 기준</div>
+      </div>
+
+      <div className="dashboard-kpi-card kpi-green">
+        <span>이번 달 개인운동</span>
+        <strong>{dashboardOverview.personalCount || 0}회</strong>
+        <div className="compact-text">회원 입력 기준</div>
+      </div>
+
+      <div className="dashboard-kpi-card kpi-amber">
+        <span>전체 남은 세션</span>
+        <strong>{dashboardOverview.remainingSessionTotal || 0}회</strong>
+        <div className="compact-text">전체 회원 잔여 세션 합계</div>
+      </div>
+
+      <div className="dashboard-kpi-card kpi-red">
+        <span>미답변 문의</span>
+        <strong>{dashboardOverview.pendingInquiries || 0}건</strong>
+        <div className="compact-text">
+          unread 문의 {dashboardOverview.unreadInquiryCount || 0}건 / unread 공지 {dashboardOverview.unreadNoticeCount || 0}건
+        </div>
+      </div>
     </div>
-  </div>
-
-  <div className="dashboard-kpi-card kpi-green">
-    <span>이번 주 매출</span>
-    <strong>{Number(dashboardOverview.weekSalesAmount || 0).toLocaleString()}원</strong>
-    <div className="compact-text">
-      이번 주 결제 {dashboardOverview.weekSalesCount || 0}건
-    </div>
-  </div>
-
-  <div className="dashboard-kpi-card kpi-violet">
-    <span>이번 달 매출</span>
-    <strong>{Number(dashboardOverview.monthSalesAmount || 0).toLocaleString()}원</strong>
-    <div className="compact-text">
-      이번 달 결제 {dashboardOverview.monthSalesCount || 0}건
-    </div>
-  </div>
-
-  <div
-    className={`dashboard-kpi-card ${
-      Number(dashboardOverview.monthRevenueChangeRate || 0) > 0
-        ? 'kpi-green'
-        : Number(dashboardOverview.monthRevenueChangeRate || 0) < 0
-        ? 'kpi-red'
-        : 'kpi-amber'
-    }`}
-  >
-    <span>전월 대비 매출</span>
-    <strong>
-      {dashboardOverview.monthRevenueChangeRate > 0 ? '+' : ''}
-      {dashboardOverview.monthRevenueChangeRate || 0}%
-    </strong>
-    <div className="compact-text">이번 달 매출 증감률</div>
-  </div>
-
-  <div className="dashboard-kpi-card kpi-blue">
-    <span>이번 달 PT 수업</span>
-    <strong>{dashboardOverview.ptCount || 0}회</strong>
-    <div className="compact-text">기록작성/운동기록 기준</div>
-  </div>
-
-  <div className="dashboard-kpi-card kpi-green">
-    <span>이번 달 개인운동</span>
-    <strong>{dashboardOverview.personalCount || 0}회</strong>
-    <div className="compact-text">회원 입력 기준</div>
-  </div>
-
-  <div className="dashboard-kpi-card kpi-amber">
-    <span>전체 남은 세션</span>
-    <strong>{dashboardOverview.remainingSessionTotal || 0}회</strong>
-    <div className="compact-text">전체 회원 잔여 세션 합계</div>
-  </div>
-
-  <div className="dashboard-kpi-card kpi-red">
-    <span>미답변 문의</span>
-    <strong>{dashboardOverview.pendingInquiries || 0}건</strong>
-    <div className="compact-text">
-      unread 문의 {dashboardOverview.unreadInquiryCount || 0}건 / unread 공지 {dashboardOverview.unreadNoticeCount || 0}건
-    </div>
-  </div>
-</div>
 
     <div className="dashboard-main-grid">
-      <section className="card">
-        <h3>코치 상태 요약</h3>
-       <div className="dashboard-kpi-grid dashboard-kpi-grid-inside">
-  <div className="dashboard-kpi-card kpi-amber">
-    <span>번아웃 의심 평균</span>
-    <strong>{Number(burnoutSummary.avgSignal || 0).toFixed(1)}</strong>
-    <div className="compact-text">
-      {burnoutSummary.avgSignal >= 3 ? '주의 필요' : '정상 범위'}
-    </div>
-  </div>
+      <section className="dashboard-panel-card">
+        <div className="dashboard-panel-head">
+          <div>
+            <div className="dashboard-panel-label">COACH STATUS</div>
+            <h3>코치 상태 요약</h3>
+            <p className="sub-text">지금 바로 봐야 할 회복/주의/위험 흐름입니다.</p>
+          </div>
+        </div>
 
-  <div className="dashboard-kpi-card kpi-blue">
-    <span>회복 체크 평균</span>
-    <strong>{Number(burnoutSummary.avgRecovery || 0).toFixed(1)}</strong>
-    <div className="compact-text">
-      {burnoutSummary.avgRecovery >= 3 ? '회복 중' : '관리 필요'}
-    </div>
-  </div>
-
-  <div className="dashboard-kpi-card kpi-amber">
-    <span>주의 코치</span>
-    <strong>{dashboardOverview.cautionCoachCount || 0}명</strong>
-    <div className="compact-text">컨디션/스트레스 확인 필요</div>
-  </div>
-
-  <div className="dashboard-kpi-card kpi-red">
-    <span>위험 코치</span>
-    <strong>{dashboardOverview.riskCoachCount || 0}명</strong>
-    <div className="compact-text">즉시 일정 조정 검토</div>
-  </div>
-</div>
-      </section>
-
-      <section className="card">
-        <h3>세일즈 요약</h3>
         <div className="dashboard-kpi-grid dashboard-kpi-grid-inside">
-  <div className="dashboard-kpi-card kpi-blue">
-    <span>세일즈일지 전체</span>
-    <strong>{salesLogSummary.total || 0}건</strong>
-    <div className="compact-text">현재 필터 기준</div>
-  </div>
+          <div className="dashboard-kpi-card kpi-amber">
+            <span>번아웃 의심 평균</span>
+            <strong>{Number(burnoutSummary.avgSignal || 0).toFixed(1)}</strong>
+            <div className="compact-text">
+              {burnoutSummary.avgSignal >= 3 ? '주의 필요' : '정상 범위'}
+            </div>
+          </div>
 
-  <div className="dashboard-kpi-card kpi-green">
-    <span>결제완료</span>
-    <strong>{salesLogSummary.closed || 0}건</strong>
-    <div className="compact-text">신규 전환 완료</div>
-  </div>
+          <div className="dashboard-kpi-card kpi-blue">
+            <span>회복 체크 평균</span>
+            <strong>{Number(burnoutSummary.avgRecovery || 0).toFixed(1)}</strong>
+            <div className="compact-text">
+              {burnoutSummary.avgRecovery >= 3 ? '회복 중' : '관리 필요'}
+            </div>
+          </div>
 
-  <div className="dashboard-kpi-card kpi-amber">
-    <span>후속관리</span>
-    <strong>{salesLogSummary.followup || 0}건</strong>
-    <div className="compact-text">재접촉 필요</div>
-  </div>
+          <div className="dashboard-kpi-card kpi-amber">
+            <span>주의 코치</span>
+            <strong>{dashboardOverview.cautionCoachCount || 0}명</strong>
+            <div className="compact-text">컨디션/스트레스 확인 필요</div>
+          </div>
 
-  <div className="dashboard-kpi-card kpi-red">
-    <span>이탈</span>
-    <strong>{salesLogSummary.lost || 0}건</strong>
-    <div className="compact-text">보류/이탈 확인</div>
-  </div>
-</div>
+          <div className="dashboard-kpi-card kpi-red">
+            <span>위험 코치</span>
+            <strong>{dashboardOverview.riskCoachCount || 0}명</strong>
+            <div className="compact-text">즉시 일정 조정 검토</div>
+          </div>
+        </div>
+      </section>
+
+      <section className="dashboard-panel-card">
+        <div className="dashboard-panel-head">
+          <div>
+            <div className="dashboard-panel-label">SALES FLOW</div>
+            <h3>세일즈 요약</h3>
+            <p className="sub-text">현재 전환 흐름과 후속관리 상태입니다.</p>
+          </div>
+        </div>
+
+        <div className="dashboard-kpi-grid dashboard-kpi-grid-inside">
+          <div className="dashboard-kpi-card kpi-blue">
+            <span>세일즈일지 전체</span>
+            <strong>{salesLogSummary.total || 0}건</strong>
+            <div className="compact-text">현재 필터 기준</div>
+          </div>
+
+          <div className="dashboard-kpi-card kpi-green">
+            <span>결제완료</span>
+            <strong>{salesLogSummary.closed || 0}건</strong>
+            <div className="compact-text">신규 전환 완료</div>
+          </div>
+
+          <div className="dashboard-kpi-card kpi-amber">
+            <span>후속관리</span>
+            <strong>{salesLogSummary.followup || 0}건</strong>
+            <div className="compact-text">재접촉 필요</div>
+          </div>
+
+          <div className="dashboard-kpi-card kpi-red">
+            <span>이탈</span>
+            <strong>{salesLogSummary.lost || 0}건</strong>
+            <div className="compact-text">보류/이탈 확인</div>
+          </div>
+        </div>
       </section>
     </div>
 
     <div className="dashboard-main-grid">
-      <section className="card">
-        <h3>결제수단별 매출</h3>
+      <section className="dashboard-panel-card">
+        <div className="dashboard-panel-head">
+          <div>
+            <div className="dashboard-panel-label">PAYMENT</div>
+            <h3>결제수단별 매출</h3>
+          </div>
+        </div>
+
         <div className="list-stack">
           {dashboardOverview.paymentBreakdown.length ? (
             dashboardOverview.paymentBreakdown.map((item) => (
-              <div key={item.label} className="dashboard-row-card">
-                <div className="list-card-top">
+              <div key={item.label} className="dashboard-list-row">
+                <div>
                   <strong>{item.label}</strong>
-                  <span className="pill pill-blue">{Number(item.amount || 0).toLocaleString()}원</span>
+                  <div className="compact-text">결제수단 기준 매출 집계</div>
                 </div>
+                <span className="pill pill-blue">{Number(item.amount || 0).toLocaleString()}원</span>
               </div>
             ))
           ) : (
@@ -8532,16 +8569,23 @@ setEditingManagerActionId(null)
         </div>
       </section>
 
-      <section className="card">
-        <h3>이번 달 프로그램별 매출</h3>
+      <section className="dashboard-panel-card">
+        <div className="dashboard-panel-head">
+          <div>
+            <div className="dashboard-panel-label">PROGRAM REVENUE</div>
+            <h3>이번 달 프로그램별 매출</h3>
+          </div>
+        </div>
+
         <div className="list-stack">
           {dashboardOverview.topPrograms.length ? (
             dashboardOverview.topPrograms.map((item) => (
-              <div key={item.name} className="dashboard-row-card">
-                <div className="list-card-top">
+              <div key={item.name} className="dashboard-list-row">
+                <div>
                   <strong>{item.name}</strong>
-                  <span className="pill pill-violet">{Number(item.amount || 0).toLocaleString()}원</span>
+                  <div className="compact-text">이번 달 프로그램 매출</div>
                 </div>
+                <span className="pill pill-violet">{Number(item.amount || 0).toLocaleString()}원</span>
               </div>
             ))
           ) : (
@@ -8552,29 +8596,35 @@ setEditingManagerActionId(null)
     </div>
 
     <div className="dashboard-main-grid">
-      <section className="card">
-        <h3>세션 종료 임박 회원</h3>
+      <section className="dashboard-panel-card">
+        <div className="dashboard-panel-head">
+          <div>
+            <div className="dashboard-panel-label">SESSION ALERT</div>
+            <h3>세션 종료 임박 회원</h3>
+          </div>
+        </div>
+
         <div className="list-stack">
           {dashboardOverview.endingMembers.length ? (
             dashboardOverview.endingMembers.map((member) => (
-              <div key={member.id} className="dashboard-row-card">
-                <div className="list-card-top">
+              <div key={member.id} className="dashboard-list-row">
+                <div>
                   <strong>{member.name}</strong>
-                  <span
-  className={`pill ${
-    Number(member.remainingSessions || 0) <= 5
-      ? 'pill-red'
-      : Number(member.remainingSessions || 0) <= 10
-      ? 'pill-amber'
-      : 'pill-blue'
-  }`}
->
-  남은 {member.remainingSessions}회
-</span>
+                  <div className="compact-text">
+                    목표: {member.goal || '-'} / 프로그램: {member.programs?.name || '미지정'}
+                  </div>
                 </div>
-                <div className="compact-text">
-                  목표: {member.goal || '-'} / 프로그램: {member.programs?.name || '미지정'}
-                </div>
+                <span
+                  className={`pill ${
+                    Number(member.remainingSessions || 0) <= 5
+                      ? 'pill-red'
+                      : Number(member.remainingSessions || 0) <= 10
+                      ? 'pill-amber'
+                      : 'pill-blue'
+                  }`}
+                >
+                  남은 {member.remainingSessions}회
+                </span>
               </div>
             ))
           ) : (
@@ -8583,19 +8633,23 @@ setEditingManagerActionId(null)
         </div>
       </section>
 
-      <section className="card">
-        <h3>이번 달 활동 많은 회원</h3>
+      <section className="dashboard-panel-card">
+        <div className="dashboard-panel-head">
+          <div>
+            <div className="dashboard-panel-label">ACTIVE MEMBERS</div>
+            <h3>이번 달 활동 많은 회원</h3>
+          </div>
+        </div>
+
         <div className="list-stack">
           {dashboardOverview.activeMembers.length ? (
             dashboardOverview.activeMembers.map((member) => (
-              <div key={member.id} className="dashboard-row-card">
-                <div className="list-card-top">
+              <div key={member.id} className="dashboard-list-row">
+                <div>
                   <strong>{member.name}</strong>
-                 <span className="pill pill-green">기록 {member.workoutCount}회</span>
+                  <div className="compact-text">목표: {member.goal || '-'}</div>
                 </div>
-                <div className="compact-text">
-                  목표: {member.goal || '-'}
-                </div>
+                <span className="pill pill-green">기록 {member.workoutCount}회</span>
               </div>
             ))
           ) : (
@@ -8606,34 +8660,40 @@ setEditingManagerActionId(null)
     </div>
 
     <div className="dashboard-main-grid">
-      <section className="card">
-        <h3>위험 / 주의 코치</h3>
+      <section className="dashboard-panel-card">
+        <div className="dashboard-panel-head">
+          <div>
+            <div className="dashboard-panel-label">COACH RISK</div>
+            <h3>위험 / 주의 코치</h3>
+          </div>
+        </div>
+
         <div className="list-stack">
           {dashboardOverview.riskCoaches.length === 0 && dashboardOverview.cautionCoaches.length === 0 ? (
             <div className="workout-list-empty">주의 또는 위험 상태 코치가 없습니다.</div>
           ) : (
             <>
               {dashboardOverview.riskCoaches.map((item) => (
-                <div key={`risk-${item.id}`} className="dashboard-row-card dashboard-row-danger">
-                  <div className="list-card-top">
+                <div key={`risk-${item.id}`} className="dashboard-list-row dashboard-list-row-danger">
+                  <div>
                     <strong>{item.coachName}</strong>
-                    <span className="pill pill-red">위험</span>
+                    <div className="compact-text">
+                      컨디션 {item.condition_score || 0} / 피로 {item.fatigue_score || 0} / 스트레스 {item.stress_score || 0} / 집중도 {item.focus_score || 0}
+                    </div>
                   </div>
-                  <div className="compact-text">
-                    컨디션 {item.condition_score || 0} / 피로 {item.fatigue_score || 0} / 스트레스 {item.stress_score || 0} / 집중도 {item.focus_score || 0}
-                  </div>
+                  <span className="pill pill-red">위험</span>
                 </div>
               ))}
 
               {dashboardOverview.cautionCoaches.map((item) => (
-                <div key={`caution-${item.id}`} className="dashboard-row-card dashboard-row-warn">
-                  <div className="list-card-top">
+                <div key={`caution-${item.id}`} className="dashboard-list-row dashboard-list-row-warn">
+                  <div>
                     <strong>{item.coachName}</strong>
-                    <span className="pill pill-amber">주의</span>
+                    <div className="compact-text">
+                      컨디션 {item.condition_score || 0} / 피로 {item.fatigue_score || 0} / 스트레스 {item.stress_score || 0} / 집중도 {item.focus_score || 0}
+                    </div>
                   </div>
-                  <div className="compact-text">
-                    컨디션 {item.condition_score || 0} / 피로 {item.fatigue_score || 0} / 스트레스 {item.stress_score || 0} / 집중도 {item.focus_score || 0}
-                  </div>
+                  <span className="pill pill-amber">주의</span>
                 </div>
               ))}
             </>
@@ -8641,19 +8701,25 @@ setEditingManagerActionId(null)
         </div>
       </section>
 
-      <section className="card">
-        <h3>코치 리뷰 상위</h3>
+      <section className="dashboard-panel-card">
+        <div className="dashboard-panel-head">
+          <div>
+            <div className="dashboard-panel-label">TOP REVIEW</div>
+            <h3>코치 리뷰 상위</h3>
+          </div>
+        </div>
+
         <div className="list-stack">
           {dashboardOverview.topCoachReviews.length ? (
             dashboardOverview.topCoachReviews.map((item) => (
-              <div key={item.id} className="dashboard-row-card">
-                <div className="list-card-top">
+              <div key={item.id} className="dashboard-list-row">
+                <div>
                   <strong>{item.coachName}</strong>
-                  <span className="pill pill-violet">총점 {Number(item.total_score || 0).toFixed(1)}</span>
+                  <div className="compact-text">
+                    매출 {item.revenue_score || 0} / 활동 {item.activity_score || 0} / 세일즈 {item.sales_score || 0} / 태도 {item.attitude_score || 0}
+                  </div>
                 </div>
-                <div className="compact-text">
-                  매출 {item.revenue_score || 0} / 활동 {item.activity_score || 0} / 세일즈 {item.sales_score || 0} / 태도 {item.attitude_score || 0}
-                </div>
+                <span className="pill pill-violet">총점 {Number(item.total_score || 0).toFixed(1)}</span>
               </div>
             ))
           ) : (
@@ -8664,19 +8730,25 @@ setEditingManagerActionId(null)
     </div>
 
     <div className="dashboard-main-grid">
-      <section className="card">
-        <h3>최근 매출</h3>
+      <section className="dashboard-panel-card">
+        <div className="dashboard-panel-head">
+          <div>
+            <div className="dashboard-panel-label">RECENT SALES</div>
+            <h3>최근 매출</h3>
+          </div>
+        </div>
+
         <div className="list-stack">
           {dashboardOverview.recentSales.length ? (
             dashboardOverview.recentSales.map((sale) => (
-              <div key={sale.id} className="dashboard-row-card">
-                <div className="list-card-top">
+              <div key={sale.id} className="dashboard-list-row">
+                <div>
                   <strong>{sale.members?.name || '회원명 없음'}</strong>
-                 <span className="pill pill-blue">{Number(sale.amount || 0).toLocaleString()}원</span>
+                  <div className="compact-text">
+                    {sale.sale_date || '-'} / {sale.programs?.name || '프로그램 미지정'} / {sale.payment_method || '-'}
+                  </div>
                 </div>
-                <div className="compact-text">
-                  {sale.sale_date || '-'} / {sale.programs?.name || '프로그램 미지정'} / {sale.payment_method || '-'}
-                </div>
+                <span className="pill pill-blue">{Number(sale.amount || 0).toLocaleString()}원</span>
               </div>
             ))
           ) : (
@@ -8685,31 +8757,37 @@ setEditingManagerActionId(null)
         </div>
       </section>
 
-      <section className="card">
-        <h3>최근 세일즈일지</h3>
+      <section className="dashboard-panel-card">
+        <div className="dashboard-panel-head">
+          <div>
+            <div className="dashboard-panel-label">RECENT SALES LOG</div>
+            <h3>최근 세일즈일지</h3>
+          </div>
+        </div>
+
         <div className="list-stack">
           {dashboardOverview.recentSalesLogs.length ? (
             dashboardOverview.recentSalesLogs.map((log) => (
-              <div key={log.id} className="dashboard-row-card">
-                <div className="list-card-top">
+              <div key={log.id} className="dashboard-list-row">
+                <div>
                   <strong>{log.lead_name || '리드명 없음'}</strong>
-                  <span
-  className={`pill ${
-    log.sales_result === '결제완료'
-      ? 'pill-green'
-      : log.sales_result === '후속관리'
-      ? 'pill-amber'
-      : log.sales_result === '이탈'
-      ? 'pill-red'
-      : 'pill-blue'
-  }`}
->
-  {log.sales_result || '진행중'}
-</span>
+                  <div className="compact-text">
+                    {log.log_date || '-'} / {log.coach_name || '-'} / {log.main_need || '-'} / 전환도 {log.conversion_score || '-'}
+                  </div>
                 </div>
-                <div className="compact-text">
-                  {log.log_date || '-'} / {log.coach_name || '-'} / {log.main_need || '-'} / 전환도 {log.conversion_score || '-'}
-                </div>
+                <span
+                  className={`pill ${
+                    log.sales_result === '결제완료'
+                      ? 'pill-green'
+                      : log.sales_result === '후속관리'
+                      ? 'pill-amber'
+                      : log.sales_result === '이탈'
+                      ? 'pill-red'
+                      : 'pill-blue'
+                  }`}
+                >
+                  {log.sales_result || '진행중'}
+                </span>
               </div>
             ))
           ) : (
@@ -8720,29 +8798,35 @@ setEditingManagerActionId(null)
     </div>
 
     <div className="dashboard-main-grid">
-      <section className="card">
-        <h3>최근 문의</h3>
+      <section className="dashboard-panel-card">
+        <div className="dashboard-panel-head">
+          <div>
+            <div className="dashboard-panel-label">RECENT INQUIRY</div>
+            <h3>최근 문의</h3>
+          </div>
+        </div>
+
         <div className="list-stack">
           {dashboardOverview.recentInquiries.length ? (
             dashboardOverview.recentInquiries.map((item) => (
-              <div key={item.id} className="dashboard-row-card">
-                <div className="list-card-top">
+              <div key={item.id} className="dashboard-list-row">
+                <div>
                   <strong>{item.title || item.member_name || '문의'}</strong>
-                 <span
-  className={`pill ${
-    item.status === 'answered' || item.status === '답변완료'
-      ? 'pill-green'
-      : item.status === 'pending' || item.status === '대기중'
-      ? 'pill-amber'
-      : 'pill-blue'
-  }`}
->
-  {item.status || 'pending'}
-</span>
+                  <div className="compact-text">
+                    {item.created_at || item.inquiry_date || '-'}
+                  </div>
                 </div>
-                <div className="compact-text">
-                  {item.created_at || item.inquiry_date || '-'}
-                </div>
+                <span
+                  className={`pill ${
+                    item.status === 'answered' || item.status === '답변완료'
+                      ? 'pill-green'
+                      : item.status === 'pending' || item.status === '대기중'
+                      ? 'pill-amber'
+                      : 'pill-blue'
+                  }`}
+                >
+                  {item.status || 'pending'}
+                </span>
               </div>
             ))
           ) : (
@@ -8751,19 +8835,25 @@ setEditingManagerActionId(null)
         </div>
       </section>
 
-      <section className="card">
-        <h3>최근 공지</h3>
+      <section className="dashboard-panel-card">
+        <div className="dashboard-panel-head">
+          <div>
+            <div className="dashboard-panel-label">RECENT NOTICE</div>
+            <h3>최근 공지</h3>
+          </div>
+        </div>
+
         <div className="list-stack">
           {dashboardOverview.recentNotices.length ? (
             dashboardOverview.recentNotices.map((item) => (
-              <div key={item.id} className="dashboard-row-card">
-                <div className="list-card-top">
+              <div key={item.id} className="dashboard-list-row">
+                <div>
                   <strong>{item.title || '공지'}</strong>
-                  <span className="pill pill-violet">{item.category || '공지'}</span>
+                  <div className="compact-text">
+                    {item.starts_at || item.created_at || '-'}
+                  </div>
                 </div>
-                <div className="compact-text">
-                  {item.starts_at || item.created_at || '-'}
-                </div>
+                <span className="pill pill-violet">{item.category || '공지'}</span>
               </div>
             ))
           ) : (
