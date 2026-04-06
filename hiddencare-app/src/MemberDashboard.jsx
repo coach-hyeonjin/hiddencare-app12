@@ -3088,121 +3088,192 @@ const updateSetValue = (itemIndex, setIndex, field, value, subIndex = null) => {
         </div>
       )}
 
-      {activeTab === '루틴' && (
-  <div className="stack-gap">
-    <section className="card">
-      <h2>루틴</h2>
+            {activeTab === '루틴' && (
+        <div className="member-routine-page">
+          <section className="member-routine-hero">
+            <div className="member-routine-hero-left">
+              <div className="member-routine-badge">MY ROUTINE</div>
+              <h2>루틴</h2>
+              <p className="member-routine-hero-text">
+                주차별 운동 계획을 한눈에 보고,
+                필요한 날만 열어서 운동명, 시간, 세트 정보를 편하게 확인할 수 있습니다.
+              </p>
+            </div>
 
-      {!routine ? (
-        <div className="workout-list-empty">등록된 루틴이 없습니다.</div>
-      ) : (
-        <div className="stack-gap">
-          <div className="detail-box">
-            <p><strong>루틴 제목:</strong> {routine.title || '루틴'}</p>
-          </div>
-
-          <div className="inline-actions wrap">
-            {(routine.weeks || []).map((week, index) => (
-              <button
-                key={index}
-                type="button"
-                className={index === selectedRoutineWeek ? 'primary-btn' : 'secondary-btn'}
-                onClick={() => setSelectedRoutineWeek(index)}
-              >
-                {week.week_number}주차
-              </button>
-            ))}
-          </div>
-
-          {!currentRoutineWeek ? (
-            <div className="workout-list-empty">선택된 주차가 없습니다.</div>
-          ) : (
-            <div className="sub-card">
-              <div className="list-card-top">
-                <strong>{currentRoutineWeek.week_number}주차</strong>
+            <div className="member-routine-hero-right">
+              <div className="member-routine-hero-mini">
+                <span>현재 루틴</span>
+                <strong>{routine?.title || '루틴'}</strong>
+                <p>회원님 전용 주차별 운동 계획입니다.</p>
               </div>
 
-              <div className="list-stack" style={{ marginTop: '12px' }}>
-  {(currentRoutineWeek.days || []).map((day, dayIndex) => {
-    const routineDayKey = `${currentRoutineWeek.week_number}-${day.day_of_week}-${dayIndex}`
-    const isCollapsed =
-  typeof collapsedRoutineDays[routineDayKey] === 'boolean'
-    ? collapsedRoutineDays[routineDayKey]
-    : true
+              <div className="member-routine-hero-mini">
+                <span>선택 주차</span>
+                <strong>
+                  {currentRoutineWeek ? `${currentRoutineWeek.week_number}주차` : '선택 없음'}
+                </strong>
+                <p>
+                  {currentRoutineWeek
+                    ? `${(currentRoutineWeek.days || []).length}개 요일 구성`
+                    : '표시할 주차가 없습니다.'}
+                </p>
+              </div>
+            </div>
+          </section>
 
-console.log('render routineDayKey:', routineDayKey, 'isCollapsed:', isCollapsed)
-    return (
-      <div
-        key={routineDayKey}
-        className="record-item-box"
-      >
-        <div className="list-card-top">
-  <strong>{day.day_of_week}요일</strong>
-
-  <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-    <span className="pill">{(day.items || []).length}개 운동</span>
-
-    <button
-      type="button"
-      className="secondary-btn"
-      onClick={() =>
-        toggleRoutineDay(
-          currentRoutineWeek.week_number,
-          day.day_of_week,
-          dayIndex,
-        )
-      }
-    >
-      {isCollapsed ? '상세히보기' : '간략히보기'}
-    </button>
-  </div>
-</div>
-
-        {isCollapsed ? null : (day.items || []).length === 0 ? (
-          <div className="compact-text" style={{ marginTop: '10px' }}>
-            등록된 운동이 없습니다.
-          </div>
-        ) : (
-          <div className="list-stack" style={{ marginTop: '12px' }}>
-            {(day.items || []).map((item, itemIndex) => (
-              <div key={itemIndex} className="sub-card">
-                <div className="list-card-top">
-                  <strong>{item.exercise_name_snapshot || `운동 ${itemIndex + 1}`}</strong>
-                  {item.duration_minutes ? (
-                    <span className="pill">{item.duration_minutes}분</span>
-                  ) : null}
+          <section className="card member-routine-main-card">
+            {!routine ? (
+              <div className="workout-list-empty">등록된 루틴이 없습니다.</div>
+            ) : (
+              <div className="stack-gap">
+                <div className="member-routine-title-box">
+                  <div className="member-routine-title-label">ROUTINE TITLE</div>
+                  <strong>{routine.title || '루틴'}</strong>
                 </div>
 
-                {item.memo ? (
-                  <div className="compact-text">메모: {item.memo}</div>
-                ) : null}
+                <div className="member-routine-week-tabs">
+                  {(routine.weeks || []).map((week, index) => (
+                    <button
+                      key={index}
+                      type="button"
+                      className={index === selectedRoutineWeek ? 'primary-btn' : 'secondary-btn'}
+                      onClick={() => setSelectedRoutineWeek(index)}
+                    >
+                      {week.week_number}주차
+                    </button>
+                  ))}
+                </div>
 
-                {(item.sets || []).length > 0 ? (
-                  <ul className="set-list">
-                    {(item.sets || []).map((setRow, setIndex) => (
-                      <li key={setIndex}>
-                        {setIndex + 1}세트 - {setRow.kg || '-'}kg / {setRow.reps || '-'}회
-                      </li>
-                    ))}
-                  </ul>
+                {!currentRoutineWeek ? (
+                  <div className="workout-list-empty">선택된 주차가 없습니다.</div>
                 ) : (
-                  <div className="compact-text">세트 정보 없음</div>
+                  <div className="member-routine-week-card">
+                    <div className="member-routine-week-head">
+                      <div>
+                        <div className="member-routine-week-label">ROUTINE WEEK</div>
+                        <strong>{currentRoutineWeek.week_number}주차</strong>
+                      </div>
+
+                      <span className="pill pill-blue">
+                        {(currentRoutineWeek.days || []).length}개 요일
+                      </span>
+                    </div>
+
+                    <div className="list-stack" style={{ marginTop: '16px' }}>
+                      {(currentRoutineWeek.days || []).map((day, dayIndex) => {
+                        const routineDayKey = `${currentRoutineWeek.week_number}-${day.day_of_week}-${dayIndex}`
+                        const isCollapsed =
+                          typeof collapsedRoutineDays[routineDayKey] === 'boolean'
+                            ? collapsedRoutineDays[routineDayKey]
+                            : true
+
+                        const itemCount = (day.items || []).length
+                        const totalSets = (day.items || []).reduce(
+                          (sum, item) => sum + ((item.sets || []).length || 0),
+                          0,
+                        )
+
+                        return (
+                          <div key={routineDayKey} className="member-routine-day-card">
+                            <button
+                              type="button"
+                              className="member-routine-day-toggle"
+                              onClick={() =>
+                                toggleRoutineDay(
+                                  currentRoutineWeek.week_number,
+                                  day.day_of_week,
+                                  dayIndex,
+                                )
+                              }
+                            >
+                              <div className="member-routine-day-left">
+                                <div className="member-routine-day-title-row">
+                                  <strong>{day.day_of_week}요일</strong>
+                                  <span className="pill">{itemCount}개 운동</span>
+                                  <span className="pill pill-violet">총 {totalSets}세트</span>
+                                </div>
+
+                                <div className="member-routine-day-meta">
+                                  {itemCount === 0
+                                    ? '등록된 운동이 없습니다.'
+                                    : `눌러서 ${day.day_of_week}요일 루틴을 확인하세요.`}
+                                </div>
+                              </div>
+
+                              <span className={`member-routine-day-arrow ${!isCollapsed ? 'open' : ''}`}>
+                                ▾
+                              </span>
+                            </button>
+
+                            {!isCollapsed && (
+                              <div className="member-routine-day-body">
+                                {(day.items || []).length === 0 ? (
+                                  <div className="workout-list-empty">등록된 운동이 없습니다.</div>
+                                ) : (
+                                  <div className="list-stack">
+                                    {(day.items || []).map((item, itemIndex) => (
+                                      <div key={itemIndex} className="member-routine-item-card">
+                                        <div className="member-routine-item-head">
+                                          <div>
+                                            <div className="member-routine-item-label">
+                                              EXERCISE {itemIndex + 1}
+                                            </div>
+                                            <strong>
+                                              {item.exercise_name_snapshot || `운동 ${itemIndex + 1}`}
+                                            </strong>
+                                          </div>
+
+                                          <div className="member-routine-item-badges">
+                                            {item.duration_minutes ? (
+                                              <span className="pill pill-blue">
+                                                {item.duration_minutes}분
+                                              </span>
+                                            ) : null}
+
+                                            <span className="pill pill-green">
+                                              {(item.sets || []).length}세트
+                                            </span>
+                                          </div>
+                                        </div>
+
+                                        {item.memo ? (
+                                          <div className="member-routine-note-box">
+                                            <span>코칭 메모</span>
+                                            <p>{item.memo}</p>
+                                          </div>
+                                        ) : null}
+
+                                        {(item.sets || []).length > 0 ? (
+                                          <div className="member-routine-set-grid">
+                                            {(item.sets || []).map((setRow, setIndex) => (
+                                              <div key={setIndex} className="member-routine-set-card">
+                                                <span>{setIndex + 1}세트</span>
+                                                <strong>
+                                                  {setRow.kg || '-'}kg / {setRow.reps || '-'}회
+                                                </strong>
+                                              </div>
+                                            ))}
+                                          </div>
+                                        ) : (
+                                          <div className="compact-text">세트 정보 없음</div>
+                                        )}
+                                      </div>
+                                    ))}
+                                  </div>
+                                )}
+                              </div>
+                            )}
+                          </div>
+                        )
+                      })}
+                    </div>
+                  </div>
                 )}
               </div>
-            ))}
-          </div>
-        )}
-      </div>
-    )
-  })}
-</div>
-            </div>
-          )}
+            )}
+          </section>
         </div>
       )}
-    </section>
-  </div>
-)}
 
       {activeTab === '프로그램' && (
         <div className="stack-gap">
