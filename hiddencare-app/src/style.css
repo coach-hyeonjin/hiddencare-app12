@@ -4712,3 +4712,122 @@ textarea:focus {
     font-size: 26px;
   }
 }
+/* ===== 회원용 식단 탭 모바일 강제 대응 ===== */
+.member-diet-page,
+.member-diet-layout,
+.member-diet-form-card,
+.member-diet-log-card,
+.member-diet-hero,
+.member-diet-hero-left,
+.member-diet-hero-right,
+.member-diet-log-item,
+.member-diet-detail-box,
+.member-diet-detail-grid,
+.member-diet-macro-grid {
+  min-width: 0;
+}
+
+@media (max-width: 1024px) {
+  .member-diet-layout {
+    display: grid !important;
+    grid-template-columns: 1fr !important;
+    gap: 16px;
+  }
+
+  .member-diet-hero {
+    display: grid !important;
+    grid-template-columns: 1fr !important;
+    gap: 14px;
+  }
+
+  .member-diet-form-card,
+  .member-diet-log-card {
+    width: 100%;
+  }
+}
+
+@media (max-width: 720px) {
+  .member-diet-page {
+    gap: 16px;
+  }
+
+  .member-diet-hero {
+    padding: 16px;
+    border-radius: 18px;
+  }
+
+  .member-diet-hero h2 {
+    font-size: 24px;
+  }
+
+  .member-diet-hero-text {
+    font-size: 14px;
+    line-height: 1.7;
+  }
+
+  .member-diet-hero-mini {
+    padding: 14px;
+    border-radius: 16px;
+  }
+
+  .member-diet-hero-mini strong {
+    font-size: 20px;
+  }
+
+  .member-diet-form-card,
+  .member-diet-log-card {
+    padding: 16px;
+    border-radius: 18px;
+  }
+
+  .member-diet-chip-row {
+    gap: 8px;
+  }
+
+  .member-diet-chip {
+    flex: 1 1 calc(50% - 8px);
+    text-align: center;
+    justify-content: center;
+    padding: 10px 12px;
+  }
+
+  .member-diet-block {
+    padding: 14px;
+    border-radius: 16px;
+  }
+
+  .member-diet-log-item {
+    padding: 14px;
+    border-radius: 16px;
+  }
+
+  .member-diet-log-top {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .member-diet-log-right {
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .member-diet-mini-chip {
+    min-height: 28px;
+    padding: 6px 10px;
+    font-size: 11px;
+  }
+
+  .member-diet-detail-grid {
+    grid-template-columns: 1fr !important;
+  }
+
+  .member-diet-macro-grid {
+    grid-template-columns: 1fr !important;
+  }
+
+  .member-diet-hunger-meta {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}
