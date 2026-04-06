@@ -6064,12 +6064,12 @@ setEditingManagerActionId(null)
         </strong>
       </div>
 
-      <div className="member-hero-item">
-        <span>회원 링크</span>
-        <strong className="member-hero-link">
-          {window.location.origin}?member={selectedMember.id}
-        </strong>
-      </div>
+     <div className="member-hero-item">
+  <span>회원 링크</span>
+  <strong className="member-hero-link member-hero-link-break">
+    {window.location.origin}?member={selectedMember.id}
+  </strong>
+</div>
     </div>
 
     <div className="member-hero-note">
