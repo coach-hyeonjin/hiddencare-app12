@@ -3750,180 +3750,453 @@ const updateSetValue = (itemIndex, setIndex, field, value, subIndex = null) => {
       )}
 
       {activeTab === '프로그램' && (
-        <div className="stack-gap">
-          <section className="card">
-            <h2>현재 이용 중인 프로그램</h2>
-            <div className="detail-box">
-              {currentProgram ? (
-                <>
-                  <p><strong>프로그램명:</strong> {currentProgram.name}</p>
-                  <p><strong>가격:</strong> {Number(currentProgram.price || 0).toLocaleString()}원</p>
-                  <p><strong>횟수:</strong> {currentProgram.session_count}회</p>
-                  <p><strong>유형:</strong> {currentProgram.is_vip ? 'VIP' : '일반'}</p>
-                  <p><strong>설명:</strong> {currentProgram.description || '-'}</p>
-                </>
-              ) : (
-                <p>현재 연결된 프로그램이 없습니다.</p>
-              )}
-            </div>
-          </section>
+  <div className="member-program-page">
+    <section className="member-program-hero">
+      <div className="member-program-hero-left">
+        <div className="member-program-badge">MY PROGRAM</div>
+        <h2>프로그램</h2>
+        <p className="member-program-hero-text">
+          현재 이용 중인 프로그램과 전체 프로그램 정보를 한눈에 확인할 수 있습니다.
+          가격, 횟수, 유형, 설명까지 보기 쉽게 정리했습니다.
+        </p>
+      </div>
 
-          <section className="card">
-            <div className="section-head">
-              <h2>전체 프로그램 보기</h2>
-              <input
-                value={programSearch}
-                onChange={(e) => setProgramSearch(e.target.value)}
-                placeholder="프로그램 검색"
-              />
-            </div>
-
-            <div className="list-stack">
-              {filteredPrograms.map((program) => (
-                <div key={program.id} className="list-card">
-                  <div className="list-card-top">
-                    <strong>{program.name}</strong>
-                    <span className="pill">{program.is_vip ? 'VIP' : '일반'}</span>
-                  </div>
-                  <div className="compact-text">
-                    {Number(program.price || 0).toLocaleString()}원 / {program.session_count}회
-                  </div>
-                  <div className="detail-box">
-                    <p><strong>설명:</strong> {program.description || '-'}</p>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </section>
+      <div className="member-program-hero-right">
+        <div className="member-program-hero-mini">
+          <span>현재 이용 상태</span>
+          <strong>{currentProgram ? '이용 중' : '미등록'}</strong>
+          <p>
+            {currentProgram
+              ? `${currentProgram.name || '-'} 프로그램 이용 중`
+              : '현재 연결된 프로그램이 없습니다.'}
+          </p>
         </div>
-      )}
+
+        <div className="member-program-hero-mini">
+          <span>전체 프로그램 수</span>
+          <strong>{filteredPrograms.length}</strong>
+          <p>{programSearch?.trim() ? `검색어: ${programSearch}` : '전체 프로그램 표시 중'}</p>
+        </div>
+      </div>
+    </section>
+
+    <section className="member-program-summary-grid">
+      <div className="member-program-summary-card">
+        <span>현재 프로그램</span>
+        <strong>{currentProgram?.name || '-'}</strong>
+        <p>회원에게 현재 연결된 프로그램</p>
+      </div>
+
+      <div className="member-program-summary-card">
+        <span>현재 횟수</span>
+        <strong>{currentProgram?.session_count || '-'}</strong>
+        <p>회차 기준</p>
+      </div>
+
+      <div className="member-program-summary-card highlight">
+        <span>현재 유형</span>
+        <strong>{currentProgram ? (currentProgram.is_vip ? 'VIP' : '일반') : '-'}</strong>
+        <p>프로그램 분류</p>
+      </div>
+    </section>
+
+    <div className="member-program-layout">
+      <section className="card member-program-current-card">
+        <div className="member-program-section-head">
+          <div>
+            <div className="member-program-section-label">CURRENT PROGRAM</div>
+            <h2>현재 이용 중인 프로그램</h2>
+            <p className="sub-text">
+              회원에게 현재 연결된 프로그램의 상세 정보를 확인할 수 있습니다.
+            </p>
+          </div>
+        </div>
+
+        {currentProgram ? (
+          <div className="member-program-current-box">
+            <div className="member-program-current-top">
+              <div>
+                <h3>{currentProgram.name}</h3>
+                <p>
+                  {Number(currentProgram.price || 0).toLocaleString()}원 /{' '}
+                  {currentProgram.session_count || 0}회
+                </p>
+              </div>
+
+              <span className="member-program-type-pill">
+                {currentProgram.is_vip ? 'VIP' : '일반'}
+              </span>
+            </div>
+
+            <div className="member-program-detail-grid">
+              <div className="detail-box">
+                <p><strong>프로그램명:</strong> {currentProgram.name}</p>
+                <p><strong>가격:</strong> {Number(currentProgram.price || 0).toLocaleString()}원</p>
+              </div>
+
+              <div className="detail-box">
+                <p><strong>횟수:</strong> {currentProgram.session_count || '-'}</p>
+                <p><strong>유형:</strong> {currentProgram.is_vip ? 'VIP' : '일반'}</p>
+              </div>
+
+              <div className="detail-box member-program-detail-full">
+                <p><strong>설명:</strong> {currentProgram.description || '-'}</p>
+              </div>
+            </div>
+          </div>
+        ) : (
+          <div className="empty-box">현재 연결된 프로그램이 없습니다.</div>
+        )}
+      </section>
+
+      <section className="card member-program-list-card">
+        <div className="member-program-section-head">
+          <div>
+            <div className="member-program-section-label">ALL PROGRAMS</div>
+            <h2>전체 프로그램 보기</h2>
+            <p className="sub-text">
+              프로그램명, 설명, 횟수, 가격 기준으로 검색해서 확인할 수 있습니다.
+            </p>
+          </div>
+        </div>
+
+        <div className="member-program-search-row">
+          <input
+            value={programSearch}
+            onChange={(e) => setProgramSearch(e.target.value)}
+            placeholder="프로그램 검색"
+          />
+        </div>
+
+        <div className="list-stack">
+          {filteredPrograms.length === 0 ? (
+            <div className="empty-box">조건에 맞는 프로그램이 없습니다.</div>
+          ) : (
+            filteredPrograms.map((program) => (
+              <div key={program.id} className="member-program-record-card">
+                <div className="member-program-record-head">
+                  <div>
+                    <h3>{program.name}</h3>
+                    <p>
+                      {Number(program.price || 0).toLocaleString()}원 / {program.session_count}회
+                    </p>
+                  </div>
+                  <span className="member-program-type-pill">
+                    {program.is_vip ? 'VIP' : '일반'}
+                  </span>
+                </div>
+
+                <div className="detail-box">
+                  <p><strong>설명:</strong> {program.description || '-'}</p>
+                </div>
+              </div>
+            ))
+          )}
+        </div>
+      </section>
+    </div>
+  </div>
+)}
 
       {activeTab === '코치스케줄' && (
-        <div className="card">
-          <div className="section-head">
-            <h2>코치 스케줄</h2>
-            <input
-              type="month"
-              value={scheduleMonth}
-              onChange={(e) => setScheduleMonth(e.target.value)}
-            />
-          </div>
+  <div className="member-schedule-page">
+    <section className="member-schedule-hero">
+      <div className="member-schedule-hero-left">
+        <div className="member-schedule-badge">COACH SCHEDULE</div>
+        <h2>코치스케줄</h2>
+        <p className="member-schedule-hero-text">
+          월별 코치 근무 일정과 가능한 시간대를 한눈에 확인할 수 있습니다.
+          필요한 날의 스케줄을 접고 펼치면서 보기 쉽게 정리했습니다.
+        </p>
+      </div>
 
-          <div className="list-stack">
-            {filteredSchedules.map((schedule) => {
-              const coach = coaches.find((item) => item.id === schedule.coach_id)
-              const collapsed = collapsedSchedules[schedule.id] ?? true
-              const slots = coachScheduleSlotsMap[schedule.id] || []
-
-              return (
-                <div key={schedule.id} className="list-card">
-                  <div className="list-card-top">
-                    <strong>{coach?.name || '코치'} / {schedule.schedule_date}</strong>
-                    <span className="pill">
-                      {schedule.is_working ? '근무' : '휴무'}
-                      {schedule.is_weekend_work ? ' / 주말근무' : ''}
-                    </span>
-                  </div>
-
-                  <div className="compact-text">
-                    간략히보기: {schedule.is_working ? `${schedule.work_start || '-'} ~ ${schedule.work_end || '-'}` : '휴무'} / 가능시간 {slots.length}개
-                  </div>
-
-                  <div className="inline-actions wrap">
-                    <button
-                      type="button"
-                      className="secondary-btn"
-                      onClick={() =>
-                        setCollapsedSchedules((prev) => ({
-                          ...prev,
-                          [schedule.id]: !collapsed,
-                        }))
-                      }
-                    >
-                      {collapsed ? '상세히보기' : '간략히보기'}
-                    </button>
-                  </div>
-
-                  {!collapsed ? (
-                    <div className="detail-box">
-                      <p><strong>코치:</strong> {coach?.name || '-'}</p>
-                      <p><strong>근무상태:</strong> {schedule.is_working ? '근무' : '휴무'}</p>
-                      <p><strong>주말근무:</strong> {schedule.is_weekend_work ? '예' : '아니오'}</p>
-                      <p><strong>근무시간:</strong> {schedule.work_start || '-'} ~ {schedule.work_end || '-'}</p>
-                      <p><strong>메모:</strong> {schedule.memo || '-'}</p>
-                      <p><strong>가능시간:</strong> {slots.length > 0 ? slots.map((slot) => slot.slot_time).join(', ') : '없음'}</p>
-                    </div>
-                  ) : null}
-                </div>
-              )
-            })}
-          </div>
+      <div className="member-schedule-hero-right">
+        <div className="member-schedule-hero-mini">
+          <span>선택 월</span>
+          <strong>{scheduleMonth || '-'}</strong>
+          <p>현재 조회 중인 코치 스케줄 월입니다.</p>
         </div>
-      )}
+
+        <div className="member-schedule-hero-mini">
+          <span>표시 스케줄 수</span>
+          <strong>{filteredSchedules.length}</strong>
+          <p>선택한 월 기준 스케줄 개수입니다.</p>
+        </div>
+      </div>
+    </section>
+
+    <section className="member-schedule-summary-grid">
+      <div className="member-schedule-summary-card">
+        <span>전체 스케줄</span>
+        <strong>{filteredSchedules.length}</strong>
+        <p>현재 월에 등록된 일정 수</p>
+      </div>
+
+      <div className="member-schedule-summary-card">
+        <span>근무 일정</span>
+        <strong>{filteredSchedules.filter((item) => item.is_working).length}</strong>
+        <p>근무로 등록된 일정 수</p>
+      </div>
+
+      <div className="member-schedule-summary-card highlight">
+        <span>휴무 일정</span>
+        <strong>{filteredSchedules.filter((item) => !item.is_working).length}</strong>
+        <p>휴무로 등록된 일정 수</p>
+      </div>
+    </section>
+
+    <section className="card member-schedule-list-card">
+      <div className="member-schedule-section-head">
+        <div>
+          <div className="member-schedule-section-label">MONTHLY SCHEDULE</div>
+          <h2>코치 스케줄</h2>
+          <p className="sub-text">
+            월을 선택하면 해당 월 코치 스케줄과 가능시간을 확인할 수 있습니다.
+          </p>
+        </div>
+      </div>
+
+      <div className="member-schedule-filter-row">
+        <input
+          type="month"
+          value={scheduleMonth}
+          onChange={(e) => setScheduleMonth(e.target.value)}
+        />
+      </div>
+
+      <div className="list-stack">
+        {filteredSchedules.length === 0 ? (
+          <div className="empty-box">선택한 월의 스케줄이 없습니다.</div>
+        ) : (
+          filteredSchedules.map((schedule) => {
+            const coach = coaches.find((item) => item.id === schedule.coach_id)
+            const collapsed = collapsedSchedules[schedule.id] ?? true
+            const slots = coachScheduleSlotsMap[schedule.id] || []
+
+            return (
+              <div key={schedule.id} className="member-schedule-record-card">
+                <div className="member-schedule-record-head">
+                  <div>
+                    <div className="member-schedule-record-topline">
+                      <span className="member-schedule-coach-pill">{coach?.name || '코치'}</span>
+                      <span className="member-schedule-date-pill">{schedule.schedule_date}</span>
+                    </div>
+
+                    <h3>
+                      {schedule.is_working
+                        ? `${schedule.work_start || '-'} ~ ${schedule.work_end || '-'}`
+                        : '휴무'}
+                    </h3>
+
+                    <p>
+                      가능시간 {slots.length}개
+                      {schedule.memo ? ` · 메모 있음` : ''}
+                    </p>
+                  </div>
+
+                  <span className={`member-schedule-status-pill ${schedule.is_working ? 'working' : 'off'}`}>
+                    {schedule.is_working ? '근무' : '휴무'}
+                    {schedule.is_weekend_work ? ' / 주말근무' : ''}
+                  </span>
+                </div>
+
+                <div className="inline-actions wrap">
+                  <button
+                    type="button"
+                    className="secondary-btn"
+                    onClick={() =>
+                      setCollapsedSchedules((prev) => ({
+                        ...prev,
+                        [schedule.id]: !collapsed,
+                      }))
+                    }
+                  >
+                    {collapsed ? '상세히보기' : '간략히보기'}
+                  </button>
+                </div>
+
+                {!collapsed ? (
+                  <div className="member-schedule-record-body">
+                    <div className="member-schedule-detail-grid">
+                      <div className="detail-box">
+                        <p><strong>코치:</strong> {coach?.name || '-'}</p>
+                        <p><strong>근무상태:</strong> {schedule.is_working ? '근무' : '휴무'}</p>
+                        <p><strong>주말근무:</strong> {schedule.is_weekend_work ? '예' : '아니오'}</p>
+                      </div>
+
+                      <div className="detail-box">
+                        <p><strong>근무시간:</strong> {schedule.work_start || '-'} ~ {schedule.work_end || '-'}</p>
+                        <p><strong>메모:</strong> {schedule.memo || '-'}</p>
+                      </div>
+
+                      <div className="detail-box member-schedule-detail-full">
+                        <p><strong>가능시간:</strong></p>
+                        <p>
+                          {slots.length > 0
+                            ? slots.map((slot) => slot.slot_time).join(', ')
+                            : '없음'}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                ) : null}
+              </div>
+            )
+          })
+        )}
+      </div>
+    </section>
+  </div>
+)}
 
       {activeTab === '공지사항' && (
-        <div className="card">
-          <h2>공지 / 이벤트</h2>
+  <div className="member-notice-page">
+    <section className="member-notice-hero">
+      <div className="member-notice-hero-left">
+        <div className="member-notice-badge">NOTICE & EVENT</div>
+        <h2>공지사항</h2>
+        <p className="member-notice-hero-text">
+          공지, 이벤트, 운동영상 안내를 카테고리별로 확인할 수 있습니다.
+          필요한 공지를 접고 펼치면서 편하게 읽을 수 있도록 구성했습니다.
+        </p>
+      </div>
 
-          <div className="stack-gap">
-            <input
-              value={noticeSearch}
-              onChange={(e) => setNoticeSearch(e.target.value)}
-              placeholder="제목 / 내용 / 카테고리 검색"
-            />
-
-            <select value={noticeCategoryFilter} onChange={(e) => setNoticeCategoryFilter(e.target.value)}>
-              <option value="all">전체 카테고리</option>
-              <option value="공지">공지</option>
-              <option value="이벤트">이벤트</option>
-              <option value="운동영상">운동영상</option>
-            </select>
-          </div>
-
-          <div className="list-stack">
-            {publishedNotices.map((notice) => {
-              const collapsed = collapsedNotices[notice.id] ?? true
-              return (
-                <div key={notice.id} className="list-card">
-                  <div className="list-card-top">
-                    <strong>{notice.title}</strong>
-                    <span className="pill">{notice.category}</span>
-                  </div>
-
-                  <div className="compact-text">
-                    간략히보기: {notice.content?.slice(0, 40) || ''}
-                    {notice.content?.length > 40 ? '...' : ''}
-                  </div>
-
-                  <div className="inline-actions wrap">
-                    <button
-                      type="button"
-                      className="secondary-btn"
-                      onClick={() =>
-                        setCollapsedNotices((prev) => ({
-                          ...prev,
-                          [notice.id]: !collapsed,
-                        }))
-                      }
-                    >
-                      {collapsed ? '상세히보기' : '간략히보기'}
-                    </button>
-                  </div>
-
-                  {!collapsed ? (
-                    <div className="detail-box">
-                      <p><strong>내용:</strong> {notice.content || '-'}</p>
-                      <p><strong>이미지 URL:</strong> {notice.image_url || '-'}</p>
-                      <p><strong>영상 URL:</strong> {notice.video_url || '-'}</p>
-                      <p><strong>기간:</strong> {formatDate(notice.starts_at)} ~ {formatDate(notice.ends_at)}</p>
-                    </div>
-                  ) : null}
-                </div>
-              )
-            })}
-          </div>
+      <div className="member-notice-hero-right">
+        <div className="member-notice-hero-mini">
+          <span>표시 공지 수</span>
+          <strong>{publishedNotices.length}</strong>
+          <p>검색과 카테고리 필터가 반영된 결과입니다.</p>
         </div>
-      )}
+
+        <div className="member-notice-hero-mini">
+          <span>현재 카테고리</span>
+          <strong>{noticeCategoryFilter === 'all' ? '전체' : noticeCategoryFilter}</strong>
+          <p>{noticeSearch?.trim() ? `검색어: ${noticeSearch}` : '검색어 없음'}</p>
+        </div>
+      </div>
+    </section>
+
+    <section className="member-notice-summary-grid">
+      <div className="member-notice-summary-card">
+        <span>전체 표시</span>
+        <strong>{publishedNotices.length}</strong>
+        <p>현재 화면에 보이는 공지 수</p>
+      </div>
+
+      <div className="member-notice-summary-card">
+        <span>공지</span>
+        <strong>{publishedNotices.filter((item) => item.category === '공지').length}</strong>
+        <p>공지 카테고리 수</p>
+      </div>
+
+      <div className="member-notice-summary-card highlight">
+        <span>이벤트/운동영상</span>
+        <strong>
+          {
+            publishedNotices.filter(
+              (item) => item.category === '이벤트' || item.category === '운동영상'
+            ).length
+          }
+        </strong>
+        <p>이벤트와 운동영상 안내 수</p>
+      </div>
+    </section>
+
+    <section className="card member-notice-list-card">
+      <div className="member-notice-section-head">
+        <div>
+          <div className="member-notice-section-label">SEARCH NOTICE</div>
+          <h2>공지 / 이벤트</h2>
+          <p className="sub-text">
+            제목, 내용, 카테고리로 검색하고 카테고리별로 공지를 구분해서 볼 수 있습니다.
+          </p>
+        </div>
+      </div>
+
+      <div className="member-notice-filter-grid">
+        <input
+          value={noticeSearch}
+          onChange={(e) => setNoticeSearch(e.target.value)}
+          placeholder="제목 / 내용 / 카테고리 검색"
+        />
+
+        <select
+          value={noticeCategoryFilter}
+          onChange={(e) => setNoticeCategoryFilter(e.target.value)}
+        >
+          <option value="all">전체 카테고리</option>
+          <option value="공지">공지</option>
+          <option value="이벤트">이벤트</option>
+          <option value="운동영상">운동영상</option>
+        </select>
+      </div>
+
+      <div className="list-stack">
+        {publishedNotices.length === 0 ? (
+          <div className="empty-box">조건에 맞는 공지가 없습니다.</div>
+        ) : (
+          publishedNotices.map((notice) => {
+            const collapsed = collapsedNotices[notice.id] ?? true
+
+            return (
+              <div key={notice.id} className="member-notice-record-card">
+                <div className="member-notice-record-head">
+                  <div>
+                    <div className="member-notice-record-topline">
+                      <span className="member-notice-category-pill">{notice.category || '-'}</span>
+                    </div>
+
+                    <h3>{notice.title}</h3>
+
+                    <p>
+                      간략히보기: {notice.content?.slice(0, 60) || ''}
+                      {notice.content?.length > 60 ? '...' : ''}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="inline-actions wrap">
+                  <button
+                    type="button"
+                    className="secondary-btn"
+                    onClick={() =>
+                      setCollapsedNotices((prev) => ({
+                        ...prev,
+                        [notice.id]: !collapsed,
+                      }))
+                    }
+                  >
+                    {collapsed ? '상세히보기' : '간략히보기'}
+                  </button>
+                </div>
+
+                {!collapsed ? (
+                  <div className="member-notice-record-body">
+                    <div className="member-notice-detail-grid">
+                      <div className="detail-box member-notice-detail-full">
+                        <p><strong>내용:</strong> {notice.content || '-'}</p>
+                      </div>
+
+                      <div className="detail-box">
+                        <p><strong>이미지 URL:</strong> {notice.image_url || '-'}</p>
+                        <p><strong>영상 URL:</strong> {notice.video_url || '-'}</p>
+                      </div>
+
+                      <div className="detail-box">
+                        <p><strong>기간:</strong> {formatDate(notice.starts_at)} ~ {formatDate(notice.ends_at)}</p>
+                        <p><strong>카테고리:</strong> {notice.category || '-'}</p>
+                      </div>
+                    </div>
+                  </div>
+                ) : null}
+              </div>
+            )
+          })
+        )}
+      </div>
+    </section>
+  </div>
+)}
       {activeTab === '제휴업체' && (
         <div className="stack-gap">
           <section className="card">
