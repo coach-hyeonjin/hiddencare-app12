@@ -2962,23 +2962,27 @@ const updateSetValue = (itemIndex, setIndex, field, value, subIndex = null) => {
         key={routineDayKey}
         className="record-item-box"
       >
-        <div
-          className="list-card-top"
-          style={{ cursor: 'pointer' }}
-          onClick={() =>
-            toggleRoutineDay(
-              currentRoutineWeek.week_number,
-              day.day_of_week,
-              dayIndex,
-            )
-          }
-        >
-          <strong>{day.day_of_week}요일</strong>
-          <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-            <span className="pill">{(day.items || []).length}개 운동</span>
-            <span className="pill">{isCollapsed ? '간략히보기' : '상세히보기'}</span>
-          </div>
-        </div>
+        <div className="list-card-top">
+  <strong>{day.day_of_week}요일</strong>
+
+  <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+    <span className="pill">{(day.items || []).length}개 운동</span>
+
+    <button
+      type="button"
+      className="secondary-btn"
+      onClick={() =>
+        toggleRoutineDay(
+          currentRoutineWeek.week_number,
+          day.day_of_week,
+          dayIndex,
+        )
+      }
+    >
+      {isCollapsed ? '상세히보기' : '간략히보기'}
+    </button>
+  </div>
+</div>
 
         {isCollapsed ? null : (day.items || []).length === 0 ? (
           <div className="compact-text" style={{ marginTop: '10px' }}>
