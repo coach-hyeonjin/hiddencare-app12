@@ -6706,3 +6706,401 @@ textarea:focus {
     width: 100%;
   }
 }
+.member-program-page,
+.member-schedule-page,
+.member-notice-page {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.member-program-hero,
+.member-schedule-hero,
+.member-notice-hero {
+  display: grid;
+  grid-template-columns: 1.4fr 0.95fr;
+  gap: 18px;
+  padding: 22px;
+  border-radius: 24px;
+  background: linear-gradient(135deg, #10203f 0%, #1d3f7a 55%, #3f63c9 100%);
+  color: #ffffff;
+  box-shadow: 0 18px 40px rgba(31, 38, 135, 0.16);
+}
+
+.member-program-hero-left,
+.member-program-hero-right,
+.member-schedule-hero-left,
+.member-schedule-hero-right,
+.member-notice-hero-left,
+.member-notice-hero-right {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.member-program-badge,
+.member-schedule-badge,
+.member-notice-badge {
+  display: inline-flex;
+  align-self: flex-start;
+  padding: 8px 12px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.12);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+}
+
+.member-program-hero h2,
+.member-schedule-hero h2,
+.member-notice-hero h2 {
+  margin: 0;
+  font-size: 34px;
+  line-height: 1.2;
+  color: #ffffff;
+}
+
+.member-program-hero-text,
+.member-schedule-hero-text,
+.member-notice-hero-text {
+  margin: 0;
+  max-width: 620px;
+  color: rgba(255, 255, 255, 0.88);
+  font-size: 14px;
+  line-height: 1.7;
+}
+
+.member-program-hero-mini,
+.member-schedule-hero-mini,
+.member-notice-hero-mini {
+  border-radius: 20px;
+  padding: 18px;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  backdrop-filter: blur(6px);
+}
+
+.member-program-hero-mini span,
+.member-schedule-hero-mini span,
+.member-notice-hero-mini span {
+  display: block;
+  margin-bottom: 6px;
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.72);
+}
+
+.member-program-hero-mini strong,
+.member-schedule-hero-mini strong,
+.member-notice-hero-mini strong {
+  display: block;
+  font-size: 28px;
+  font-weight: 800;
+  color: #ffffff;
+}
+
+.member-program-hero-mini p,
+.member-schedule-hero-mini p,
+.member-notice-hero-mini p {
+  margin: 8px 0 0;
+  font-size: 13px;
+  line-height: 1.6;
+  color: rgba(255, 255, 255, 0.84);
+}
+
+.member-program-summary-grid,
+.member-schedule-summary-grid,
+.member-notice-summary-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.member-program-summary-card,
+.member-schedule-summary-card,
+.member-notice-summary-card {
+  padding: 18px;
+  border-radius: 20px;
+  background: #ffffff;
+  border: 1px solid #e7ecf5;
+  box-shadow: 0 10px 30px rgba(15, 23, 42, 0.06);
+}
+
+.member-program-summary-card.highlight,
+.member-schedule-summary-card.highlight,
+.member-notice-summary-card.highlight {
+  background: linear-gradient(135deg, #eef4ff 0%, #f7faff 100%);
+  border-color: #dbe6ff;
+}
+
+.member-program-summary-card span,
+.member-schedule-summary-card span,
+.member-notice-summary-card span {
+  display: block;
+  margin-bottom: 8px;
+  font-size: 12px;
+  font-weight: 700;
+  color: #6b7280;
+}
+
+.member-program-summary-card strong,
+.member-schedule-summary-card strong,
+.member-notice-summary-card strong {
+  display: block;
+  font-size: 30px;
+  line-height: 1;
+  color: #111827;
+}
+
+.member-program-summary-card p,
+.member-schedule-summary-card p,
+.member-notice-summary-card p {
+  margin: 10px 0 0;
+  font-size: 13px;
+  line-height: 1.6;
+  color: #6b7280;
+}
+
+.member-program-layout {
+  display: grid;
+  grid-template-columns: 0.95fr 1.05fr;
+  gap: 18px;
+}
+
+.member-program-current-card,
+.member-program-list-card,
+.member-schedule-list-card,
+.member-notice-list-card {
+  border-radius: 24px;
+}
+
+.member-program-section-head,
+.member-schedule-section-head,
+.member-notice-section-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.member-program-section-label,
+.member-schedule-section-label,
+.member-notice-section-label {
+  display: inline-flex;
+  margin-bottom: 8px;
+  padding: 6px 10px;
+  border-radius: 999px;
+  background: #eef2ff;
+  color: #4f46e5;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+}
+
+.member-program-current-box,
+.member-program-record-card,
+.member-schedule-record-card,
+.member-notice-record-card {
+  padding: 16px;
+  border-radius: 20px;
+  border: 1px solid #e7ecf5;
+  background: #ffffff;
+  box-shadow: 0 10px 24px rgba(15, 23, 42, 0.05);
+}
+
+.member-program-current-top,
+.member-program-record-head,
+.member-schedule-record-head,
+.member-notice-record-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.member-program-current-top h3,
+.member-program-record-head h3,
+.member-schedule-record-head h3,
+.member-notice-record-head h3 {
+  margin: 0;
+  font-size: 22px;
+  color: #111827;
+}
+
+.member-program-current-top p,
+.member-program-record-head p,
+.member-schedule-record-head p,
+.member-notice-record-head p {
+  margin: 8px 0 0;
+  font-size: 12px;
+  line-height: 1.6;
+  color: #6b7280;
+}
+
+.member-program-type-pill,
+.member-schedule-status-pill,
+.member-schedule-coach-pill,
+.member-schedule-date-pill,
+.member-notice-category-pill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 30px;
+  padding: 6px 12px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.member-program-type-pill,
+.member-schedule-coach-pill,
+.member-notice-category-pill {
+  background: #edf2ff;
+  color: #3f57c7;
+}
+
+.member-schedule-date-pill {
+  background: #f3f4f6;
+  color: #4b5563;
+}
+
+.member-schedule-status-pill.working {
+  background: #ecfdf5;
+  color: #047857;
+}
+
+.member-schedule-status-pill.off {
+  background: #f3f4f6;
+  color: #6b7280;
+}
+
+.member-program-detail-grid,
+.member-schedule-detail-grid,
+.member-notice-detail-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  margin-top: 14px;
+}
+
+.member-program-detail-full,
+.member-schedule-detail-full,
+.member-notice-detail-full {
+  grid-column: 1 / -1;
+}
+
+.member-program-search-row,
+.member-schedule-filter-row {
+  margin-bottom: 16px;
+}
+
+.member-notice-filter-grid {
+  display: grid;
+  grid-template-columns: 1.6fr 0.8fr;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.member-schedule-record-topline,
+.member-notice-record-topline {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.member-schedule-record-body,
+.member-notice-record-body {
+  margin-top: 14px;
+}
+
+@media (max-width: 1080px) {
+  .member-program-summary-grid,
+  .member-schedule-summary-grid,
+  .member-notice-summary-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .member-program-layout {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 960px) {
+  .member-program-hero,
+  .member-schedule-hero,
+  .member-notice-hero,
+  .member-notice-filter-grid,
+  .member-program-detail-grid,
+  .member-schedule-detail-grid,
+  .member-notice-detail-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .member-program-current-top,
+  .member-program-record-head,
+  .member-schedule-record-head,
+  .member-notice-record-head {
+    flex-direction: column;
+  }
+}
+
+@media (max-width: 640px) {
+  .member-program-page,
+  .member-schedule-page,
+  .member-notice-page {
+    gap: 14px;
+  }
+
+  .member-program-hero,
+  .member-schedule-hero,
+  .member-notice-hero {
+    padding: 16px;
+    border-radius: 20px;
+  }
+
+  .member-program-hero h2,
+  .member-schedule-hero h2,
+  .member-notice-hero h2 {
+    font-size: 28px;
+  }
+
+  .member-program-summary-grid,
+  .member-schedule-summary-grid,
+  .member-notice-summary-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .member-program-current-card,
+  .member-program-list-card,
+  .member-schedule-list-card,
+  .member-notice-list-card,
+  .member-program-current-box,
+  .member-program-record-card,
+  .member-schedule-record-card,
+  .member-notice-record-card,
+  .member-program-hero-mini,
+  .member-schedule-hero-mini,
+  .member-notice-hero-mini {
+    padding: 16px;
+  }
+
+  .member-program-hero-mini strong,
+  .member-schedule-hero-mini strong,
+  .member-notice-hero-mini strong,
+  .member-program-summary-card strong,
+  .member-schedule-summary-card strong,
+  .member-notice-summary-card strong {
+    font-size: 26px;
+  }
+
+  .inline-actions.wrap {
+    width: 100%;
+  }
+
+  .inline-actions.wrap .secondary-btn,
+  .inline-actions.wrap .danger-btn,
+  .inline-actions.wrap .primary-btn {
+    width: 100%;
+  }
+}
