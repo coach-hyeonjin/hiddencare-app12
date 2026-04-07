@@ -7836,3 +7836,29 @@ textarea:focus {
     font-size: 28px;
   }
 }
+/* ===== 성장현황 아이콘 ===== */
+.growth-level-line {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.growth-level-icon {
+  font-size: 28px;
+  line-height: 1;
+}
+
+.growth-rank-icon {
+  margin-right: 6px;
+}
+
+.growth-log-icon {
+  margin-right: 6px;
+}
+
+.growth-hero-mini strong,
+.growth-card strong,
+.activity-rank-score {
+  word-break: keep-all;
+}
