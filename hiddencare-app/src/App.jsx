@@ -24,7 +24,21 @@ function BrandHeader({ large = false }) {
     </div>
   )
 }
-
+function SplashScreen() {
+  return (
+    <div className="splash-screen">
+      <div className="splash-inner">
+        <img
+          src={logo}
+          alt="숨바꼭질케어 로고"
+          className="splash-logo"
+        />
+        <h1 className="splash-title">숨바꼭질케어</h1>
+        <p className="splash-sub">회원 관리 · 운동 기록 · 식단 기록</p>
+      </div>
+    </div>
+  )
+}
 function withTimeout(promise, ms = 4000) {
   return Promise.race([
     promise,
@@ -412,13 +426,9 @@ export default function App() {
     setMode(entryParams.memberId ? 'member-access' : 'home')
   }
 
-  if (loading) {
-    return (
-      <div className="app-shell center-screen">
-        <div className="loading-card">로딩 중...</div>
-      </div>
-    )
-  }
+ if (loading) {
+  return <SplashScreen />
+}
 
   if (mode === 'admin' && adminProfile) {
     return (
