@@ -26,16 +26,12 @@ function BrandHeader({ large = false }) {
 }
 function SplashScreen() {
   return (
-    <div className="splash-screen">
-      <div className="splash-inner">
-        <img
-          src={logo}
-          alt="숨바꼭질케어 로고"
-          className="splash-logo"
-        />
-        <h1 className="splash-title">숨바꼭질케어</h1>
-        <p className="splash-sub">회원 관리 · 운동 기록 · 식단 기록</p>
-      </div>
+    <div className="logo-splash">
+      <img
+        src={logo}
+        alt="숨바꼭질케어 로고"
+        className="logo-splash-img"
+      />
     </div>
   )
 }
