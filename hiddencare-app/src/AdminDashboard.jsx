@@ -3301,24 +3301,33 @@ setPartnerCategories(uniqueCategories)
   if (!currentAdminId) {
     setSalesRecords([])
     setCollapsedSales({})
-    return
+    return []
   }
 
-  const { data } = await supabase
+  const { data, error } = await supabase
     .from('sales_records')
     .select('*, members(id, name), programs(id, name)')
     .eq('admin_id', currentAdminId)
     .order('sale_date', { ascending: false })
     .order('created_at', { ascending: false })
 
-  if (data) {
-    const collapsed = {}
-    data.forEach((sale) => {
-      collapsed[sale.id] = true
-    })
-    setSalesRecords(data)
-    setCollapsedSales(collapsed)
+  if (error) {
+    console.error('매출 기록 불러오기 실패:', error)
+    setMessage(`매출 기록 불러오기 실패: ${error.message}`)
+    return []
   }
+
+  const rows = data || []
+  const collapsed = {}
+
+  rows.forEach((sale) => {
+    collapsed[sale.id] = true
+  })
+
+  setSalesRecords(rows)
+  setCollapsedSales(collapsed)
+
+  return rows
 }
 const loadSalesSummary = async (month) => {
   if (!currentAdminId) {
@@ -4954,6 +4963,7 @@ const handlePartnerUsageReject = async (usageId) => {
   await loadSalesSummary(saleMonth)
   await loadMemberLevels()
   await loadMemberXpLogs()
+    setSalesRecords(freshSales)
 }
 
   const handleSaleEdit = (sale) => {
@@ -4975,12 +4985,25 @@ const handlePartnerUsageReject = async (usageId) => {
   }
 
   const handleSaleDelete = async (saleId) => {
-    if (!window.confirm('매출 기록을 삭제할까요?')) return
-    await supabase.from('sales_records').delete().eq('id', saleId)
-    await loadSalesRecords()
-    await loadSalesSummary(saleMonth)
-    setMessage('매출 기록이 삭제되었습니다.')
+  if (!window.confirm('매출 기록을 삭제할까요?')) return
+
+  const { error } = await supabase
+    .from('sales_records')
+    .delete()
+    .eq('id', saleId)
+
+  if (error) {
+    console.error('매출 기록 삭제 실패:', error)
+    setMessage(`매출 기록 삭제 실패: ${error.message}`)
+    return
   }
+
+  const freshSales = await loadSalesRecords()
+  await loadSalesSummary(saleMonth)
+  setSalesRecords(freshSales)
+
+  setMessage('매출 기록이 삭제되었습니다.')
+}
 const toggleSalesArrayValue = (field, value) => {
   setSalesLogForm((prev) => {
     const current = Array.isArray(prev[field]) ? prev[field] : []
