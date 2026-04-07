@@ -4,6 +4,7 @@ import logo from './assets/logo.png'
 
 const TABS = [
   '내정보',
+  '성장현황',
   '건강정보',
   '운동기록',
   '개인운동입력',
@@ -232,6 +233,10 @@ export default function MemberDashboard({ member, accessCode, onLogout }) {
   const [personalForm, setPersonalForm] = useState(emptyPersonalForm)
 
   const [dietLogs, setDietLogs] = useState([])
+  const [memberLevel, setMemberLevel] = useState(null)
+const [memberXpLogs, setMemberXpLogs] = useState([])
+const [memberLevelSettings, setMemberLevelSettings] = useState([])
+const [memberLevelRanking, setMemberLevelRanking] = useState([])
   const [collapsedDiets, setCollapsedDiets] = useState({})
   const [dietForm, setDietForm] = useState(emptyDietForm)
   const [dietSearch, setDietSearch] = useState('')
@@ -519,7 +524,47 @@ const calculatedRecommendedKcal = useMemo(() => {
         return matchesCategory && matchesKeyword
       })
   }, [notices, noticeCategoryFilter, noticeSearch])
+const growthSummary = useMemo(() => {
+  const totalXp = Number(memberLevel?.total_xp || 0)
+  const levelNo = Number(memberLevel?.level_no || 1)
+  const levelName = memberLevel?.level_name || '생알'
+  const weeklyScore = Number(memberLevel?.weekly_score || 0)
+  const streakDays = Number(memberLevel?.streak_days || 0)
+  const lastActivityDate = memberLevel?.last_activity_date || '-'
 
+  const sortedLevels = [...memberLevelSettings].sort(
+    (a, b) => Number(a.min_xp || 0) - Number(b.min_xp || 0)
+  )
+
+  const currentLevel =
+    sortedLevels.find((item) => Number(item.level_no || 0) === levelNo) || null
+
+  const nextLevel =
+    sortedLevels.find((item) => Number(item.min_xp || 0) > totalXp) || null
+
+  const currentMinXp = Number(currentLevel?.min_xp || 0)
+  const nextMinXp = Number(nextLevel?.min_xp || totalXp)
+  const progressMax = nextLevel ? Math.max(nextMinXp - currentMinXp, 1) : 1
+  const progressValue = nextLevel
+    ? Math.min(Math.max(totalXp - currentMinXp, 0), progressMax)
+    : progressMax
+
+  const progressPercent = nextLevel
+    ? Math.min(100, Math.round((progressValue / progressMax) * 100))
+    : 100
+
+  return {
+    totalXp,
+    levelNo,
+    levelName,
+    weeklyScore,
+    streakDays,
+    lastActivityDate,
+    nextLevel,
+    nextLevelDiff: nextLevel ? Math.max(nextMinXp - totalXp, 0) : 0,
+    progressPercent,
+  }
+}, [memberLevel, memberLevelSettings])
   useEffect(() => {
     loadAll()
   }, [member?.id])
@@ -681,6 +726,10 @@ useEffect(() => {
         loadCoachSchedules(adminId),
         loadNotices(adminId),
         loadInquiries(),
+        loadMemberLevel(loadedMember),
+  loadMemberXpLogs(loadedMember),
+  loadMemberLevelSettings(adminId),
+  loadMemberLevelRanking(adminId),
       ])
     } catch (error) {
       console.error('loadAll 전체 오류:', error)
@@ -786,7 +835,95 @@ useEffect(() => {
       setCollapsedDiets(collapsed)
     }
   }
+const loadMemberLevel = async (targetMember = null) => {
+  const memberId = targetMember?.id || member?.id
 
+if (!memberId) {
+  setMemberLevel(null)
+  return
+}
+
+  const { data, error } = await supabase
+    .from('member_levels')
+    .select('*')
+   .eq('member_id', memberId)
+    .maybeSingle()
+
+  if (error) {
+    console.error('member_levels 불러오기 실패:', error)
+    return
+  }
+
+  setMemberLevel(data || null)
+}
+
+const loadMemberXpLogs = async (targetMember = null) => {
+  const memberId = targetMember?.id || member?.id
+
+if (!memberId) {
+  setMemberXpLogs([])
+  return
+}
+
+  const { data, error } = await supabase
+    .from('member_xp_logs')
+    .select('*')
+    .eq('member_id', memberId)
+    .order('created_at', { ascending: false })
+
+  if (error) {
+    console.error('member_xp_logs 불러오기 실패:', error)
+    return
+  }
+
+  setMemberXpLogs(data || [])
+}
+
+const loadMemberLevelSettings = async (targetAdminId = null) => {
+  const adminId = targetAdminId || currentAdminId || memberInfo?.admin_id || member?.admin_id || null
+
+  if (!adminId) {
+    setMemberLevelSettings([])
+    return
+  }
+
+  const { data, error } = await supabase
+    .from('member_level_settings')
+    .select('*')
+    .eq('admin_id', adminId)
+    .eq('is_active', true)
+    .order('level_no', { ascending: true })
+
+  if (error) {
+    console.error('member_level_settings 불러오기 실패:', error)
+    return
+  }
+
+  setMemberLevelSettings(data || [])
+}
+
+const loadMemberLevelRanking = async (targetAdminId = null) => {
+  const adminId = targetAdminId || currentAdminId || memberInfo?.admin_id || member?.admin_id || null
+
+  if (!adminId) {
+    setMemberLevelRanking([])
+    return
+  }
+
+  const { data, error } = await supabase
+    .from('member_levels')
+    .select('*, members(id, name)')
+    .eq('admin_id', adminId)
+    .order('total_xp', { ascending: false })
+    .limit(10)
+
+  if (error) {
+    console.error('member_levels 랭킹 불러오기 실패:', error)
+    return
+  }
+
+  setMemberLevelRanking(data || [])
+}
   const loadHealthLogs = async () => {
     const { data } = await supabase
       .from('member_health_logs')
@@ -2121,7 +2258,128 @@ const applyMemberXp = async ({
     </section>
   </div>
 )}
+{activeTab === '성장현황' && (
+  <div className="stack-gap">
+    <section className="card">
+      <div className="section-head">
+        <div>
+          <h2>성장현황</h2>
+          <p className="sub-text">
+            현재 레벨, 누적 XP, 주간 점수, 최근 활동 흐름을 확인하는 화면입니다.
+          </p>
+        </div>
+      </div>
 
+      <div className="dashboard-main-grid">
+        <div className="detail-box">
+          <p><strong>현재 레벨</strong></p>
+          <h3>Lv.{growthSummary.levelNo} · {growthSummary.levelName}</h3>
+          <div className="compact-text">
+            누적 XP {growthSummary.totalXp}점
+          </div>
+        </div>
+
+        <div className="detail-box">
+          <p><strong>이번 주 점수</strong></p>
+          <h3>{growthSummary.weeklyScore}점</h3>
+          <div className="compact-text">
+            연속 활동 {growthSummary.streakDays}일
+          </div>
+        </div>
+
+        <div className="detail-box">
+          <p><strong>다음 레벨까지</strong></p>
+          <h3>
+            {growthSummary.nextLevel
+              ? `${growthSummary.nextLevelDiff} XP 남음`
+              : '최고 레벨'}
+          </h3>
+          <div className="compact-text">
+            {growthSummary.nextLevel
+              ? `다음 단계: ${growthSummary.nextLevel.level_name}`
+              : '이미 최고 단계입니다.'}
+          </div>
+        </div>
+
+        <div className="detail-box">
+          <p><strong>최근 활동일</strong></p>
+          <h3>{growthSummary.lastActivityDate}</h3>
+          <div className="compact-text">
+            마지막 XP 반영 기준
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section className="card">
+      <h3>레벨 진행도</h3>
+      <div className="xp-bar">
+        <div
+          className="xp-fill"
+          style={{ width: `${growthSummary.progressPercent}%` }}
+        />
+      </div>
+      <div className="compact-text" style={{ marginTop: '10px' }}>
+        진행도 {growthSummary.progressPercent}%
+      </div>
+    </section>
+
+    <div className="dashboard-main-grid">
+      <section className="card">
+        <h3>최근 XP 로그</h3>
+        <div className="list-stack">
+          {memberXpLogs.length ? (
+            memberXpLogs.slice(0, 10).map((log) => (
+              <div key={log.id} className="activity-rank-item">
+                <div className="list-card-top">
+                  <strong>{log.source_type || '-'}</strong>
+                  <span className="activity-rank-score score-weighted">
+                    {log.xp} XP
+                  </span>
+                </div>
+                <div className="compact-text">
+                  날짜 {log.source_date || '-'} / 메모 {log.note || '-'}
+                </div>
+              </div>
+            ))
+          ) : (
+            <div className="workout-list-empty">아직 XP 로그가 없습니다.</div>
+          )}
+        </div>
+      </section>
+
+      <section className="card">
+        <h3>회원 레벨 랭킹 TOP 10</h3>
+        <div className="list-stack">
+          {memberLevelRanking.length ? (
+            memberLevelRanking.map((item, index) => (
+              <div
+                key={item.id}
+                className={`activity-rank-item ${
+                  item.member_id === member?.id ? 'rank-1' : ''
+                }`}
+              >
+                <div className="list-card-top">
+                  <strong>
+                    {index + 1}위 · {item.members?.name || '회원'}
+                  </strong>
+                  <span className="activity-rank-score score-total">
+                    Lv.{item.level_no} · {item.level_name}
+                  </span>
+                </div>
+                <div className="compact-text">
+                  누적 XP {Number(item.total_xp || 0)}점 / 주간 {Number(item.weekly_score || 0)}점
+                </div>
+              </div>
+            ))
+          ) : (
+            <div className="workout-list-empty">랭킹 데이터가 없습니다.</div>
+          )}
+        </div>
+      </section>
+    </div>
+  </div>
+)}
       {activeTab === '건강정보' && (
   <div className="member-health-page">
     <section className="member-health-hero">
