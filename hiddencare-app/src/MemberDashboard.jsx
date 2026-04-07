@@ -1414,7 +1414,15 @@ const updateSetValue = (itemIndex, setIndex, field, value, subIndex = null) => {
       gym_id: currentGymId || null,
     })),
   )
-
+  if (!personalForm.id) {
+    await applyMemberXp({
+      memberId: member.id,
+      sourceType: 'personal_workout',
+      sourceId: workoutId,
+      sourceDate: personalForm.workout_date,
+      note: '회원 개인운동 입력',
+    })
+  }
   setMessage(personalForm.id ? '개인운동이 수정되었습니다.' : '개인운동이 저장되었습니다.')
   resetPersonalForm()
   await loadWorkouts()
@@ -1506,18 +1514,31 @@ const updateSetValue = (itemIndex, setIndex, field, value, subIndex = null) => {
       return
     }
 
-    if (dietForm.id) {
+        if (dietForm.id) {
       await supabase.from('diet_logs').update(payload).eq('id', dietForm.id)
       setMessage('식단이 수정되었습니다.')
     } else {
-      await supabase.from('diet_logs').insert(payload)
+      const { data, error } = await supabase
+        .from('diet_logs')
+        .insert(payload)
+        .select()
+        .single()
+
+      if (error) {
+        setMessage(error.message)
+        return
+      }
+
+      await applyMemberXp({
+        memberId: member.id,
+        sourceType: 'diet',
+        sourceId: data.id,
+        sourceDate: dietForm.log_date,
+        note: '회원 식단 입력',
+      })
+
       setMessage('식단이 저장되었습니다.')
     }
-
-    resetDietForm()
-    await loadDietLogs()
-  }
-
   const handleDietEdit = (diet) => {
     setDietForm({
       id: diet.id,
@@ -1543,7 +1564,162 @@ const updateSetValue = (itemIndex, setIndex, field, value, subIndex = null) => {
     await loadDietLogs()
     setMessage('식단 기록이 삭제되었습니다.')
   }
+const getWeekKey = (dateString) => {
+  const date = new Date(dateString)
+  if (Number.isNaN(date.getTime())) return ''
 
+  const temp = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()))
+  const dayNum = temp.getUTCDay() || 7
+  temp.setUTCDate(temp.getUTCDate() + 4 - dayNum)
+  const yearStart = new Date(Date.UTC(temp.getUTCFullYear(), 0, 1))
+  const weekNo = Math.ceil((((temp - yearStart) / 86400000) + 1) / 7)
+
+  return `${temp.getUTCFullYear()}-W${String(weekNo).padStart(2, '0')}`
+}
+
+const applyMemberXp = async ({
+  memberId,
+  sourceType,
+  sourceId,
+  sourceDate,
+  note = '',
+  forceXp = null,
+}) => {
+  if (!memberId || !sourceType || !sourceDate) return { ok: false, reason: 'missing_required' }
+
+  const adminId = currentAdminId || memberInfo?.admin_id || member?.admin_id || null
+  const gymId = currentGymId || memberInfo?.gym_id || member?.gym_id || null
+
+  const { data: ruleRows, error: ruleError } = await supabase
+    .from('member_xp_settings')
+    .select('*')
+    .eq('admin_id', adminId)
+    .eq('rule_code', sourceType)
+    .eq('is_active', true)
+
+  if (ruleError) {
+    console.error('member_xp_settings 조회 실패:', ruleError)
+    return { ok: false, reason: 'rule_fetch_failed', error: ruleError }
+  }
+
+  const rule = (ruleRows || [])[0] || null
+
+  if (!rule && forceXp === null) {
+    return { ok: false, reason: 'rule_not_found' }
+  }
+
+  const xpValue = forceXp !== null ? Number(forceXp || 0) : Number(rule?.xp || 0)
+  if (xpValue <= 0) return { ok: false, reason: 'invalid_xp' }
+
+  const weekKey = getWeekKey(sourceDate)
+  const monthKey = String(sourceDate).slice(0, 7)
+
+  if (sourceId) {
+    const { data: existingLog } = await supabase
+      .from('member_xp_logs')
+      .select('id')
+      .eq('member_id', memberId)
+      .eq('source_type', sourceType)
+      .eq('source_id', sourceId)
+      .maybeSingle()
+
+    if (existingLog?.id) {
+      return { ok: false, reason: 'already_exists' }
+    }
+  }
+
+  if (rule && Number(rule.daily_limit || 0) > 0) {
+    const { count } = await supabase
+      .from('member_xp_logs')
+      .select('*', { count: 'exact', head: true })
+      .eq('member_id', memberId)
+      .eq('source_type', sourceType)
+      .eq('source_date', sourceDate)
+
+    if (Number(count || 0) >= Number(rule.daily_limit || 0)) {
+      return { ok: false, reason: 'daily_limit_reached' }
+    }
+  }
+
+  const { error: insertLogError } = await supabase.from('member_xp_logs').insert({
+    member_id: memberId,
+    admin_id: adminId,
+    gym_id: gymId,
+    source_type: sourceType,
+    source_id: sourceId || null,
+    source_date: sourceDate,
+    week_key: weekKey,
+    month_key: monthKey,
+    xp: xpValue,
+    note,
+    is_valid: true,
+  })
+
+  if (insertLogError) {
+    console.error('member_xp_logs insert 실패:', insertLogError)
+    return { ok: false, reason: 'log_insert_failed', error: insertLogError }
+  }
+
+  const { data: currentLevelRow, error: levelFetchError } = await supabase
+    .from('member_levels')
+    .select('*')
+    .eq('member_id', memberId)
+    .maybeSingle()
+
+  if (levelFetchError) {
+    console.error('member_levels 조회 실패:', levelFetchError)
+    return { ok: false, reason: 'level_fetch_failed', error: levelFetchError }
+  }
+
+  const nextTotalXp = Number(currentLevelRow?.total_xp || 0) + xpValue
+  const nextWeeklyScore = Number(currentLevelRow?.weekly_score || 0) + xpValue
+  const nextMonthlyScore = Number(currentLevelRow?.monthly_score || 0) + xpValue
+
+  const { data: levelRows, error: levelSettingError } = await supabase
+    .from('member_level_settings')
+    .select('*')
+    .eq('admin_id', adminId)
+    .eq('is_active', true)
+    .order('min_xp', { ascending: true })
+
+  if (levelSettingError) {
+    console.error('member_level_settings 조회 실패:', levelSettingError)
+    return { ok: false, reason: 'level_setting_fetch_failed', error: levelSettingError }
+  }
+
+  const matchedLevel =
+    (levelRows || [])
+      .filter((item) => nextTotalXp >= Number(item.min_xp || 0))
+      .slice(-1)[0] || null
+
+  const { error: levelUpdateError } = await supabase
+    .from('member_levels')
+    .upsert(
+      {
+        member_id: memberId,
+        admin_id: adminId,
+        gym_id: gymId,
+        total_xp: nextTotalXp,
+        weekly_score: nextWeeklyScore,
+        monthly_score: nextMonthlyScore,
+        level_no: Number(matchedLevel?.level_no || currentLevelRow?.level_no || 1),
+        level_key: matchedLevel?.level_key || currentLevelRow?.level_key || 'egg_1',
+        level_name: matchedLevel?.level_name || currentLevelRow?.level_name || '생알',
+        streak_days: Number(currentLevelRow?.streak_days || 0),
+        last_activity_date: sourceDate,
+        last_xp_applied_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      },
+      { onConflict: 'member_id' },
+    )
+
+  if (levelUpdateError) {
+    console.error('member_levels 업데이트 실패:', levelUpdateError)
+    return { ok: false, reason: 'level_update_failed', error: levelUpdateError }
+  }
+
+  return { ok: true, xp: xpValue }
+}
   const handleHealthSubmit = async (e) => {
   e.preventDefault()
 
