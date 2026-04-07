@@ -789,6 +789,20 @@ const toggleActivityRankingSection = (key) => {
     [key]: !prev[key],
   }))
 }
+  const [memberLevelOpenSections, setMemberLevelOpenSections] = useState({
+  levelSummary: true,
+  xpSummary: true,
+})
+
+const toggleMemberLevelSection = (key) => {
+  setMemberLevelOpenSections((prev) => ({
+    ...prev,
+    [key]: !prev[key],
+  }))
+}
+
+const [collapsedMemberLevels, setCollapsedMemberLevels] = useState({})
+const [collapsedMemberXpRules, setCollapsedMemberXpRules] = useState({})
 const [managerOpenSections, setManagerOpenSections] = useState({
   career: false,
   nextLevel: false,
@@ -10030,199 +10044,321 @@ const applyMemberXp = async ({
   </div>
 )}
       {activeTab === '회원레벨설정' && (
-  <div className="stack-gap">
-    <section className="card">
-      <div className="section-head">
-        <div>
-          <h2>회원 레벨 기준 설정</h2>
-          <p className="sub-text">
-            회원 레벨 단계와 활동별 XP 기준을 수정하는 화면입니다.
-          </p>
-        </div>
+  <div className="member-level-page">
+    <section className="member-level-hero">
+      <div className="member-level-hero-left">
+        <div className="member-level-badge">MEMBER LEVEL SETTINGS</div>
+        <h2>회원 레벨 기준 설정</h2>
+        <p className="member-level-hero-text">
+          회원 레벨 단계와 활동별 XP 기준을 보기 쉽게 정리하고, 필요한 항목만 펼쳐서 수정할 수 있는 설정 화면입니다.
+        </p>
       </div>
 
-      <div className="list-stack">
-        {memberLevelSettings.map((level) => (
-          <div key={level.id} className="activity-rank-item">
-            <div className="list-card-top">
-              <strong>Lv.{level.level_no} · {level.level_name}</strong>
-              <button
-                type="button"
-                className="secondary-btn"
-                onClick={() => handleMemberLevelSettingSave(level)}
-              >
-                저장
-              </button>
-            </div>
+      <div className="member-level-hero-right">
+        <div className="member-level-hero-mini">
+          <span>전체 레벨 수</span>
+          <strong>{memberLevelSettings.length}개</strong>
+          <p>현재 등록된 회원 레벨 단계</p>
+        </div>
 
-            <div className="grid-2">
-              <label className="field">
-                <span>레벨명</span>
-                <input
-                  value={level.level_name || ''}
-                  onChange={(e) =>
-                    setMemberLevelSettings((prev) =>
-                      prev.map((item) =>
-                        item.id === level.id ? { ...item, level_name: e.target.value } : item
-                      )
-                    )
-                  }
-                />
-              </label>
+        <div className="member-level-hero-mini">
+          <span>XP 규칙 수</span>
+          <strong>{memberXpSettings.length}개</strong>
+          <p>현재 등록된 XP 지급 규칙</p>
+        </div>
 
-              <label className="field">
-                <span>최소 XP</span>
-                <input
-                  type="number"
-                  value={level.min_xp || 0}
-                  onChange={(e) =>
-                    setMemberLevelSettings((prev) =>
-                      prev.map((item) =>
-                        item.id === level.id ? { ...item, min_xp: e.target.value } : item
-                      )
-                    )
-                  }
-                />
-              </label>
-            </div>
+        <div className="member-level-hero-mini">
+          <span>시작 레벨 XP</span>
+          <strong>{memberLevelSettings[0]?.min_xp || 0}</strong>
+          <p>가장 첫 레벨 최소 XP</p>
+        </div>
 
-            <label className="field">
-              <span>설명</span>
-              <input
-                value={level.description || ''}
-                onChange={(e) =>
-                  setMemberLevelSettings((prev) =>
-                    prev.map((item) =>
-                      item.id === level.id ? { ...item, description: e.target.value } : item
-                    )
-                  )
-                }
-              />
-            </label>
-          </div>
-        ))}
+        <div className="member-level-hero-mini">
+          <span>최고 레벨 XP</span>
+          <strong>{memberLevelSettings[memberLevelSettings.length - 1]?.min_xp || 0}</strong>
+          <p>최상위 레벨 최소 XP</p>
+        </div>
       </div>
     </section>
 
-    <section className="card">
-      <div className="section-head">
-        <div>
-          <h3>회원 XP 규칙 설정</h3>
-          <p className="sub-text">
-            개인운동, PT, 식단, 보너스의 XP와 인정 제한을 설정합니다.
-          </p>
-        </div>
+    <div className="member-level-summary-grid">
+      <div className="member-level-summary-card summary-blue">
+        <span>회원 레벨 단계</span>
+        <strong>{memberLevelSettings.length}</strong>
+        <p>수정 가능한 레벨 수</p>
       </div>
 
-      <div className="list-stack">
-        {memberXpSettings.map((rule) => (
-          <div key={rule.id} className="activity-rank-item">
-            <div className="list-card-top">
-              <strong>{rule.rule_name}</strong>
-              <button
-                type="button"
-                className="secondary-btn"
-                onClick={() => handleMemberXpSettingSave(rule)}
-              >
-                저장
-              </button>
-            </div>
+      <div className="member-level-summary-card summary-green">
+        <span>XP 규칙 항목</span>
+        <strong>{memberXpSettings.length}</strong>
+        <p>활동별 지급 규칙 수</p>
+      </div>
 
-            <div className="grid-2">
-              <label className="field">
-                <span>XP</span>
-                <input
-                  type="number"
-                  value={rule.xp || 0}
-                  onChange={(e) =>
-                    setMemberXpSettings((prev) =>
-                      prev.map((item) =>
-                        item.id === rule.id ? { ...item, xp: e.target.value } : item
-                      )
-                    )
-                  }
-                />
-              </label>
+      <div className="member-level-summary-card summary-violet">
+        <span>첫 시작 XP</span>
+        <strong>{memberLevelSettings[0]?.min_xp || 0}</strong>
+        <p>시작 기준 XP</p>
+      </div>
 
-              <label className="field">
-                <span>하루 최대 인정 횟수</span>
-                <input
-                  type="number"
-                  value={rule.daily_limit || 0}
-                  onChange={(e) =>
-                    setMemberXpSettings((prev) =>
-                      prev.map((item) =>
-                        item.id === rule.id ? { ...item, daily_limit: e.target.value } : item
-                      )
-                    )
-                  }
-                />
-              </label>
-            </div>
+      <div className="member-level-summary-card summary-amber">
+        <span>최고 레벨 XP</span>
+        <strong>{memberLevelSettings[memberLevelSettings.length - 1]?.min_xp || 0}</strong>
+        <p>최상위 기준 XP</p>
+      </div>
+    </div>
 
-            <div className="grid-3">
-              <label className="field">
-                <span>최소 운동 개수</span>
-                <input
-                  type="number"
-                  value={rule.min_items ?? ''}
-                  onChange={(e) =>
-                    setMemberXpSettings((prev) =>
-                      prev.map((item) =>
-                        item.id === rule.id ? { ...item, min_items: e.target.value } : item
-                      )
-                    )
-                  }
-                />
-              </label>
+    <section className="member-level-panel">
+      <button
+        type="button"
+        className="member-level-panel-toggle"
+        onClick={() => toggleMemberLevelSection('levelSummary')}
+      >
+        <span>1. 회원 레벨 단계 설정</span>
+        <strong>{memberLevelOpenSections.levelSummary ? '−' : '+'}</strong>
+      </button>
 
-              <label className="field">
-                <span>최소 세트 수</span>
-                <input
-                  type="number"
-                  value={rule.min_sets ?? ''}
-                  onChange={(e) =>
-                    setMemberXpSettings((prev) =>
-                      prev.map((item) =>
-                        item.id === rule.id ? { ...item, min_sets: e.target.value } : item
-                      )
-                    )
-                  }
-                />
-              </label>
+      {memberLevelOpenSections.levelSummary && (
+        <div className="member-level-panel-body">
+          <div className="list-stack">
+            {memberLevelSettings.map((level) => {
+              const isCollapsed = collapsedMemberLevels[level.id] ?? true
 
-              <label className="field">
-                <span>최소 유산소 시간</span>
-                <input
-                  type="number"
-                  value={rule.min_cardio_minutes ?? ''}
-                  onChange={(e) =>
-                    setMemberXpSettings((prev) =>
-                      prev.map((item) =>
-                        item.id === rule.id ? { ...item, min_cardio_minutes: e.target.value } : item
-                      )
-                    )
-                  }
-                />
-              </label>
-            </div>
+              return (
+                <div key={level.id} className="member-level-item-card">
+                  <div className="list-card-top">
+                    <button
+                      type="button"
+                      className="member-level-item-title-btn"
+                      onClick={() =>
+                        setCollapsedMemberLevels((prev) => ({
+                          ...prev,
+                          [level.id]: !isCollapsed,
+                        }))
+                      }
+                    >
+                      <span>
+                        Lv.{level.level_no} · {level.level_name}
+                      </span>
+                      <strong>{isCollapsed ? '+' : '−'}</strong>
+                    </button>
 
-            <label className="field">
-              <span>설명</span>
-              <input
-                value={rule.description || ''}
-                onChange={(e) =>
-                  setMemberXpSettings((prev) =>
-                    prev.map((item) =>
-                      item.id === rule.id ? { ...item, description: e.target.value } : item
-                    )
-                  )
-                }
-              />
-            </label>
+                    <button
+                      type="button"
+                      className="secondary-btn"
+                      onClick={() => handleMemberLevelSettingSave(level)}
+                    >
+                      저장
+                    </button>
+                  </div>
+
+                  {isCollapsed ? (
+                    <div className="compact-text member-level-collapsed-text">
+                      최소 XP {level.min_xp || 0} / 설명 {level.description || '-'}
+                    </div>
+                  ) : (
+                    <>
+                      <div className="grid-2">
+                        <label className="field">
+                          <span>레벨명</span>
+                          <input
+                            value={level.level_name || ''}
+                            onChange={(e) =>
+                              setMemberLevelSettings((prev) =>
+                                prev.map((item) =>
+                                  item.id === level.id ? { ...item, level_name: e.target.value } : item
+                                )
+                              )
+                            }
+                          />
+                        </label>
+
+                        <label className="field">
+                          <span>최소 XP</span>
+                          <input
+                            type="number"
+                            value={level.min_xp || 0}
+                            onChange={(e) =>
+                              setMemberLevelSettings((prev) =>
+                                prev.map((item) =>
+                                  item.id === level.id ? { ...item, min_xp: e.target.value } : item
+                                )
+                              )
+                            }
+                          />
+                        </label>
+                      </div>
+
+                      <label className="field">
+                        <span>설명</span>
+                        <input
+                          value={level.description || ''}
+                          onChange={(e) =>
+                            setMemberLevelSettings((prev) =>
+                              prev.map((item) =>
+                                item.id === level.id ? { ...item, description: e.target.value } : item
+                              )
+                            )
+                          }
+                        />
+                      </label>
+                    </>
+                  )}
+                </div>
+              )
+            })}
           </div>
-        ))}
-      </div>
+        </div>
+      )}
+    </section>
+
+    <section className="member-level-panel">
+      <button
+        type="button"
+        className="member-level-panel-toggle"
+        onClick={() => toggleMemberLevelSection('xpSummary')}
+      >
+        <span>2. 회원 XP 규칙 설정</span>
+        <strong>{memberLevelOpenSections.xpSummary ? '−' : '+'}</strong>
+      </button>
+
+      {memberLevelOpenSections.xpSummary && (
+        <div className="member-level-panel-body">
+          <div className="list-stack">
+            {memberXpSettings.map((rule) => {
+              const isCollapsed = collapsedMemberXpRules[rule.id] ?? true
+
+              return (
+                <div key={rule.id} className="member-level-item-card">
+                  <div className="list-card-top">
+                    <button
+                      type="button"
+                      className="member-level-item-title-btn"
+                      onClick={() =>
+                        setCollapsedMemberXpRules((prev) => ({
+                          ...prev,
+                          [rule.id]: !isCollapsed,
+                        }))
+                      }
+                    >
+                      <span>{rule.rule_name}</span>
+                      <strong>{isCollapsed ? '+' : '−'}</strong>
+                    </button>
+
+                    <button
+                      type="button"
+                      className="secondary-btn"
+                      onClick={() => handleMemberXpSettingSave(rule)}
+                    >
+                      저장
+                    </button>
+                  </div>
+
+                  {isCollapsed ? (
+                    <div className="compact-text member-level-collapsed-text">
+                      XP {rule.xp || 0} / 하루 최대 {rule.daily_limit || 0}회 / 설명 {rule.description || '-'}
+                    </div>
+                  ) : (
+                    <>
+                      <div className="grid-2">
+                        <label className="field">
+                          <span>XP</span>
+                          <input
+                            type="number"
+                            value={rule.xp || 0}
+                            onChange={(e) =>
+                              setMemberXpSettings((prev) =>
+                                prev.map((item) =>
+                                  item.id === rule.id ? { ...item, xp: e.target.value } : item
+                                )
+                              )
+                            }
+                          />
+                        </label>
+
+                        <label className="field">
+                          <span>하루 최대 인정 횟수</span>
+                          <input
+                            type="number"
+                            value={rule.daily_limit || 0}
+                            onChange={(e) =>
+                              setMemberXpSettings((prev) =>
+                                prev.map((item) =>
+                                  item.id === rule.id ? { ...item, daily_limit: e.target.value } : item
+                                )
+                              )
+                            }
+                          />
+                        </label>
+                      </div>
+
+                      <div className="grid-3">
+                        <label className="field">
+                          <span>최소 운동 개수</span>
+                          <input
+                            type="number"
+                            value={rule.min_items ?? ''}
+                            onChange={(e) =>
+                              setMemberXpSettings((prev) =>
+                                prev.map((item) =>
+                                  item.id === rule.id ? { ...item, min_items: e.target.value } : item
+                                )
+                              )
+                            }
+                          />
+                        </label>
+
+                        <label className="field">
+                          <span>최소 세트 수</span>
+                          <input
+                            type="number"
+                            value={rule.min_sets ?? ''}
+                            onChange={(e) =>
+                              setMemberXpSettings((prev) =>
+                                prev.map((item) =>
+                                  item.id === rule.id ? { ...item, min_sets: e.target.value } : item
+                                )
+                              )
+                            }
+                          />
+                        </label>
+
+                        <label className="field">
+                          <span>최소 유산소 시간</span>
+                          <input
+                            type="number"
+                            value={rule.min_cardio_minutes ?? ''}
+                            onChange={(e) =>
+                              setMemberXpSettings((prev) =>
+                                prev.map((item) =>
+                                  item.id === rule.id ? { ...item, min_cardio_minutes: e.target.value } : item
+                                )
+                              )
+                            }
+                          />
+                        </label>
+                      </div>
+
+                      <label className="field">
+                        <span>설명</span>
+                        <input
+                          value={rule.description || ''}
+                          onChange={(e) =>
+                            setMemberXpSettings((prev) =>
+                              prev.map((item) =>
+                                item.id === rule.id ? { ...item, description: e.target.value } : item
+                              )
+                            )
+                          }
+                        />
+                      </label>
+                    </>
+                  )}
+                </div>
+              )
+            })}
+          </div>
+        </div>
+      )}
     </section>
   </div>
 )}
