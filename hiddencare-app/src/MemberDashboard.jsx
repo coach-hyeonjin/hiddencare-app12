@@ -254,6 +254,48 @@ function getXpLogIcon(sourceType) {
   if (sourceType === 'diet') return '🥗'
   return '✨'
 }
+function getXpProgress(growthSummary, levelSettings = []) {
+  const currentXp = Number(growthSummary?.totalXp || 0)
+
+  if (!Array.isArray(levelSettings) || levelSettings.length === 0) {
+    return { percent: 0, current: currentXp, next: currentXp }
+  }
+
+  const sorted = [...levelSettings].sort(
+    (a, b) => Number(a.min_xp || 0) - Number(b.min_xp || 0)
+  )
+
+  let currentLevel = sorted[0]
+  let nextLevel = null
+
+  for (let i = 0; i < sorted.length; i++) {
+    if (currentXp >= Number(sorted[i].min_xp || 0)) {
+      currentLevel = sorted[i]
+      nextLevel = sorted[i + 1] || null
+    }
+  }
+
+  if (!nextLevel) {
+    return {
+      percent: 100,
+      current: currentXp,
+      next: currentXp,
+    }
+  }
+
+  const currentMin = Number(currentLevel.min_xp || 0)
+  const nextMin = Number(nextLevel.min_xp || 0)
+
+  const progress = currentXp - currentMin
+  const range = nextMin - currentMin
+  const percent = range > 0 ? Math.min(100, Math.round((progress / range) * 100)) : 0
+
+  return {
+    percent,
+    current: currentXp,
+    next: nextMin,
+  }
+}
 export default function MemberDashboard({ member, accessCode, onLogout }) {
   const [activeTab, setActiveTab] = useState('내정보')
   const [loading, setLoading] = useState(true)
@@ -602,6 +644,7 @@ const growthSummary = useMemo(() => {
     progressPercent,
   }
 }, [memberLevel, memberLevelSettings])
+  const xpProgress = getXpProgress(growthSummary, memberLevelSettings)
   useEffect(() => {
     loadAll()
   }, [member?.id])
@@ -2374,21 +2417,21 @@ const applyMemberXp = async ({
           </p>
         </div>
         <div className="pill pill-violet">
-          진행도 {growthSummary.progressPercent}%
+          진행도 {xpProgress.percent}%
         </div>
       </div>
 
       <div className="xp-bar">
         <div
           className="xp-fill"
-          style={{ width: `${growthSummary.progressPercent}%` }}
+          style={{ width: `${xpProgress.percent}%` }}
         />
       </div>
 
       <div className="compact-text" style={{ marginTop: '12px' }}>
         {growthSummary.nextLevel
-          ? `${growthSummary.nextLevel.level_name}까지 ${growthSummary.nextLevelDiff} XP 남았습니다.`
-          : '현재 최고 단계입니다.'}
+  ? `${growthSummary.nextLevel.level_name}까지 ${growthSummary.nextLevelDiff} XP 남았습니다. (${xpProgress.current} / ${xpProgress.next} XP)`
+  : '현재 최고 단계입니다.'}
       </div>
     </section>
 
