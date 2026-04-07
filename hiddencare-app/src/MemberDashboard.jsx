@@ -316,6 +316,14 @@ export default function MemberDashboard({ member, accessCode, onLogout }) {
 const [memberXpLogs, setMemberXpLogs] = useState([])
 const [memberLevelSettings, setMemberLevelSettings] = useState([])
 const [memberLevelRanking, setMemberLevelRanking] = useState([])
+  const [memberXpSettings, setMemberXpSettings] = useState([])
+const [growthOpenSections, setGrowthOpenSections] = useState({
+  summary: true,
+  levelTable: false,
+  xpGuide: false,
+  xpLogs: false,
+  ranking: false,
+})
   const [collapsedDiets, setCollapsedDiets] = useState({})
   const [dietForm, setDietForm] = useState(emptyDietForm)
   const [dietSearch, setDietSearch] = useState('')
@@ -782,7 +790,12 @@ useEffect(() => {
       name: memberInfo?.name || '',
     }))
   }, [memberInfo?.name])
-
+const toggleGrowthSection = (key) => {
+  setGrowthOpenSections((prev) => ({
+    ...prev,
+    [key]: !prev[key],
+  }))
+}
   const loadAll = async () => {
     setLoading(true)
     setMessage('')
@@ -810,6 +823,7 @@ useEffect(() => {
   loadMemberXpLogs(loadedMember),
   loadMemberLevelSettings(adminId),
   loadMemberLevelRanking(adminId),
+        loadMemberXpSettings(adminId),
       ])
     } catch (error) {
       console.error('loadAll 전체 오류:', error)
@@ -1003,6 +1017,28 @@ const loadMemberLevelRanking = async (targetAdminId = null) => {
   }
 
   setMemberLevelRanking(data || [])
+}
+  const loadMemberXpSettings = async (targetAdminId = null) => {
+  const adminId = targetAdminId || currentAdminId || memberInfo?.admin_id || member?.admin_id || null
+
+  if (!adminId) {
+    setMemberXpSettings([])
+    return
+  }
+
+  const { data, error } = await supabase
+    .from('member_xp_settings')
+    .select('*')
+    .eq('admin_id', adminId)
+    .eq('is_active', true)
+    .order('xp', { ascending: false })
+
+  if (error) {
+    console.error('member_xp_settings 불러오기 실패:', error)
+    return
+  }
+
+  setMemberXpSettings(data || [])
 }
   const loadHealthLogs = async () => {
     const { data } = await supabase
@@ -2351,101 +2387,201 @@ const applyMemberXp = async ({
         </div>
 
         <div className="growth-hero-side">
-  <div className="growth-hero-mini">
-    <span>현재 레벨</span>
-    <strong>
-      {getLevelIcon(growthSummary.levelName, growthSummary.levelNo)} Lv.{growthSummary.levelNo}
-    </strong>
-    <p>{growthSummary.levelName}</p>
-  </div>
+          <div className="growth-hero-mini">
+            <span>현재 레벨</span>
+            <strong>
+              {getLevelIcon(growthSummary.levelName, growthSummary.levelNo)} Lv.{growthSummary.levelNo}
+            </strong>
+            <p>{growthSummary.levelName}</p>
+          </div>
 
-  <div className="growth-hero-mini">
-    <span>누적 XP</span>
-    <strong>{growthSummary.totalXp}</strong>
-    <p>이번 주 {growthSummary.weeklyScore}점</p>
-  </div>
-</div>
-</div>
-</section>
-
-<div className="growth-summary-grid">
-  <div className="growth-card">
-    <span>현재 레벨</span>
-    <strong>
-      {getLevelIcon(growthSummary.levelName, growthSummary.levelNo)} Lv.{growthSummary.levelNo} · {growthSummary.levelName}
-    </strong>
-    <div className="compact-text">
-      현재까지 누적 XP {growthSummary.totalXp}점
-    </div>
-  </div>
-
-  <div className="growth-card">
-    <span>이번 주 점수</span>
-    <strong>{growthSummary.weeklyScore}점</strong>
-    <div className="compact-text">
-      연속 활동 {growthSummary.streakDays}일
-    </div>
-  </div>
-
-  <div className="growth-card">
-        <span>다음 레벨까지</span>
-        <strong>
-          {growthSummary.nextLevel ? `${growthSummary.nextLevelDiff} XP 남음` : '최고 레벨'}
-        </strong>
-        <div className="compact-text">
-          {growthSummary.nextLevel
-           ? `다음 단계: ${getLevelIcon(growthSummary.nextLevel.level_name, growthSummary.nextLevel.level_no)} ${growthSummary.nextLevel.level_name}`
-            : '이미 최고 단계입니다.'}
+          <div className="growth-hero-mini">
+            <span>누적 XP</span>
+            <strong>{growthSummary.totalXp}</strong>
+            <p>이번 주 {growthSummary.weeklyScore}점</p>
+          </div>
         </div>
-      </div>
-
-      <div className="growth-card">
-        <span>최근 활동일</span>
-        <strong>{growthSummary.lastActivityDate}</strong>
-        <div className="compact-text">
-          마지막 XP 반영 기준
-        </div>
-      </div>
-    </div>
-
-    <section className="growth-progress-card">
-      <div className="section-head">
-        <div>
-          <h3>레벨 진행도</h3>
-          <p className="sub-text">
-            다음 단계까지 얼마나 남았는지 확인할 수 있습니다.
-          </p>
-        </div>
-        <div className="pill pill-violet">
-          진행도 {xpProgress.percent}%
-        </div>
-      </div>
-
-      <div className="xp-bar">
-        <div
-          className="xp-fill"
-          style={{ width: `${xpProgress.percent}%` }}
-        />
-      </div>
-
-      <div className="compact-text" style={{ marginTop: '12px' }}>
-        {growthSummary.nextLevel
-  ? `${growthSummary.nextLevel.level_name}까지 ${growthSummary.nextLevelDiff} XP 남았습니다. (${xpProgress.current} / ${xpProgress.next} XP)`
-  : '현재 최고 단계입니다.'}
       </div>
     </section>
 
-    <div className="dashboard-main-grid">
-      <section className="card">
-        <div className="section-head">
-          <div>
-            <h3>최근 XP 로그</h3>
-            <p className="sub-text">
-              어떤 활동으로 점수가 쌓였는지 확인할 수 있습니다.
-            </p>
-          </div>
-        </div>
+    <section className="card growth-accordion-card">
+      <button
+        type="button"
+        className="growth-section-toggle"
+        onClick={() => toggleGrowthSection('summary')}
+      >
+        <span>1. 내 성장 요약</span>
+        <strong>{growthOpenSections.summary ? '−' : '+'}</strong>
+      </button>
 
+      {growthOpenSections.summary && (
+        <div className="stack-gap">
+          <div className="growth-summary-grid">
+            <div className="growth-card">
+              <span>현재 레벨</span>
+              <strong>
+                {getLevelIcon(growthSummary.levelName, growthSummary.levelNo)} Lv.{growthSummary.levelNo} · {growthSummary.levelName}
+              </strong>
+              <div className="compact-text">
+                현재까지 누적 XP {growthSummary.totalXp}점
+              </div>
+            </div>
+
+            <div className="growth-card">
+              <span>이번 주 점수</span>
+              <strong>{growthSummary.weeklyScore}점</strong>
+              <div className="compact-text">
+                연속 활동 {growthSummary.streakDays}일
+              </div>
+            </div>
+
+            <div className="growth-card">
+              <span>다음 레벨까지</span>
+              <strong>
+                {growthSummary.nextLevel ? `${growthSummary.nextLevelDiff} XP 남음` : '최고 레벨'}
+              </strong>
+              <div className="compact-text">
+                {growthSummary.nextLevel
+                  ? `다음 단계: ${getLevelIcon(growthSummary.nextLevel.level_name, growthSummary.nextLevel.level_no)} ${growthSummary.nextLevel.level_name}`
+                  : '이미 최고 단계입니다.'}
+              </div>
+            </div>
+
+            <div className="growth-card">
+              <span>최근 활동일</span>
+              <strong>{growthSummary.lastActivityDate}</strong>
+              <div className="compact-text">
+                마지막 XP 반영 기준
+              </div>
+            </div>
+          </div>
+
+          <section className="growth-progress-card">
+            <div className="section-head">
+              <div>
+                <h3>레벨 진행도</h3>
+                <p className="sub-text">
+                  다음 단계까지 얼마나 남았는지 확인할 수 있습니다.
+                </p>
+              </div>
+              <div className="pill pill-violet">
+                진행도 {xpProgress.percent}%
+              </div>
+            </div>
+
+            <div className="xp-bar">
+              <div
+                className="xp-fill"
+                style={{ width: `${xpProgress.percent}%` }}
+              />
+            </div>
+
+            <div className="compact-text" style={{ marginTop: '12px' }}>
+              {growthSummary.nextLevel
+                ? `${growthSummary.nextLevel.level_name}까지 ${growthSummary.nextLevelDiff} XP 남았습니다. (${xpProgress.current} / ${xpProgress.next} XP)`
+                : '현재 최고 단계입니다.'}
+            </div>
+          </section>
+        </div>
+      )}
+    </section>
+
+    <section className="card growth-accordion-card">
+      <button
+        type="button"
+        className="growth-section-toggle"
+        onClick={() => toggleGrowthSection('levelTable')}
+      >
+        <span>2. 레벨 등급표</span>
+        <strong>{growthOpenSections.levelTable ? '−' : '+'}</strong>
+      </button>
+
+      {growthOpenSections.levelTable && (
+        <div className="list-stack">
+          {memberLevelSettings.length ? (
+            memberLevelSettings.map((item) => (
+              <div key={item.id} className="activity-rank-item">
+                <div className="list-card-top">
+                  <strong>
+                    {getLevelIcon(item.level_name, item.level_no)} Lv.{item.level_no} · {item.level_name}
+                  </strong>
+                  <span className="activity-rank-score score-total">
+                    최소 {Number(item.min_xp || 0)} XP
+                  </span>
+                </div>
+                <div className="compact-text">
+                  {item.description || '설명이 없습니다.'}
+                </div>
+              </div>
+            ))
+          ) : (
+            <div className="workout-list-empty">레벨 등급표가 없습니다.</div>
+          )}
+        </div>
+      )}
+    </section>
+
+    <section className="card growth-accordion-card">
+      <button
+        type="button"
+        className="growth-section-toggle"
+        onClick={() => toggleGrowthSection('xpGuide')}
+      >
+        <span>3. XP 획득 기준</span>
+        <strong>{growthOpenSections.xpGuide ? '−' : '+'}</strong>
+      </button>
+
+      {growthOpenSections.xpGuide && (
+        <div className="list-stack">
+          {memberXpSettings.length ? (
+            memberXpSettings.map((rule) => {
+              const label =
+                rule.rule_code === 'pt_workout'
+                  ? '🏋️ PT 운동기록'
+                  : rule.rule_code === 'personal_workout'
+                  ? '🔥 개인운동기록'
+                  : rule.rule_code === 'diet'
+                  ? '🥗 식단기록'
+                  : `✨ ${rule.rule_name}`
+
+              return (
+                <div key={rule.id} className="activity-rank-item">
+                  <div className="list-card-top">
+                    <strong>{label}</strong>
+                    <span className="activity-rank-score score-weighted">
+                      {Number(rule.xp || 0)} XP
+                    </span>
+                  </div>
+                  <div className="compact-text">
+                    하루 최대 {Number(rule.daily_limit || 0)}회 인정
+                    {rule.min_items ? ` / 최소 운동 ${rule.min_items}개` : ''}
+                    {rule.min_sets ? ` / 최소 세트 ${rule.min_sets}개` : ''}
+                    {rule.min_cardio_minutes ? ` / 최소 유산소 ${rule.min_cardio_minutes}분` : ''}
+                  </div>
+                  <div className="compact-text" style={{ marginTop: '6px' }}>
+                    {rule.description || '활동 기록 시 XP가 적립됩니다.'}
+                  </div>
+                </div>
+              )
+            })
+          ) : (
+            <div className="workout-list-empty">XP 획득 기준이 없습니다.</div>
+          )}
+        </div>
+      )}
+    </section>
+
+    <section className="card growth-accordion-card">
+      <button
+        type="button"
+        className="growth-section-toggle"
+        onClick={() => toggleGrowthSection('xpLogs')}
+      >
+        <span>4. 최근 XP 로그</span>
+        <strong>{growthOpenSections.xpLogs ? '−' : '+'}</strong>
+      </button>
+
+      {growthOpenSections.xpLogs && (
         <div className="list-stack">
           {memberXpLogs.length ? (
             memberXpLogs.slice(0, 10).map((log) => {
@@ -2485,18 +2621,20 @@ const applyMemberXp = async ({
             <div className="workout-list-empty">아직 XP 로그가 없습니다.</div>
           )}
         </div>
-      </section>
+      )}
+    </section>
 
-      <section className="card">
-        <div className="section-head">
-          <div>
-            <h3>회원 레벨 랭킹 TOP 10</h3>
-            <p className="sub-text">
-              회원 이름은 가운데 글자를 마스킹해서 표시합니다.
-            </p>
-          </div>
-        </div>
+    <section className="card growth-accordion-card">
+      <button
+        type="button"
+        className="growth-section-toggle"
+        onClick={() => toggleGrowthSection('ranking')}
+      >
+        <span>5. 회원 레벨 랭킹 TOP 10</span>
+        <strong>{growthOpenSections.ranking ? '−' : '+'}</strong>
+      </button>
 
+      {growthOpenSections.ranking && (
         <div className="list-stack">
           {memberLevelRanking.length ? (
             memberLevelRanking.map((item, index) => {
@@ -2508,12 +2646,12 @@ const applyMemberXp = async ({
                   className={`activity-rank-item ${isMe ? 'growth-rank-self' : ''}`}
                 >
                   <div className="list-card-top">
-<strong>
-  {index + 1}위 · {maskMemberName(item.members?.name || '회원')}
-</strong>
+                    <strong>
+                      {index + 1}위 · {maskMemberName(item.members?.name || '회원')}
+                    </strong>
                     <span className="activity-rank-score score-total">
-  {getLevelIcon(item.level_name, item.level_no)} Lv.{item.level_no} · {item.level_name}
-</span>
+                      {getLevelIcon(item.level_name, item.level_no)} Lv.{item.level_no} · {item.level_name}
+                    </span>
                   </div>
                   <div className="compact-text">
                     누적 XP {Number(item.total_xp || 0)}점 / 주간 {Number(item.weekly_score || 0)}점
@@ -2526,8 +2664,8 @@ const applyMemberXp = async ({
             <div className="workout-list-empty">랭킹 데이터가 없습니다.</div>
           )}
         </div>
-      </section>
-    </div>
+      )}
+    </section>
   </div>
 )}
       {activeTab === '건강정보' && (
