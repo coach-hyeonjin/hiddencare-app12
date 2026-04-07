@@ -6327,12 +6327,14 @@ const rebuildSalesXpByMonth = async (targetMonth) => {
   setMessage(`${targetMonth} 매출 XP 재정산이 완료되었습니다.`)
 }
   const forceRefreshSingleMemberXp = async (memberId) => {
-  if (!memberId) return
+  if (!memberId || !currentAdminId) return
 
+  // 1️⃣ 기존 매출 XP 삭제
   const { error: deleteSalesXpError } = await supabase
     .from('member_xp_logs')
     .delete()
     .eq('member_id', memberId)
+    .eq('admin_id', currentAdminId)
     .in('source_type', [
       'sale_bonus_10',
       'sale_bonus_20',
@@ -6347,60 +6349,62 @@ const rebuildSalesXpByMonth = async (targetMonth) => {
     return
   }
 
+  // 2️⃣ 해당 회원 매출 다시 조회
+  const { data: salesRows, error: salesError } = await supabase
+    .from('sales_records')
+    .select('*')
+    .eq('member_id', memberId)
+    .eq('admin_id', currentAdminId)
+
+  if (salesError) {
+    console.error('회원 매출 재조회 실패:', salesError)
+    setMessage(`회원 매출 재조회 실패: ${salesError.message}`)
+    return
+  }
+
+  const rows = salesRows || []
+
+  // 3️⃣ 매출 기준으로 XP 다시 적립
+  for (const sale of rows) {
+    if (!sale.member_id) continue
+
+    const saleBonusRule = getSaleBonusRule(sale.purchased_session_count)
+    if (!saleBonusRule) continue
+
+    await applyMemberXp({
+      memberId: sale.member_id,
+      sourceType: `sale_bonus_${saleBonusRule.minSessions}`,
+      sourceId: sale.id,
+      sourceDate: sale.sale_date,
+      note: `${saleBonusRule.label} 재정산 지급`,
+      forceXp: saleBonusRule.xp,
+    })
+
+    // 💎 다이아 추가 XP
+    if (isDiamondOrHigherMember(sale.member_id)) {
+      const extraXp = getDiamondExtraXp(saleBonusRule.xp)
+
+      if (extraXp > 0) {
+        await applyMemberXp({
+          memberId: sale.member_id,
+          sourceType: 'sale_diamond_bonus',
+          sourceId: sale.id,
+          sourceDate: sale.sale_date,
+          note: `다이아 이상 추가 보너스 재정산 +${extraXp}XP`,
+          forceXp: extraXp,
+        })
+      }
+    }
+  }
+
+  // 4️⃣ 레벨 재계산
   await recalcMemberLevelFromLogs(memberId)
+
+  // 5️⃣ UI 갱신
   await loadMemberLevels()
   await loadMemberXpLogs()
 
-  setMessage('선택 회원 XP를 다시 계산했습니다.')
-}
-  const handleManagerActionDelete = async (id) => {
-  const confirmDelete = window.confirm('이 로그를 삭제하시겠습니까?')
-
-  if (!confirmDelete) return
-
-  const { error } = await supabase
-    .from('manager_action_logs')
-    .delete()
-    .eq('id', id)
-
-  if (error) {
-    console.error('삭제 실패:', error)
-    setMessage('삭제 실패')
-    return
-  }
-
-  setMessage('삭제 완료')
-  await loadManagerActionLogs()
-}
-  const hardResetSingleMemberXp = async (memberId) => {
-  if (!memberId) return
-
-  const { error: deleteLogsError } = await supabase
-    .from('member_xp_logs')
-    .delete()
-    .eq('member_id', memberId)
-
-  if (deleteLogsError) {
-    console.error('회원 XP 로그 전체 삭제 실패:', deleteLogsError)
-    setMessage(`회원 XP 로그 전체 삭제 실패: ${deleteLogsError.message}`)
-    return
-  }
-
-  const { error: deleteLevelError } = await supabase
-    .from('member_levels')
-    .delete()
-    .eq('member_id', memberId)
-
-  if (deleteLevelError) {
-    console.error('member_levels 삭제 실패:', deleteLevelError)
-    setMessage(`member_levels 삭제 실패: ${deleteLevelError.message}`)
-    return
-  }
-
-  await loadMemberLevels()
-  await loadMemberXpLogs()
-
-  setMessage('선택 회원 XP를 완전히 초기화했습니다.')
+  setMessage('선택 회원 XP 재정산 완료')
 }
   const handleManagerActionEdit = (log) => {
   setEditingManagerActionId(log.id)
