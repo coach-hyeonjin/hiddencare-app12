@@ -4857,36 +4857,104 @@ const handlePartnerUsageReject = async (usageId) => {
   }
 
   const handleSaleSubmit = async (e) => {
-    e.preventDefault()
+  e.preventDefault()
 
-   const payload = {
-  member_id: saleForm.member_id || null,
-  program_id: saleForm.program_id || null,
-  sale_date: saleForm.sale_date,
-  amount: Number(saleForm.amount) || 0,
-  payment_method: saleForm.payment_method,
-  installment_months: Number(saleForm.installment_months) || 0,
-  cash_receipt_issued: !!saleForm.cash_receipt_issued,
-  purchased_session_count: Number(saleForm.purchased_session_count) || 0,
-  service_session_count: Number(saleForm.service_session_count) || 0,
-  is_vip: !!saleForm.is_vip,
-  memo: saleForm.memo?.trim() || '',
-  admin_id: currentAdminId || null,
-  gym_id: currentGymId || null,
-}
+  const payload = {
+    member_id: saleForm.member_id || null,
+    program_id: saleForm.program_id || null,
+    sale_date: saleForm.sale_date,
+    amount: Number(saleForm.amount) || 0,
+    payment_method: saleForm.payment_method,
+    installment_months: Number(saleForm.installment_months) || 0,
+    cash_receipt_issued: !!saleForm.cash_receipt_issued,
+    purchased_session_count: Number(saleForm.purchased_session_count) || 0,
+    service_session_count: Number(saleForm.service_session_count) || 0,
+    is_vip: !!saleForm.is_vip,
+    memo: saleForm.memo?.trim() || '',
+    admin_id: currentAdminId || null,
+    gym_id: currentGymId || null,
+  }
 
-    if (editingSaleId) {
-      await supabase.from('sales_records').update(payload).eq('id', editingSaleId)
-      setMessage('매출 기록이 수정되었습니다.')
-    } else {
-      await supabase.from('sales_records').insert(payload)
-      setMessage('매출 기록이 저장되었습니다.')
+  if (!payload.sale_date) {
+    setMessage('결제일을 입력해주세요.')
+    return
+  }
+
+  if (editingSaleId) {
+    const { error } = await supabase
+      .from('sales_records')
+      .update(payload)
+      .eq('id', editingSaleId)
+
+    if (error) {
+      console.error('매출 기록 수정 실패:', error)
+      setMessage(`매출 기록 수정 실패: ${error.message}`)
+      return
     }
 
-    resetSaleForm()
-    await loadSalesRecords()
-    await loadSalesSummary(saleMonth)
+    setMessage('매출 기록이 수정되었습니다.')
+  } else {
+    const { data: insertedSale, error } = await supabase
+      .from('sales_records')
+      .insert(payload)
+      .select('*')
+      .single()
+
+    if (error) {
+      console.error('매출 기록 저장 실패:', error)
+      setMessage(`매출 기록 저장 실패: ${error.message}`)
+      return
+    }
+
+    let messageText = '매출 기록이 저장되었습니다.'
+
+    if (payload.member_id) {
+      const saleBonusRule = getSaleBonusRule(payload.purchased_session_count)
+
+      if (saleBonusRule) {
+        const saleXpResult = await applyMemberXp({
+          memberId: payload.member_id,
+          sourceType: `sale_bonus_${saleBonusRule.minSessions}`,
+          sourceId: `${insertedSale.id}_sale_bonus_${saleBonusRule.minSessions}`,
+          sourceDate: payload.sale_date,
+          note: `${saleBonusRule.label} 지급`,
+          forceXp: saleBonusRule.xp,
+        })
+
+        if (saleXpResult?.ok) {
+          messageText += ` / ${saleBonusRule.label} +${saleBonusRule.xp}XP`
+        }
+
+        if (isDiamondOrHigherMember(payload.member_id)) {
+          const extraXp = getDiamondExtraXp(saleBonusRule.xp)
+
+          if (extraXp > 0) {
+            const diamondXpResult = await applyMemberXp({
+              memberId: payload.member_id,
+              sourceType: 'sale_diamond_bonus',
+              sourceId: `${insertedSale.id}_sale_diamond_bonus`,
+              sourceDate: payload.sale_date,
+              note: `다이아 이상 등록 추가 보너스 +${extraXp}XP`,
+              forceXp: extraXp,
+            })
+
+            if (diamondXpResult?.ok) {
+              messageText += ` / 다이아 이상 추가 +${extraXp}XP`
+            }
+          }
+        }
+      }
+    }
+
+    setMessage(messageText)
   }
+
+  resetSaleForm()
+  await loadSalesRecords()
+  await loadSalesSummary(saleMonth)
+  await loadMemberLevels()
+  await loadMemberXpLogs()
+}
 
   const handleSaleEdit = (sale) => {
     setEditingSaleId(sale.id)
@@ -5870,7 +5938,29 @@ const applyMemberXp = async ({
   if (!rule && forceXp === null) {
     return { ok: false, reason: 'rule_not_found' }
   }
+const SALE_XP_BONUS_RULES = [
+  { minSessions: 50, xp: 800, label: '50회 등록 보너스' },
+  { minSessions: 30, xp: 450, label: '30회 등록 보너스' },
+  { minSessions: 20, xp: 250, label: '20회 등록 보너스' },
+  { minSessions: 10, xp: 100, label: '10회 등록 보너스' },
+]
 
+const DIAMOND_TIER_KEYWORDS = ['다이아', '블랙', '인피니티']
+
+const getSaleBonusRule = (sessionCount = 0) => {
+  const count = Number(sessionCount || 0)
+  return SALE_XP_BONUS_RULES.find((rule) => count >= rule.minSessions) || null
+}
+
+const isDiamondOrHigherMember = (memberId) => {
+  const levelRow = memberLevels.find((item) => item.member_id === memberId)
+  const levelName = String(levelRow?.level_name || '')
+  return DIAMOND_TIER_KEYWORDS.some((keyword) => levelName.includes(keyword))
+}
+
+const getDiamondExtraXp = (baseXp = 0) => {
+  return Math.round(Number(baseXp || 0) * 0.2)
+}
   const xpValue = forceXp !== null ? Number(forceXp || 0) : Number(rule?.xp || 0)
   if (xpValue <= 0) return { ok: false, reason: 'invalid_xp' }
 
