@@ -10722,15 +10722,26 @@ const getDiamondExtraXp = (baseXp = 0) => {
                 </label>
 
                 <label className="field">
-                  <span>프로그램</span>
-                  <select value={saleForm.program_id} onChange={(e) => setSaleForm({ ...saleForm, program_id: e.target.value })}>
-                    <option value="">선택 안함</option>
-                    {programs.map((program) => (
-                      <option key={program.id} value={program.id}>
-                        {program.name}
-                      </option>
-                    ))}
-                  </select>
+                  <select
+  value={saleForm.program_id}
+  onChange={(e) => {
+    const nextProgramId = e.target.value
+    const matchedProgram = programs.find((program) => program.id === nextProgramId)
+
+    setSaleForm((prev) => ({
+      ...prev,
+      program_id: nextProgramId,
+      purchased_session_count: matchedProgram?.session_count || 0,
+    }))
+  }}
+>
+  <option value="">선택 안함</option>
+  {programs.map((program) => (
+    <option key={program.id} value={program.id}>
+      {program.name}
+    </option>
+  ))}
+</select>
                 </label>
               </div>
 
@@ -10768,14 +10779,28 @@ const getDiamondExtraXp = (baseXp = 0) => {
               </div>
 
               <div className="grid-2">
-                <label className="field">
-                  <span>구매 세션</span>
-                  <input
-                    type="number"
-                    value={saleForm.purchased_session_count}
-                    onChange={(e) => setSaleForm({ ...saleForm, purchased_session_count: e.target.value })}
-                  />
-                </label>
+               <label className="field">
+  <span>구매 세션</span>
+  <input
+    type="number"
+    value={saleForm.purchased_session_count}
+    onChange={(e) => setSaleForm({ ...saleForm, purchased_session_count: e.target.value })}
+  />
+  <div className="compact-text">
+    {Number(saleForm.purchased_session_count || 0) >= 50
+      ? '50회 등록 보너스 +800XP'
+      : Number(saleForm.purchased_session_count || 0) >= 30
+      ? '30회 등록 보너스 +450XP'
+      : Number(saleForm.purchased_session_count || 0) >= 20
+      ? '20회 등록 보너스 +250XP'
+      : Number(saleForm.purchased_session_count || 0) >= 10
+      ? '10회 등록 보너스 +100XP'
+      : '10회부터 등록 보너스 XP가 지급됩니다.'}
+  </div>
+                 <div className="compact-text">
+    다이아 / 블랙 / 인피니티 회원은 등록 보너스 XP의 20%가 추가 지급됩니다.
+  </div>
+</label>
 
                 <label className="field">
                   <span>서비스 세션</span>
