@@ -6224,8 +6224,27 @@ const rebuildSalesXpByMonth = async (targetMonth) => {
   const [year, month] = targetMonth.split('-').map(Number)
   const startDate = `${targetMonth}-01`
   const nextMonthDate = new Date(year, month, 1)
-  const nextMonth = `${nextMonthDate.getFullYear()}-${String(nextMonthDate.getMonth() + 1).padStart(2, '0')}-01`
+  const endDate = `${nextMonthDate.getFullYear()}-${String(nextMonthDate.getMonth() + 1).padStart(2, '0')}-01`
 
+  // 1) 삭제 전에, 이 달 매출 XP 로그가 걸려 있던 회원 전체 확보
+  const { data: existingMonthXpLogs, error: existingMonthXpLogsError } = await supabase
+    .from('member_xp_logs')
+    .select('member_id, source_id, source_type, month_key')
+    .eq('admin_id', currentAdminId)
+    .eq('month_key', targetMonth)
+    .in('source_type', monthXpLogTypes)
+
+  if (existingMonthXpLogsError) {
+    console.error('기존 월 매출 XP 로그 조회 실패:', existingMonthXpLogsError)
+    setMessage(`기존 월 매출 XP 로그 조회 실패: ${existingMonthXpLogsError.message}`)
+    return
+  }
+
+  const affectedMemberIdsFromOldLogs = [
+    ...new Set((existingMonthXpLogs || []).map((row) => row.member_id).filter(Boolean)),
+  ]
+
+  // 2) 이 달의 매출 XP 로그 전체 삭제
   const { error: deleteMonthXpError } = await supabase
     .from('member_xp_logs')
     .delete()
@@ -6239,12 +6258,13 @@ const rebuildSalesXpByMonth = async (targetMonth) => {
     return
   }
 
+  // 3) 현재 남아 있는 이 달 매출 다시 조회
   const { data: salesRows, error: salesError } = await supabase
     .from('sales_records')
     .select('*')
     .eq('admin_id', currentAdminId)
     .gte('sale_date', startDate)
-    .lt('sale_date', nextMonth)
+    .lt('sale_date', endDate)
 
   if (salesError) {
     console.error('매출 재조회 실패:', salesError)
@@ -6254,11 +6274,11 @@ const rebuildSalesXpByMonth = async (targetMonth) => {
 
   const monthRows = salesRows || []
 
+  // 4) 현재 남아 있는 매출 기준으로 XP 다시 적립
   for (const sale of monthRows) {
     if (!sale.member_id) continue
 
     const saleBonusRule = getSaleBonusRule(sale.purchased_session_count)
-
     if (!saleBonusRule) continue
 
     await applyMemberXp({
@@ -6286,8 +6306,16 @@ const rebuildSalesXpByMonth = async (targetMonth) => {
     }
   }
 
-  const memberIds = [...new Set(monthRows.map((row) => row.member_id).filter(Boolean))]
-  for (const memberId of memberIds) {
+  // 5) 삭제 전 로그 회원 + 현재 매출 회원 둘 다 재계산
+  const memberIdsFromCurrentSales = [
+    ...new Set(monthRows.map((row) => row.member_id).filter(Boolean)),
+  ]
+
+  const allAffectedMemberIds = [
+    ...new Set([...affectedMemberIdsFromOldLogs, ...memberIdsFromCurrentSales]),
+  ]
+
+  for (const memberId of allAffectedMemberIds) {
     await recalcMemberLevelFromLogs(memberId)
   }
 
