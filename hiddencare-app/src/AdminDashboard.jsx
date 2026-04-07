@@ -737,6 +737,7 @@ export default function AdminDashboard({ profile, currentAdminId, currentGymId, 
   const [memberDetailSearch, setMemberDetailSearch] = useState('')
   const [memberProgramFilter, setMemberProgramFilter] = useState('')
   const [memberStatusFilter, setMemberStatusFilter] = useState('all')
+  const [collapsedMembers, setCollapsedMembers] = useState({})
  
 
 
@@ -6421,96 +6422,108 @@ const applyMemberXp = async ({
           ) : null}
 
           {filteredMemberStats.map((member) => {
-            const isSelected = selectedMemberId === member.id
-            const remainingSessions = Number(member.remainingSessions || 0)
-            const statusClass =
-              remainingSessions <= 0
-                ? 'pill-red'
-                : remainingSessions <= 5
-                ? 'pill-amber'
-                : 'pill-green'
+  const isSelected = selectedMemberId === member.id
+  const remainingSessions = Number(member.remainingSessions || 0)
+  const statusClass =
+    remainingSessions <= 0
+      ? 'pill-red'
+      : remainingSessions <= 5
+      ? 'pill-amber'
+      : 'pill-green'
 
-            return (
-              <div
-                key={member.id}
-                className={`member-list-modern-card ${isSelected ? 'selected' : ''}`}
-                onClick={() => {
-                  setSelectedMemberId(member.id)
-                  setActiveTab('회원상세')
-                }}
-              >
-                <div className="member-list-modern-top">
-                  <div className="member-list-modern-name">
-                    <strong>{member.name}</strong>
-                    <span className={`pill ${statusClass}`}>
-                      남은 {remainingSessions}회
-                    </span>
-                  </div>
+  const isCollapsed = collapsedMembers[member.id] ?? true
 
-                  <div className="member-list-modern-program">
-                    {member.programs?.name || '프로그램 없음'}
-                  </div>
-                </div>
+  return (
+    <div
+      key={member.id}
+      className={`member-list-modern-card member-list-collapsible-card ${isSelected ? 'selected' : ''}`}
+    >
+      <div className="member-list-modern-top">
+        <button
+          type="button"
+          className="member-list-name-button"
+          onClick={() => {
+            setCollapsedMembers((prev) => ({
+              ...prev,
+              [member.id]: !isCollapsed,
+            }))
+          }}
+        >
+          <div className="member-list-modern-name">
+            <strong>{member.name}</strong>
+            <span className={`pill ${statusClass}`}>
+              남은 {remainingSessions}회
+            </span>
+          </div>
+          <span className="member-collapse-mark">{isCollapsed ? '+' : '−'}</span>
+        </button>
 
-                <div className="member-list-modern-grid">
-                  <div className="member-mini-info">
-                    <span>목표</span>
-                    <strong>{member.goal || '-'}</strong>
-                  </div>
+        <div className="member-list-modern-program">
+          {member.programs?.name || '프로그램 없음'}
+        </div>
+      </div>
 
-                  <div className="member-mini-info">
-                    <span>Access</span>
-                    <strong>{member.access_code || '-'}</strong>
-                  </div>
+      {!isCollapsed && (
+        <div className="member-list-modern-grid">
+          <div className="member-mini-info">
+            <span>목표</span>
+            <strong>{member.goal || '-'}</strong>
+          </div>
 
-                  <div className="member-mini-info">
-                    <span>PT 수업</span>
-                    <strong>{member.ptCount}회</strong>
-                  </div>
+          <div className="member-mini-info">
+            <span>Access</span>
+            <strong>{member.access_code || '-'}</strong>
+          </div>
 
-                  <div className="member-mini-info">
-                    <span>개인운동</span>
-                    <strong>{member.personalCount}회</strong>
-                  </div>
-                </div>
+          <div className="member-mini-info">
+            <span>PT 수업</span>
+            <strong>{member.ptCount}회</strong>
+          </div>
 
-                <div className="inline-actions wrap member-card-actions">
-                  <button
-                    type="button"
-                    className="secondary-btn"
-                    onClick={(e) => {
-                      e.stopPropagation()
-                      handleMemberEdit(member)
-                    }}
-                  >
-                    수정
-                  </button>
+          <div className="member-mini-info">
+            <span>개인운동</span>
+            <strong>{member.personalCount}회</strong>
+          </div>
+        </div>
+      )}
 
-                  <button
-                    type="button"
-                    className="secondary-btn"
-                    onClick={(e) => {
-                      e.stopPropagation()
-                      copyMemberLink(member)
-                    }}
-                  >
-                    링크 복사
-                  </button>
+      <div className="inline-actions wrap member-card-actions">
+        <button
+          type="button"
+          className="secondary-btn"
+          onClick={(e) => {
+            e.stopPropagation()
+            handleMemberEdit(member)
+          }}
+        >
+          수정
+        </button>
 
-                  <button
-                    type="button"
-                    className="danger-btn"
-                    onClick={(e) => {
-                      e.stopPropagation()
-                      handleMemberDelete(member.id)
-                    }}
-                  >
-                    삭제
-                  </button>
-                </div>
-              </div>
-            )
-          })}
+        <button
+          type="button"
+          className="secondary-btn"
+          onClick={(e) => {
+            e.stopPropagation()
+            copyMemberLink(member)
+          }}
+        >
+          링크 복사
+        </button>
+
+        <button
+          type="button"
+          className="danger-btn"
+          onClick={(e) => {
+            e.stopPropagation()
+            handleMemberDelete(member.id)
+          }}
+        >
+          삭제
+        </button>
+      </div>
+    </div>
+  )
+})}
         </div>
       </section>
     </div>
