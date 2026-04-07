@@ -4903,7 +4903,51 @@ const handlePartnerUsageReject = async (usageId) => {
       return
     }
 
-    setMessage('매출 기록이 수정되었습니다.')
+    let finalMessage = '매출 기록이 저장되었습니다.'
+
+if (payload.member_id) {
+  const saleBonusRule = getSaleBonusRule(payload.purchased_session_count)
+
+  if (saleBonusRule) {
+    const saleXpResult = await applyMemberXp({
+      memberId: payload.member_id,
+      sourceType: `sale_bonus_${saleBonusRule.minSessions}`,
+      sourceId: `${insertedSale.id}_sale_bonus_${saleBonusRule.minSessions}`,
+      sourceDate: payload.sale_date,
+      note: `${saleBonusRule.label} 지급`,
+      forceXp: saleBonusRule.xp,
+    })
+
+    console.log('매출 보너스 XP 결과:', saleXpResult)
+
+    if (!saleXpResult?.ok) {
+      finalMessage = `매출은 저장됐지만 XP 반영 실패: ${saleXpResult?.reason || 'unknown'}`
+    }
+
+    if (saleXpResult?.ok && isDiamondOrHigherMember(payload.member_id)) {
+      const extraXp = getDiamondExtraXp(saleBonusRule.xp)
+
+      if (extraXp > 0) {
+        const diamondXpResult = await applyMemberXp({
+          memberId: payload.member_id,
+          sourceType: 'sale_diamond_bonus',
+          sourceId: `${insertedSale.id}_sale_diamond_bonus`,
+          sourceDate: payload.sale_date,
+          note: `다이아 이상 등록 추가 보너스 +${extraXp}XP`,
+          forceXp: extraXp,
+        })
+
+        console.log('다이아 추가 XP 결과:', diamondXpResult)
+
+        if (!diamondXpResult?.ok) {
+          finalMessage = `매출은 저장됐지만 다이아 추가 XP 반영 실패: ${diamondXpResult?.reason || 'unknown'}`
+        }
+      }
+    }
+  }
+}
+
+setMessage(finalMessage)
   } else {
     const { data: insertedSale, error } = await supabase
       .from('sales_records')
