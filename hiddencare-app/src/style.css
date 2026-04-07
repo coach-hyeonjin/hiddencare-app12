@@ -7862,3 +7862,108 @@ textarea:focus {
 .activity-rank-score {
   word-break: keep-all;
 }
+/* ===== 성장현황 아코디언 ===== */
+.growth-accordion-card {
+  padding: 0;
+  overflow: hidden;
+}
+
+.growth-section-toggle {
+  width: 100%;
+  border: none;
+  background: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 18px 20px;
+  font-size: 16px;
+  font-weight: 800;
+  color: #111827;
+  cursor: pointer;
+}
+
+.growth-section-toggle:hover {
+  background: #f8fafc;
+}
+
+.growth-accordion-card > .stack-gap,
+.growth-accordion-card > .list-stack {
+  padding: 0 20px 20px;
+}
+
+@media (max-width: 900px) {
+  .growth-hero-top {
+    grid-template-columns: 1fr;
+  }
+
+  .growth-summary-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .dashboard-main-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 640px) {
+  .growth-hero-card {
+    padding: 20px;
+    border-radius: 18px;
+  }
+
+  .growth-hero-card h2 {
+    font-size: 36px;
+  }
+
+  .growth-hero-text {
+    font-size: 14px;
+    line-height: 1.6;
+  }
+
+  .growth-hero-mini {
+    min-height: auto;
+    padding: 16px;
+  }
+
+  .growth-hero-mini strong {
+    font-size: 26px;
+  }
+
+  .growth-summary-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .growth-card {
+    min-height: auto;
+    padding: 16px;
+  }
+
+  .growth-card strong {
+    font-size: 22px;
+  }
+
+  .growth-section-toggle {
+    padding: 16px;
+    font-size: 15px;
+  }
+
+  .growth-accordion-card > .stack-gap,
+  .growth-accordion-card > .list-stack {
+    padding: 0 16px 16px;
+  }
+
+  .xp-bar {
+    height: 14px;
+  }
+
+  .list-card-top {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .activity-rank-score {
+    align-self: flex-start;
+  }
+}
