@@ -6213,12 +6213,38 @@ const getDiamondExtraXp = (baseXp = 0) => {
 const rebuildSalesXpByMonth = async (targetMonth) => {
   if (!currentAdminId || !targetMonth) return
 
+  const monthXpLogTypes = [
+    'sale_bonus_10',
+    'sale_bonus_20',
+    'sale_bonus_30',
+    'sale_bonus_50',
+    'sale_diamond_bonus',
+  ]
+
+  const [year, month] = targetMonth.split('-').map(Number)
+  const startDate = `${targetMonth}-01`
+  const nextMonthDate = new Date(year, month, 1)
+  const nextMonth = `${nextMonthDate.getFullYear()}-${String(nextMonthDate.getMonth() + 1).padStart(2, '0')}-01`
+
+  const { error: deleteMonthXpError } = await supabase
+    .from('member_xp_logs')
+    .delete()
+    .eq('admin_id', currentAdminId)
+    .eq('month_key', targetMonth)
+    .in('source_type', monthXpLogTypes)
+
+  if (deleteMonthXpError) {
+    console.error('월 매출 XP 로그 초기화 실패:', deleteMonthXpError)
+    setMessage(`월 매출 XP 로그 초기화 실패: ${deleteMonthXpError.message}`)
+    return
+  }
+
   const { data: salesRows, error: salesError } = await supabase
     .from('sales_records')
     .select('*')
     .eq('admin_id', currentAdminId)
-    .gte('sale_date', `${targetMonth}-01`)
-    .lt('sale_date', `${targetMonth}-32`)
+    .gte('sale_date', startDate)
+    .lt('sale_date', nextMonth)
 
   if (salesError) {
     console.error('매출 재조회 실패:', salesError)
@@ -6228,59 +6254,34 @@ const rebuildSalesXpByMonth = async (targetMonth) => {
 
   const monthRows = salesRows || []
 
-  const monthXpLogTypes = [
-    'sale_bonus_10',
-    'sale_bonus_20',
-    'sale_bonus_30',
-    'sale_bonus_50',
-    'sale_diamond_bonus',
-  ]
-
-  const saleIds = monthRows.map((row) => row.id)
-
-  if (saleIds.length > 0) {
-    const { error: deleteXpError } = await supabase
-      .from('member_xp_logs')
-      .delete()
-      .eq('admin_id', currentAdminId)
-      .in('source_type', monthXpLogTypes)
-      .in('source_id', saleIds)
-
-    if (deleteXpError) {
-      console.error('기존 매출 XP 로그 삭제 실패:', deleteXpError)
-      setMessage(`기존 매출 XP 로그 삭제 실패: ${deleteXpError.message}`)
-      return
-    }
-  }
-
   for (const sale of monthRows) {
     if (!sale.member_id) continue
 
     const saleBonusRule = getSaleBonusRule(sale.purchased_session_count)
 
-    if (saleBonusRule) {
-      await applyMemberXp({
-        memberId: sale.member_id,
-        sourceType: `sale_bonus_${saleBonusRule.minSessions}`,
-        sourceId: sale.id,
-        sourceDate: sale.sale_date,
-        note: `${saleBonusRule.label} 재정산 지급`,
-        forceXp: saleBonusRule.xp,
-      })
+    if (!saleBonusRule) continue
 
-      if (isDiamondOrHigherMember(sale.member_id)) {
-        const extraXp = getDiamondExtraXp(saleBonusRule.xp)
+    await applyMemberXp({
+      memberId: sale.member_id,
+      sourceType: `sale_bonus_${saleBonusRule.minSessions}`,
+      sourceId: sale.id,
+      sourceDate: sale.sale_date,
+      note: `${saleBonusRule.label} 재정산 지급`,
+      forceXp: saleBonusRule.xp,
+    })
 
-        if (extraXp > 0) {
-          await applyMemberXp({
-            memberId: sale.member_id,
-            sourceType: 'sale_diamond_bonus',
-            sourceId: sale.id,
-            sourceDate: sale.sale_date,
-            note: `다이아 이상 등록 추가 보너스 재정산 +${extraXp}XP`,
-            forceXp: extraXp,
-          })
-        }
+    if (isDiamondOrHigherMember(sale.member_id)) {
+      const extraXp = getDiamondExtraXp(saleBonusRule.xp)
+
+      if (extraXp > 0) {
+        await applyMemberXp({
+          memberId: sale.member_id,
+          sourceType: 'sale_diamond_bonus',
+          sourceId: sale.id,
+          sourceDate: sale.sale_date,
+          note: `다이아 이상 등록 추가 보너스 재정산 +${extraXp}XP`,
+          forceXp: extraXp,
+        })
       }
     }
   }
@@ -6290,10 +6291,10 @@ const rebuildSalesXpByMonth = async (targetMonth) => {
     await recalcMemberLevelFromLogs(memberId)
   }
 
-  await loadMemberLevels()
-  await loadMemberXpLogs()
   await loadSalesRecords()
   await loadSalesSummary(targetMonth)
+  await loadMemberLevels()
+  await loadMemberXpLogs()
 
   setMessage(`${targetMonth} 매출 XP 재정산이 완료되었습니다.`)
 }
