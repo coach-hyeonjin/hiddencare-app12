@@ -652,6 +652,33 @@ const growthSummary = useMemo(() => {
     progressPercent,
   }
 }, [memberLevel, memberLevelSettings])
+  const myLevelRankInfo = useMemo(() => {
+  const myId = String(memberInfo?.id || member?.id || '')
+
+  if (!myId || !Array.isArray(memberLevelRanking) || memberLevelRanking.length === 0) {
+    return {
+      myRank: null,
+      myRankItem: null,
+      topTenRanking: [],
+    }
+  }
+
+  const sorted = [...memberLevelRanking].sort((a, b) => {
+    const xpDiff = Number(b.total_xp || 0) - Number(a.total_xp || 0)
+    if (xpDiff !== 0) return xpDiff
+    return String(a.members?.name || '').localeCompare(String(b.members?.name || ''), 'ko-KR')
+  })
+
+  const myIndex = sorted.findIndex(
+    (item) => String(item.member_id) === myId
+  )
+
+  return {
+    myRank: myIndex >= 0 ? myIndex + 1 : null,
+    myRankItem: myIndex >= 0 ? sorted[myIndex] : null,
+    topTenRanking: sorted.slice(0, 10),
+  }
+}, [memberLevelRanking, memberInfo?.id, member?.id])
   const xpProgress = getXpProgress(growthSummary, memberLevelSettings)
   useEffect(() => {
     loadAll()
@@ -1009,7 +1036,7 @@ const loadMemberLevelRanking = async (targetAdminId = null) => {
     .select('*, members(id, name)')
     .eq('admin_id', adminId)
     .order('total_xp', { ascending: false })
-    .limit(10)
+    
 
   if (error) {
     console.error('member_levels 랭킹 불러오기 실패:', error)
@@ -2636,8 +2663,23 @@ const applyMemberXp = async ({
 
       {growthOpenSections.ranking && (
         <div className="list-stack">
-          {memberLevelRanking.length ? (
-            memberLevelRanking.map((item, index) => {
+          {myLevelRankInfo.myRankItem && (
+  <div className="activity-rank-item growth-rank-self my-rank-card">
+    <div className="list-card-top">
+      <strong>
+        내 순위 · {myLevelRankInfo.myRank}위 · {maskMemberName(myLevelRankInfo.myRankItem.members?.name || '회원')}
+      </strong>
+      <span className="activity-rank-score score-total">
+        {getLevelIcon(myLevelRankInfo.myRankItem.level_name, myLevelRankInfo.myRankItem.level_no)} Lv.{myLevelRankInfo.myRankItem.level_no} · {myLevelRankInfo.myRankItem.level_name}
+      </span>
+    </div>
+    <div className="compact-text">
+      누적 XP {Number(myLevelRankInfo.myRankItem.total_xp || 0)}점 / 주간 {Number(myLevelRankInfo.myRankItem.weekly_score || 0)}점
+    </div>
+  </div>
+)}
+          {myLevelRankInfo.topTenRanking.length ? (
+  myLevelRankInfo.topTenRanking.map((item, index) => {
               const isMe = item.member_id === member?.id
 
               return (
