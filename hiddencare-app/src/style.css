@@ -8299,3 +8299,51 @@ textarea:focus {
     padding: 16px;
   }
 }
+.brand-card {
+  padding: 0;
+  overflow: hidden;
+}
+
+.brand-hero {
+  padding: 18px;
+  border-bottom: 1px solid #eef2f7;
+  background: linear-gradient(135deg, #eef4ff, #f8fbff);
+}
+
+.brand-badge {
+  font-size: 11px;
+  font-weight: 800;
+  color: #3b82f6;
+  margin-bottom: 6px;
+}
+
+.brand-form {
+  padding: 16px 18px;
+}
+
+.brand-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 16px;
+}
+
+.brand-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 14px 16px;
+  border-radius: 14px;
+  background: #fff;
+  border: 1px solid #eef2f7;
+  box-shadow: 0 6px 14px rgba(15, 23, 42, 0.05);
+}
+
+.brand-item strong {
+  font-size: 14px;
+}
+
+.brand-item-actions {
+  display: flex;
+  gap: 8px;
+}
