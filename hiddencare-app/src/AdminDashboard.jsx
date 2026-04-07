@@ -4942,7 +4942,7 @@ const handlePartnerUsageReject = async (usageId) => {
       const saleXpResult = await applyMemberXp({
         memberId: payload.member_id,
         sourceType: `sale_bonus_${saleBonusRule.minSessions}`,
-        sourceId: `${insertedSale.id}_sale_bonus_${saleBonusRule.minSessions}`,
+        sourceId: insertedSale.id,
         sourceDate: payload.sale_date,
         note: `${saleBonusRule.label} 지급`,
         forceXp: saleBonusRule.xp,
@@ -4961,7 +4961,7 @@ const handlePartnerUsageReject = async (usageId) => {
           const diamondXpResult = await applyMemberXp({
             memberId: payload.member_id,
             sourceType: 'sale_diamond_bonus',
-            sourceId: `${insertedSale.id}_sale_diamond_bonus`,
+            sourceId: insertedSale.id,
             sourceDate: payload.sale_date,
             note: `다이아 이상 등록 추가 보너스 +${extraXp}XP`,
             forceXp: extraXp,
