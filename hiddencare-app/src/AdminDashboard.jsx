@@ -9424,17 +9424,17 @@ const applyMemberXp = async ({
   </div>
 )}
 {activeTab === '활동랭킹' && (
-  <div className="stack-gap">
-    <div className="card">
-      <div className="section-head activity-filter-bar">
-        <div>
-          <h2>회원 활동랭킹</h2>
-          <p className="sub-text">
-            {selectedStatsMonth} 기준 PT 수업, 개인운동, 전체 활동, 회원 레벨과 XP 흐름까지 확인하는 화면입니다.
-          </p>
-        </div>
+  <div className="activity-ranking-page">
+    <section className="activity-ranking-hero">
+      <div className="activity-ranking-hero-left">
+        <div className="activity-ranking-badge">MEMBER ACTIVITY RANKING</div>
+        <h2>회원 활동랭킹</h2>
+        <p className="activity-ranking-hero-text">
+          {selectedStatsMonth} 기준 PT 수업, 개인운동, 전체 활동, 참여 점수, 회원 레벨과 XP 흐름까지
+          한 화면에서 빠르게 확인하는 요약 화면입니다.
+        </p>
 
-        <div className="activity-filter-actions">
+        <div className="activity-ranking-filter-row">
           <input
             type="month"
             value={selectedStatsMonth}
@@ -9449,12 +9449,88 @@ const applyMemberXp = async ({
           </button>
         </div>
       </div>
+
+      <div className="activity-ranking-hero-right">
+        <div className="activity-ranking-hero-mini top-pt">
+          <span>{selectedStatsMonth} PT 1위</span>
+          <strong>
+            {activityRankingData.topPtMember
+              ? `${activityRankingData.topPtMember.name} (${activityRankingData.topPtMember.ptCount}회)`
+              : '-'}
+          </strong>
+          <p>PT 수업 기준 최다 참여 회원</p>
+        </div>
+
+        <div className="activity-ranking-hero-mini top-personal">
+          <span>{selectedStatsMonth} 개인운동 1위</span>
+          <strong>
+            {activityRankingData.topPersonalMember
+              ? `${activityRankingData.topPersonalMember.name} (${activityRankingData.topPersonalMember.personalCount}회)`
+              : '-'}
+          </strong>
+          <p>개인운동 기준 최다 참여 회원</p>
+        </div>
+
+        <div className="activity-ranking-hero-mini top-total">
+          <span>{selectedStatsMonth} 전체 활동 1위</span>
+          <strong>
+            {activityRankingData.topTotalMember
+              ? `${activityRankingData.topTotalMember.name} (${activityRankingData.topTotalMember.totalActivity}회)`
+              : '-'}
+          </strong>
+          <p>PT + 개인운동 합산 기준</p>
+        </div>
+
+        <div className="activity-ranking-hero-mini top-score">
+          <span>{selectedStatsMonth} 참여 점수 1위</span>
+          <strong>
+            {activityRankingData.topWeightedMember
+              ? `${activityRankingData.topWeightedMember.name} (${activityRankingData.topWeightedMember.weightedScore}점)`
+              : '-'}
+          </strong>
+          <p>PT 2점 / 개인운동 1점 기준</p>
+        </div>
+      </div>
+    </section>
+
+    <div className="activity-ranking-summary-grid">
+      <div className="activity-summary-card summary-pt">
+        <span>이번 달 PT 수업 1위</span>
+        <strong>
+          {activityRankingData.topPtMember ? `${activityRankingData.topPtMember.ptCount}회` : '0회'}
+        </strong>
+        <p>{activityRankingData.topPtMember ? activityRankingData.topPtMember.name : '데이터 없음'}</p>
+      </div>
+
+      <div className="activity-summary-card summary-personal">
+        <span>이번 달 개인운동 1위</span>
+        <strong>
+          {activityRankingData.topPersonalMember ? `${activityRankingData.topPersonalMember.personalCount}회` : '0회'}
+        </strong>
+        <p>{activityRankingData.topPersonalMember ? activityRankingData.topPersonalMember.name : '데이터 없음'}</p>
+      </div>
+
+      <div className="activity-summary-card summary-total">
+        <span>이번 달 전체 활동 1위</span>
+        <strong>
+          {activityRankingData.topTotalMember ? `${activityRankingData.topTotalMember.totalActivity}회` : '0회'}
+        </strong>
+        <p>{activityRankingData.topTotalMember ? activityRankingData.topTotalMember.name : '데이터 없음'}</p>
+      </div>
+
+      <div className="activity-summary-card summary-score">
+        <span>이번 달 참여 점수 1위</span>
+        <strong>
+          {activityRankingData.topWeightedMember ? `${activityRankingData.topWeightedMember.weightedScore}점` : '0점'}
+        </strong>
+        <p>{activityRankingData.topWeightedMember ? activityRankingData.topWeightedMember.name : '데이터 없음'}</p>
+      </div>
     </div>
 
-    <section className="card activity-ranking-shell">
+    <section className="activity-ranking-panel">
       <button
         type="button"
-        className="growth-section-toggle"
+        className="activity-ranking-panel-toggle"
         onClick={() => toggleActivityRankingSection('summary')}
       >
         <span>1. 이번달 활동 요약</span>
@@ -9462,52 +9538,56 @@ const applyMemberXp = async ({
       </button>
 
       {activityRankingOpenSections.summary && (
-        <div className="stack-gap">
-          <div className="activity-top-grid">
-            <div className="activity-top-card top-pt">
-              <span>{selectedStatsMonth} PT 1위</span>
+        <div className="activity-ranking-panel-body">
+          <div className="activity-ranking-summary-grid inner">
+            <div className="activity-summary-card summary-pt">
+              <span>PT 수업 선두</span>
               <strong>
                 {activityRankingData.topPtMember
                   ? `${activityRankingData.topPtMember.name} (${activityRankingData.topPtMember.ptCount}회)`
                   : '-'}
               </strong>
+              <p>현재 월간 PT 랭킹 선두 회원</p>
             </div>
 
-            <div className="activity-top-card top-personal">
-              <span>{selectedStatsMonth} 개인운동 1위</span>
+            <div className="activity-summary-card summary-personal">
+              <span>개인운동 선두</span>
               <strong>
                 {activityRankingData.topPersonalMember
                   ? `${activityRankingData.topPersonalMember.name} (${activityRankingData.topPersonalMember.personalCount}회)`
                   : '-'}
               </strong>
+              <p>현재 월간 개인운동 랭킹 선두 회원</p>
             </div>
 
-            <div className="activity-top-card top-total">
-              <span>{selectedStatsMonth} 전체 활동 1위</span>
+            <div className="activity-summary-card summary-total">
+              <span>전체 활동 선두</span>
               <strong>
                 {activityRankingData.topTotalMember
                   ? `${activityRankingData.topTotalMember.name} (${activityRankingData.topTotalMember.totalActivity}회)`
                   : '-'}
               </strong>
+              <p>PT + 개인운동 합산 기준</p>
             </div>
 
-            <div className="activity-top-card top-score">
-              <span>{selectedStatsMonth} 참여 점수 1위</span>
+            <div className="activity-summary-card summary-score">
+              <span>참여 점수 선두</span>
               <strong>
                 {activityRankingData.topWeightedMember
                   ? `${activityRankingData.topWeightedMember.name} (${activityRankingData.topWeightedMember.weightedScore}점)`
                   : '-'}
               </strong>
+              <p>가중치 반영 참여 점수 기준</p>
             </div>
           </div>
         </div>
       )}
     </section>
 
-    <section className="card activity-ranking-shell">
+    <section className="activity-ranking-panel">
       <button
         type="button"
-        className="growth-section-toggle"
+        className="activity-ranking-panel-toggle"
         onClick={() => toggleActivityRankingSection('pt')}
       >
         <span>2. PT 수업 랭킹 TOP 10</span>
@@ -9515,37 +9595,39 @@ const applyMemberXp = async ({
       </button>
 
       {activityRankingOpenSections.pt && (
-        <div className="list-stack">
-          {activityRankingData.ptRanking.length ? (
-            activityRankingData.ptRanking.slice(0, 10).map((member, index) => (
-              <div
-                key={member.id}
-                className={`activity-rank-item ${
-                  index === 0 ? 'rank-1' : index === 1 ? 'rank-2' : index === 2 ? 'rank-3' : ''
-                }`}
-              >
-                <div className="list-card-top">
-                  <strong>
-                    {index + 1}위 · {member.name}
-                  </strong>
-                  <span className="activity-rank-score score-pt">PT {member.ptCount}회</span>
+        <div className="activity-ranking-panel-body">
+          <div className="list-stack">
+            {activityRankingData.ptRanking.length ? (
+              activityRankingData.ptRanking.slice(0, 10).map((member, index) => (
+                <div
+                  key={member.id}
+                  className={`activity-rank-item activity-rank-card ${
+                    index === 0 ? 'rank-1' : index === 1 ? 'rank-2' : index === 2 ? 'rank-3' : ''
+                  }`}
+                >
+                  <div className="list-card-top">
+                    <strong>
+                      {index + 1}위 · {member.name}
+                    </strong>
+                    <span className="activity-rank-score score-pt">PT {member.ptCount}회</span>
+                  </div>
+                  <div className="compact-text">
+                    개인운동 {member.personalCount}회 / 전체 활동 {member.totalActivity}회 / 남은 세션 {member.remainingSessions}회
+                  </div>
                 </div>
-                <div className="compact-text">
-                  개인운동 {member.personalCount}회 / 전체 활동 {member.totalActivity}회 / 남은 세션 {member.remainingSessions}회
-                </div>
-              </div>
-            ))
-          ) : (
-            <div className="workout-list-empty">이번 달 PT 기록이 없습니다.</div>
-          )}
+              ))
+            ) : (
+              <div className="workout-list-empty">이번 달 PT 기록이 없습니다.</div>
+            )}
+          </div>
         </div>
       )}
     </section>
 
-    <section className="card activity-ranking-shell">
+    <section className="activity-ranking-panel">
       <button
         type="button"
-        className="growth-section-toggle"
+        className="activity-ranking-panel-toggle"
         onClick={() => toggleActivityRankingSection('personal')}
       >
         <span>3. 개인운동 랭킹 TOP 10</span>
@@ -9553,37 +9635,39 @@ const applyMemberXp = async ({
       </button>
 
       {activityRankingOpenSections.personal && (
-        <div className="list-stack">
-          {activityRankingData.personalRanking.length ? (
-            activityRankingData.personalRanking.slice(0, 10).map((member, index) => (
-              <div
-                key={member.id}
-                className={`activity-rank-item ${
-                  index === 0 ? 'rank-1' : index === 1 ? 'rank-2' : index === 2 ? 'rank-3' : ''
-                }`}
-              >
-                <div className="list-card-top">
-                  <strong>
-                    {index + 1}위 · {member.name}
-                  </strong>
-                  <span className="activity-rank-score score-personal">개인운동 {member.personalCount}회</span>
+        <div className="activity-ranking-panel-body">
+          <div className="list-stack">
+            {activityRankingData.personalRanking.length ? (
+              activityRankingData.personalRanking.slice(0, 10).map((member, index) => (
+                <div
+                  key={member.id}
+                  className={`activity-rank-item activity-rank-card ${
+                    index === 0 ? 'rank-1' : index === 1 ? 'rank-2' : index === 2 ? 'rank-3' : ''
+                  }`}
+                >
+                  <div className="list-card-top">
+                    <strong>
+                      {index + 1}위 · {member.name}
+                    </strong>
+                    <span className="activity-rank-score score-personal">개인운동 {member.personalCount}회</span>
+                  </div>
+                  <div className="compact-text">
+                    PT {member.ptCount}회 / 전체 활동 {member.totalActivity}회 / 목표 {member.goal || '-'}
+                  </div>
                 </div>
-                <div className="compact-text">
-                  PT {member.ptCount}회 / 전체 활동 {member.totalActivity}회 / 목표 {member.goal || '-'}
-                </div>
-              </div>
-            ))
-          ) : (
-            <div className="workout-list-empty">이번 달 개인운동 기록이 없습니다.</div>
-          )}
+              ))
+            ) : (
+              <div className="workout-list-empty">이번 달 개인운동 기록이 없습니다.</div>
+            )}
+          </div>
         </div>
       )}
     </section>
 
-    <section className="card activity-ranking-shell">
+    <section className="activity-ranking-panel">
       <button
         type="button"
-        className="growth-section-toggle"
+        className="activity-ranking-panel-toggle"
         onClick={() => toggleActivityRankingSection('total')}
       >
         <span>4. 전체 활동 랭킹 TOP 10</span>
@@ -9591,37 +9675,39 @@ const applyMemberXp = async ({
       </button>
 
       {activityRankingOpenSections.total && (
-        <div className="list-stack">
-          {activityRankingData.totalRanking.length ? (
-            activityRankingData.totalRanking.slice(0, 10).map((member, index) => (
-              <div
-                key={member.id}
-                className={`activity-rank-item ${
-                  index === 0 ? 'rank-1' : index === 1 ? 'rank-2' : index === 2 ? 'rank-3' : ''
-                }`}
-              >
-                <div className="list-card-top">
-                  <strong>
-                    {index + 1}위 · {member.name}
-                  </strong>
-                  <span className="activity-rank-score score-total">총 {member.totalActivity}회</span>
+        <div className="activity-ranking-panel-body">
+          <div className="list-stack">
+            {activityRankingData.totalRanking.length ? (
+              activityRankingData.totalRanking.slice(0, 10).map((member, index) => (
+                <div
+                  key={member.id}
+                  className={`activity-rank-item activity-rank-card ${
+                    index === 0 ? 'rank-1' : index === 1 ? 'rank-2' : index === 2 ? 'rank-3' : ''
+                  }`}
+                >
+                  <div className="list-card-top">
+                    <strong>
+                      {index + 1}위 · {member.name}
+                    </strong>
+                    <span className="activity-rank-score score-total">총 {member.totalActivity}회</span>
+                  </div>
+                  <div className="compact-text">
+                    PT {member.ptCount}회 / 개인운동 {member.personalCount}회 / 남은 세션 {member.remainingSessions}회
+                  </div>
                 </div>
-                <div className="compact-text">
-                  PT {member.ptCount}회 / 개인운동 {member.personalCount}회 / 남은 세션 {member.remainingSessions}회
-                </div>
-              </div>
-            ))
-          ) : (
-            <div className="workout-list-empty">이번 달 활동 기록이 없습니다.</div>
-          )}
+              ))
+            ) : (
+              <div className="workout-list-empty">이번 달 활동 기록이 없습니다.</div>
+            )}
+          </div>
         </div>
       )}
     </section>
 
-    <section className="card activity-ranking-shell">
+    <section className="activity-ranking-panel">
       <button
         type="button"
-        className="growth-section-toggle"
+        className="activity-ranking-panel-toggle"
         onClick={() => toggleActivityRankingSection('weighted')}
       >
         <span>5. 참여 점수 랭킹 TOP 10</span>
@@ -9629,8 +9715,8 @@ const applyMemberXp = async ({
       </button>
 
       {activityRankingOpenSections.weighted && (
-        <>
-          <div className="compact-text" style={{ marginBottom: '12px' }}>
+        <div className="activity-ranking-panel-body">
+          <div className="compact-text activity-ranking-guide-text">
             PT 1회 = 2점 / 개인운동 1회 = 1점 기준
           </div>
 
@@ -9639,7 +9725,7 @@ const applyMemberXp = async ({
               activityRankingData.weightedRanking.slice(0, 10).map((member, index) => (
                 <div
                   key={member.id}
-                  className={`activity-rank-item ${
+                  className={`activity-rank-item activity-rank-card ${
                     index === 0 ? 'rank-1' : index === 1 ? 'rank-2' : index === 2 ? 'rank-3' : ''
                   }`}
                 >
@@ -9658,14 +9744,14 @@ const applyMemberXp = async ({
               <div className="workout-list-empty">이번 달 참여 점수 데이터가 없습니다.</div>
             )}
           </div>
-        </>
+        </div>
       )}
     </section>
 
-    <section className="card activity-ranking-shell">
+    <section className="activity-ranking-panel">
       <button
         type="button"
-        className="growth-section-toggle"
+        className="activity-ranking-panel-toggle"
         onClick={() => toggleActivityRankingSection('level')}
       >
         <span>6. 회원 레벨 랭킹 TOP 10</span>
@@ -9673,39 +9759,41 @@ const applyMemberXp = async ({
       </button>
 
       {activityRankingOpenSections.level && (
-        <div className="list-stack">
-          {activityRankingData.levelRanking.length ? (
-            activityRankingData.levelRanking.slice(0, 10).map((member, index) => (
-              <div
-                key={member.id}
-                className={`activity-rank-item ${
-                  index === 0 ? 'rank-1' : index === 1 ? 'rank-2' : index === 2 ? 'rank-3' : ''
-                }`}
-              >
-                <div className="list-card-top">
-                  <strong>
-                    {index + 1}위 · {member.name}
-                  </strong>
-                  <span className="activity-rank-score score-weighted">
-                    Lv.{member.levelNo} · {member.levelName}
-                  </span>
+        <div className="activity-ranking-panel-body">
+          <div className="list-stack">
+            {activityRankingData.levelRanking.length ? (
+              activityRankingData.levelRanking.slice(0, 10).map((member, index) => (
+                <div
+                  key={member.id}
+                  className={`activity-rank-item activity-rank-card ${
+                    index === 0 ? 'rank-1' : index === 1 ? 'rank-2' : index === 2 ? 'rank-3' : ''
+                  }`}
+                >
+                  <div className="list-card-top">
+                    <strong>
+                      {index + 1}위 · {member.name}
+                    </strong>
+                    <span className="activity-rank-score score-weighted">
+                      Lv.{member.levelNo} · {member.levelName}
+                    </span>
+                  </div>
+                  <div className="compact-text">
+                    누적 XP {member.totalXp}점 / 주간 점수 {member.weeklyScore}점 / 연속 {member.streakDays}일
+                  </div>
                 </div>
-                <div className="compact-text">
-                  누적 XP {member.totalXp}점 / 주간 점수 {member.weeklyScore}점 / 연속 {member.streakDays}일
-                </div>
-              </div>
-            ))
-          ) : (
-            <div className="workout-list-empty">회원 레벨 데이터가 없습니다.</div>
-          )}
+              ))
+            ) : (
+              <div className="workout-list-empty">회원 레벨 데이터가 없습니다.</div>
+            )}
+          </div>
         </div>
       )}
     </section>
 
-    <section className="card activity-ranking-shell">
+    <section className="activity-ranking-panel">
       <button
         type="button"
-        className="growth-section-toggle"
+        className="activity-ranking-panel-toggle"
         onClick={() => toggleActivityRankingSection('weeklyXp')}
       >
         <span>7. 주간 XP 랭킹 TOP 10</span>
@@ -9713,39 +9801,41 @@ const applyMemberXp = async ({
       </button>
 
       {activityRankingOpenSections.weeklyXp && (
-        <div className="list-stack">
-          {activityRankingData.weeklyXpRanking.length ? (
-            activityRankingData.weeklyXpRanking.slice(0, 10).map((member, index) => (
-              <div
-                key={member.id}
-                className={`activity-rank-item ${
-                  index === 0 ? 'rank-1' : index === 1 ? 'rank-2' : index === 2 ? 'rank-3' : ''
-                }`}
-              >
-                <div className="list-card-top">
-                  <strong>
-                    {index + 1}위 · {member.name}
-                  </strong>
-                  <span className="activity-rank-score score-total">
-                    주간 {member.weeklyScore}점
-                  </span>
+        <div className="activity-ranking-panel-body">
+          <div className="list-stack">
+            {activityRankingData.weeklyXpRanking.length ? (
+              activityRankingData.weeklyXpRanking.slice(0, 10).map((member, index) => (
+                <div
+                  key={member.id}
+                  className={`activity-rank-item activity-rank-card ${
+                    index === 0 ? 'rank-1' : index === 1 ? 'rank-2' : index === 2 ? 'rank-3' : ''
+                  }`}
+                >
+                  <div className="list-card-top">
+                    <strong>
+                      {index + 1}위 · {member.name}
+                    </strong>
+                    <span className="activity-rank-score score-total">
+                      주간 {member.weeklyScore}점
+                    </span>
+                  </div>
+                  <div className="compact-text">
+                    레벨 {member.levelName} / 누적 XP {member.totalXp}점 / 최근 활동일 {member.lastActivityDate || '-'}
+                  </div>
                 </div>
-                <div className="compact-text">
-                  레벨 {member.levelName} / 누적 XP {member.totalXp}점 / 최근 활동일 {member.lastActivityDate || '-'}
-                </div>
-              </div>
-            ))
-          ) : (
-            <div className="workout-list-empty">주간 XP 데이터가 없습니다.</div>
-          )}
+              ))
+            ) : (
+              <div className="workout-list-empty">주간 XP 데이터가 없습니다.</div>
+            )}
+          </div>
         </div>
       )}
     </section>
 
-    <section className="card activity-ranking-shell">
+    <section className="activity-ranking-panel">
       <button
         type="button"
-        className="growth-section-toggle"
+        className="activity-ranking-panel-toggle"
         onClick={() => toggleActivityRankingSection('xpLogs')}
       >
         <span>8. 회원 XP 반영 로그</span>
@@ -9753,8 +9843,8 @@ const applyMemberXp = async ({
       </button>
 
       {activityRankingOpenSections.xpLogs && (
-        <>
-          <div className="section-head">
+        <div className="activity-ranking-panel-body">
+          <div className="section-head activity-ranking-log-head">
             <div>
               <p className="sub-text">최근 어떤 활동으로 XP가 반영됐는지 확인하는 영역입니다.</p>
             </div>
@@ -9782,7 +9872,7 @@ const applyMemberXp = async ({
                 const targetMember = members.find((member) => member.id === log.member_id)
 
                 return (
-                  <div key={log.id} className="activity-rank-item">
+                  <div key={log.id} className="activity-rank-item activity-rank-card">
                     <div className="list-card-top">
                       <strong>{targetMember?.name || '회원'}</strong>
                       <span className="activity-rank-score score-weighted">{log.xp} XP</span>
@@ -9798,7 +9888,7 @@ const applyMemberXp = async ({
               <div className="workout-list-empty">표시할 XP 로그가 없습니다.</div>
             )}
           </div>
-        </>
+        </div>
       )}
     </section>
   </div>
