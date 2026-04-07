@@ -6326,6 +6326,33 @@ const rebuildSalesXpByMonth = async (targetMonth) => {
 
   setMessage(`${targetMonth} 매출 XP 재정산이 완료되었습니다.`)
 }
+  const forceRefreshSingleMemberXp = async (memberId) => {
+  if (!memberId) return
+
+  const { error: deleteSalesXpError } = await supabase
+    .from('member_xp_logs')
+    .delete()
+    .eq('member_id', memberId)
+    .in('source_type', [
+      'sale_bonus_10',
+      'sale_bonus_20',
+      'sale_bonus_30',
+      'sale_bonus_50',
+      'sale_diamond_bonus',
+    ])
+
+  if (deleteSalesXpError) {
+    console.error('회원 매출 XP 로그 삭제 실패:', deleteSalesXpError)
+    setMessage(`회원 매출 XP 로그 삭제 실패: ${deleteSalesXpError.message}`)
+    return
+  }
+
+  await recalcMemberLevelFromLogs(memberId)
+  await loadMemberLevels()
+  await loadMemberXpLogs()
+
+  setMessage('선택 회원 XP를 다시 계산했습니다.')
+}
   const handleManagerActionDelete = async (id) => {
   const confirmDelete = window.confirm('이 로그를 삭제하시겠습니까?')
 
@@ -10488,24 +10515,35 @@ const rebuildSalesXpByMonth = async (targetMonth) => {
       {activityRankingOpenSections.xpLogs && (
         <div className="activity-ranking-panel-body">
           <div className="section-head activity-ranking-log-head">
-            <div>
-              <p className="sub-text">최근 어떤 활동으로 XP가 반영됐는지 확인하는 영역입니다.</p>
-            </div>
+  <div>
+    <p className="sub-text">최근 어떤 활동으로 XP가 반영됐는지 확인하는 영역입니다.</p>
+  </div>
 
-            <div style={{ minWidth: '220px' }}>
-              <select
-                value={selectedXpMemberId}
-                onChange={(e) => setSelectedXpMemberId(e.target.value)}
-              >
-                <option value="">전체 회원</option>
-                {members.map((member) => (
-                  <option key={member.id} value={member.id}>
-                    {member.name}
-                  </option>
-                ))}
-              </select>
-            </div>
-          </div>
+  <div className="inline-actions wrap">
+    <div style={{ minWidth: '220px' }}>
+      <select
+        value={selectedXpMemberId}
+        onChange={(e) => setSelectedXpMemberId(e.target.value)}
+      >
+        <option value="">전체 회원</option>
+        {members.map((member) => (
+          <option key={member.id} value={member.id}>
+            {member.name}
+          </option>
+        ))}
+      </select>
+    </div>
+
+    <button
+      type="button"
+      className="secondary-btn"
+      onClick={() => forceRefreshSingleMemberXp(selectedXpMemberId)}
+      disabled={!selectedXpMemberId}
+    >
+      선택 회원 XP 재계산
+    </button>
+  </div>
+</div>
 
           <div className="list-stack">
             {memberXpLogs
