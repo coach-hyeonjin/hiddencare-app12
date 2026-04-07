@@ -9813,11 +9813,10 @@ const getDiamondExtraXp = (baseXp = 0) => {
       <div className="activity-ranking-hero-left">
         <div className="activity-ranking-badge">MEMBER ACTIVITY RANKING</div>
         <h2>회원 활동랭킹</h2>
-        <p className="activity-ranking-hero-text">
-          {selectedStatsMonth} 기준 PT 수업, 개인운동, 전체 활동, 참여 점수, 회원 레벨과 XP 흐름까지
-          한 화면에서 빠르게 확인하는 요약 화면입니다.
-        </p>
-
+       <p className="activity-ranking-hero-text">
+  {selectedStatsMonth} 기준 활동량과 별도로, 누적 총 XP 기준 회원 랭킹까지 함께 보는 화면입니다.
+  매출 보너스 XP를 포함한 전체 성장 순위를 확인할 수 있습니다.
+</p>
         <div className="activity-ranking-filter-row">
           <input
             type="month"
@@ -9866,14 +9865,14 @@ const getDiamondExtraXp = (baseXp = 0) => {
         </div>
 
         <div className="activity-ranking-hero-mini top-score">
-          <span>{selectedStatsMonth} 참여 점수 1위</span>
-          <strong>
-            {activityRankingData.topWeightedMember
-              ? `${activityRankingData.topWeightedMember.name} (${activityRankingData.topWeightedMember.weightedScore}점)`
-              : '-'}
-          </strong>
-          <p>PT 2점 / 개인운동 1점 기준</p>
-        </div>
+  <span>총 XP 1위</span>
+  <strong>
+    {activityRankingData.topLevelMember
+      ? `${activityRankingData.topLevelMember.name} (${activityRankingData.topLevelMember.totalXp}XP)`
+      : '-'}
+  </strong>
+  <p>매출 보너스 포함 누적 XP 기준</p>
+</div>
       </div>
     </section>
 
@@ -9902,13 +9901,13 @@ const getDiamondExtraXp = (baseXp = 0) => {
         <p>{activityRankingData.topTotalMember ? activityRankingData.topTotalMember.name : '데이터 없음'}</p>
       </div>
 
-      <div className="activity-summary-card summary-score">
-        <span>이번 달 참여 점수 1위</span>
-        <strong>
-          {activityRankingData.topWeightedMember ? `${activityRankingData.topWeightedMember.weightedScore}점` : '0점'}
-        </strong>
-        <p>{activityRankingData.topWeightedMember ? activityRankingData.topWeightedMember.name : '데이터 없음'}</p>
-      </div>
+     <div className="activity-summary-card summary-score">
+  <span>총 XP 1위</span>
+  <strong>
+    {activityRankingData.topLevelMember ? `${activityRankingData.topLevelMember.totalXp}XP` : '0XP'}
+  </strong>
+  <p>{activityRankingData.topLevelMember ? activityRankingData.topLevelMember.name : '데이터 없음'}</p>
+</div>
     </div>
 
     <section className="activity-ranking-panel">
@@ -9955,14 +9954,14 @@ const getDiamondExtraXp = (baseXp = 0) => {
             </div>
 
             <div className="activity-summary-card summary-score">
-              <span>참여 점수 선두</span>
-              <strong>
-                {activityRankingData.topWeightedMember
-                  ? `${activityRankingData.topWeightedMember.name} (${activityRankingData.topWeightedMember.weightedScore}점)`
-                  : '-'}
-              </strong>
-              <p>가중치 반영 참여 점수 기준</p>
-            </div>
+  <span>총 XP 선두</span>
+  <strong>
+    {activityRankingData.topLevelMember
+      ? `${activityRankingData.topLevelMember.name} (${activityRankingData.topLevelMember.totalXp}XP)`
+      : '-'}
+  </strong>
+  <p>매출 보너스 포함 누적 XP 기준</p>
+</div>
           </div>
         </div>
       )}
@@ -10138,7 +10137,7 @@ const getDiamondExtraXp = (baseXp = 0) => {
         className="activity-ranking-panel-toggle"
         onClick={() => toggleActivityRankingSection('level')}
       >
-        <span>6. 회원 레벨 랭킹 TOP 10</span>
+       <span>6. 총 XP 랭킹 TOP 10</span>
         <strong>{activityRankingOpenSections.level ? '−' : '+'}</strong>
       </button>
 
@@ -10161,9 +10160,9 @@ const getDiamondExtraXp = (baseXp = 0) => {
                       Lv.{member.levelNo} · {member.levelName}
                     </span>
                   </div>
-                  <div className="compact-text">
-                    누적 XP {member.totalXp}점 / 주간 점수 {member.weeklyScore}점 / 연속 {member.streakDays}일
-                  </div>
+                 <div className="compact-text">
+  총 XP {member.totalXp}점 / 레벨 Lv.{member.levelNo} / 주간 점수 {member.weeklyScore}점
+</div>
                 </div>
               ))
             ) : (
