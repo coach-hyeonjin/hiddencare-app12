@@ -4981,14 +4981,10 @@ const handlePartnerUsageReject = async (usageId) => {
 }
   resetSaleForm()
 
-  await loadSalesSummary(targetMonth)
-  await loadMemberLevels()
-  await loadMemberXpLogs()
-
-  setTimeout(async () => {
-    await loadSalesRecords()
-    await loadSalesSummary(targetMonth)
-  }, 150)
+await loadSalesRecords()
+await loadSalesSummary(targetMonth)
+await loadMemberLevels()
+await loadMemberXpLogs()
 }
 
   const handleSaleEdit = (sale) => {
@@ -5012,6 +5008,8 @@ const handlePartnerUsageReject = async (usageId) => {
   const handleSaleDelete = async (saleId) => {
   if (!window.confirm('매출 기록을 삭제할까요?')) return
 
+  const targetSale = salesRecords.find((sale) => sale.id === saleId)
+
   const { error } = await supabase
     .from('sales_records')
     .delete()
@@ -5023,24 +5021,34 @@ const handlePartnerUsageReject = async (usageId) => {
     return
   }
 
-  const nextSales = salesRecords.filter((sale) => sale.id !== saleId)
-  const nextCollapsed = {}
+  if (targetSale?.member_id) {
+    const { error: xpDeleteError } = await supabase
+      .from('member_xp_logs')
+      .delete()
+      .eq('member_id', targetSale.member_id)
+      .eq('source_id', saleId)
+      .in('source_type', [
+        'sale_bonus_10',
+        'sale_bonus_20',
+        'sale_bonus_30',
+        'sale_bonus_50',
+        'sale_diamond_bonus',
+      ])
 
-  nextSales.forEach((sale) => {
-    nextCollapsed[sale.id] = true
-  })
+    if (xpDeleteError) {
+      console.error('매출 XP 로그 삭제 실패:', xpDeleteError)
+      setMessage(`매출은 삭제됐지만 XP 로그 삭제 실패: ${xpDeleteError.message}`)
+    }
 
-  setSalesRecords(nextSales)
-  setCollapsedSales(nextCollapsed)
+    await recalcMemberLevelFromLogs(targetSale.member_id)
+  }
 
+  await loadSalesRecords()
   await loadSalesSummary(saleMonth)
+  await loadMemberLevels()
+  await loadMemberXpLogs()
 
-  setTimeout(async () => {
-    await loadSalesRecords()
-    await loadSalesSummary(saleMonth)
-  }, 150)
-
-  setMessage('매출 기록이 삭제되었습니다.')
+  setMessage('매출 기록과 연결된 XP가 삭제되었습니다.')
 }
 const toggleSalesArrayValue = (field, value) => {
   setSalesLogForm((prev) => {
@@ -6127,6 +6135,77 @@ const isDiamondOrHigherMember = (memberId) => {
 
 const getDiamondExtraXp = (baseXp = 0) => {
   return Math.round(Number(baseXp || 0) * 0.2)
+}
+  const recalcMemberLevelFromLogs = async (memberId) => {
+  if (!memberId) return
+
+  const memberRow = members.find((item) => item.id === memberId)
+  const adminId = memberRow?.admin_id || currentAdminId || null
+  const gymId = memberRow?.gym_id || currentGymId || null
+
+  const { data: logs, error: logsError } = await supabase
+    .from('member_xp_logs')
+    .select('*')
+    .eq('member_id', memberId)
+    .eq('is_valid', true)
+
+  if (logsError) {
+    console.error('member_xp_logs 재조회 실패:', logsError)
+    return
+  }
+
+  const rows = logs || []
+  const totalXp = rows.reduce((sum, row) => sum + Number(row.xp || 0), 0)
+
+  const today = new Date().toISOString().slice(0, 10)
+  const currentWeekKey = getWeekKey(today)
+  const currentMonthKey = today.slice(0, 7)
+
+  const weeklyScore = rows
+    .filter((row) => row.week_key === currentWeekKey)
+    .reduce((sum, row) => sum + Number(row.xp || 0), 0)
+
+  const monthlyScore = rows
+    .filter((row) => row.month_key === currentMonthKey)
+    .reduce((sum, row) => sum + Number(row.xp || 0), 0)
+
+  const lastActivityDate = rows
+    .map((row) => row.source_date || '')
+    .filter(Boolean)
+    .sort()
+    .reverse()[0] || null
+
+  const matchedLevel =
+    [...memberLevelSettings]
+      .filter((item) => item.is_active !== false)
+      .sort((a, b) => Number(a.min_xp || 0) - Number(b.min_xp || 0))
+      .filter((item) => totalXp >= Number(item.min_xp || 0))
+      .slice(-1)[0] || null
+
+  const { error: upsertError } = await supabase
+    .from('member_levels')
+    .upsert(
+      {
+        member_id: memberId,
+        admin_id: adminId,
+        gym_id: gymId,
+        total_xp: totalXp,
+        weekly_score: weeklyScore,
+        monthly_score: monthlyScore,
+        level_no: Number(matchedLevel?.level_no || 1),
+        level_key: matchedLevel?.level_key || 'egg_1',
+        level_name: matchedLevel?.level_name || '생알',
+        streak_days: 0,
+        last_activity_date: lastActivityDate,
+        last_xp_applied_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      },
+      { onConflict: 'member_id' },
+    )
+
+  if (upsertError) {
+    console.error('member_levels 재계산 실패:', upsertError)
+  }
 }
   const handleManagerActionDelete = async (id) => {
   const confirmDelete = window.confirm('이 로그를 삭제하시겠습니까?')
