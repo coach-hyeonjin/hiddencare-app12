@@ -4889,6 +4889,8 @@ const handlePartnerUsageReject = async (usageId) => {
     return
   }
 
+  const targetMonth = String(payload.sale_date).slice(0, 7)
+
   if (editingSaleId) {
     const { error } = await supabase
       .from('sales_records')
@@ -4906,7 +4908,7 @@ const handlePartnerUsageReject = async (usageId) => {
     const { data: insertedSale, error } = await supabase
       .from('sales_records')
       .insert(payload)
-      .select('*')
+      .select('*, members(id, name), programs(id, name)')
       .single()
 
     if (error) {
@@ -4915,13 +4917,27 @@ const handlePartnerUsageReject = async (usageId) => {
       return
     }
 
-    let messageText = '매출 기록이 저장되었습니다.'
+    let nextSales = [insertedSale, ...salesRecords]
+
+    nextSales.sort((a, b) => {
+      const dateCompare = String(b.sale_date || '').localeCompare(String(a.sale_date || ''))
+      if (dateCompare !== 0) return dateCompare
+      return String(b.created_at || '').localeCompare(String(a.created_at || ''))
+    })
+
+    const nextCollapsed = {}
+    nextSales.forEach((sale) => {
+      nextCollapsed[sale.id] = true
+    })
+
+    setSalesRecords(nextSales)
+    setCollapsedSales(nextCollapsed)
 
     if (payload.member_id) {
       const saleBonusRule = getSaleBonusRule(payload.purchased_session_count)
 
       if (saleBonusRule) {
-        const saleXpResult = await applyMemberXp({
+        await applyMemberXp({
           memberId: payload.member_id,
           sourceType: `sale_bonus_${saleBonusRule.minSessions}`,
           sourceId: `${insertedSale.id}_sale_bonus_${saleBonusRule.minSessions}`,
@@ -4930,15 +4946,11 @@ const handlePartnerUsageReject = async (usageId) => {
           forceXp: saleBonusRule.xp,
         })
 
-        if (saleXpResult?.ok) {
-          messageText += ` / ${saleBonusRule.label} +${saleBonusRule.xp}XP`
-        }
-
         if (isDiamondOrHigherMember(payload.member_id)) {
           const extraXp = getDiamondExtraXp(saleBonusRule.xp)
 
           if (extraXp > 0) {
-            const diamondXpResult = await applyMemberXp({
+            await applyMemberXp({
               memberId: payload.member_id,
               sourceType: 'sale_diamond_bonus',
               sourceId: `${insertedSale.id}_sale_diamond_bonus`,
@@ -4946,24 +4958,28 @@ const handlePartnerUsageReject = async (usageId) => {
               note: `다이아 이상 등록 추가 보너스 +${extraXp}XP`,
               forceXp: extraXp,
             })
-
-            if (diamondXpResult?.ok) {
-              messageText += ` / 다이아 이상 추가 +${extraXp}XP`
-            }
           }
         }
       }
     }
 
-    setMessage(messageText)
+    setMessage('매출 기록이 저장되었습니다.')
+  }
+
+  if (saleMonth !== targetMonth) {
+    setSaleMonth(targetMonth)
   }
 
   resetSaleForm()
-  await loadSalesRecords()
-  await loadSalesSummary(saleMonth)
+
+  await loadSalesSummary(targetMonth)
   await loadMemberLevels()
   await loadMemberXpLogs()
-    setSalesRecords(freshSales)
+
+  setTimeout(async () => {
+    await loadSalesRecords()
+    await loadSalesSummary(targetMonth)
+  }, 150)
 }
 
   const handleSaleEdit = (sale) => {
@@ -4998,9 +5014,22 @@ const handlePartnerUsageReject = async (usageId) => {
     return
   }
 
-  const freshSales = await loadSalesRecords()
+  const nextSales = salesRecords.filter((sale) => sale.id !== saleId)
+  const nextCollapsed = {}
+
+  nextSales.forEach((sale) => {
+    nextCollapsed[sale.id] = true
+  })
+
+  setSalesRecords(nextSales)
+  setCollapsedSales(nextCollapsed)
+
   await loadSalesSummary(saleMonth)
-  setSalesRecords(freshSales)
+
+  setTimeout(async () => {
+    await loadSalesRecords()
+    await loadSalesSummary(saleMonth)
+  }, 150)
 
   setMessage('매출 기록이 삭제되었습니다.')
 }
