@@ -9532,3 +9532,41 @@ textarea:focus {
     font-size: 13px;
   }
 }
+/* ===== 로고 스플래시 ===== */
+.logo-splash {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #ffffff;
+  padding: 24px;
+}
+
+.logo-splash-img {
+  width: min(62vw, 420px);
+  height: auto;
+  display: block;
+  object-fit: contain;
+  animation: logoSplashFade 0.45s ease;
+}
+
+@keyframes logoSplashFade {
+  from {
+    opacity: 0;
+    transform: scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@media (max-width: 720px) {
+  .logo-splash {
+    padding: 20px;
+  }
+
+  .logo-splash-img {
+    width: min(72vw, 300px);
+  }
+}
