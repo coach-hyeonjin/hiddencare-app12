@@ -6609,465 +6609,544 @@ const applyMemberXp = async ({
   </div>
 )}
  
-{activeTab === '회원상세' && selectedMember && (
-  <div className="card">
-    <h2>회원 상세</h2>
-
-    <div className="sub-card member-detail-modern-card">
-  <div className="member-hero-card">
-    <div className="member-hero-top">
-      <div>
-        <div className="member-hero-badge">MEMBER DETAIL</div>
-        <h3>선택 회원 상세 / 루틴 관리</h3>
-        <p className="member-hero-subtext">
-          회원 기본 정보와 주차별 루틴을 한 화면에서 정리하는 영역입니다.
-        </p>
+{activeTab === '회원상세' && (
+  <div className="stack-gap">
+    <div className="card member-detail-search-card">
+      <div className="section-head">
+        <div>
+          <h2>회원 상세</h2>
+          <p className="sub-text">
+            회원을 검색해서 바로 상세정보와 루틴을 확인할 수 있습니다.
+          </p>
+        </div>
       </div>
 
-      <div className="member-hero-program">
-        {selectedMember.programs?.name || '프로그램 없음'}
-      </div>
-    </div>
+      <div className="stack-gap">
+        <input
+          placeholder="회원명 / 목표 / 프로그램 검색"
+          value={memberDetailSearch}
+          onChange={(e) => setMemberDetailSearch(e.target.value)}
+        />
 
-    <div className="member-hero-grid">
-      <div className="member-hero-item">
-        <span>회원명</span>
-        <strong>{selectedMember.name}</strong>
-      </div>
+        <div className="list-stack member-detail-search-results">
+          {members
+            .filter((member) => {
+              const keyword = memberDetailSearch.trim().toLowerCase()
+              if (!keyword) return true
 
-      <div className="member-hero-item">
-        <span>목표</span>
-        <strong>{selectedMember.goal || '-'}</strong>
-      </div>
-
-      <div className="member-hero-item">
-        <span>기간</span>
-        <strong>
-          {formatDate(selectedMember.start_date)} ~ {formatDate(selectedMember.end_date)}
-        </strong>
-      </div>
-
-     <div className="member-hero-item">
-  <span>회원 링크</span>
-  <strong className="member-hero-link member-hero-link-break">
-    {window.location.origin}?member={selectedMember.id}
-  </strong>
-</div>
-    </div>
-
-    <div className="member-hero-note">
-      <span>회원 메모</span>
-      <p>{selectedMember.memo || '-'}</p>
-    </div>
-  </div>
-
-  <div className="routine-shell">
-    <div className="routine-shell-top">
-      <div>
-        <h4>루틴 편집</h4>
-        <p className="sub-text">
-          주차를 선택하고, 요일별 운동을 접고 펼치면서 관리할 수 있습니다.
-        </p>
-      </div>
-    </div>
-
-    <label className="field">
-      <span>루틴 제목</span>
-      <input
-        value={routineForm.title}
-        onChange={(e) =>
-          setRoutineForm((prev) => ({ ...prev, title: e.target.value }))
-        }
-      />
-    </label>
-
-    <div className="inline-actions wrap routine-week-tabs">
-      {(routineForm.weeks || []).map((week, index) => (
-        <button
-          key={index}
-          type="button"
-          className={index === selectedRoutineWeek ? 'primary-btn' : 'secondary-btn'}
-          onClick={() => setSelectedRoutineWeek(index)}
-        >
-          {week.week_number}주차
-        </button>
-      ))}
-
-      <button
-        type="button"
-        className="secondary-btn"
-        onClick={() => {
-          const nextIndex = Array.isArray(routineForm.weeks) ? routineForm.weeks.length : 0
-          addRoutineWeek()
-          setSelectedRoutineWeek(nextIndex)
-        }}
-      >
-        + 주차 추가
-      </button>
-    </div>
-
-    <div className="list-stack">
-      {(() => {
-        const currentWeek = currentRoutineWeek
-
-        if (!currentWeek) {
-          return <div className="compact-text">선택된 주차가 없습니다.</div>
-        }
-
-        return (
-          <div className="routine-week-card">
-            <div className="routine-week-card-top">
-              <div>
-                <div className="routine-week-label">ROUTINE WEEK</div>
-                <strong>{currentWeek.week_number}주차</strong>
-              </div>
-
+              return (
+                String(member.name || '').toLowerCase().includes(keyword) ||
+                String(member.goal || '').toLowerCase().includes(keyword) ||
+                String(member.programs?.name || '').toLowerCase().includes(keyword)
+              )
+            })
+            .slice(0, 8)
+            .map((member) => (
               <button
+                key={member.id}
                 type="button"
-                className="danger-btn"
+                className={`member-detail-search-item ${selectedMemberId === member.id ? 'active' : ''}`}
                 onClick={() => {
-                  removeRoutineWeek(selectedRoutineWeek)
-                  setSelectedRoutineWeek(0)
+                  setSelectedMemberId(member.id)
+                  setMemberDetailSearch(member.name || '')
                 }}
               >
-                주차 삭제
-              </button>
-            </div>
-
-            <div className="list-stack" style={{ marginTop: '16px' }}>
-              {(currentWeek.days || []).map((day, dayIndex) => {
-                const dayKey = `${currentWeek.week_number}-${day.day_of_week}`
-                const isCollapsed = collapsedRoutineDays[dayKey] ?? true
-                const itemCount = Array.isArray(day.items) ? day.items.length : 0
-
-                return (
-                  <div
-                    key={`${currentWeek.week_number}-${day.day_of_week}`}
-                    className="routine-day-card"
-                  >
-                    <button
-                      type="button"
-                      className="routine-day-toggle"
-                      onClick={() =>
-                        toggleRoutineDayCollapse(
-                          currentWeek.week_number,
-                          day.day_of_week
-                        )
-                      }
-                    >
-                      <div className="routine-day-left">
-                        <div className="routine-day-title-row">
-                          <strong>{day.day_of_week}요일</strong>
-                          <span className="pill">
-                            운동 {itemCount}개
-                          </span>
-                        </div>
-                        <div className="routine-day-meta">
-                          요일별 루틴을 눌러 열고 닫을 수 있습니다.
-                        </div>
-                      </div>
-
-                      <span className={`routine-day-arrow ${!isCollapsed ? 'open' : ''}`}>
-                        ▾
-                      </span>
-                    </button>
-
-                    {!isCollapsed && (
-                      <div className="routine-day-body">
-                        <div className="inline-actions wrap" style={{ marginBottom: '12px' }}>
-                          <button
-                            type="button"
-                            className="secondary-btn"
-                            onClick={() => addRoutineItem(selectedRoutineWeek, dayIndex)}
-                          >
-                            운동 추가
-                          </button>
-                        </div>
-
-                        <div className="list-stack">
-                          {(day.items || []).map((item, itemIndex) => (
-                            <div key={itemIndex} className="routine-exercise-card">
-                              <div className="routine-exercise-head">
-                                <div>
-                                  <div className="routine-exercise-label">
-                                    EXERCISE {itemIndex + 1}
-                                  </div>
-                                  <strong>운동 {itemIndex + 1}</strong>
-                                </div>
-
-                                <button
-                                  type="button"
-                                  className="danger-btn"
-                                  onClick={() =>
-                                    removeRoutineItem(selectedRoutineWeek, dayIndex, itemIndex)
-                                  }
-                                >
-                                  운동 삭제
-                                </button>
-                              </div>
-
-                              <div className="grid-2" style={{ marginTop: '12px' }}>
-                                <label className="field">
-                                  <span>운동 선택</span>
-                                  <select
-                                    value={String(item.exercise_id || '')}
-                                    onChange={(e) =>
-                                      updateRoutineItemSelect(
-                                        selectedRoutineWeek,
-                                        dayIndex,
-                                        itemIndex,
-                                        e.target.value
-                                      )
-                                    }
-                                  >
-                                    <option value="">운동DB에서 선택</option>
-                                    {exercises.map((exercise) => (
-                                      <option key={exercise.id} value={String(exercise.id)}>
-                                        [{exercise.body_part || '-'}] {exercise.name}
-                                      </option>
-                                    ))}
-                                  </select>
-                                </label>
-
-                                <label className="field">
-                                  <span>운동명 직접입력</span>
-                                  <input
-                                    value={item.exercise_name_snapshot || ''}
-                                    onChange={(e) =>
-                                      updateRoutineItemField(
-                                        selectedRoutineWeek,
-                                        dayIndex,
-                                        itemIndex,
-                                        'exercise_name_snapshot',
-                                        e.target.value
-                                      )
-                                    }
-                                    placeholder="예: 레그프레스, 햄스트링 스트레칭"
-                                  />
-                                </label>
-                              </div>
-
-                              <div className="grid-2">
-                                <label className="field">
-                                  <span>시간(분)</span>
-                                  <input
-                                    type="number"
-                                    min="0"
-                                    value={item.duration_minutes || ''}
-                                    onChange={(e) =>
-                                      updateRoutineItemField(
-                                        selectedRoutineWeek,
-                                        dayIndex,
-                                        itemIndex,
-                                        'duration_minutes',
-                                        e.target.value
-                                      )
-                                    }
-                                    placeholder="선택 입력"
-                                  />
-                                </label>
-
-                                <label className="field">
-                                  <span>메모 / 코칭포인트</span>
-                                  <input
-                                    value={item.memo || ''}
-                                    onChange={(e) =>
-                                      updateRoutineItemField(
-                                        selectedRoutineWeek,
-                                        dayIndex,
-                                        itemIndex,
-                                        'memo',
-                                        e.target.value
-                                      )
-                                    }
-                                    placeholder="예: 천천히 내려가기 / 호흡 유지"
-                                  />
-                                </label>
-                              </div>
-
-                              <div className="stack-gap">
-                                <div className="inline-actions wrap">
-                                  <button
-                                    type="button"
-                                    className="secondary-btn"
-                                    onClick={() =>
-                                      addRoutineSet(selectedRoutineWeek, dayIndex, itemIndex)
-                                    }
-                                  >
-                                    세트 추가
-                                  </button>
-                                </div>
-
-                                {(item.sets || []).map((setRow, setIndex) => (
-                                  <div key={setIndex} className="set-row routine-set-row">
-                                    <input
-                                      placeholder="중량(kg)"
-                                      value={setRow.kg}
-                                      onChange={(e) =>
-                                        updateRoutineSetValue(
-                                          selectedRoutineWeek,
-                                          dayIndex,
-                                          itemIndex,
-                                          setIndex,
-                                          'kg',
-                                          e.target.value
-                                        )
-                                      }
-                                    />
-                                    <input
-                                      placeholder="횟수(reps)"
-                                      value={setRow.reps}
-                                      onChange={(e) =>
-                                        updateRoutineSetValue(
-                                          selectedRoutineWeek,
-                                          dayIndex,
-                                          itemIndex,
-                                          setIndex,
-                                          'reps',
-                                          e.target.value
-                                        )
-                                      }
-                                    />
-                                    <button
-                                      type="button"
-                                      className="danger-btn"
-                                      onClick={() =>
-                                        removeRoutineSet(
-                                          selectedRoutineWeek,
-                                          dayIndex,
-                                          itemIndex,
-                                          setIndex
-                                        )
-                                      }
-                                    >
-                                      삭제
-                                    </button>
-                                  </div>
-                                ))}
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    )}
+                <div>
+                  <strong>{member.name || '-'}</strong>
+                  <div className="compact-text">
+                    목표: {member.goal || '-'} / 프로그램: {member.programs?.name || '프로그램 없음'}
                   </div>
-                )
-              })}
-            </div>
+                </div>
 
-            <div className="inline-actions wrap" style={{ marginTop: '18px' }}>
-              <button className="primary-btn" type="button" onClick={handleRoutineSave}>
-                루틴 저장
+                <span className="pill">
+                  남은 {Math.max(
+                    Number(member.total_sessions || 0) - Number(member.used_sessions || 0),
+                    0
+                  )}회
+                </span>
               </button>
-              <button className="danger-btn" type="button" onClick={handleRoutineDelete}>
-                루틴 삭제
-              </button>
-            </div>
-          </div>
-        )
-      })()}
-    </div>
-  </div>
-</div>
-    <div className="sub-card">
-      <h3>관리자 전용 메모</h3>
+            ))}
 
-      <label className="field">
-        <span>비공개 메모 입력</span>
-        <textarea
-          rows="4"
-          value={adminNoteInput}
-          onChange={(e) => setAdminNoteInput(e.target.value)}
-        />
-      </label>
-
-      <button className="primary-btn" type="button" onClick={handleAdminNoteSave}>
-        메모 저장
-      </button>
-
-      <div className="list-stack">
-        {adminNotes.map((note) => (
-          <div key={note.id} className="list-card">
-            <div className="compact-text">{note.note}</div>
-            <div className="compact-text">
-              수정일: {note.updated_at?.slice(0, 10) || '-'}
-            </div>
-            <button
-              className="danger-btn"
-              type="button"
-              onClick={() => handleAdminNoteDelete(note.id)}
-            >
-              삭제
-            </button>
-          </div>
-        ))}
+          {memberDetailSearch.trim() &&
+            members.filter((member) => {
+              const keyword = memberDetailSearch.trim().toLowerCase()
+              return (
+                String(member.name || '').toLowerCase().includes(keyword) ||
+                String(member.goal || '').toLowerCase().includes(keyword) ||
+                String(member.programs?.name || '').toLowerCase().includes(keyword)
+              )
+            }).length === 0 && (
+              <div className="workout-list-empty">검색 결과가 없습니다.</div>
+            )}
+        </div>
       </div>
     </div>
 
-    <div className="sub-card">
-      <h3>회원 건강정보</h3>
-
-      <div className="list-stack">
-        {memberHealthLogs.length === 0 ? (
-          <div className="compact-text">등록된 건강정보가 없습니다.</div>
-        ) : null}
-
-        {memberHealthLogs.map((health) => {
-          const collapsed = collapsedHealthLogs[health.id] ?? true
-
-          return (
-            <div key={health.id} className="list-card">
-              <div className="list-card-top">
-                <strong>{health.record_date}</strong>
-                <span className="pill">
-                  체중 {health.weight_kg || '-'}kg
-                </span>
+    {selectedMember ? (
+      <div className="card">
+        <div className="sub-card member-detail-modern-card">
+          <div className="member-hero-card">
+            <div className="member-hero-top">
+              <div>
+                <div className="member-hero-badge">MEMBER DETAIL</div>
+                <h3>선택 회원 상세 / 루틴 관리</h3>
+                <p className="member-hero-subtext">
+                  회원 기본 정보와 주차별 루틴을 한 화면에서 정리하는 영역입니다.
+                </p>
               </div>
 
-              <div className="compact-text">
-  간략히보기: 키 {health.height_cm || '-'} / 체지방 {health.body_fat_percent || '-'} / 골격근 {health.skeletal_muscle_mass || '-'} / BMR {health.bmr || '-'} / 권장열량 {health.recommended_kcal || '-'}
-</div>
+              <div className="member-hero-program">
+                {selectedMember.programs?.name || '프로그램 없음'}
+              </div>
+            </div>
+
+            <div className="member-hero-grid">
+              <div className="member-hero-item">
+                <span>회원명</span>
+                <strong>{selectedMember.name}</strong>
+              </div>
+
+              <div className="member-hero-item">
+                <span>목표</span>
+                <strong>{selectedMember.goal || '-'}</strong>
+              </div>
+
+              <div className="member-hero-item">
+                <span>기간</span>
+                <strong>
+                  {formatDate(selectedMember.start_date)} ~ {formatDate(selectedMember.end_date)}
+                </strong>
+              </div>
+
+              <div className="member-hero-item">
+                <span>회원 링크</span>
+                <strong className="member-hero-link member-hero-link-break">
+                  {window.location.origin}?member={selectedMember.id}
+                </strong>
+              </div>
+            </div>
+
+            <div className="member-hero-note">
+              <span>회원 메모</span>
+              <p>{selectedMember.memo || '-'}</p>
+            </div>
+          </div>
+
+          <div className="routine-shell">
+            <div className="routine-shell-top">
+              <div>
+                <h4>루틴 편집</h4>
+                <p className="sub-text">
+                  주차를 선택하고, 요일별 운동을 접고 펼치면서 관리할 수 있습니다.
+                </p>
+              </div>
+            </div>
+
+            <label className="field">
+              <span>루틴 제목</span>
+              <input
+                value={routineForm.title}
+                onChange={(e) =>
+                  setRoutineForm((prev) => ({ ...prev, title: e.target.value }))
+                }
+              />
+            </label>
+
+            <div className="inline-actions wrap routine-week-tabs">
+              {(routineForm.weeks || []).map((week, index) => (
+                <button
+                  key={index}
+                  type="button"
+                  className={index === selectedRoutineWeek ? 'primary-btn' : 'secondary-btn'}
+                  onClick={() => setSelectedRoutineWeek(index)}
+                >
+                  {week.week_number}주차
+                </button>
+              ))}
 
               <button
                 type="button"
                 className="secondary-btn"
-                onClick={() =>
-                  setCollapsedHealthLogs((prev) => ({
-                    ...prev,
-                    [health.id]: !collapsed,
-                  }))
-                }
+                onClick={() => {
+                  const nextIndex = Array.isArray(routineForm.weeks) ? routineForm.weeks.length : 0
+                  addRoutineWeek()
+                  setSelectedRoutineWeek(nextIndex)
+                }}
               >
-                {collapsed ? '상세히보기' : '간략히보기'}
+                + 주차 추가
               </button>
-
-              {!collapsed && (
-                <div className="detail-box">
-  <p><strong>성별:</strong> {health.sex === 'female' ? '여성' : health.sex === 'male' ? '남성' : '-'}</p>
-  <p><strong>나이:</strong> {health.age || '-'}</p>
-  <p><strong>키:</strong> {health.height_cm || '-'}</p>
-  <p><strong>체중:</strong> {health.weight_kg || '-'}</p>
-  <p><strong>체지방률:</strong> {health.body_fat_percent || '-'}</p>
-  <p><strong>골격근량:</strong> {health.skeletal_muscle_mass || '-'}</p>
-  <p><strong>체지방량:</strong> {health.body_fat_mass || '-'}</p>
-  <p><strong>내장지방레벨:</strong> {health.visceral_fat_level || '-'}</p>
-  <p><strong>내장지방면적:</strong> {health.visceral_fat_area || '-'}</p>
-  <p><strong>WHR:</strong> {health.whr || '-'}</p>
-  <p><strong>기초대사량:</strong> {health.bmr || '-'}</p>
-  <p><strong>하루 권장 섭취열량:</strong> {health.recommended_kcal || '-'}</p>
-  <p><strong>인바디점수:</strong> {health.inbody_score || '-'}</p>
-  <p><strong>병력사항:</strong> {health.medical_history || '-'}</p>
-  <p><strong>회원 메모:</strong> {health.member_note || '-'}</p>
-  <p><strong>인바디 이미지 URL:</strong> {health.inbody_image_url || '-'}</p>
-</div>
-              )}
             </div>
-          )
-        })}
+
+            <div className="list-stack">
+              {(() => {
+                const currentWeek = currentRoutineWeek
+
+                if (!currentWeek) {
+                  return <div className="compact-text">선택된 주차가 없습니다.</div>
+                }
+
+                return (
+                  <div className="routine-week-card">
+                    <div className="routine-week-card-top">
+                      <div>
+                        <div className="routine-week-label">ROUTINE WEEK</div>
+                        <strong>{currentWeek.week_number}주차</strong>
+                      </div>
+
+                      <button
+                        type="button"
+                        className="danger-btn"
+                        onClick={() => {
+                          removeRoutineWeek(selectedRoutineWeek)
+                          setSelectedRoutineWeek(0)
+                        }}
+                      >
+                        주차 삭제
+                      </button>
+                    </div>
+
+                    <div className="list-stack" style={{ marginTop: '16px' }}>
+                      {(currentWeek.days || []).map((day, dayIndex) => {
+                        const dayKey = `${currentWeek.week_number}-${day.day_of_week}`
+                        const isCollapsed = collapsedRoutineDays[dayKey] ?? true
+                        const itemCount = Array.isArray(day.items) ? day.items.length : 0
+
+                        return (
+                          <div
+                            key={`${currentWeek.week_number}-${day.day_of_week}`}
+                            className="routine-day-card"
+                          >
+                            <button
+                              type="button"
+                              className="routine-day-toggle"
+                              onClick={() =>
+                                toggleRoutineDayCollapse(
+                                  currentWeek.week_number,
+                                  day.day_of_week
+                                )
+                              }
+                            >
+                              <div className="routine-day-left">
+                                <div className="routine-day-title-row">
+                                  <strong>{day.day_of_week}요일</strong>
+                                  <span className="pill">
+                                    운동 {itemCount}개
+                                  </span>
+                                </div>
+                                <div className="routine-day-meta">
+                                  요일별 루틴을 눌러 열고 닫을 수 있습니다.
+                                </div>
+                              </div>
+
+                              <span className={`routine-day-arrow ${!isCollapsed ? 'open' : ''}`}>
+                                ▾
+                              </span>
+                            </button>
+
+                            {!isCollapsed && (
+                              <div className="routine-day-body">
+                                <div className="inline-actions wrap" style={{ marginBottom: '12px' }}>
+                                  <button
+                                    type="button"
+                                    className="secondary-btn"
+                                    onClick={() => addRoutineItem(selectedRoutineWeek, dayIndex)}
+                                  >
+                                    운동 추가
+                                  </button>
+                                </div>
+
+                                <div className="list-stack">
+                                  {(day.items || []).map((item, itemIndex) => (
+                                    <div key={itemIndex} className="routine-exercise-card">
+                                      <div className="routine-exercise-head">
+                                        <div>
+                                          <div className="routine-exercise-label">
+                                            EXERCISE {itemIndex + 1}
+                                          </div>
+                                          <strong>운동 {itemIndex + 1}</strong>
+                                        </div>
+
+                                        <button
+                                          type="button"
+                                          className="danger-btn"
+                                          onClick={() =>
+                                            removeRoutineItem(selectedRoutineWeek, dayIndex, itemIndex)
+                                          }
+                                        >
+                                          운동 삭제
+                                        </button>
+                                      </div>
+
+                                      <div className="grid-2" style={{ marginTop: '12px' }}>
+                                        <label className="field">
+                                          <span>운동 선택</span>
+                                          <select
+                                            value={String(item.exercise_id || '')}
+                                            onChange={(e) =>
+                                              updateRoutineItemSelect(
+                                                selectedRoutineWeek,
+                                                dayIndex,
+                                                itemIndex,
+                                                e.target.value
+                                              )
+                                            }
+                                          >
+                                            <option value="">운동DB에서 선택</option>
+                                            {exercises.map((exercise) => (
+                                              <option key={exercise.id} value={String(exercise.id)}>
+                                                [{exercise.body_part || '-'}] {exercise.name}
+                                              </option>
+                                            ))}
+                                          </select>
+                                        </label>
+
+                                        <label className="field">
+                                          <span>운동명 직접입력</span>
+                                          <input
+                                            value={item.exercise_name_snapshot || ''}
+                                            onChange={(e) =>
+                                              updateRoutineItemField(
+                                                selectedRoutineWeek,
+                                                dayIndex,
+                                                itemIndex,
+                                                'exercise_name_snapshot',
+                                                e.target.value
+                                              )
+                                            }
+                                            placeholder="예: 레그프레스, 햄스트링 스트레칭"
+                                          />
+                                        </label>
+                                      </div>
+
+                                      <div className="grid-2">
+                                        <label className="field">
+                                          <span>시간(분)</span>
+                                          <input
+                                            type="number"
+                                            min="0"
+                                            value={item.duration_minutes || ''}
+                                            onChange={(e) =>
+                                              updateRoutineItemField(
+                                                selectedRoutineWeek,
+                                                dayIndex,
+                                                itemIndex,
+                                                'duration_minutes',
+                                                e.target.value
+                                              )
+                                            }
+                                            placeholder="선택 입력"
+                                          />
+                                        </label>
+
+                                        <label className="field">
+                                          <span>메모 / 코칭포인트</span>
+                                          <input
+                                            value={item.memo || ''}
+                                            onChange={(e) =>
+                                              updateRoutineItemField(
+                                                selectedRoutineWeek,
+                                                dayIndex,
+                                                itemIndex,
+                                                'memo',
+                                                e.target.value
+                                              )
+                                            }
+                                            placeholder="예: 천천히 내려가기 / 호흡 유지"
+                                          />
+                                        </label>
+                                      </div>
+
+                                      <div className="stack-gap">
+                                        <div className="inline-actions wrap">
+                                          <button
+                                            type="button"
+                                            className="secondary-btn"
+                                            onClick={() =>
+                                              addRoutineSet(selectedRoutineWeek, dayIndex, itemIndex)
+                                            }
+                                          >
+                                            세트 추가
+                                          </button>
+                                        </div>
+
+                                        {(item.sets || []).map((setRow, setIndex) => (
+                                          <div key={setIndex} className="set-row routine-set-row">
+                                            <input
+                                              placeholder="중량(kg)"
+                                              value={setRow.kg}
+                                              onChange={(e) =>
+                                                updateRoutineSetValue(
+                                                  selectedRoutineWeek,
+                                                  dayIndex,
+                                                  itemIndex,
+                                                  setIndex,
+                                                  'kg',
+                                                  e.target.value
+                                                )
+                                              }
+                                            />
+                                            <input
+                                              placeholder="횟수(reps)"
+                                              value={setRow.reps}
+                                              onChange={(e) =>
+                                                updateRoutineSetValue(
+                                                  selectedRoutineWeek,
+                                                  dayIndex,
+                                                  itemIndex,
+                                                  setIndex,
+                                                  'reps',
+                                                  e.target.value
+                                                )
+                                              }
+                                            />
+                                            <button
+                                              type="button"
+                                              className="danger-btn"
+                                              onClick={() =>
+                                                removeRoutineSet(
+                                                  selectedRoutineWeek,
+                                                  dayIndex,
+                                                  itemIndex,
+                                                  setIndex
+                                                )
+                                              }
+                                            >
+                                              삭제
+                                            </button>
+                                          </div>
+                                        ))}
+                                      </div>
+                                    </div>
+                                  ))}
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        )
+                      })}
+                    </div>
+
+                    <div className="inline-actions wrap" style={{ marginTop: '18px' }}>
+                      <button className="primary-btn" type="button" onClick={handleRoutineSave}>
+                        루틴 저장
+                      </button>
+                      <button className="danger-btn" type="button" onClick={handleRoutineDelete}>
+                        루틴 삭제
+                      </button>
+                    </div>
+                  </div>
+                )
+              })()}
+            </div>
+          </div>
+        </div>
+
+        <div className="sub-card">
+          <h3>관리자 전용 메모</h3>
+
+          <label className="field">
+            <span>비공개 메모 입력</span>
+            <textarea
+              rows="4"
+              value={adminNoteInput}
+              onChange={(e) => setAdminNoteInput(e.target.value)}
+            />
+          </label>
+
+          <button className="primary-btn" type="button" onClick={handleAdminNoteSave}>
+            메모 저장
+          </button>
+
+          <div className="list-stack">
+            {adminNotes.map((note) => (
+              <div key={note.id} className="list-card">
+                <div className="compact-text">{note.note}</div>
+                <div className="compact-text">
+                  수정일: {note.updated_at?.slice(0, 10) || '-'}
+                </div>
+                <button
+                  className="danger-btn"
+                  type="button"
+                  onClick={() => handleAdminNoteDelete(note.id)}
+                >
+                  삭제
+                </button>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <div className="sub-card">
+          <h3>회원 건강정보</h3>
+
+          <div className="list-stack">
+            {memberHealthLogs.length === 0 ? (
+              <div className="compact-text">등록된 건강정보가 없습니다.</div>
+            ) : null}
+
+            {memberHealthLogs.map((health) => {
+              const collapsed = collapsedHealthLogs[health.id] ?? true
+
+              return (
+                <div key={health.id} className="list-card">
+                  <div className="list-card-top">
+                    <strong>{health.record_date}</strong>
+                    <span className="pill">
+                      체중 {health.weight_kg || '-'}kg
+                    </span>
+                  </div>
+
+                  <div className="compact-text">
+                    간략히보기: 키 {health.height_cm || '-'} / 체지방 {health.body_fat_percent || '-'} / 골격근 {health.skeletal_muscle_mass || '-'} / BMR {health.bmr || '-'} / 권장열량 {health.recommended_kcal || '-'}
+                  </div>
+
+                  <button
+                    type="button"
+                    className="secondary-btn"
+                    onClick={() =>
+                      setCollapsedHealthLogs((prev) => ({
+                        ...prev,
+                        [health.id]: !collapsed,
+                      }))
+                    }
+                  >
+                    {collapsed ? '상세히보기' : '간략히보기'}
+                  </button>
+
+                  {!collapsed && (
+                    <div className="detail-box">
+                      <p><strong>성별:</strong> {health.sex === 'female' ? '여성' : health.sex === 'male' ? '남성' : '-'}</p>
+                      <p><strong>나이:</strong> {health.age || '-'}</p>
+                      <p><strong>키:</strong> {health.height_cm || '-'}</p>
+                      <p><strong>체중:</strong> {health.weight_kg || '-'}</p>
+                      <p><strong>체지방률:</strong> {health.body_fat_percent || '-'}</p>
+                      <p><strong>골격근량:</strong> {health.skeletal_muscle_mass || '-'}</p>
+                      <p><strong>체지방량:</strong> {health.body_fat_mass || '-'}</p>
+                      <p><strong>내장지방레벨:</strong> {health.visceral_fat_level || '-'}</p>
+                      <p><strong>내장지방면적:</strong> {health.visceral_fat_area || '-'}</p>
+                      <p><strong>WHR:</strong> {health.whr || '-'}</p>
+                      <p><strong>기초대사량:</strong> {health.bmr || '-'}</p>
+                      <p><strong>하루 권장 섭취열량:</strong> {health.recommended_kcal || '-'}</p>
+                      <p><strong>인바디점수:</strong> {health.inbody_score || '-'}</p>
+                      <p><strong>병력사항:</strong> {health.medical_history || '-'}</p>
+                      <p><strong>회원 메모:</strong> {health.member_note || '-'}</p>
+                      <p><strong>인바디 이미지 URL:</strong> {health.inbody_image_url || '-'}</p>
+                    </div>
+                  )}
+                </div>
+              )
+            })}
+          </div>
+        </div>
       </div>
-    </div>
+    ) : (
+      <div className="card">
+        <div className="workout-list-empty">검색해서 회원을 먼저 선택해주세요.</div>
+      </div>
+    )}
   </div>
 )}
+
      {activeTab === '나만의 매니저' && (
   <div className="manager-page">
     <section className="manager-hero">
