@@ -6137,77 +6137,7 @@ const isDiamondOrHigherMember = (memberId) => {
 const getDiamondExtraXp = (baseXp = 0) => {
   return Math.round(Number(baseXp || 0) * 0.2)
 }
-  const recalcMemberLevelFromLogs = async (memberId) => {
-  if (!memberId) return
-
-  const memberRow = members.find((item) => item.id === memberId)
-  const adminId = memberRow?.admin_id || currentAdminId || null
-  const gymId = memberRow?.gym_id || currentGymId || null
-
-  const { data: logs, error: logsError } = await supabase
-    .from('member_xp_logs')
-    .select('*')
-    .eq('member_id', memberId)
-    .eq('is_valid', true)
-
-  if (logsError) {
-    console.error('member_xp_logs 재조회 실패:', logsError)
-    return
-  }
-
-  const rows = logs || []
-  const totalXp = rows.reduce((sum, row) => sum + Number(row.xp || 0), 0)
-
-  const today = new Date().toISOString().slice(0, 10)
-  const currentWeekKey = getWeekKey(today)
-  const currentMonthKey = today.slice(0, 7)
-
-  const weeklyScore = rows
-    .filter((row) => row.week_key === currentWeekKey)
-    .reduce((sum, row) => sum + Number(row.xp || 0), 0)
-
-  const monthlyScore = rows
-    .filter((row) => row.month_key === currentMonthKey)
-    .reduce((sum, row) => sum + Number(row.xp || 0), 0)
-
-  const lastActivityDate = rows
-    .map((row) => row.source_date || '')
-    .filter(Boolean)
-    .sort()
-    .reverse()[0] || null
-
-  const matchedLevel =
-    [...memberLevelSettings]
-      .filter((item) => item.is_active !== false)
-      .sort((a, b) => Number(a.min_xp || 0) - Number(b.min_xp || 0))
-      .filter((item) => totalXp >= Number(item.min_xp || 0))
-      .slice(-1)[0] || null
-
-  const { error: upsertError } = await supabase
-    .from('member_levels')
-    .upsert(
-      {
-        member_id: memberId,
-        admin_id: adminId,
-        gym_id: gymId,
-        total_xp: totalXp,
-        weekly_score: weeklyScore,
-        monthly_score: monthlyScore,
-        level_no: Number(matchedLevel?.level_no || 1),
-        level_key: matchedLevel?.level_key || 'egg_1',
-        level_name: matchedLevel?.level_name || '생알',
-        streak_days: 0,
-        last_activity_date: lastActivityDate,
-        last_xp_applied_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-      },
-      { onConflict: 'member_id' },
-    )
-
-  if (upsertError) {
-    console.error('member_levels 재계산 실패:', upsertError)
-  }
-}
+ 
   const recalcMemberLevelFromLogs = async (memberId) => {
   if (!memberId) return
 
