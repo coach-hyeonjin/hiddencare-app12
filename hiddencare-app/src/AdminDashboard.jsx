@@ -6372,6 +6372,36 @@ const rebuildSalesXpByMonth = async (targetMonth) => {
   setMessage('삭제 완료')
   await loadManagerActionLogs()
 }
+  const hardResetSingleMemberXp = async (memberId) => {
+  if (!memberId) return
+
+  const { error: deleteLogsError } = await supabase
+    .from('member_xp_logs')
+    .delete()
+    .eq('member_id', memberId)
+
+  if (deleteLogsError) {
+    console.error('회원 XP 로그 전체 삭제 실패:', deleteLogsError)
+    setMessage(`회원 XP 로그 전체 삭제 실패: ${deleteLogsError.message}`)
+    return
+  }
+
+  const { error: deleteLevelError } = await supabase
+    .from('member_levels')
+    .delete()
+    .eq('member_id', memberId)
+
+  if (deleteLevelError) {
+    console.error('member_levels 삭제 실패:', deleteLevelError)
+    setMessage(`member_levels 삭제 실패: ${deleteLevelError.message}`)
+    return
+  }
+
+  await loadMemberLevels()
+  await loadMemberXpLogs()
+
+  setMessage('선택 회원 XP를 완전히 초기화했습니다.')
+}
   const handleManagerActionEdit = (log) => {
   setEditingManagerActionId(log.id)
 
@@ -10541,6 +10571,15 @@ const rebuildSalesXpByMonth = async (targetMonth) => {
       disabled={!selectedXpMemberId}
     >
       선택 회원 XP 재계산
+    </button>
+
+    <button
+      type="button"
+      className="danger-btn"
+      onClick={() => hardResetSingleMemberXp(selectedXpMemberId)}
+      disabled={!selectedXpMemberId}
+    >
+      선택 회원 XP 완전초기화
     </button>
   </div>
 </div>
