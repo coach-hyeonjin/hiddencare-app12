@@ -4233,7 +4233,26 @@ const updateSetValue = (itemIndex, setIndex, field, value, subIndex = null) => {
     await loadExercises()
     setMessage('운동이 삭제되었습니다.')
   }
+const handleDeleteAllExercises = async () => {
+  const confirmed = window.confirm('운동 데이터를 전부 삭제할까요? 되돌릴 수 없습니다.')
 
+  if (!confirmed) return
+
+  try {
+    const { error } = await supabase
+      .from('exercises')
+      .delete()
+      .eq('gym_id', currentGymId)
+
+    if (error) throw error
+
+    setMessage('운동 데이터 전체삭제 완료')
+    await loadAll()
+  } catch (error) {
+    console.error(error)
+    setMessage('삭제 중 오류 발생')
+  }
+}
   const handleBulkExerciseInsert = async () => {
     const lines = bulkExerciseText.split('\n').map((line) => line.trim()).filter(Boolean)
     if (lines.length === 0) {
@@ -8636,64 +8655,99 @@ const applyMemberXp = async ({
 )}
       {activeTab === '운동DB' && (
         <div className="two-col">
-          <section className="card">
-            <h2>브랜드 관리</h2>
-            <form className="stack-gap" onSubmit={handleBrandSubmit}>
-              <label className="field">
-                <span>브랜드명</span>
-                <input value={brandForm.name} onChange={(e) => setBrandForm({ name: e.target.value })} />
-              </label>
+          <section className="card brand-card">
+  <div className="brand-hero">
+    <div>
+      <div className="brand-badge">BRAND MANAGE</div>
+      <h2>브랜드 관리</h2>
+      <p className="sub-text">
+        센터에서 사용하는 머신 브랜드를 등록하고 관리하는 영역입니다.
+      </p>
+    </div>
+  </div>
 
-              <div className="inline-actions wrap">
-                <button className="primary-btn" type="submit">
-                  {editingBrandId ? '브랜드 수정' : '브랜드 추가'}
-                </button>
-                <button
-                  type="button"
-                  className="secondary-btn"
-                  onClick={() => {
-                    setBrandForm(emptyBrandForm)
-                    setEditingBrandId(null)
-                  }}
-                >
-                  초기화
-                </button>
-              </div>
-            </form>
+  <form className="stack-gap brand-form" onSubmit={handleBrandSubmit}>
+    <label className="field">
+      <span>브랜드명</span>
+      <input
+        value={brandForm.name}
+        onChange={(e) => setBrandForm({ name: e.target.value })}
+        placeholder="예: 뉴텍, 라이프피트니스"
+      />
+    </label>
 
-            <div className="list-stack">
-              {brands.map((brand) => (
-                <div key={brand.id} className="list-card">
-                  <div className="list-card-top">
-                    <strong>{brand.name}</strong>
-                  </div>
-                  <div className="inline-actions wrap">
-                    <button
-                      type="button"
-                      className="secondary-btn"
-                      onClick={() => {
-                        setEditingBrandId(brand.id)
-                        setBrandForm({ name: brand.name })
-                      }}
-                    >
-                      수정
-                    </button>
-                    <button type="button" className="danger-btn" onClick={() => handleBrandDelete(brand.id)}>
-                      삭제
-                    </button>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </section>
+    <div className="inline-actions wrap">
+      <button className="primary-btn" type="submit">
+        {editingBrandId ? '브랜드 수정' : '브랜드 추가'}
+      </button>
+
+      <button
+        type="button"
+        className="secondary-btn"
+        onClick={() => {
+          setBrandForm(emptyBrandForm)
+          setEditingBrandId(null)
+        }}
+      >
+        초기화
+      </button>
+    </div>
+  </form>
+
+  <div className="brand-list">
+    {brands.map((brand) => (
+      <div key={brand.id} className="brand-item">
+        <div className="brand-item-left">
+          <strong>{brand.name}</strong>
+        </div>
+
+        <div className="brand-item-actions">
+          <button
+            type="button"
+            className="secondary-btn"
+            onClick={() => {
+              setEditingBrandId(brand.id)
+              setBrandForm({ name: brand.name })
+            }}
+          >
+            수정
+          </button>
+
+          <button
+            type="button"
+            className="danger-btn"
+            onClick={() => handleBrandDelete(brand.id)}
+          >
+            삭제
+          </button>
+        </div>
+      </div>
+    ))}
+  </div>
+</section>
 
           <section className="card">
             <div className="section-head">
-              <h2>운동 관리</h2>
-              <button type="button" className="secondary-btn" onClick={() => setShowBulkInput((prev) => !prev)}>
-                {showBulkInput ? '개별 입력만 보기' : '일괄 입력 열기'}
-              </button>
-            </div>
+  <h2>운동 관리</h2>
+
+  <div className="inline-actions">
+    <button
+      type="button"
+      className="danger-btn"
+      onClick={handleDeleteAllExercises}
+    >
+      전체삭제
+    </button>
+
+    <button
+      type="button"
+      className="secondary-btn"
+      onClick={() => setShowBulkInput((prev) => !prev)}
+    >
+      {showBulkInput ? '개별 입력만 보기' : '일괄 입력 열기'}
+    </button>
+  </div>
+</div>
 
             <form className="stack-gap" onSubmit={handleExerciseSubmit}>
               <label className="field">
