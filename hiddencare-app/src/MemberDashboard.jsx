@@ -131,7 +131,14 @@ function formatDate(value) {
 function textIncludes(value, keyword) {
   return String(value || '').toLowerCase().includes(String(keyword || '').toLowerCase())
 }
+function maskMemberName(name) {
+  const text = String(name || '').trim()
 
+  if (!text) return '회원'
+  if (text.length === 1) return text
+  if (text.length === 2) return `${text[0]}*`
+  return `${text[0]}*${text[text.length - 1]}`
+}
 function safeJsonParse(value, fallback) {
   try {
     if (!value) return fallback
@@ -2260,88 +2267,143 @@ const applyMemberXp = async ({
 )}
 {activeTab === '성장현황' && (
   <div className="stack-gap">
-    <section className="card">
-      <div className="section-head">
+    <section className="growth-hero-card">
+      <div className="growth-hero-top">
         <div>
+          <div className="growth-hero-badge">MY GROWTH</div>
           <h2>성장현황</h2>
-          <p className="sub-text">
-            현재 레벨, 누적 XP, 주간 점수, 최근 활동 흐름을 확인하는 화면입니다.
+          <p className="growth-hero-text">
+            현재 레벨, 누적 XP, 주간 점수, 최근 활동 흐름을 한눈에 확인할 수 있습니다.
           </p>
         </div>
-      </div>
 
-      <div className="dashboard-main-grid">
-        <div className="detail-box">
-          <p><strong>현재 레벨</strong></p>
-          <h3>Lv.{growthSummary.levelNo} · {growthSummary.levelName}</h3>
-          <div className="compact-text">
-            누적 XP {growthSummary.totalXp}점
+        <div className="growth-hero-side">
+          <div className="growth-hero-mini">
+            <span>현재 레벨</span>
+            <strong>Lv.{growthSummary.levelNo}</strong>
+            <p>{growthSummary.levelName}</p>
           </div>
-        </div>
 
-        <div className="detail-box">
-          <p><strong>이번 주 점수</strong></p>
-          <h3>{growthSummary.weeklyScore}점</h3>
-          <div className="compact-text">
-            연속 활동 {growthSummary.streakDays}일
-          </div>
-        </div>
-
-        <div className="detail-box">
-          <p><strong>다음 레벨까지</strong></p>
-          <h3>
-            {growthSummary.nextLevel
-              ? `${growthSummary.nextLevelDiff} XP 남음`
-              : '최고 레벨'}
-          </h3>
-          <div className="compact-text">
-            {growthSummary.nextLevel
-              ? `다음 단계: ${growthSummary.nextLevel.level_name}`
-              : '이미 최고 단계입니다.'}
-          </div>
-        </div>
-
-        <div className="detail-box">
-          <p><strong>최근 활동일</strong></p>
-          <h3>{growthSummary.lastActivityDate}</h3>
-          <div className="compact-text">
-            마지막 XP 반영 기준
+          <div className="growth-hero-mini">
+            <span>누적 XP</span>
+            <strong>{growthSummary.totalXp}</strong>
+            <p>이번 주 {growthSummary.weeklyScore}점</p>
           </div>
         </div>
       </div>
     </section>
 
-    <section className="card">
-      <h3>레벨 진행도</h3>
+    <div className="growth-summary-grid">
+      <div className="growth-card">
+        <span>현재 레벨</span>
+        <strong>Lv.{growthSummary.levelNo} · {growthSummary.levelName}</strong>
+        <div className="compact-text">
+          현재까지 누적 XP {growthSummary.totalXp}점
+        </div>
+      </div>
+
+      <div className="growth-card">
+        <span>이번 주 점수</span>
+        <strong>{growthSummary.weeklyScore}점</strong>
+        <div className="compact-text">
+          연속 활동 {growthSummary.streakDays}일
+        </div>
+      </div>
+
+      <div className="growth-card">
+        <span>다음 레벨까지</span>
+        <strong>
+          {growthSummary.nextLevel ? `${growthSummary.nextLevelDiff} XP 남음` : '최고 레벨'}
+        </strong>
+        <div className="compact-text">
+          {growthSummary.nextLevel
+            ? `다음 단계: ${growthSummary.nextLevel.level_name}`
+            : '이미 최고 단계입니다.'}
+        </div>
+      </div>
+
+      <div className="growth-card">
+        <span>최근 활동일</span>
+        <strong>{growthSummary.lastActivityDate}</strong>
+        <div className="compact-text">
+          마지막 XP 반영 기준
+        </div>
+      </div>
+    </div>
+
+    <section className="growth-progress-card">
+      <div className="section-head">
+        <div>
+          <h3>레벨 진행도</h3>
+          <p className="sub-text">
+            다음 단계까지 얼마나 남았는지 확인할 수 있습니다.
+          </p>
+        </div>
+        <div className="pill pill-violet">
+          진행도 {growthSummary.progressPercent}%
+        </div>
+      </div>
+
       <div className="xp-bar">
         <div
           className="xp-fill"
           style={{ width: `${growthSummary.progressPercent}%` }}
         />
       </div>
-      <div className="compact-text" style={{ marginTop: '10px' }}>
-        진행도 {growthSummary.progressPercent}%
+
+      <div className="compact-text" style={{ marginTop: '12px' }}>
+        {growthSummary.nextLevel
+          ? `${growthSummary.nextLevel.level_name}까지 ${growthSummary.nextLevelDiff} XP 남았습니다.`
+          : '현재 최고 단계입니다.'}
       </div>
     </section>
 
     <div className="dashboard-main-grid">
       <section className="card">
-        <h3>최근 XP 로그</h3>
+        <div className="section-head">
+          <div>
+            <h3>최근 XP 로그</h3>
+            <p className="sub-text">
+              어떤 활동으로 점수가 쌓였는지 확인할 수 있습니다.
+            </p>
+          </div>
+        </div>
+
         <div className="list-stack">
           {memberXpLogs.length ? (
-            memberXpLogs.slice(0, 10).map((log) => (
-              <div key={log.id} className="activity-rank-item">
-                <div className="list-card-top">
-                  <strong>{log.source_type || '-'}</strong>
-                  <span className="activity-rank-score score-weighted">
-                    {log.xp} XP
-                  </span>
+            memberXpLogs.slice(0, 10).map((log) => {
+              const logTypeClass =
+                log.source_type === 'pt_workout'
+                  ? 'pt'
+                  : log.source_type === 'personal_workout'
+                  ? 'personal'
+                  : log.source_type === 'diet'
+                  ? 'diet'
+                  : ''
+
+              const logTypeLabel =
+                log.source_type === 'pt_workout'
+                  ? 'PT 운동'
+                  : log.source_type === 'personal_workout'
+                  ? '개인운동'
+                  : log.source_type === 'diet'
+                  ? '식단'
+                  : log.source_type || '-'
+
+              return (
+                <div key={log.id} className={`activity-rank-item growth-log-card ${logTypeClass}`}>
+                  <div className="list-card-top">
+                    <strong>{logTypeLabel}</strong>
+                    <span className="activity-rank-score score-weighted">
+                      +{log.xp} XP
+                    </span>
+                  </div>
+                  <div className="compact-text">
+                    날짜 {log.source_date || '-'} / 메모 {log.note || '-'}
+                  </div>
                 </div>
-                <div className="compact-text">
-                  날짜 {log.source_date || '-'} / 메모 {log.note || '-'}
-                </div>
-              </div>
-            ))
+              )
+            })
           ) : (
             <div className="workout-list-empty">아직 XP 로그가 없습니다.</div>
           )}
@@ -2349,29 +2411,40 @@ const applyMemberXp = async ({
       </section>
 
       <section className="card">
-        <h3>회원 레벨 랭킹 TOP 10</h3>
+        <div className="section-head">
+          <div>
+            <h3>회원 레벨 랭킹 TOP 10</h3>
+            <p className="sub-text">
+              회원 이름은 가운데 글자를 마스킹해서 표시합니다.
+            </p>
+          </div>
+        </div>
+
         <div className="list-stack">
           {memberLevelRanking.length ? (
-            memberLevelRanking.map((item, index) => (
-              <div
-                key={item.id}
-                className={`activity-rank-item ${
-                  item.member_id === member?.id ? 'rank-1' : ''
-                }`}
-              >
-                <div className="list-card-top">
-                  <strong>
-                    {index + 1}위 · {item.members?.name || '회원'}
-                  </strong>
-                  <span className="activity-rank-score score-total">
-                    Lv.{item.level_no} · {item.level_name}
-                  </span>
+            memberLevelRanking.map((item, index) => {
+              const isMe = item.member_id === member?.id
+
+              return (
+                <div
+                  key={item.id}
+                  className={`activity-rank-item ${isMe ? 'growth-rank-self' : ''}`}
+                >
+                  <div className="list-card-top">
+                    <strong>
+                      {index + 1}위 · {maskMemberName(item.members?.name || '회원')}
+                    </strong>
+                    <span className="activity-rank-score score-total">
+                      Lv.{item.level_no} · {item.level_name}
+                    </span>
+                  </div>
+                  <div className="compact-text">
+                    누적 XP {Number(item.total_xp || 0)}점 / 주간 {Number(item.weekly_score || 0)}점
+                    {isMe ? ' / 내 순위' : ''}
+                  </div>
                 </div>
-                <div className="compact-text">
-                  누적 XP {Number(item.total_xp || 0)}점 / 주간 {Number(item.weekly_score || 0)}점
-                </div>
-              </div>
-            ))
+              )
+            })
           ) : (
             <div className="workout-list-empty">랭킹 데이터가 없습니다.</div>
           )}
