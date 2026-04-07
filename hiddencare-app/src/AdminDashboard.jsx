@@ -10,6 +10,7 @@ const TABS = [
   '식단',
   '통계',
   '활동랭킹',
+  '회원레벨설정',
   '운영대시보드',
   '코치관리',
   '리포트',
@@ -947,6 +948,12 @@ const [unreadNoticeCount, setUnreadNoticeCount] = useState(0)
 const [careerProfileForm, setCareerProfileForm] = useState(emptyCareerProfileForm)
 const [careerProfileId, setCareerProfileId] = useState(null)
 const [trainerLevelSettings, setTrainerLevelSettings] = useState([])
+  const [memberLevels, setMemberLevels] = useState([])
+const [memberXpLogs, setMemberXpLogs] = useState([])
+const [memberLevelSettings, setMemberLevelSettings] = useState([])
+const [memberXpSettings, setMemberXpSettings] = useState([])
+
+const [selectedXpMemberId, setSelectedXpMemberId] = useState('')
   const [managerActionForm, setManagerActionForm] = useState({
     action_date: new Date().toISOString().slice(0, 10),
     action_type: 'blog_post',
@@ -1834,14 +1841,26 @@ const visibleMemberCount = Array.isArray(filteredMemberStats) ? filteredMemberSt
     })
   }, [memberStats, memberDetailSearch])
 const activityRankingData = useMemo(() => {
+  const levelMap = (memberLevels || []).reduce((acc, row) => {
+    acc[row.member_id] = row
+    return acc
+  }, {})
+
   const monthMembers = memberStats.map((member) => {
     const totalActivity = Number(member.ptCount || 0) + Number(member.personalCount || 0)
     const weightedScore = Number(member.ptCount || 0) * 2 + Number(member.personalCount || 0)
+    const levelInfo = levelMap[member.id] || null
 
     return {
       ...member,
       totalActivity,
       weightedScore,
+      totalXp: Number(levelInfo?.total_xp || 0),
+      levelNo: Number(levelInfo?.level_no || 1),
+      levelName: levelInfo?.level_name || '생알',
+      weeklyScore: Number(levelInfo?.weekly_score || 0),
+      streakDays: Number(levelInfo?.streak_days || 0),
+      lastActivityDate: levelInfo?.last_activity_date || '',
     }
   })
 
@@ -1873,17 +1892,36 @@ const activityRankingData = useMemo(() => {
       return (a.name || '').localeCompare(b.name || '', 'ko-KR')
     })
 
+  const levelRanking = [...monthMembers]
+    .filter((member) => member.totalXp > 0)
+    .sort((a, b) => {
+      if (b.totalXp !== a.totalXp) return b.totalXp - a.totalXp
+      if (b.levelNo !== a.levelNo) return b.levelNo - a.levelNo
+      return (a.name || '').localeCompare(b.name || '', 'ko-KR')
+    })
+
+  const weeklyXpRanking = [...monthMembers]
+    .filter((member) => member.weeklyScore > 0)
+    .sort((a, b) => {
+      if (b.weeklyScore !== a.weeklyScore) return b.weeklyScore - a.weeklyScore
+      return (a.name || '').localeCompare(b.name || '', 'ko-KR')
+    })
+
   return {
     ptRanking,
     personalRanking,
     totalRanking,
     weightedRanking,
+    levelRanking,
+    weeklyXpRanking,
     topPtMember: ptRanking[0] || null,
     topPersonalMember: personalRanking[0] || null,
     topTotalMember: totalRanking[0] || null,
     topWeightedMember: weightedRanking[0] || null,
+    topLevelMember: levelRanking[0] || null,
+    topWeeklyXpMember: weeklyXpRanking[0] || null,
   }
-}, [memberStats])
+}, [memberStats, memberLevels])
  const monthlyStats = useMemo(() => {
   const monthKey = selectedStatsMonth
 
@@ -2661,6 +2699,10 @@ useEffect(() => {
       ['loadExercises', () => loadExercises()],
       ['loadWorkouts', () => loadWorkouts()],
       ['loadDietLogs', () => loadDietLogs()],
+      ['loadMemberLevels', () => loadMemberLevels()],
+['loadMemberXpLogs', () => loadMemberXpLogs()],
+['loadMemberLevelSettings', () => loadMemberLevelSettings()],
+['loadMemberXpSettings', () => loadMemberXpSettings()],
       ['loadManuals', () => loadManuals()],
       ['loadCoaches', () => loadCoaches()],
       ['loadCoachSchedules', () => loadCoachSchedules()],
@@ -2860,7 +2902,89 @@ const loadBrands = async () => {
     setCollapsedDiets(collapsed)
   }
 }
+const loadMemberLevels = async () => {
+  if (!currentAdminId) {
+    setMemberLevels([])
+    return
+  }
 
+  const { data, error } = await supabase
+    .from('member_levels')
+    .select('*')
+    .eq('admin_id', currentAdminId)
+    .order('total_xp', { ascending: false })
+
+  if (error) {
+    console.error('member_levels 불러오기 실패:', error)
+    setMessage(`회원 레벨 불러오기 실패: ${error.message}`)
+    return
+  }
+
+  setMemberLevels(data || [])
+}
+
+const loadMemberXpLogs = async () => {
+  if (!currentAdminId) {
+    setMemberXpLogs([])
+    return
+  }
+
+  const { data, error } = await supabase
+    .from('member_xp_logs')
+    .select('*')
+    .eq('admin_id', currentAdminId)
+    .order('created_at', { ascending: false })
+
+  if (error) {
+    console.error('member_xp_logs 불러오기 실패:', error)
+    setMessage(`회원 XP 로그 불러오기 실패: ${error.message}`)
+    return
+  }
+
+  setMemberXpLogs(data || [])
+}
+
+const loadMemberLevelSettings = async () => {
+  if (!currentAdminId) {
+    setMemberLevelSettings([])
+    return
+  }
+
+  const { data, error } = await supabase
+    .from('member_level_settings')
+    .select('*')
+    .eq('admin_id', currentAdminId)
+    .order('level_no', { ascending: true })
+
+  if (error) {
+    console.error('member_level_settings 불러오기 실패:', error)
+    setMessage(`회원 레벨 기준 불러오기 실패: ${error.message}`)
+    return
+  }
+
+  setMemberLevelSettings(data || [])
+}
+
+const loadMemberXpSettings = async () => {
+  if (!currentAdminId) {
+    setMemberXpSettings([])
+    return
+  }
+
+  const { data, error } = await supabase
+    .from('member_xp_settings')
+    .select('*')
+    .eq('admin_id', currentAdminId)
+    .order('rule_name', { ascending: true })
+
+  if (error) {
+    console.error('member_xp_settings 불러오기 실패:', error)
+    setMessage(`회원 XP 기준 불러오기 실패: ${error.message}`)
+    return
+  }
+
+  setMemberXpSettings(data || [])
+}
   const loadRoutine = async (memberId) => {
   const { data, error } = await supabase
     .from('member_routines')
@@ -5505,6 +5629,92 @@ setEditingManagerActionId(null)
   setMessage(`${level.name} 기준이 저장되었습니다.`)
   await loadTrainerLevelSettings()
 }
+const handleMemberLevelSettingSave = async (level) => {
+  if (!currentAdminId) {
+    setMessage('관리자 정보를 찾을 수 없습니다.')
+    return
+  }
+
+  const payload = {
+    admin_id: currentAdminId,
+    gym_id: currentGymId || null,
+    level_no: Number(level.level_no || 0),
+    level_key: level.level_key || '',
+    level_name: level.level_name || '',
+    min_xp: Number(level.min_xp || 0),
+    description: level.description || '',
+    icon_type: level.icon_type || 'egg',
+    sort_order: Number(level.sort_order || level.level_no || 0),
+    is_active: level.is_active !== false,
+    updated_at: new Date().toISOString(),
+  }
+
+  const { error } = await supabase
+    .from('member_level_settings')
+    .upsert(payload, { onConflict: 'admin_id,level_key' })
+
+  if (error) {
+    console.error('member_level_settings 저장 실패:', error)
+    setMessage(`회원 레벨 기준 저장 실패: ${error.message}`)
+    return
+  }
+
+  setMessage(`${level.level_name} 기준이 저장되었습니다.`)
+  await loadMemberLevelSettings()
+}
+
+const handleMemberXpSettingSave = async (rule) => {
+  if (!currentAdminId) {
+    setMessage('관리자 정보를 찾을 수 없습니다.')
+    return
+  }
+
+  const payload = {
+    admin_id: currentAdminId,
+    gym_id: currentGymId || null,
+    rule_code: rule.rule_code || '',
+    rule_name: rule.rule_name || '',
+    xp: Number(rule.xp || 0),
+    daily_limit: Number(rule.daily_limit || 0),
+    weekly_limit:
+      rule.weekly_limit === null || rule.weekly_limit === ''
+        ? null
+        : Number(rule.weekly_limit),
+    monthly_limit:
+      rule.monthly_limit === null || rule.monthly_limit === ''
+        ? null
+        : Number(rule.monthly_limit),
+    min_items:
+      rule.min_items === null || rule.min_items === ''
+        ? null
+        : Number(rule.min_items),
+    min_sets:
+      rule.min_sets === null || rule.min_sets === ''
+        ? null
+        : Number(rule.min_sets),
+    min_cardio_minutes:
+      rule.min_cardio_minutes === null || rule.min_cardio_minutes === ''
+        ? null
+        : Number(rule.min_cardio_minutes),
+    is_active: rule.is_active !== false,
+    description: rule.description || '',
+    updated_at: new Date().toISOString(),
+  }
+
+  const { error } = await supabase
+    .from('member_xp_settings')
+    .upsert(payload, { onConflict: 'admin_id,rule_code' })
+
+  if (error) {
+    console.error('member_xp_settings 저장 실패:', error)
+    setMessage(`회원 XP 기준 저장 실패: ${error.message}`)
+    return
+  }
+
+  setMessage(`${rule.rule_name} 기준이 저장되었습니다.`)
+  await loadMemberXpSettings()
+}
+  
   const handleManagerActionDelete = async (id) => {
   const confirmDelete = window.confirm('이 로그를 삭제하시겠습니까?')
 
@@ -9058,11 +9268,11 @@ setEditingManagerActionId(null)
         <div>
           <h2>회원 활동랭킹</h2>
           <p className="sub-text">
-            {selectedStatsMonth} 기준 PT 수업, 개인운동, 전체 활동 순위를 확인하는 화면입니다.
+            {selectedStatsMonth} 기준 PT 수업, 개인운동, 전체 활동, 회원 레벨과 XP 흐름까지 확인하는 화면입니다.
           </p>
         </div>
 
-       <div className="activity-filter-actions">
+        <div className="activity-filter-actions">
           <input
             type="month"
             value={selectedStatsMonth}
@@ -9080,42 +9290,42 @@ setEditingManagerActionId(null)
     </div>
 
     <div className="activity-top-grid">
-  <div className="activity-top-card top-pt">
-    <span>{selectedStatsMonth} PT 1위</span>
-    <strong>
-      {activityRankingData.topPtMember
-        ? `${activityRankingData.topPtMember.name} (${activityRankingData.topPtMember.ptCount}회)`
-        : '-'}
-    </strong>
-  </div>
+      <div className="activity-top-card top-pt">
+        <span>{selectedStatsMonth} PT 1위</span>
+        <strong>
+          {activityRankingData.topPtMember
+            ? `${activityRankingData.topPtMember.name} (${activityRankingData.topPtMember.ptCount}회)`
+            : '-'}
+        </strong>
+      </div>
 
-  <div className="activity-top-card top-personal">
-    <span>{selectedStatsMonth} 개인운동 1위</span>
-    <strong>
-      {activityRankingData.topPersonalMember
-        ? `${activityRankingData.topPersonalMember.name} (${activityRankingData.topPersonalMember.personalCount}회)`
-        : '-'}
-    </strong>
-  </div>
+      <div className="activity-top-card top-personal">
+        <span>{selectedStatsMonth} 개인운동 1위</span>
+        <strong>
+          {activityRankingData.topPersonalMember
+            ? `${activityRankingData.topPersonalMember.name} (${activityRankingData.topPersonalMember.personalCount}회)`
+            : '-'}
+        </strong>
+      </div>
 
-  <div className="activity-top-card top-total">
-    <span>{selectedStatsMonth} 전체 활동 1위</span>
-    <strong>
-      {activityRankingData.topTotalMember
-        ? `${activityRankingData.topTotalMember.name} (${activityRankingData.topTotalMember.totalActivity}회)`
-        : '-'}
-    </strong>
-  </div>
+      <div className="activity-top-card top-total">
+        <span>{selectedStatsMonth} 전체 활동 1위</span>
+        <strong>
+          {activityRankingData.topTotalMember
+            ? `${activityRankingData.topTotalMember.name} (${activityRankingData.topTotalMember.totalActivity}회)`
+            : '-'}
+        </strong>
+      </div>
 
-  <div className="activity-top-card top-score">
-    <span>{selectedStatsMonth} 참여 점수 1위</span>
-    <strong>
-      {activityRankingData.topWeightedMember
-        ? `${activityRankingData.topWeightedMember.name} (${activityRankingData.topWeightedMember.weightedScore}점)`
-        : '-'}
-    </strong>
-  </div>
-</div>
+      <div className="activity-top-card top-score">
+        <span>{selectedStatsMonth} 참여 점수 1위</span>
+        <strong>
+          {activityRankingData.topWeightedMember
+            ? `${activityRankingData.topWeightedMember.name} (${activityRankingData.topWeightedMember.weightedScore}점)`
+            : '-'}
+        </strong>
+      </div>
+    </div>
 
     <div className="dashboard-main-grid">
       <section className="card">
@@ -9124,11 +9334,11 @@ setEditingManagerActionId(null)
           {activityRankingData.ptRanking.length ? (
             activityRankingData.ptRanking.slice(0, 10).map((member, index) => (
               <div
-  key={member.id}
-  className={`activity-rank-item ${
-    index === 0 ? 'rank-1' : index === 1 ? 'rank-2' : index === 2 ? 'rank-3' : ''
-  }`}
->
+                key={member.id}
+                className={`activity-rank-item ${
+                  index === 0 ? 'rank-1' : index === 1 ? 'rank-2' : index === 2 ? 'rank-3' : ''
+                }`}
+              >
                 <div className="list-card-top">
                   <strong>
                     {index + 1}위 · {member.name}
@@ -9152,16 +9362,16 @@ setEditingManagerActionId(null)
           {activityRankingData.personalRanking.length ? (
             activityRankingData.personalRanking.slice(0, 10).map((member, index) => (
               <div
-  key={member.id}
-  className={`activity-rank-item ${
-    index === 0 ? 'rank-1' : index === 1 ? 'rank-2' : index === 2 ? 'rank-3' : ''
-  }`}
->
+                key={member.id}
+                className={`activity-rank-item ${
+                  index === 0 ? 'rank-1' : index === 1 ? 'rank-2' : index === 2 ? 'rank-3' : ''
+                }`}
+              >
                 <div className="list-card-top">
                   <strong>
                     {index + 1}위 · {member.name}
                   </strong>
-                 <span className="activity-rank-score score-personal">개인운동 {member.personalCount}회</span>
+                  <span className="activity-rank-score score-personal">개인운동 {member.personalCount}회</span>
                 </div>
                 <div className="compact-text">
                   PT {member.ptCount}회 / 전체 활동 {member.totalActivity}회 / 목표 {member.goal || '-'}
@@ -9182,16 +9392,16 @@ setEditingManagerActionId(null)
           {activityRankingData.totalRanking.length ? (
             activityRankingData.totalRanking.slice(0, 10).map((member, index) => (
               <div
-  key={member.id}
-  className={`activity-rank-item ${
-    index === 0 ? 'rank-1' : index === 1 ? 'rank-2' : index === 2 ? 'rank-3' : ''
-  }`}
->
+                key={member.id}
+                className={`activity-rank-item ${
+                  index === 0 ? 'rank-1' : index === 1 ? 'rank-2' : index === 2 ? 'rank-3' : ''
+                }`}
+              >
                 <div className="list-card-top">
                   <strong>
                     {index + 1}위 · {member.name}
                   </strong>
-                 <span className="activity-rank-score score-total">총 {member.totalActivity}회</span>
+                  <span className="activity-rank-score score-total">총 {member.totalActivity}회</span>
                 </div>
                 <div className="compact-text">
                   PT {member.ptCount}회 / 개인운동 {member.personalCount}회 / 남은 세션 {member.remainingSessions}회
@@ -9213,12 +9423,12 @@ setEditingManagerActionId(null)
         <div className="list-stack">
           {activityRankingData.weightedRanking.length ? (
             activityRankingData.weightedRanking.slice(0, 10).map((member, index) => (
-             <div
-  key={member.id}
-  className={`activity-rank-item ${
-    index === 0 ? 'rank-1' : index === 1 ? 'rank-2' : index === 2 ? 'rank-3' : ''
-  }`}
->
+              <div
+                key={member.id}
+                className={`activity-rank-item ${
+                  index === 0 ? 'rank-1' : index === 1 ? 'rank-2' : index === 2 ? 'rank-3' : ''
+                }`}
+              >
                 <div className="list-card-top">
                   <strong>
                     {index + 1}위 · {member.name}
@@ -9236,6 +9446,313 @@ setEditingManagerActionId(null)
         </div>
       </section>
     </div>
+
+    <div className="dashboard-main-grid">
+      <section className="card">
+        <h3>회원 레벨 랭킹 TOP 10</h3>
+        <div className="list-stack">
+          {activityRankingData.levelRanking.length ? (
+            activityRankingData.levelRanking.slice(0, 10).map((member, index) => (
+              <div
+                key={member.id}
+                className={`activity-rank-item ${
+                  index === 0 ? 'rank-1' : index === 1 ? 'rank-2' : index === 2 ? 'rank-3' : ''
+                }`}
+              >
+                <div className="list-card-top">
+                  <strong>
+                    {index + 1}위 · {member.name}
+                  </strong>
+                  <span className="activity-rank-score score-weighted">
+                    Lv.{member.levelNo} · {member.levelName}
+                  </span>
+                </div>
+                <div className="compact-text">
+                  누적 XP {member.totalXp}점 / 주간 점수 {member.weeklyScore}점 / 연속 {member.streakDays}일
+                </div>
+              </div>
+            ))
+          ) : (
+            <div className="workout-list-empty">회원 레벨 데이터가 없습니다.</div>
+          )}
+        </div>
+      </section>
+
+      <section className="card">
+        <h3>주간 XP 랭킹 TOP 10</h3>
+        <div className="list-stack">
+          {activityRankingData.weeklyXpRanking.length ? (
+            activityRankingData.weeklyXpRanking.slice(0, 10).map((member, index) => (
+              <div
+                key={member.id}
+                className={`activity-rank-item ${
+                  index === 0 ? 'rank-1' : index === 1 ? 'rank-2' : index === 2 ? 'rank-3' : ''
+                }`}
+              >
+                <div className="list-card-top">
+                  <strong>
+                    {index + 1}위 · {member.name}
+                  </strong>
+                  <span className="activity-rank-score score-total">
+                    주간 {member.weeklyScore}점
+                  </span>
+                </div>
+                <div className="compact-text">
+                  레벨 {member.levelName} / 누적 XP {member.totalXp}점 / 최근 활동일 {member.lastActivityDate || '-'}
+                </div>
+              </div>
+            ))
+          ) : (
+            <div className="workout-list-empty">주간 XP 데이터가 없습니다.</div>
+          )}
+        </div>
+      </section>
+    </div>
+
+    <section className="card">
+      <div className="section-head">
+        <div>
+          <h3>회원 XP 반영 로그</h3>
+          <p className="sub-text">최근 어떤 활동으로 XP가 반영됐는지 확인하는 영역입니다.</p>
+        </div>
+
+        <div style={{ minWidth: '220px' }}>
+          <select
+            value={selectedXpMemberId}
+            onChange={(e) => setSelectedXpMemberId(e.target.value)}
+          >
+            <option value="">전체 회원</option>
+            {members.map((member) => (
+              <option key={member.id} value={member.id}>
+                {member.name}
+              </option>
+            ))}
+          </select>
+        </div>
+      </div>
+
+      <div className="list-stack">
+        {memberXpLogs
+          .filter((log) => !selectedXpMemberId || log.member_id === selectedXpMemberId)
+          .slice(0, 20)
+          .map((log) => {
+            const targetMember = members.find((member) => member.id === log.member_id)
+
+            return (
+              <div key={log.id} className="activity-rank-item">
+                <div className="list-card-top">
+                  <strong>{targetMember?.name || '회원'}</strong>
+                  <span className="activity-rank-score score-weighted">{log.xp} XP</span>
+                </div>
+                <div className="compact-text">
+                  유형: {log.source_type || '-'} / 날짜: {log.source_date || '-'} / 메모: {log.note || '-'}
+                </div>
+              </div>
+            )
+          })}
+
+        {memberXpLogs.filter((log) => !selectedXpMemberId || log.member_id === selectedXpMemberId).length === 0 && (
+          <div className="workout-list-empty">표시할 XP 로그가 없습니다.</div>
+        )}
+      </div>
+    </section>
+  </div>
+)}
+      {activeTab === '회원레벨설정' && (
+  <div className="stack-gap">
+    <section className="card">
+      <div className="section-head">
+        <div>
+          <h2>회원 레벨 기준 설정</h2>
+          <p className="sub-text">
+            회원 레벨 단계와 활동별 XP 기준을 수정하는 화면입니다.
+          </p>
+        </div>
+      </div>
+
+      <div className="list-stack">
+        {memberLevelSettings.map((level) => (
+          <div key={level.id} className="activity-rank-item">
+            <div className="list-card-top">
+              <strong>Lv.{level.level_no} · {level.level_name}</strong>
+              <button
+                type="button"
+                className="secondary-btn"
+                onClick={() => handleMemberLevelSettingSave(level)}
+              >
+                저장
+              </button>
+            </div>
+
+            <div className="grid-2">
+              <label className="field">
+                <span>레벨명</span>
+                <input
+                  value={level.level_name || ''}
+                  onChange={(e) =>
+                    setMemberLevelSettings((prev) =>
+                      prev.map((item) =>
+                        item.id === level.id ? { ...item, level_name: e.target.value } : item
+                      )
+                    )
+                  }
+                />
+              </label>
+
+              <label className="field">
+                <span>최소 XP</span>
+                <input
+                  type="number"
+                  value={level.min_xp || 0}
+                  onChange={(e) =>
+                    setMemberLevelSettings((prev) =>
+                      prev.map((item) =>
+                        item.id === level.id ? { ...item, min_xp: e.target.value } : item
+                      )
+                    )
+                  }
+                />
+              </label>
+            </div>
+
+            <label className="field">
+              <span>설명</span>
+              <input
+                value={level.description || ''}
+                onChange={(e) =>
+                  setMemberLevelSettings((prev) =>
+                    prev.map((item) =>
+                      item.id === level.id ? { ...item, description: e.target.value } : item
+                    )
+                  )
+                }
+              />
+            </label>
+          </div>
+        ))}
+      </div>
+    </section>
+
+    <section className="card">
+      <div className="section-head">
+        <div>
+          <h3>회원 XP 규칙 설정</h3>
+          <p className="sub-text">
+            개인운동, PT, 식단, 보너스의 XP와 인정 제한을 설정합니다.
+          </p>
+        </div>
+      </div>
+
+      <div className="list-stack">
+        {memberXpSettings.map((rule) => (
+          <div key={rule.id} className="activity-rank-item">
+            <div className="list-card-top">
+              <strong>{rule.rule_name}</strong>
+              <button
+                type="button"
+                className="secondary-btn"
+                onClick={() => handleMemberXpSettingSave(rule)}
+              >
+                저장
+              </button>
+            </div>
+
+            <div className="grid-2">
+              <label className="field">
+                <span>XP</span>
+                <input
+                  type="number"
+                  value={rule.xp || 0}
+                  onChange={(e) =>
+                    setMemberXpSettings((prev) =>
+                      prev.map((item) =>
+                        item.id === rule.id ? { ...item, xp: e.target.value } : item
+                      )
+                    )
+                  }
+                />
+              </label>
+
+              <label className="field">
+                <span>하루 최대 인정 횟수</span>
+                <input
+                  type="number"
+                  value={rule.daily_limit || 0}
+                  onChange={(e) =>
+                    setMemberXpSettings((prev) =>
+                      prev.map((item) =>
+                        item.id === rule.id ? { ...item, daily_limit: e.target.value } : item
+                      )
+                    )
+                  }
+                />
+              </label>
+            </div>
+
+            <div className="grid-3">
+              <label className="field">
+                <span>최소 운동 개수</span>
+                <input
+                  type="number"
+                  value={rule.min_items ?? ''}
+                  onChange={(e) =>
+                    setMemberXpSettings((prev) =>
+                      prev.map((item) =>
+                        item.id === rule.id ? { ...item, min_items: e.target.value } : item
+                      )
+                    )
+                  }
+                />
+              </label>
+
+              <label className="field">
+                <span>최소 세트 수</span>
+                <input
+                  type="number"
+                  value={rule.min_sets ?? ''}
+                  onChange={(e) =>
+                    setMemberXpSettings((prev) =>
+                      prev.map((item) =>
+                        item.id === rule.id ? { ...item, min_sets: e.target.value } : item
+                      )
+                    )
+                  }
+                />
+              </label>
+
+              <label className="field">
+                <span>최소 유산소 시간</span>
+                <input
+                  type="number"
+                  value={rule.min_cardio_minutes ?? ''}
+                  onChange={(e) =>
+                    setMemberXpSettings((prev) =>
+                      prev.map((item) =>
+                        item.id === rule.id ? { ...item, min_cardio_minutes: e.target.value } : item
+                      )
+                    )
+                  }
+                />
+              </label>
+            </div>
+
+            <label className="field">
+              <span>설명</span>
+              <input
+                value={rule.description || ''}
+                onChange={(e) =>
+                  setMemberXpSettings((prev) =>
+                    prev.map((item) =>
+                      item.id === rule.id ? { ...item, description: e.target.value } : item
+                    )
+                  )
+                }
+              />
+            </label>
+          </div>
+        ))}
+      </div>
+    </section>
   </div>
 )}
       {activeTab === '매출기록' && (
