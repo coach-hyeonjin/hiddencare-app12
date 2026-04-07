@@ -8941,11 +8941,17 @@ const applyMemberXp = async ({
       )}
 
       {activeTab === '통계' && (
-  <div className="stack-gap">
-    <div className="card">
-      <div className="section-head">
+  <div className="stats-page-modern">
+    <section className="stats-hero">
+      <div className="stats-hero-left">
+        <div className="stats-hero-badge">MONTHLY STATS OVERVIEW</div>
         <h2>월별 통계</h2>
-        <div className="inline-row">
+        <p className="stats-hero-text">
+          {selectedStatsMonth} 기준 PT 수업, 개인운동, 전체 잔여 세션과 회원별 활동 흐름을
+          한 화면에서 빠르게 확인하는 통계 화면입니다.
+        </p>
+
+        <div className="stats-filter-row">
           <input
             type="month"
             value={selectedStatsMonth}
@@ -8960,39 +8966,102 @@ const applyMemberXp = async ({
           </button>
         </div>
       </div>
-    </div>
 
-    <div className="stats-grid">
-      <div className="stat-card">
-        <span>{selectedStatsMonth} PT 수</span>
+      <div className="stats-hero-right">
+        <div className="stats-hero-mini stats-pt">
+          <span>{selectedStatsMonth} PT 수</span>
+          <strong>{monthlyStats.ptCount}</strong>
+          <p>기록 기준 월간 PT 수업 수</p>
+        </div>
+
+        <div className="stats-hero-mini stats-personal">
+          <span>{selectedStatsMonth} 개인운동 수</span>
+          <strong>{monthlyStats.personalCount}</strong>
+          <p>회원 기록 기준 월간 개인운동 수</p>
+        </div>
+
+        <div className="stats-hero-mini stats-remaining">
+          <span>전체 남은 세션</span>
+          <strong>{monthlyStats.remainingSessions}</strong>
+          <p>전체 회원 잔여 세션 합계</p>
+        </div>
+
+        <div className="stats-hero-mini stats-members">
+          <span>통계 대상 회원</span>
+          <strong>{memberStats.length}명</strong>
+          <p>현재 집계에 포함된 회원 수</p>
+        </div>
+      </div>
+    </section>
+
+    <div className="stats-summary-grid">
+      <div className="stats-summary-card summary-blue">
+        <span>이번 달 PT 수업</span>
         <strong>{monthlyStats.ptCount}</strong>
+        <p>기록작성 기준 집계</p>
       </div>
-      <div className="stat-card">
-        <span>{selectedStatsMonth} 개인운동 수</span>
+
+      <div className="stats-summary-card summary-green">
+        <span>이번 달 개인운동</span>
         <strong>{monthlyStats.personalCount}</strong>
+        <p>회원 입력 기준 집계</p>
       </div>
-      <div className="stat-card">
+
+      <div className="stats-summary-card summary-violet">
         <span>전체 남은 세션</span>
         <strong>{monthlyStats.remainingSessions}</strong>
+        <p>전체 회원 기준</p>
+      </div>
+
+      <div className="stats-summary-card summary-amber">
+        <span>회원별 통계 수</span>
+        <strong>{memberStats.length}</strong>
+        <p>현재 표시 회원 수</p>
       </div>
     </div>
 
-    <div className="card">
-      <h2>회원별 통계</h2>
-      <div className="list-stack">
-        {memberStats.map((member) => (
-          <div key={member.id} className="list-card">
-            <div className="list-card-top">
-              <strong>{member.name}</strong>
-              <span className="pill">남은 {member.remainingSessions}회</span>
-            </div>
-            <div className="compact-text">
-              PT {member.ptCount}회 / 개인운동 {member.personalCount}회 / 총 세션 {member.total_sessions || 0}회
-            </div>
-          </div>
-        ))}
+    <section className="stats-panel-card">
+      <div className="stats-panel-head">
+        <div>
+          <div className="stats-panel-label">MEMBER STATS</div>
+          <h3>회원별 통계</h3>
+          <p className="sub-text">
+            회원별 PT 수업, 개인운동, 총 세션, 남은 세션을 빠르게 비교할 수 있습니다.
+          </p>
+        </div>
       </div>
-    </div>
+
+      <div className="list-stack">
+        {memberStats.length ? (
+          memberStats.map((member) => {
+            const remainingSessions = Number(member.remainingSessions || 0)
+            const remainingClass =
+              remainingSessions <= 0
+                ? 'pill-red'
+                : remainingSessions <= 5
+                ? 'pill-amber'
+                : 'pill-green'
+
+            return (
+              <div key={member.id} className="stats-member-row">
+                <div className="stats-member-row-left">
+                  <strong>{member.name}</strong>
+                  <div className="compact-text">
+                    PT {member.ptCount}회 / 개인운동 {member.personalCount}회 / 총 세션 {member.total_sessions || 0}회
+                  </div>
+                </div>
+
+                <span className={`pill ${remainingClass}`}>
+                  남은 {remainingSessions}회
+                </span>
+              </div>
+            )
+          })
+        ) : (
+          <div className="workout-list-empty">회원별 통계 데이터가 없습니다.</div>
+        )}
+      </div>
+    </section>
   </div>
 )}
 {activeTab === '운영대시보드' && (
