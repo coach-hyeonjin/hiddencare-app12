@@ -4934,34 +4934,46 @@ const handlePartnerUsageReject = async (usageId) => {
     setCollapsedSales(nextCollapsed)
 
     if (payload.member_id) {
-      const saleBonusRule = getSaleBonusRule(payload.purchased_session_count)
+  const saleBonusRule = getSaleBonusRule(payload.purchased_session_count)
 
-      if (saleBonusRule) {
-        await applyMemberXp({
+  if (saleBonusRule) {
+    const saleXpResult = await applyMemberXp({
+      memberId: payload.member_id,
+      sourceType: `sale_bonus_${saleBonusRule.minSessions}`,
+      sourceId: `${insertedSale.id}_sale_bonus_${saleBonusRule.minSessions}`,
+      sourceDate: payload.sale_date,
+      note: `${saleBonusRule.label} 지급`,
+      forceXp: saleBonusRule.xp,
+    })
+
+    console.log('매출 보너스 XP 결과:', saleXpResult)
+
+    if (!saleXpResult?.ok) {
+      setMessage(`매출은 저장됐지만 XP 반영 실패: ${saleXpResult?.reason || 'unknown'}`)
+    }
+
+    if (saleXpResult?.ok && isDiamondOrHigherMember(payload.member_id)) {
+      const extraXp = getDiamondExtraXp(saleBonusRule.xp)
+
+      if (extraXp > 0) {
+        const diamondXpResult = await applyMemberXp({
           memberId: payload.member_id,
-          sourceType: `sale_bonus_${saleBonusRule.minSessions}`,
-          sourceId: `${insertedSale.id}_sale_bonus_${saleBonusRule.minSessions}`,
+          sourceType: 'sale_diamond_bonus',
+          sourceId: `${insertedSale.id}_sale_diamond_bonus`,
           sourceDate: payload.sale_date,
-          note: `${saleBonusRule.label} 지급`,
-          forceXp: saleBonusRule.xp,
+          note: `다이아 이상 등록 추가 보너스 +${extraXp}XP`,
+          forceXp: extraXp,
         })
 
-        if (isDiamondOrHigherMember(payload.member_id)) {
-          const extraXp = getDiamondExtraXp(saleBonusRule.xp)
+        console.log('다이아 추가 XP 결과:', diamondXpResult)
 
-          if (extraXp > 0) {
-            await applyMemberXp({
-              memberId: payload.member_id,
-              sourceType: 'sale_diamond_bonus',
-              sourceId: `${insertedSale.id}_sale_diamond_bonus`,
-              sourceDate: payload.sale_date,
-              note: `다이아 이상 등록 추가 보너스 +${extraXp}XP`,
-              forceXp: extraXp,
-            })
-          }
+        if (!diamondXpResult?.ok) {
+          setMessage(`매출은 저장됐지만 다이아 추가 XP 반영 실패: ${diamondXpResult?.reason || 'unknown'}`)
         }
       }
     }
+  }
+}
 
     setMessage('매출 기록이 저장되었습니다.')
   }
