@@ -7967,3 +7967,7 @@ textarea:focus {
     align-self: flex-start;
   }
 }
+.my-rank-card {
+  border: 1.5px solid #c7d2fe;
+  background: linear-gradient(180deg, #eef2ff 0%, #f8faff 100%);
+}
