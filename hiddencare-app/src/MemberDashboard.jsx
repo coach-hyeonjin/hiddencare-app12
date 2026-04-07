@@ -1529,7 +1529,7 @@ const updateSetValue = (itemIndex, setIndex, field, value, subIndex = null) => {
         return
       }
 
-      await applyMemberXp({
+       await applyMemberXp({
         memberId: member.id,
         sourceType: 'diet',
         sourceId: data.id,
@@ -1539,6 +1539,10 @@ const updateSetValue = (itemIndex, setIndex, field, value, subIndex = null) => {
 
       setMessage('식단이 저장되었습니다.')
     }
+
+    resetDietForm()
+    await loadDietLogs()
+  }
   const handleDietEdit = (diet) => {
     setDietForm({
       id: diet.id,
