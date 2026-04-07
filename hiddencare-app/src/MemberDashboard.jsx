@@ -224,6 +224,36 @@ function playMemberAlertSound() {
     console.error('회원 알림음 재생 실패:', error)
   }
 }
+function getLevelIcon(levelName, levelNo) {
+  const name = String(levelName || '').trim()
+
+  if (name.includes('생알')) return '🥚'
+  if (name.includes('금 간 알')) return '🐣'
+  if (name.includes('흔들리는 알')) return '🐥'
+  if (name.includes('부화 직전')) return '🐤'
+  if (name.includes('부화')) return '🐦'
+  if (name.includes('초기 성장')) return '🌱'
+  if (name.includes('성장')) return '🪽'
+  if (name.includes('안정 성장')) return '🕊️'
+  if (name.includes('진화')) return '🦅'
+  if (name.includes('완전체')) return '👑'
+  if (name.includes('마스터')) return '💎'
+  if (name.includes('레전드')) return '🏆'
+
+  if (Number(levelNo || 0) <= 1) return '🥚'
+  if (Number(levelNo || 0) <= 3) return '🐣'
+  if (Number(levelNo || 0) <= 5) return '🐤'
+  if (Number(levelNo || 0) <= 8) return '🪽'
+  if (Number(levelNo || 0) <= 10) return '🦅'
+  return '🏆'
+}
+
+function getXpLogIcon(sourceType) {
+  if (sourceType === 'pt_workout') return '🏋️'
+  if (sourceType === 'personal_workout') return '🔥'
+  if (sourceType === 'diet') return '🥗'
+  return '✨'
+}
 export default function MemberDashboard({ member, accessCode, onLogout }) {
   const [activeTab, setActiveTab] = useState('내정보')
   const [loading, setLoading] = useState(true)
@@ -2278,46 +2308,50 @@ const applyMemberXp = async ({
         </div>
 
         <div className="growth-hero-side">
-          <div className="growth-hero-mini">
-            <span>현재 레벨</span>
-            <strong>Lv.{growthSummary.levelNo}</strong>
-            <p>{growthSummary.levelName}</p>
-          </div>
+  <div className="growth-hero-mini">
+    <span>현재 레벨</span>
+    <strong>
+      {getLevelIcon(growthSummary.levelName, growthSummary.levelNo)} Lv.{growthSummary.levelNo}
+    </strong>
+    <p>{growthSummary.levelName}</p>
+  </div>
 
-          <div className="growth-hero-mini">
-            <span>누적 XP</span>
-            <strong>{growthSummary.totalXp}</strong>
-            <p>이번 주 {growthSummary.weeklyScore}점</p>
-          </div>
-        </div>
-      </div>
-    </section>
+  <div className="growth-hero-mini">
+    <span>누적 XP</span>
+    <strong>{growthSummary.totalXp}</strong>
+    <p>이번 주 {growthSummary.weeklyScore}점</p>
+  </div>
+</div>
+</div>
+</section>
 
-    <div className="growth-summary-grid">
-      <div className="growth-card">
-        <span>현재 레벨</span>
-        <strong>Lv.{growthSummary.levelNo} · {growthSummary.levelName}</strong>
-        <div className="compact-text">
-          현재까지 누적 XP {growthSummary.totalXp}점
-        </div>
-      </div>
+<div className="growth-summary-grid">
+  <div className="growth-card">
+    <span>현재 레벨</span>
+    <strong>
+      {getLevelIcon(growthSummary.levelName, growthSummary.levelNo)} Lv.{growthSummary.levelNo} · {growthSummary.levelName}
+    </strong>
+    <div className="compact-text">
+      현재까지 누적 XP {growthSummary.totalXp}점
+    </div>
+  </div>
 
-      <div className="growth-card">
-        <span>이번 주 점수</span>
-        <strong>{growthSummary.weeklyScore}점</strong>
-        <div className="compact-text">
-          연속 활동 {growthSummary.streakDays}일
-        </div>
-      </div>
+  <div className="growth-card">
+    <span>이번 주 점수</span>
+    <strong>{growthSummary.weeklyScore}점</strong>
+    <div className="compact-text">
+      연속 활동 {growthSummary.streakDays}일
+    </div>
+  </div>
 
-      <div className="growth-card">
+  <div className="growth-card">
         <span>다음 레벨까지</span>
         <strong>
           {growthSummary.nextLevel ? `${growthSummary.nextLevelDiff} XP 남음` : '최고 레벨'}
         </strong>
         <div className="compact-text">
           {growthSummary.nextLevel
-            ? `다음 단계: ${growthSummary.nextLevel.level_name}`
+           ? `다음 단계: ${getLevelIcon(growthSummary.nextLevel.level_name, growthSummary.nextLevel.level_no)} ${growthSummary.nextLevel.level_name}`
             : '이미 최고 단계입니다.'}
         </div>
       </div>
@@ -2393,7 +2427,7 @@ const applyMemberXp = async ({
               return (
                 <div key={log.id} className={`activity-rank-item growth-log-card ${logTypeClass}`}>
                   <div className="list-card-top">
-                    <strong>{logTypeLabel}</strong>
+                    <strong>{getXpLogIcon(log.source_type)} {logTypeLabel}</strong>
                     <span className="activity-rank-score score-weighted">
                       +{log.xp} XP
                     </span>
@@ -2431,12 +2465,12 @@ const applyMemberXp = async ({
                   className={`activity-rank-item ${isMe ? 'growth-rank-self' : ''}`}
                 >
                   <div className="list-card-top">
-                    <strong>
-                      {index + 1}위 · {maskMemberName(item.members?.name || '회원')}
-                    </strong>
+<strong>
+  {index + 1}위 · {maskMemberName(item.members?.name || '회원')}
+</strong>
                     <span className="activity-rank-score score-total">
-                      Lv.{item.level_no} · {item.level_name}
-                    </span>
+  {getLevelIcon(item.level_name, item.level_no)} Lv.{item.level_no} · {item.level_name}
+</span>
                   </div>
                   <div className="compact-text">
                     누적 XP {Number(item.total_xp || 0)}점 / 주간 {Number(item.weekly_score || 0)}점
