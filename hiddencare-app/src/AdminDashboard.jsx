@@ -835,7 +835,37 @@ const toggleMemberLevelSection = (key) => {
     [key]: !prev[key],
   }))
 }
+const [salesRecordOpenSections, setSalesRecordOpenSections] = useState({
+  filters: true,
+  form: true,
+  summary: true,
+  list: true,
+})
 
+const toggleSalesRecordSection = (key) => {
+  setSalesRecordOpenSections((prev) => ({
+    ...prev,
+    [key]: !prev[key],
+  }))
+}
+
+const [salesLogOpenSections, setSalesLogOpenSections] = useState({
+  basic: true,
+  need: false,
+  consultation: false,
+  salesMethod: false,
+  result: false,
+  followup: false,
+  legacy: false,
+  list: true,
+})
+
+const toggleSalesLogSection = (key) => {
+  setSalesLogOpenSections((prev) => ({
+    ...prev,
+    [key]: !prev[key],
+  }))
+}
 const [collapsedMemberLevels, setCollapsedMemberLevels] = useState({})
 const [collapsedMemberXpRules, setCollapsedMemberXpRules] = useState({})
 const [managerOpenSections, setManagerOpenSections] = useState({
@@ -10398,202 +10428,311 @@ const applyMemberXp = async ({
   </div>
 )}
       {activeTab === '매출기록' && (
-        <div className="stack-gap">
-          <div className="two-col">
-            <section className="card">
-              <h2>매출 기록 입력 / 수정</h2>
+  <div className="sales-page-modern">
+    <section className="sales-hero">
+      <div className="sales-hero-left">
+        <div className="sales-hero-badge">SALES RECORD</div>
+        <h2>매출기록</h2>
+        <p className="sales-hero-text">
+          월별 매출 흐름, 결제수단, VIP 비율, 프로그램별 매출을 먼저 보고
+          필요한 입력과 목록만 펼쳐서 관리하는 화면입니다.
+        </p>
+      </div>
 
-              <div className="stack-gap">
-                <input
-                  placeholder="매출 검색"
-                  value={saleSearch}
-                  onChange={(e) => setSaleSearch(e.target.value)}
-                />
-                <div className="grid-2">
-                  <input type="month" value={saleMonth} onChange={(e) => setSaleMonth(e.target.value)} />
-                  <select value={salePaymentFilter} onChange={(e) => setSalePaymentFilter(e.target.value)}>
-                    <option value="all">전체 결제수단</option>
+      <div className="sales-hero-right">
+        <div className="sales-hero-mini">
+          <span>{saleMonth} 총 매출</span>
+          <strong>{Number(salesStatsExtended.totalSales || 0).toLocaleString()}</strong>
+          <p>현재 필터 기준 매출 합계</p>
+        </div>
+
+        <div className="sales-hero-mini">
+          <span>등록 건수</span>
+          <strong>{Number(salesStatsExtended.totalCount || 0).toLocaleString()}</strong>
+          <p>현재 필터 기준 결제 건수</p>
+        </div>
+
+        <div className="sales-hero-mini">
+          <span>VIP 결제 수</span>
+          <strong>{Number(salesStatsExtended.vipCount || 0).toLocaleString()}</strong>
+          <p>VIP 결제 건수</p>
+        </div>
+
+        <div className="sales-hero-mini">
+          <span>VIP 비율</span>
+          <strong>{salesStatsExtended.vipRatio}%</strong>
+          <p>전체 매출 중 VIP 비중</p>
+        </div>
+      </div>
+    </section>
+
+    <div className="sales-summary-modern-grid">
+      <div className="sales-summary-modern-card summary-blue">
+        <span>총 매출</span>
+        <strong>{Number(salesStatsExtended.totalSales || 0).toLocaleString()}</strong>
+        <p>현재 필터 기준</p>
+      </div>
+
+      <div className="sales-summary-modern-card summary-green">
+        <span>등록 건수</span>
+        <strong>{Number(salesStatsExtended.totalCount || 0).toLocaleString()}</strong>
+        <p>이번 달 결제 건수</p>
+      </div>
+
+      <div className="sales-summary-modern-card summary-violet">
+        <span>VIP 결제 수</span>
+        <strong>{Number(salesStatsExtended.vipCount || 0).toLocaleString()}</strong>
+        <p>VIP 결제 건수</p>
+      </div>
+
+      <div className="sales-summary-modern-card summary-amber">
+        <span>VIP 비율</span>
+        <strong>{salesStatsExtended.vipRatio}%</strong>
+        <p>현재 필터 기준</p>
+      </div>
+    </div>
+
+    <section className="sales-panel-modern">
+      <button type="button" className="sales-panel-toggle" onClick={() => toggleSalesRecordSection('filters')}>
+        <span>1. 검색 / 월간 필터</span>
+        <strong>{salesRecordOpenSections.filters ? '−' : '+'}</strong>
+      </button>
+
+      {salesRecordOpenSections.filters && (
+        <div className="sales-panel-body">
+          <section className="card">
+            <h3>매출 검색 / 필터</h3>
+
+            <div className="stack-gap">
+              <input
+                placeholder="매출 검색"
+                value={saleSearch}
+                onChange={(e) => setSaleSearch(e.target.value)}
+              />
+
+              <div className="grid-2">
+                <input type="month" value={saleMonth} onChange={(e) => setSaleMonth(e.target.value)} />
+
+                <select value={salePaymentFilter} onChange={(e) => setSalePaymentFilter(e.target.value)}>
+                  <option value="all">전체 결제수단</option>
+                  <option value="현금">현금</option>
+                  <option value="카드">카드</option>
+                  <option value="이체">이체</option>
+                  <option value="할부">할부</option>
+                </select>
+              </div>
+            </div>
+          </section>
+        </div>
+      )}
+    </section>
+
+    <section className="sales-panel-modern">
+      <button type="button" className="sales-panel-toggle" onClick={() => toggleSalesRecordSection('form')}>
+        <span>2. 매출 기록 입력 / 수정</span>
+        <strong>{salesRecordOpenSections.form ? '−' : '+'}</strong>
+      </button>
+
+      {salesRecordOpenSections.form && (
+        <div className="sales-panel-body">
+          <section className="card">
+            <h3>매출 기록 입력 / 수정</h3>
+
+            <form className="stack-gap" onSubmit={handleSaleSubmit}>
+              <div className="grid-2">
+                <label className="field">
+                  <span>회원</span>
+                  <select value={saleForm.member_id} onChange={(e) => setSaleForm({ ...saleForm, member_id: e.target.value })}>
+                    <option value="">선택 안함</option>
+                    {members.map((member) => (
+                      <option key={member.id} value={member.id}>
+                        {member.name}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+
+                <label className="field">
+                  <span>프로그램</span>
+                  <select value={saleForm.program_id} onChange={(e) => setSaleForm({ ...saleForm, program_id: e.target.value })}>
+                    <option value="">선택 안함</option>
+                    {programs.map((program) => (
+                      <option key={program.id} value={program.id}>
+                        {program.name}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+              </div>
+
+              <div className="grid-2">
+                <label className="field">
+                  <span>결제일</span>
+                  <input type="date" value={saleForm.sale_date} onChange={(e) => setSaleForm({ ...saleForm, sale_date: e.target.value })} />
+                </label>
+
+                <label className="field">
+                  <span>금액</span>
+                  <input type="number" value={saleForm.amount} onChange={(e) => setSaleForm({ ...saleForm, amount: e.target.value })} />
+                </label>
+              </div>
+
+              <div className="grid-2">
+                <label className="field">
+                  <span>결제방법</span>
+                  <select value={saleForm.payment_method} onChange={(e) => setSaleForm({ ...saleForm, payment_method: e.target.value })}>
                     <option value="현금">현금</option>
                     <option value="카드">카드</option>
                     <option value="이체">이체</option>
                     <option value="할부">할부</option>
                   </select>
-                </div>
-              </div>
-
-              <form className="stack-gap" onSubmit={handleSaleSubmit}>
-                <div className="grid-2">
-                  <label className="field">
-                    <span>회원</span>
-                    <select value={saleForm.member_id} onChange={(e) => setSaleForm({ ...saleForm, member_id: e.target.value })}>
-                      <option value="">선택 안함</option>
-                      {members.map((member) => (
-                        <option key={member.id} value={member.id}>
-                          {member.name}
-                        </option>
-                      ))}
-                    </select>
-                  </label>
-
-                  <label className="field">
-                    <span>프로그램</span>
-                    <select value={saleForm.program_id} onChange={(e) => setSaleForm({ ...saleForm, program_id: e.target.value })}>
-                      <option value="">선택 안함</option>
-                      {programs.map((program) => (
-                        <option key={program.id} value={program.id}>
-                          {program.name}
-                        </option>
-                      ))}
-                    </select>
-                  </label>
-                </div>
-
-                <div className="grid-2">
-                  <label className="field">
-                    <span>결제일</span>
-                    <input type="date" value={saleForm.sale_date} onChange={(e) => setSaleForm({ ...saleForm, sale_date: e.target.value })} />
-                  </label>
-
-                  <label className="field">
-                    <span>금액</span>
-                    <input type="number" value={saleForm.amount} onChange={(e) => setSaleForm({ ...saleForm, amount: e.target.value })} />
-                  </label>
-                </div>
-
-                <div className="grid-2">
-                  <label className="field">
-                    <span>결제방법</span>
-                    <select value={saleForm.payment_method} onChange={(e) => setSaleForm({ ...saleForm, payment_method: e.target.value })}>
-                      <option value="현금">현금</option>
-                      <option value="카드">카드</option>
-                      <option value="이체">이체</option>
-                      <option value="할부">할부</option>
-                    </select>
-                  </label>
-
-                  <label className="field">
-                    <span>할부 개월수</span>
-                    <input
-                      type="number"
-                      value={saleForm.installment_months}
-                      onChange={(e) => setSaleForm({ ...saleForm, installment_months: e.target.value })}
-                    />
-                  </label>
-                </div>
-
-                <div className="grid-2">
-                  <label className="field">
-                    <span>구매 세션</span>
-                    <input
-                      type="number"
-                      value={saleForm.purchased_session_count}
-                      onChange={(e) => setSaleForm({ ...saleForm, purchased_session_count: e.target.value })}
-                    />
-                  </label>
-
-                  <label className="field">
-                    <span>서비스 세션</span>
-                    <input
-                      type="number"
-                      value={saleForm.service_session_count}
-                      onChange={(e) => setSaleForm({ ...saleForm, service_session_count: e.target.value })}
-                    />
-                  </label>
-                </div>
-
-                <div className="grid-2">
-                  <label className="checkbox-line">
-                    <input
-                      type="checkbox"
-                      checked={saleForm.cash_receipt_issued}
-                      onChange={(e) => setSaleForm({ ...saleForm, cash_receipt_issued: e.target.checked })}
-                    />
-                    <span>현금영수증 발행</span>
-                  </label>
-
-                  <label className="checkbox-line">
-                    <input
-                      type="checkbox"
-                      checked={saleForm.is_vip}
-                      onChange={(e) => setSaleForm({ ...saleForm, is_vip: e.target.checked })}
-                    />
-                    <span>VIP</span>
-                  </label>
-                </div>
-
-                <label className="field">
-                  <span>메모</span>
-                  <textarea rows="4" value={saleForm.memo} onChange={(e) => setSaleForm({ ...saleForm, memo: e.target.value })} />
                 </label>
 
-                <div className="inline-actions wrap">
-                  <button className="primary-btn" type="submit">
-                    {editingSaleId ? '매출 수정' : '매출 저장'}
-                  </button>
-                  <button type="button" className="secondary-btn" onClick={resetSaleForm}>
-                    초기화
-                  </button>
-                </div>
-              </form>
-            </section>
+                <label className="field">
+                  <span>할부 개월수</span>
+                  <input
+                    type="number"
+                    value={saleForm.installment_months}
+                    onChange={(e) => setSaleForm({ ...saleForm, installment_months: e.target.value })}
+                  />
+                </label>
+              </div>
 
-            <section className="card">
-              <div className="section-head">
-                <h2>월별 매출 요약</h2>
-                <button
-                  type="button"
-                  className="secondary-btn"
-                  onClick={() =>
-                    downloadCsv(`sales_${saleMonth}.csv`, [
-                      ['날짜', '회원', '프로그램', '금액', '결제방법', 'VIP'],
-                      ...filteredSales.map((sale) => [
-                        sale.sale_date || '',
-                        sale.members?.name || '',
-                        sale.programs?.name || '',
-                        sale.amount || 0,
-                        sale.payment_method || '',
-                        sale.is_vip ? 'Y' : 'N',
-                      ]),
-                    ])
-                  }
-                >
-                  CSV
+              <div className="grid-2">
+                <label className="field">
+                  <span>구매 세션</span>
+                  <input
+                    type="number"
+                    value={saleForm.purchased_session_count}
+                    onChange={(e) => setSaleForm({ ...saleForm, purchased_session_count: e.target.value })}
+                  />
+                </label>
+
+                <label className="field">
+                  <span>서비스 세션</span>
+                  <input
+                    type="number"
+                    value={saleForm.service_session_count}
+                    onChange={(e) => setSaleForm({ ...saleForm, service_session_count: e.target.value })}
+                  />
+                </label>
+              </div>
+
+              <div className="grid-2">
+                <label className="checkbox-line">
+                  <input
+                    type="checkbox"
+                    checked={saleForm.cash_receipt_issued}
+                    onChange={(e) => setSaleForm({ ...saleForm, cash_receipt_issued: e.target.checked })}
+                  />
+                  <span>현금영수증 발행</span>
+                </label>
+
+                <label className="checkbox-line">
+                  <input
+                    type="checkbox"
+                    checked={saleForm.is_vip}
+                    onChange={(e) => setSaleForm({ ...saleForm, is_vip: e.target.checked })}
+                  />
+                  <span>VIP</span>
+                </label>
+              </div>
+
+              <label className="field">
+                <span>메모</span>
+                <textarea rows="4" value={saleForm.memo} onChange={(e) => setSaleForm({ ...saleForm, memo: e.target.value })} />
+              </label>
+
+              <div className="inline-actions wrap">
+                <button className="primary-btn" type="submit">
+                  {editingSaleId ? '매출 수정' : '매출 저장'}
+                </button>
+                <button type="button" className="secondary-btn" onClick={resetSaleForm}>
+                  초기화
                 </button>
               </div>
+            </form>
+          </section>
+        </div>
+      )}
+    </section>
 
-              <div className="stats-grid">
-  <div className="stat-card">
-    <span>총 매출</span>
-    <strong>{Number(salesStatsExtended.totalSales || 0).toLocaleString()}</strong>
-  </div>
-  <div className="stat-card">
-    <span>등록 건수</span>
-    <strong>{Number(salesStatsExtended.totalCount || 0).toLocaleString()}</strong>
-  </div>
-  <div className="stat-card">
-    <span>VIP 결제 수</span>
-    <strong>{Number(salesStatsExtended.vipCount || 0).toLocaleString()}</strong>
-  </div>
-</div>
+    <section className="sales-panel-modern">
+      <button type="button" className="sales-panel-toggle" onClick={() => toggleSalesRecordSection('summary')}>
+        <span>3. 월별 매출 요약</span>
+        <strong>{salesRecordOpenSections.summary ? '−' : '+'}</strong>
+      </button>
 
-              <div className="detail-box">
-                <p><strong>현금:</strong> {Number(salesSummary?.cash_sales || 0).toLocaleString()}</p>
-                <p><strong>카드:</strong> {Number(salesSummary?.card_sales || 0).toLocaleString()}</p>
-                <p><strong>이체:</strong> {Number(salesSummary?.transfer_sales || 0).toLocaleString()}</p>
-                <p><strong>할부:</strong> {Number(salesSummary?.installment_sales || 0).toLocaleString()}</p>
-                <p><strong>VIP 비율:</strong> {salesStatsExtended.vipRatio}%</p>
-                <p><strong>자동 피드백:</strong> {getSalesAutoFeedback()}</p>
+      {salesRecordOpenSections.summary && (
+        <div className="sales-panel-body">
+          <section className="card">
+            <div className="section-head">
+              <h3>월별 매출 요약</h3>
+              <button
+                type="button"
+                className="secondary-btn"
+                onClick={() =>
+                  downloadCsv(`sales_${saleMonth}.csv`, [
+                    ['날짜', '회원', '프로그램', '금액', '결제방법', 'VIP'],
+                    ...filteredSales.map((sale) => [
+                      sale.sale_date || '',
+                      sale.members?.name || '',
+                      sale.programs?.name || '',
+                      sale.amount || 0,
+                      sale.payment_method || '',
+                      sale.is_vip ? 'Y' : 'N',
+                    ]),
+                  ])
+                }
+              >
+                CSV
+              </button>
+            </div>
+
+            <div className="stats-grid">
+              <div className="stat-card">
+                <span>총 매출</span>
+                <strong>{Number(salesStatsExtended.totalSales || 0).toLocaleString()}</strong>
               </div>
-
-              <div className="sub-card">
-                <h3>프로그램별 매출</h3>
-                <MiniBarChart data={salesStatsExtended.chartSource} />
+              <div className="stat-card">
+                <span>등록 건수</span>
+                <strong>{Number(salesStatsExtended.totalCount || 0).toLocaleString()}</strong>
               </div>
-            </section>
-          </div>
+              <div className="stat-card">
+                <span>VIP 결제 수</span>
+                <strong>{Number(salesStatsExtended.vipCount || 0).toLocaleString()}</strong>
+              </div>
+            </div>
 
-          <div className="card">
-            <h2>매출 목록</h2>
+            <div className="detail-box">
+              <p><strong>현금:</strong> {Number(salesSummary?.cash_sales || 0).toLocaleString()}</p>
+              <p><strong>카드:</strong> {Number(salesSummary?.card_sales || 0).toLocaleString()}</p>
+              <p><strong>이체:</strong> {Number(salesSummary?.transfer_sales || 0).toLocaleString()}</p>
+              <p><strong>할부:</strong> {Number(salesSummary?.installment_sales || 0).toLocaleString()}</p>
+              <p><strong>VIP 비율:</strong> {salesStatsExtended.vipRatio}%</p>
+              <p><strong>자동 피드백:</strong> {getSalesAutoFeedback()}</p>
+            </div>
+
+            <div className="sub-card">
+              <h3>프로그램별 매출</h3>
+              <MiniBarChart data={salesStatsExtended.chartSource} />
+            </div>
+          </section>
+        </div>
+      )}
+    </section>
+
+    <section className="sales-panel-modern">
+      <button type="button" className="sales-panel-toggle" onClick={() => toggleSalesRecordSection('list')}>
+        <span>4. 매출 목록</span>
+        <strong>{salesRecordOpenSections.list ? '−' : '+'}</strong>
+      </button>
+
+      {salesRecordOpenSections.list && (
+        <div className="sales-panel-body">
+          <section className="card">
+            <h3>매출 목록</h3>
+
             <div className="list-stack">
               {filteredSales.map((sale) => {
                 const collapsed = collapsedSales[sale.id] ?? true
@@ -10603,9 +10742,11 @@ const applyMemberXp = async ({
                       <strong>{sale.members?.name || '회원없음'} / {sale.programs?.name || '프로그램없음'}</strong>
                       <span className="pill">{sale.sale_date}</span>
                     </div>
+
                     <div className="compact-text">
                       간략히보기: {Number(sale.amount || 0).toLocaleString()}원 / {sale.payment_method}
                     </div>
+
                     <div className="inline-actions wrap">
                       <button
                         className="secondary-btn"
@@ -10619,9 +10760,11 @@ const applyMemberXp = async ({
                       >
                         {collapsed ? '상세히보기' : '간략히보기'}
                       </button>
+
                       <button className="secondary-btn" type="button" onClick={() => handleSaleEdit(sale)}>
                         수정
                       </button>
+
                       <button className="danger-btn" type="button" onClick={() => handleSaleDelete(sale.id)}>
                         삭제
                       </button>
@@ -10639,570 +10782,717 @@ const applyMemberXp = async ({
                 )
               })}
             </div>
-          </div>
+          </section>
         </div>
       )}
-
+    </section>
+  </div>
+)}
       {activeTab === '세일즈일지' && (
-  <div className="two-col sales-log-layout">
-    <section className="card">
-      <h2>세일즈 일지 작성 / 수정</h2>
+  <div className="sales-page-modern">
+    <section className="sales-hero">
+      <div className="sales-hero-left">
+        <div className="sales-hero-badge">SALES LOG</div>
+        <h2>세일즈일지</h2>
+        <p className="sales-hero-text">
+          상담 흐름, 전환 가능성, 후속관리, 결과를 한 번에 기록하되
+          입력 섹션을 나눠서 필요한 부분만 펼쳐 작성할 수 있는 세일즈 일지 화면입니다.
+        </p>
+      </div>
 
-      <form className="stack-gap" onSubmit={handleSalesLogSubmit}>
-        <div className="sales-form-section">
-          <h3>기본 정보</h3>
-
-          <div className="grid-2">
-            <label className="field">
-              <span>날짜</span>
-              <input
-                type="date"
-                value={salesLogForm.log_date}
-                onChange={(e) => setSalesLogForm({ ...salesLogForm, log_date: e.target.value })}
-              />
-            </label>
-
-            <label className="field">
-              <span>시간</span>
-              <input
-                type="time"
-                value={salesLogForm.activity_time}
-                onChange={(e) => setSalesLogForm({ ...salesLogForm, activity_time: e.target.value })}
-              />
-            </label>
-          </div>
-
-          <div className="grid-2">
-            <label className="field">
-              <span>담당 코치</span>
-              <input
-                value={salesLogForm.coach_name}
-                onChange={(e) => setSalesLogForm({ ...salesLogForm, coach_name: e.target.value })}
-                placeholder="예: 임현진"
-              />
-            </label>
-
-            <label className="field">
-              <span>상담 대상 이름</span>
-              <input
-                value={salesLogForm.lead_name}
-                onChange={(e) => setSalesLogForm({ ...salesLogForm, lead_name: e.target.value })}
-                placeholder="예: 김OO"
-              />
-            </label>
-          </div>
-
-          <div className="grid-2">
-            <label className="field">
-              <span>연락처</span>
-              <input
-                value={salesLogForm.phone}
-                onChange={(e) => setSalesLogForm({ ...salesLogForm, phone: e.target.value })}
-                placeholder="010-0000-0000"
-              />
-            </label>
-
-            <label className="field">
-              <span>연령대</span>
-              <input
-                value={salesLogForm.age_group}
-                onChange={(e) => setSalesLogForm({ ...salesLogForm, age_group: e.target.value })}
-                placeholder="예: 30대"
-              />
-            </label>
-          </div>
-
-          <div className="grid-3">
-            <label className="field">
-              <span>성별</span>
-              <select
-                value={salesLogForm.gender}
-                onChange={(e) => setSalesLogForm({ ...salesLogForm, gender: e.target.value })}
-              >
-                <option value="">선택</option>
-                <option value="여성">여성</option>
-                <option value="남성">남성</option>
-              </select>
-            </label>
-
-            <label className="field">
-              <span>구분</span>
-              <select
-                value={salesLogForm.member_type}
-                onChange={(e) => setSalesLogForm({ ...salesLogForm, member_type: e.target.value })}
-              >
-                {salesMemberTypeOptions.map((option) => (
-                  <option key={option} value={option}>
-                    {option}
-                  </option>
-                ))}
-              </select>
-            </label>
-
-            <label className="field">
-              <span>유입경로</span>
-              <select
-                value={salesLogForm.source_channel}
-                onChange={(e) => setSalesLogForm({ ...salesLogForm, source_channel: e.target.value })}
-              >
-                <option value="">선택</option>
-                {salesSourceOptions.map((option) => (
-                  <option key={option} value={option}>
-                    {option}
-                  </option>
-                ))}
-              </select>
-            </label>
-          </div>
+      <div className="sales-hero-right">
+        <div className="sales-hero-mini">
+          <span>전체 리드</span>
+          <strong>{salesLogSummary.total}</strong>
+          <p>현재 필터 기준 전체 일지 수</p>
         </div>
 
-        <div className="sales-form-section">
-          <h3>유입 / 니즈</h3>
-
-          <div className="grid-2">
-            <label className="field">
-              <span>OT 진행 이유</span>
-              <select
-                value={salesLogForm.ot_reason}
-                onChange={(e) => setSalesLogForm({ ...salesLogForm, ot_reason: e.target.value })}
-              >
-                <option value="">선택</option>
-                {salesOtReasonOptions.map((option) => (
-                  <option key={option} value={option}>
-                    {option}
-                  </option>
-                ))}
-              </select>
-            </label>
-
-            <label className="field">
-              <span>상담 시작 계기</span>
-              <input
-                value={salesLogForm.contact_reason}
-                onChange={(e) => setSalesLogForm({ ...salesLogForm, contact_reason: e.target.value })}
-                placeholder="예: 코치가 먼저 인사 후 대화 시작"
-              />
-            </label>
-          </div>
-
-          <label className="field">
-            <span>핵심 니즈</span>
-            <input
-              value={salesLogForm.main_need}
-              onChange={(e) => setSalesLogForm({ ...salesLogForm, main_need: e.target.value })}
-              placeholder="예: 어깨 통증 + 체형 스트레스"
-            />
-          </label>
-
-          <label className="field">
-            <span>불편부위 / 문제 포인트</span>
-            <textarea
-              rows="3"
-              value={salesLogForm.pain_point}
-              onChange={(e) => setSalesLogForm({ ...salesLogForm, pain_point: e.target.value })}
-            />
-          </label>
+        <div className="sales-hero-mini">
+          <span>전환 높음</span>
+          <strong>{salesLogSummary.high}</strong>
+          <p>전환 가능성 높음</p>
         </div>
 
-        <div className="sales-form-section">
-          <h3>상담 / OT 진행</h3>
-
-          <div className="check-grid">
-            {salesConsultationMethodOptions.map((option) => (
-              <label key={option} className="checkbox-chip">
-                <input
-                  type="checkbox"
-                  checked={salesLogForm.consultation_method.includes(option)}
-                  onChange={() => toggleSalesArrayValue('consultation_method', option)}
-                />
-                <span>{option}</span>
-              </label>
-            ))}
-          </div>
-
-          <label className="field">
-            <span>실제 진행 흐름</span>
-            <textarea
-              rows="4"
-              value={salesLogForm.consultation_flow}
-              onChange={(e) => setSalesLogForm({ ...salesLogForm, consultation_flow: e.target.value })}
-              placeholder="예: 인사 → 니즈 질문 → 체형 평가 → 운동 체험 → 프로그램 설명"
-            />
-          </label>
-
-          <div className="grid-2">
-            <label className="field">
-              <span>회원 반응</span>
-              <input
-                value={salesLogForm.reaction_summary}
-                onChange={(e) => setSalesLogForm({ ...salesLogForm, reaction_summary: e.target.value })}
-                placeholder="예: 질문 많았고 통증개선 니즈 높음"
-              />
-            </label>
-
-            <label className="field">
-              <span>감정 상태</span>
-              <select
-                value={salesLogForm.emotion_status}
-                onChange={(e) => setSalesLogForm({ ...salesLogForm, emotion_status: e.target.value })}
-              >
-                {salesEmotionOptions.map((option) => (
-                  <option key={option} value={option}>
-                    {option}
-                  </option>
-                ))}
-              </select>
-            </label>
-          </div>
+        <div className="sales-hero-mini">
+          <span>결제완료</span>
+          <strong>{salesLogSummary.closed}</strong>
+          <p>실제 결제 완료 건수</p>
         </div>
 
-        <div className="sales-form-section">
-          <h3>세일즈 방식</h3>
-
-          <div className="check-grid">
-            {salesMethodOptions.map((option) => (
-              <label key={option} className="checkbox-chip">
-                <input
-                  type="checkbox"
-                  checked={salesLogForm.sales_method.includes(option)}
-                  onChange={() => toggleSalesArrayValue('sales_method', option)}
-                />
-                <span>{option}</span>
-              </label>
-            ))}
-          </div>
+        <div className="sales-hero-mini">
+          <span>후속관리중</span>
+          <strong>{salesLogSummary.followup}</strong>
+          <p>다시 접촉이 필요한 리드</p>
         </div>
-
-        <div className="sales-form-section">
-          <h3>결과 / 전환</h3>
-
-          <div className="grid-3">
-            <label className="field">
-              <span>현재 단계</span>
-              <select
-                value={salesLogForm.current_stage}
-                onChange={(e) => setSalesLogForm({ ...salesLogForm, current_stage: e.target.value })}
-              >
-                {salesStageOptions.map((option) => (
-                  <option key={option} value={option}>
-                    {option}
-                  </option>
-                ))}
-              </select>
-            </label>
-
-            <label className="field">
-              <span>세일즈 결과</span>
-              <select
-                value={salesLogForm.sales_result}
-                onChange={(e) => setSalesLogForm({ ...salesLogForm, sales_result: e.target.value })}
-              >
-                {salesResultOptions.map((option) => (
-                  <option key={option.value} value={option.value}>
-                    {option.label}
-                  </option>
-                ))}
-              </select>
-            </label>
-
-            <label className="field">
-              <span>전환 가능성</span>
-              <select
-                value={salesLogForm.conversion_score}
-                onChange={(e) => setSalesLogForm({ ...salesLogForm, conversion_score: e.target.value })}
-              >
-                {salesConversionOptions.map((option) => (
-                  <option key={option.value} value={option.value}>
-                    {option.label}
-                  </option>
-                ))}
-              </select>
-            </label>
-          </div>
-
-          <div className="grid-2">
-            <label className="field">
-              <span>제안 상품</span>
-              <input
-                value={salesLogForm.proposal_product}
-                onChange={(e) => setSalesLogForm({ ...salesLogForm, proposal_product: e.target.value })}
-                placeholder="예: PT 20회 / 체형교정 프로그램"
-              />
-            </label>
-
-            <label className="field">
-              <span>안내 가격</span>
-              <input
-                value={salesLogForm.proposal_price}
-                onChange={(e) => setSalesLogForm({ ...salesLogForm, proposal_price: e.target.value })}
-                placeholder="예: 55만원"
-              />
-            </label>
-          </div>
-
-          <label className="field">
-            <span>결제 실패 / 보류 이유</span>
-            <select
-              value={salesLogForm.fail_reason}
-              onChange={(e) => setSalesLogForm({ ...salesLogForm, fail_reason: e.target.value })}
-            >
-              <option value="">선택</option>
-              {salesFailReasonOptions.map((option) => (
-                <option key={option} value={option}>
-                  {option}
-                </option>
-              ))}
-            </select>
-          </label>
-        </div>
-
-        <div className="sales-form-section">
-          <h3>후속 관리</h3>
-
-          <div className="grid-2">
-            <label className="field">
-              <span>다음 연락일</span>
-              <input
-                type="date"
-                value={salesLogForm.next_contact_date}
-                onChange={(e) => setSalesLogForm({ ...salesLogForm, next_contact_date: e.target.value })}
-              />
-            </label>
-
-            <label className="field">
-              <span>결제 예상일</span>
-              <input
-                type="date"
-                value={salesLogForm.expected_close_date}
-                onChange={(e) => setSalesLogForm({ ...salesLogForm, expected_close_date: e.target.value })}
-              />
-            </label>
-          </div>
-
-          <label className="field">
-            <span>후속 액션</span>
-            <textarea
-              rows="3"
-              value={salesLogForm.follow_up_action}
-              onChange={(e) => setSalesLogForm({ ...salesLogForm, follow_up_action: e.target.value })}
-              placeholder="예: 내일 문자 발송 / 운동영상 전달 / 재상담 예약"
-            />
-          </label>
-        </div>
-
-        <div className="sales-form-section">
-          <h3>기존 일지 항목</h3>
-
-          <div className="grid-2">
-            <label className="field">
-              <span>OT 진행 인원</span>
-              <input
-                type="number"
-                value={salesLogForm.ot_count}
-                onChange={(e) => setSalesLogForm({ ...salesLogForm, ot_count: e.target.value })}
-              />
-            </label>
-
-            <label className="field">
-              <span>인사 횟수</span>
-              <input
-                type="number"
-                value={salesLogForm.greeting_count}
-                onChange={(e) => setSalesLogForm({ ...salesLogForm, greeting_count: e.target.value })}
-              />
-            </label>
-          </div>
-
-          <label className="field">
-            <span>누구에게 인사했는지</span>
-            <textarea
-              rows="3"
-              value={salesLogForm.greeted_to}
-              onChange={(e) => setSalesLogForm({ ...salesLogForm, greeted_to: e.target.value })}
-              placeholder="예: 신규 상담 1명, 워크인 2명, 기존회원 3명"
-            />
-          </label>
-
-          <label className="checkbox-line">
-            <input
-              type="checkbox"
-              checked={salesLogForm.greeted_three_plus}
-              onChange={(e) => setSalesLogForm({ ...salesLogForm, greeted_three_plus: e.target.checked })}
-            />
-            <span>하루 3명 이상 인사함</span>
-          </label>
-
-          <label className="field">
-            <span>세일즈 메모</span>
-            <textarea
-              rows="5"
-              value={salesLogForm.diary}
-              onChange={(e) => setSalesLogForm({ ...salesLogForm, diary: e.target.value })}
-              placeholder="오늘 상담 흐름, 걸렸던 포인트, 다음에 보완할 점"
-            />
-          </label>
-        </div>
-
-        <div className="inline-actions wrap">
-          <button className="primary-btn" type="submit">
-            {editingSalesLogId ? '세일즈 일지 수정' : '세일즈 일지 저장'}
-          </button>
-          <button type="button" className="secondary-btn" onClick={resetSalesLogForm}>
-            초기화
-          </button>
-        </div>
-      </form>
+      </div>
     </section>
 
-    <section className="card">
-      <div className="member-list-header">
-        <h2>세일즈 일지 목록</h2>
-
-        <div className="member-list-search-area">
-          <input
-            placeholder="이름 / 연락처 / 니즈 / 메모 검색"
-            value={salesLogSearch}
-            onChange={(e) => setSalesLogSearch(e.target.value)}
-          />
-
-          <div className="member-list-filter-row">
-            <input
-              type="month"
-              value={salesLogMonth}
-              onChange={(e) => setSalesLogMonth(e.target.value)}
-            />
-
-            <select
-              value={salesLogStageFilter}
-              onChange={(e) => setSalesLogStageFilter(e.target.value)}
-            >
-              <option value="all">전체 단계</option>
-              {salesStageOptions.map((option) => (
-                <option key={option} value={option}>
-                  {option}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          <div className="member-list-filter-row">
-            <select
-              value={salesLogResultFilter}
-              onChange={(e) => setSalesLogResultFilter(e.target.value)}
-            >
-              <option value="all">전체 결과</option>
-              {salesResultOptions.map((option) => (
-                <option key={option.value} value={option.value}>
-                  {option.label}
-                </option>
-              ))}
-            </select>
-
-            <select
-              value={salesLogConversionFilter}
-              onChange={(e) => setSalesLogConversionFilter(e.target.value)}
-            >
-              <option value="all">전체 가능성</option>
-              {salesConversionOptions.map((option) => (
-                <option key={option.value} value={option.value}>
-                  {option.label}
-                </option>
-              ))}
-            </select>
-          </div>
-        </div>
+    <div className="sales-summary-modern-grid">
+      <div className="sales-summary-modern-card summary-blue">
+        <span>전체 리드</span>
+        <strong>{salesLogSummary.total}</strong>
+        <p>현재 필터 기준</p>
       </div>
 
-      <div className="grid-4">
-        <div className="mini-stat-card">
-          <strong>{salesLogSummary.total}</strong>
-          <span>전체 리드</span>
-        </div>
-        <div className="mini-stat-card">
-          <strong>{salesLogSummary.high}</strong>
-          <span>전환 높음</span>
-        </div>
-        <div className="mini-stat-card">
-          <strong>{salesLogSummary.closed}</strong>
-          <span>결제완료</span>
-        </div>
-        <div className="mini-stat-card">
-          <strong>{salesLogSummary.followup}</strong>
-          <span>후속관리중</span>
-        </div>
+      <div className="sales-summary-modern-card summary-green">
+        <span>전환 높음</span>
+        <strong>{salesLogSummary.high}</strong>
+        <p>전환 가능성 높음</p>
       </div>
 
-      <div className="list-stack">
-        {groupedSalesLogs.length === 0 ? (
-          <div className="workout-list-empty">세일즈 일지가 없습니다.</div>
-        ) : null}
+      <div className="sales-summary-modern-card summary-violet">
+        <span>결제완료</span>
+        <strong>{salesLogSummary.closed}</strong>
+        <p>실제 결제 완료</p>
+      </div>
 
-        {groupedSalesLogs.map(([date, logs]) => (
-          <div key={date} className="sales-log-date-group">
-            <div className="sales-log-date-title">{date}</div>
+      <div className="sales-summary-modern-card summary-amber">
+        <span>후속관리중</span>
+        <strong>{salesLogSummary.followup}</strong>
+        <p>재접촉 필요</p>
+      </div>
+    </div>
+
+    <section className="sales-panel-modern">
+      <button type="button" className="sales-panel-toggle" onClick={() => toggleSalesLogSection('basic')}>
+        <span>1. 기본 정보</span>
+        <strong>{salesLogOpenSections.basic ? '−' : '+'}</strong>
+      </button>
+
+      {salesLogOpenSections.basic && (
+        <div className="sales-panel-body">
+          <section className="card">
+            <h3>기본 정보</h3>
+
+            <div className="grid-2">
+              <label className="field">
+                <span>날짜</span>
+                <input
+                  type="date"
+                  value={salesLogForm.log_date}
+                  onChange={(e) => setSalesLogForm({ ...salesLogForm, log_date: e.target.value })}
+                />
+              </label>
+
+              <label className="field">
+                <span>시간</span>
+                <input
+                  type="time"
+                  value={salesLogForm.activity_time}
+                  onChange={(e) => setSalesLogForm({ ...salesLogForm, activity_time: e.target.value })}
+                />
+              </label>
+            </div>
+
+            <div className="grid-2">
+              <label className="field">
+                <span>담당 코치</span>
+                <input
+                  value={salesLogForm.coach_name}
+                  onChange={(e) => setSalesLogForm({ ...salesLogForm, coach_name: e.target.value })}
+                  placeholder="예: 임현진"
+                />
+              </label>
+
+              <label className="field">
+                <span>상담 대상 이름</span>
+                <input
+                  value={salesLogForm.lead_name}
+                  onChange={(e) => setSalesLogForm({ ...salesLogForm, lead_name: e.target.value })}
+                  placeholder="예: 김OO"
+                />
+              </label>
+            </div>
+
+            <div className="grid-2">
+              <label className="field">
+                <span>연락처</span>
+                <input
+                  value={salesLogForm.phone}
+                  onChange={(e) => setSalesLogForm({ ...salesLogForm, phone: e.target.value })}
+                  placeholder="010-0000-0000"
+                />
+              </label>
+
+              <label className="field">
+                <span>연령대</span>
+                <input
+                  value={salesLogForm.age_group}
+                  onChange={(e) => setSalesLogForm({ ...salesLogForm, age_group: e.target.value })}
+                  placeholder="예: 30대"
+                />
+              </label>
+            </div>
+
+            <div className="grid-3">
+              <label className="field">
+                <span>성별</span>
+                <select
+                  value={salesLogForm.gender}
+                  onChange={(e) => setSalesLogForm({ ...salesLogForm, gender: e.target.value })}
+                >
+                  <option value="">선택</option>
+                  <option value="여성">여성</option>
+                  <option value="남성">남성</option>
+                </select>
+              </label>
+
+              <label className="field">
+                <span>구분</span>
+                <select
+                  value={salesLogForm.member_type}
+                  onChange={(e) => setSalesLogForm({ ...salesLogForm, member_type: e.target.value })}
+                >
+                  {salesMemberTypeOptions.map((option) => (
+                    <option key={option} value={option}>
+                      {option}
+                    </option>
+                  ))}
+                </select>
+              </label>
+
+              <label className="field">
+                <span>유입경로</span>
+                <select
+                  value={salesLogForm.source_channel}
+                  onChange={(e) => setSalesLogForm({ ...salesLogForm, source_channel: e.target.value })}
+                >
+                  <option value="">선택</option>
+                  {salesSourceOptions.map((option) => (
+                    <option key={option} value={option}>
+                      {option}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            </div>
+          </section>
+        </div>
+      )}
+    </section>
+
+    <section className="sales-panel-modern">
+      <button type="button" className="sales-panel-toggle" onClick={() => toggleSalesLogSection('need')}>
+        <span>2. 유입 / 니즈</span>
+        <strong>{salesLogOpenSections.need ? '−' : '+'}</strong>
+      </button>
+
+      {salesLogOpenSections.need && (
+        <div className="sales-panel-body">
+          <section className="card">
+            <h3>유입 / 니즈</h3>
+
+            <div className="grid-2">
+              <label className="field">
+                <span>OT 진행 이유</span>
+                <select
+                  value={salesLogForm.ot_reason}
+                  onChange={(e) => setSalesLogForm({ ...salesLogForm, ot_reason: e.target.value })}
+                >
+                  <option value="">선택</option>
+                  {salesOtReasonOptions.map((option) => (
+                    <option key={option} value={option}>
+                      {option}
+                    </option>
+                  ))}
+                </select>
+              </label>
+
+              <label className="field">
+                <span>상담 시작 계기</span>
+                <input
+                  value={salesLogForm.contact_reason}
+                  onChange={(e) => setSalesLogForm({ ...salesLogForm, contact_reason: e.target.value })}
+                  placeholder="예: 코치가 먼저 인사 후 대화 시작"
+                />
+              </label>
+            </div>
+
+            <label className="field">
+              <span>핵심 니즈</span>
+              <input
+                value={salesLogForm.main_need}
+                onChange={(e) => setSalesLogForm({ ...salesLogForm, main_need: e.target.value })}
+                placeholder="예: 어깨 통증 + 체형 스트레스"
+              />
+            </label>
+
+            <label className="field">
+              <span>불편부위 / 문제 포인트</span>
+              <textarea
+                rows="3"
+                value={salesLogForm.pain_point}
+                onChange={(e) => setSalesLogForm({ ...salesLogForm, pain_point: e.target.value })}
+              />
+            </label>
+          </section>
+        </div>
+      )}
+    </section>
+
+    <section className="sales-panel-modern">
+      <button type="button" className="sales-panel-toggle" onClick={() => toggleSalesLogSection('consultation')}>
+        <span>3. 상담 / OT 진행</span>
+        <strong>{salesLogOpenSections.consultation ? '−' : '+'}</strong>
+      </button>
+
+      {salesLogOpenSections.consultation && (
+        <div className="sales-panel-body">
+          <section className="card">
+            <h3>상담 / OT 진행</h3>
+
+            <div className="check-grid">
+              {salesConsultationMethodOptions.map((option) => (
+                <label key={option} className="checkbox-chip">
+                  <input
+                    type="checkbox"
+                    checked={salesLogForm.consultation_method.includes(option)}
+                    onChange={() => toggleSalesArrayValue('consultation_method', option)}
+                  />
+                  <span>{option}</span>
+                </label>
+              ))}
+            </div>
+
+            <label className="field">
+              <span>실제 진행 흐름</span>
+              <textarea
+                rows="4"
+                value={salesLogForm.consultation_flow}
+                onChange={(e) => setSalesLogForm({ ...salesLogForm, consultation_flow: e.target.value })}
+                placeholder="예: 인사 → 니즈 질문 → 체형 평가 → 운동 체험 → 프로그램 설명"
+              />
+            </label>
+
+            <div className="grid-2">
+              <label className="field">
+                <span>회원 반응</span>
+                <input
+                  value={salesLogForm.reaction_summary}
+                  onChange={(e) => setSalesLogForm({ ...salesLogForm, reaction_summary: e.target.value })}
+                  placeholder="예: 질문 많았고 통증개선 니즈 높음"
+                />
+              </label>
+
+              <label className="field">
+                <span>감정 상태</span>
+                <select
+                  value={salesLogForm.emotion_status}
+                  onChange={(e) => setSalesLogForm({ ...salesLogForm, emotion_status: e.target.value })}
+                >
+                  {salesEmotionOptions.map((option) => (
+                    <option key={option} value={option}>
+                      {option}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            </div>
+          </section>
+        </div>
+      )}
+    </section>
+
+    <section className="sales-panel-modern">
+      <button type="button" className="sales-panel-toggle" onClick={() => toggleSalesLogSection('salesMethod')}>
+        <span>4. 세일즈 방식</span>
+        <strong>{salesLogOpenSections.salesMethod ? '−' : '+'}</strong>
+      </button>
+
+      {salesLogOpenSections.salesMethod && (
+        <div className="sales-panel-body">
+          <section className="card">
+            <h3>세일즈 방식</h3>
+
+            <div className="check-grid">
+              {salesMethodOptions.map((option) => (
+                <label key={option} className="checkbox-chip">
+                  <input
+                    type="checkbox"
+                    checked={salesLogForm.sales_method.includes(option)}
+                    onChange={() => toggleSalesArrayValue('sales_method', option)}
+                  />
+                  <span>{option}</span>
+                </label>
+              ))}
+            </div>
+          </section>
+        </div>
+      )}
+    </section>
+
+    <section className="sales-panel-modern">
+      <button type="button" className="sales-panel-toggle" onClick={() => toggleSalesLogSection('result')}>
+        <span>5. 결과 / 전환</span>
+        <strong>{salesLogOpenSections.result ? '−' : '+'}</strong>
+      </button>
+
+      {salesLogOpenSections.result && (
+        <div className="sales-panel-body">
+          <section className="card">
+            <h3>결과 / 전환</h3>
+
+            <div className="grid-3">
+              <label className="field">
+                <span>현재 단계</span>
+                <select
+                  value={salesLogForm.current_stage}
+                  onChange={(e) => setSalesLogForm({ ...salesLogForm, current_stage: e.target.value })}
+                >
+                  {salesStageOptions.map((option) => (
+                    <option key={option} value={option}>
+                      {option}
+                    </option>
+                  ))}
+                </select>
+              </label>
+
+              <label className="field">
+                <span>세일즈 결과</span>
+                <select
+                  value={salesLogForm.sales_result}
+                  onChange={(e) => setSalesLogForm({ ...salesLogForm, sales_result: e.target.value })}
+                >
+                  {salesResultOptions.map((option) => (
+                    <option key={option.value} value={option.value}>
+                      {option.label}
+                    </option>
+                  ))}
+                </select>
+              </label>
+
+              <label className="field">
+                <span>전환 가능성</span>
+                <select
+                  value={salesLogForm.conversion_score}
+                  onChange={(e) => setSalesLogForm({ ...salesLogForm, conversion_score: e.target.value })}
+                >
+                  {salesConversionOptions.map((option) => (
+                    <option key={option.value} value={option.value}>
+                      {option.label}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            </div>
+
+            <div className="grid-2">
+              <label className="field">
+                <span>제안 상품</span>
+                <input
+                  value={salesLogForm.proposal_product}
+                  onChange={(e) => setSalesLogForm({ ...salesLogForm, proposal_product: e.target.value })}
+                  placeholder="예: PT 20회 / 체형교정 프로그램"
+                />
+              </label>
+
+              <label className="field">
+                <span>안내 가격</span>
+                <input
+                  value={salesLogForm.proposal_price}
+                  onChange={(e) => setSalesLogForm({ ...salesLogForm, proposal_price: e.target.value })}
+                  placeholder="예: 55만원"
+                />
+              </label>
+            </div>
+
+            <label className="field">
+              <span>결제 실패 / 보류 이유</span>
+              <select
+                value={salesLogForm.fail_reason}
+                onChange={(e) => setSalesLogForm({ ...salesLogForm, fail_reason: e.target.value })}
+              >
+                <option value="">선택</option>
+                {salesFailReasonOptions.map((option) => (
+                  <option key={option} value={option}>
+                    {option}
+                  </option>
+                ))}
+              </select>
+            </label>
+          </section>
+        </div>
+      )}
+    </section>
+
+    <section className="sales-panel-modern">
+      <button type="button" className="sales-panel-toggle" onClick={() => toggleSalesLogSection('followup')}>
+        <span>6. 후속 관리</span>
+        <strong>{salesLogOpenSections.followup ? '−' : '+'}</strong>
+      </button>
+
+      {salesLogOpenSections.followup && (
+        <div className="sales-panel-body">
+          <section className="card">
+            <h3>후속 관리</h3>
+
+            <div className="grid-2">
+              <label className="field">
+                <span>다음 연락일</span>
+                <input
+                  type="date"
+                  value={salesLogForm.next_contact_date}
+                  onChange={(e) => setSalesLogForm({ ...salesLogForm, next_contact_date: e.target.value })}
+                />
+              </label>
+
+              <label className="field">
+                <span>결제 예상일</span>
+                <input
+                  type="date"
+                  value={salesLogForm.expected_close_date}
+                  onChange={(e) => setSalesLogForm({ ...salesLogForm, expected_close_date: e.target.value })}
+                />
+              </label>
+            </div>
+
+            <label className="field">
+              <span>후속 액션</span>
+              <textarea
+                rows="3"
+                value={salesLogForm.follow_up_action}
+                onChange={(e) => setSalesLogForm({ ...salesLogForm, follow_up_action: e.target.value })}
+                placeholder="예: 내일 문자 발송 / 운동영상 전달 / 재상담 예약"
+              />
+            </label>
+          </section>
+        </div>
+      )}
+    </section>
+
+    <section className="sales-panel-modern">
+      <button type="button" className="sales-panel-toggle" onClick={() => toggleSalesLogSection('legacy')}>
+        <span>7. 기존 일지 항목</span>
+        <strong>{salesLogOpenSections.legacy ? '−' : '+'}</strong>
+      </button>
+
+      {salesLogOpenSections.legacy && (
+        <div className="sales-panel-body">
+          <section className="card">
+            <h3>기존 일지 항목</h3>
+
+            <div className="grid-2">
+              <label className="field">
+                <span>OT 진행 인원</span>
+                <input
+                  type="number"
+                  value={salesLogForm.ot_count}
+                  onChange={(e) => setSalesLogForm({ ...salesLogForm, ot_count: e.target.value })}
+                />
+              </label>
+
+              <label className="field">
+                <span>인사 횟수</span>
+                <input
+                  type="number"
+                  value={salesLogForm.greeting_count}
+                  onChange={(e) => setSalesLogForm({ ...salesLogForm, greeting_count: e.target.value })}
+                />
+              </label>
+            </div>
+
+            <label className="field">
+              <span>누구에게 인사했는지</span>
+              <textarea
+                rows="3"
+                value={salesLogForm.greeted_to}
+                onChange={(e) => setSalesLogForm({ ...salesLogForm, greeted_to: e.target.value })}
+                placeholder="예: 신규 상담 1명, 워크인 2명, 기존회원 3명"
+              />
+            </label>
+
+            <label className="checkbox-line">
+              <input
+                type="checkbox"
+                checked={salesLogForm.greeted_three_plus}
+                onChange={(e) => setSalesLogForm({ ...salesLogForm, greeted_three_plus: e.target.checked })}
+              />
+              <span>하루 3명 이상 인사함</span>
+            </label>
+
+            <label className="field">
+              <span>세일즈 메모</span>
+              <textarea
+                rows="5"
+                value={salesLogForm.diary}
+                onChange={(e) => setSalesLogForm({ ...salesLogForm, diary: e.target.value })}
+                placeholder="오늘 상담 흐름, 걸렸던 포인트, 다음에 보완할 점"
+              />
+            </label>
+
+            <div className="inline-actions wrap">
+              <button className="primary-btn" type="submit" onClick={handleSalesLogSubmit}>
+                {editingSalesLogId ? '세일즈 일지 수정' : '세일즈 일지 저장'}
+              </button>
+              <button type="button" className="secondary-btn" onClick={resetSalesLogForm}>
+                초기화
+              </button>
+            </div>
+          </section>
+        </div>
+      )}
+    </section>
+
+    <section className="sales-panel-modern">
+      <button type="button" className="sales-panel-toggle" onClick={() => toggleSalesLogSection('list')}>
+        <span>8. 세일즈 일지 목록</span>
+        <strong>{salesLogOpenSections.list ? '−' : '+'}</strong>
+      </button>
+
+      {salesLogOpenSections.list && (
+        <div className="sales-panel-body">
+          <section className="card">
+            <div className="member-list-header">
+              <h3>세일즈 일지 목록</h3>
+
+              <div className="member-list-search-area">
+                <input
+                  placeholder="이름 / 연락처 / 니즈 / 메모 검색"
+                  value={salesLogSearch}
+                  onChange={(e) => setSalesLogSearch(e.target.value)}
+                />
+
+                <div className="member-list-filter-row">
+                  <input
+                    type="month"
+                    value={salesLogMonth}
+                    onChange={(e) => setSalesLogMonth(e.target.value)}
+                  />
+
+                  <select
+                    value={salesLogStageFilter}
+                    onChange={(e) => setSalesLogStageFilter(e.target.value)}
+                  >
+                    <option value="all">전체 단계</option>
+                    {salesStageOptions.map((option) => (
+                      <option key={option} value={option}>
+                        {option}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className="member-list-filter-row">
+                  <select
+                    value={salesLogResultFilter}
+                    onChange={(e) => setSalesLogResultFilter(e.target.value)}
+                  >
+                    <option value="all">전체 결과</option>
+                    {salesResultOptions.map((option) => (
+                      <option key={option.value} value={option.value}>
+                        {option.label}
+                      </option>
+                    ))}
+                  </select>
+
+                  <select
+                    value={salesLogConversionFilter}
+                    onChange={(e) => setSalesLogConversionFilter(e.target.value)}
+                  >
+                    <option value="all">전체 가능성</option>
+                    {salesConversionOptions.map((option) => (
+                      <option key={option.value} value={option.value}>
+                        {option.label}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+            </div>
+
+            <div className="grid-4">
+              <div className="mini-stat-card">
+                <strong>{salesLogSummary.total}</strong>
+                <span>전체 리드</span>
+              </div>
+              <div className="mini-stat-card">
+                <strong>{salesLogSummary.high}</strong>
+                <span>전환 높음</span>
+              </div>
+              <div className="mini-stat-card">
+                <strong>{salesLogSummary.closed}</strong>
+                <span>결제완료</span>
+              </div>
+              <div className="mini-stat-card">
+                <strong>{salesLogSummary.followup}</strong>
+                <span>후속관리중</span>
+              </div>
+            </div>
 
             <div className="list-stack">
-              {logs.map((log) => (
-                <div key={log.id} className="list-card">
-                  <div className="list-card-head">
-                    <div>
-                      <strong>{log.activity_time || '시간없음'} · {log.lead_name || '이름없음'}</strong>
-                      <p className="sub-text">
-                        {log.phone || '-'} / {log.source_channel || '-'} / {log.coach_name || '-'}
-                      </p>
-                    </div>
+              {groupedSalesLogs.length === 0 ? (
+                <div className="workout-list-empty">세일즈 일지가 없습니다.</div>
+              ) : null}
 
-                    <div className="inline-actions wrap">
-                      <button
-                        type="button"
-                        className="secondary-btn"
-                        onClick={() =>
-                          setCollapsedSalesLogs((prev) => ({ ...prev, [log.id]: !prev[log.id] }))
-                        }
-                      >
-                        {collapsedSalesLogs[log.id] ? '상세보기' : '간략보기'}
-                      </button>
-                      <button type="button" className="secondary-btn" onClick={() => handleSalesLogEdit(log)}>
-                        수정
-                      </button>
-                      <button type="button" className="danger-btn" onClick={() => handleSalesLogDelete(log.id)}>
-                        삭제
-                      </button>
-                    </div>
+              {groupedSalesLogs.map(([date, logs]) => (
+                <div key={date} className="sales-log-date-group">
+                  <div className="sales-log-date-title">{date}</div>
+
+                  <div className="list-stack">
+                    {logs.map((log) => (
+                      <div key={log.id} className="list-card">
+                        <div className="list-card-head">
+                          <div>
+                            <strong>{log.activity_time || '시간없음'} · {log.lead_name || '이름없음'}</strong>
+                            <p className="sub-text">
+                              {log.phone || '-'} / {log.source_channel || '-'} / {log.coach_name || '-'}
+                            </p>
+                          </div>
+
+                          <div className="inline-actions wrap">
+                            <button
+                              type="button"
+                              className="secondary-btn"
+                              onClick={() =>
+                                setCollapsedSalesLogs((prev) => ({ ...prev, [log.id]: !prev[log.id] }))
+                              }
+                            >
+                              {collapsedSalesLogs[log.id] ? '상세보기' : '간략보기'}
+                            </button>
+                            <button type="button" className="secondary-btn" onClick={() => handleSalesLogEdit(log)}>
+                              수정
+                            </button>
+                            <button type="button" className="danger-btn" onClick={() => handleSalesLogDelete(log.id)}>
+                              삭제
+                            </button>
+                          </div>
+                        </div>
+
+                        <p className="sub-text">
+                          핵심니즈: {log.main_need || '-'} / 단계: {log.current_stage || '-'} / 결과: {log.sales_result || '-'} / 전환: {log.conversion_score || '-'}
+                        </p>
+
+                        {!collapsedSalesLogs[log.id] ? (
+                          <div className="detail-box">
+                            <p><strong>상담 계기:</strong> {log.contact_reason || '-'}</p>
+                            <p><strong>OT 이유:</strong> {log.ot_reason || '-'}</p>
+                            <p><strong>불편부위:</strong> {log.pain_point || '-'}</p>
+                            <p><strong>회원 반응:</strong> {log.reaction_summary || '-'}</p>
+                            <p><strong>감정 상태:</strong> {log.emotion_status || '-'}</p>
+                            <p><strong>제안 상품:</strong> {log.proposal_product || '-'}</p>
+                            <p><strong>안내 가격:</strong> {log.proposal_price || '-'}</p>
+                            <p><strong>보류 이유:</strong> {log.fail_reason || '-'}</p>
+                            <p><strong>다음 연락일:</strong> {log.next_contact_date || '-'}</p>
+                            <p><strong>결제 예상일:</strong> {log.expected_close_date || '-'}</p>
+                            <p><strong>후속 액션:</strong> {log.follow_up_action || '-'}</p>
+                            <p><strong>진행 흐름:</strong> {log.consultation_flow || '-'}</p>
+                            <p><strong>상담 방식:</strong> {Array.isArray(log.consultation_method) ? log.consultation_method.join(', ') : '-'}</p>
+                            <p><strong>세일즈 방식:</strong> {Array.isArray(log.sales_method) ? log.sales_method.join(', ') : '-'}</p>
+                            <p><strong>OT 인원:</strong> {log.ot_count || 0}</p>
+                            <p><strong>인사 횟수:</strong> {log.greeting_count || 0}</p>
+                            <p><strong>인사 대상:</strong> {log.greeted_to || '-'}</p>
+                            <p><strong>메모:</strong> {log.diary || '-'}</p>
+                          </div>
+                        ) : null}
+                      </div>
+                    ))}
                   </div>
-
-                  <p className="sub-text">
-                    핵심니즈: {log.main_need || '-'} / 단계: {log.current_stage || '-'} / 결과: {log.sales_result || '-'} / 전환: {log.conversion_score || '-'}
-                  </p>
-
-                  {!collapsedSalesLogs[log.id] ? (
-                    <div className="detail-box">
-                      <p><strong>상담 계기:</strong> {log.contact_reason || '-'}</p>
-                      <p><strong>OT 이유:</strong> {log.ot_reason || '-'}</p>
-                      <p><strong>불편부위:</strong> {log.pain_point || '-'}</p>
-                      <p><strong>회원 반응:</strong> {log.reaction_summary || '-'}</p>
-                      <p><strong>감정 상태:</strong> {log.emotion_status || '-'}</p>
-                      <p><strong>제안 상품:</strong> {log.proposal_product || '-'}</p>
-                      <p><strong>안내 가격:</strong> {log.proposal_price || '-'}</p>
-                      <p><strong>보류 이유:</strong> {log.fail_reason || '-'}</p>
-                      <p><strong>다음 연락일:</strong> {log.next_contact_date || '-'}</p>
-                      <p><strong>결제 예상일:</strong> {log.expected_close_date || '-'}</p>
-                      <p><strong>후속 액션:</strong> {log.follow_up_action || '-'}</p>
-                      <p><strong>진행 흐름:</strong> {log.consultation_flow || '-'}</p>
-                      <p><strong>상담 방식:</strong> {Array.isArray(log.consultation_method) ? log.consultation_method.join(', ') : '-'}</p>
-                      <p><strong>세일즈 방식:</strong> {Array.isArray(log.sales_method) ? log.sales_method.join(', ') : '-'}</p>
-                      <p><strong>OT 인원:</strong> {log.ot_count || 0}</p>
-                      <p><strong>인사 횟수:</strong> {log.greeting_count || 0}</p>
-                      <p><strong>인사 대상:</strong> {log.greeted_to || '-'}</p>
-                      <p><strong>메모:</strong> {log.diary || '-'}</p>
-                    </div>
-                  ) : null}
                 </div>
               ))}
             </div>
-          </div>
-        ))}
-      </div>
+          </section>
+        </div>
+      )}
     </section>
   </div>
 )}
