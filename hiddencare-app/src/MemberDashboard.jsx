@@ -304,6 +304,19 @@ function getLevelColorClass(levelName = '') {
 
   return 'tier-default'
 }
+function getLevelColorClass(levelName = '') {
+  const name = String(levelName || '').trim()
+
+  if (name.includes('그린')) return 'tier-green'
+  if (name.includes('실버')) return 'tier-silver'
+  if (name.includes('골드')) return 'tier-gold'
+  if (name.includes('플래티넘')) return 'tier-platinum'
+  if (name.includes('다이아')) return 'tier-diamond'
+  if (name.includes('블랙')) return 'tier-black'
+  if (name.includes('인피니티')) return 'tier-infinity'
+
+  return 'tier-default'
+}
 function getXpLogIcon(sourceType) {
   if (sourceType === 'pt_workout') return '🏋️'
   if (sourceType === 'personal_workout') return '🔥'
