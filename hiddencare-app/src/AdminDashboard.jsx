@@ -4155,16 +4155,27 @@ const updateSetValue = (itemIndex, setIndex, field, value, subIndex = null) => {
     })),
   )
 
-  await loadWorkouts()
-  if (!workoutForm.id && workoutForm.workout_type === 'pt') {
-    await applyMemberXp({
-      memberId: workoutForm.member_id,
-      sourceType: 'pt_workout',
-      sourceId: targetWorkoutId,
-      sourceDate: workoutForm.workout_date,
-      note: '관리자 PT 운동기록 저장',
-    })
-  }
+await loadWorkouts()
+
+if (!workoutForm.id && workoutForm.workout_type === 'pt') {
+  await applyMemberXp({
+    memberId: workoutForm.member_id,
+    sourceType: 'pt_workout',
+    sourceId: targetWorkoutId,
+    sourceDate: workoutForm.workout_date,
+    note: '관리자 PT 운동기록 저장',
+  })
+}
+
+if (!workoutForm.id && workoutForm.workout_type === 'personal') {
+  await applyMemberXp({
+    memberId: workoutForm.member_id,
+    sourceType: 'personal_workout',
+    sourceId: targetWorkoutId,
+    sourceDate: workoutForm.workout_date,
+    note: '관리자 개인운동기록 저장',
+  })
+}
   if (workoutForm.workout_type === 'pt') {
     const { data: freshWorkouts } = await supabase
       .from('workouts')
@@ -6625,6 +6636,10 @@ const rebuildSalesXpByMonth = async (targetMonth) => {
 
   const targetXpTypes = [
     'pt_workout',
+    'personal_workout',
+    'diet_log',
+    'streak_bonus',
+    'weekly_bonus',
     'sale_bonus_10',
     'sale_bonus_20',
     'sale_bonus_30',
@@ -6632,7 +6647,7 @@ const rebuildSalesXpByMonth = async (targetMonth) => {
     'sale_diamond_bonus',
   ]
 
-  // 1️⃣ 기존 XP 로그 삭제 (PT + 매출)
+  // 1) 기존 XP 로그 삭제
   const { error: deleteXpError } = await supabase
     .from('member_xp_logs')
     .delete()
@@ -6646,7 +6661,7 @@ const rebuildSalesXpByMonth = async (targetMonth) => {
     return
   }
 
-  // 2️⃣ 해당 회원 매출 다시 조회
+  // 2) 매출 재조회 후 XP 재적립
   const { data: salesRows, error: salesError } = await supabase
     .from('sales_records')
     .select('*')
@@ -6660,9 +6675,8 @@ const rebuildSalesXpByMonth = async (targetMonth) => {
     return
   }
 
-  // 3️⃣ 매출 기준으로 XP 다시 적립
   for (const sale of salesRows || []) {
-    if (!sale.member_id) continue
+    if (!sale.member_id || !sale.sale_date) continue
 
     const saleBonusRule = getSaleBonusRule(sale.purchased_session_count)
     if (!saleBonusRule) continue
@@ -6691,42 +6705,162 @@ const rebuildSalesXpByMonth = async (targetMonth) => {
     }
   }
 
-  // 4️⃣ 해당 회원 PT 운동기록 다시 조회
+  // 3) 운동기록 재조회 후 XP 재적립 (PT + 개인운동)
   const { data: workoutRows, error: workoutError } = await supabase
     .from('workouts')
     .select('*')
     .eq('member_id', memberId)
     .eq('admin_id', currentAdminId)
-    .eq('workout_type', 'pt')
     .order('workout_date', { ascending: true })
 
   if (workoutError) {
-    console.error('회원 PT 운동기록 재조회 실패:', workoutError)
-    setMessage(`회원 PT 운동기록 재조회 실패: ${workoutError.message}`)
+    console.error('회원 운동기록 재조회 실패:', workoutError)
+    setMessage(`회원 운동기록 재조회 실패: ${workoutError.message}`)
     return
   }
 
-  // 5️⃣ PT 운동기록 XP 다시 적립
   for (const workout of workoutRows || []) {
     if (!workout.id || !workout.workout_date) continue
 
+    if (workout.workout_type === 'pt') {
+      await applyMemberXp({
+        memberId,
+        sourceType: 'pt_workout',
+        sourceId: workout.id,
+        sourceDate: workout.workout_date,
+        note: '관리자 PT 운동기록 재정산',
+      })
+    }
+
+    if (workout.workout_type === 'personal') {
+      await applyMemberXp({
+        memberId,
+        sourceType: 'personal_workout',
+        sourceId: workout.id,
+        sourceDate: workout.workout_date,
+        note: '관리자 개인운동기록 재정산',
+      })
+    }
+  }
+
+  // 4) 식단기록 재조회 후 XP 재적립
+  const { data: dietRows, error: dietError } = await supabase
+    .from('diet_logs')
+    .select('*')
+    .eq('member_id', memberId)
+    .eq('admin_id', currentAdminId)
+    .order('created_at', { ascending: true })
+
+  if (dietError) {
+    console.error('회원 식단기록 재조회 실패:', dietError)
+    setMessage(`회원 식단기록 재조회 실패: ${dietError.message}`)
+    return
+  }
+
+  for (const diet of dietRows || []) {
+    const dietDate = diet.log_date || diet.created_at?.slice(0, 10)
+    if (!diet.id || !dietDate) continue
+
     await applyMemberXp({
       memberId,
-      sourceType: 'pt_workout',
-      sourceId: workout.id,
-      sourceDate: workout.workout_date,
-      note: '관리자 PT 운동기록 재정산',
+      sourceType: 'diet_log',
+      sourceId: diet.id,
+      sourceDate: dietDate,
+      note: '식단기록 재정산',
     })
   }
 
-  // 6️⃣ 레벨 재계산
+  // 5) 연속활동 보너스 / 주간 꾸준함 보너스 재계산
+  const allActivityDates = [
+    ...(workoutRows || []).map((row) => row.workout_date).filter(Boolean),
+    ...(dietRows || []).map((row) => row.log_date || row.created_at?.slice(0, 10)).filter(Boolean),
+  ]
+
+  const uniqueDates = [...new Set(allActivityDates)].sort()
+
+  // 연속활동 보너스: 3일 연속 달성일에 1회 지급
+  let streakCount = 1
+  for (let i = 0; i < uniqueDates.length; i += 1) {
+    if (i === 0) {
+      streakCount = 1
+    } else {
+      const prev = new Date(uniqueDates[i - 1])
+      const curr = new Date(uniqueDates[i])
+      const diffDays = Math.round((curr - prev) / 86400000)
+
+      if (diffDays === 1) {
+        streakCount += 1
+      } else {
+        streakCount = 1
+      }
+    }
+
+    if (streakCount >= 3) {
+      await applyMemberXp({
+        memberId,
+        sourceType: 'streak_bonus',
+        sourceId: `streak-${memberId}-${uniqueDates[i]}`,
+        sourceDate: uniqueDates[i],
+        note: `연속활동 보너스 재정산 (${streakCount}일 연속)`,
+      })
+    }
+  }
+
+  // 주간 꾸준함 보너스: 같은 주에 활동일 3일 이상이면 1회 지급
+  const weekMap = {}
+  for (const date of uniqueDates) {
+    const weekKey = getWeekKey(date)
+    if (!weekMap[weekKey]) weekMap[weekKey] = []
+    weekMap[weekKey].push(date)
+  }
+
+  for (const [weekKey, dates] of Object.entries(weekMap)) {
+    const weekDates = [...new Set(dates)].sort()
+    if (weekDates.length >= 3) {
+      await applyMemberXp({
+        memberId,
+        sourceType: 'weekly_bonus',
+        sourceId: `weekly-${memberId}-${weekKey}`,
+        sourceDate: weekDates[weekDates.length - 1],
+        note: `주간 꾸준함 보너스 재정산 (${weekDates.length}일 활동)`,
+      })
+    }
+  }
+
+  // 6) 레벨 재계산
   await recalcMemberLevelFromLogs(memberId)
 
-  // 7️⃣ UI 갱신
+  // 7) UI 갱신
   await loadMemberLevels()
   await loadMemberXpLogs()
 
-  setMessage('선택 회원 XP 재정산 완료')
+  setMessage('선택 회원 XP 재계산 완료')
+}
+  const forceRefreshAllMembersXp = async () => {
+  if (!currentAdminId) return
+
+  const ok = window.confirm(
+    '전체 회원 XP를 현재 기준으로 다시 계산할까요?\n기존 운동/식단/보너스/매출 XP를 지우고 다시 적립합니다.'
+  )
+  if (!ok) return
+
+  setMessage('전체 회원 XP 재계산 중입니다...')
+
+  try {
+    const memberIds = [...new Set(members.map((member) => member.id).filter(Boolean))]
+
+    for (const memberId of memberIds) {
+      await forceRefreshSingleMemberXp(memberId)
+    }
+
+    await loadMemberLevels()
+    await loadMemberXpLogs()
+
+    setMessage('전체 회원 XP 재계산 완료')
+  } catch (error) {
+    console.error('전체 회원 XP 재계산 실패:', error)
+    setMessage(`전체 회원 XP 재계산 실패: ${error.message}`)
+  }
 }
   const handleManagerActionEdit = (log) => {
   setEditingManagerActionId(log.id)
@@ -10929,7 +11063,13 @@ const rebuildSalesXpByMonth = async (targetMonth) => {
     >
       선택 회원 XP 재계산
     </button>
-
+<button
+  type="button"
+  className="secondary-btn"
+  onClick={forceRefreshAllMembersXp}
+>
+  전체 회원 XP 재계산
+</button>
     <button
       type="button"
       className="danger-btn"
