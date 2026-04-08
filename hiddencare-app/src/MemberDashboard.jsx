@@ -2021,54 +2021,32 @@ const applyMemberXp = async ({
       .slice(-1)[0] || null
 
   const { error: levelUpdateError } = await supabase
-    .from('member_levels')
-    .upsert(
-      {
-        member_id: memberId,
-        admin_id: adminId,
-        gym_id: gymId,
-        total_xp: nextTotalXp,
-        weekly_score: nextWeeklyScore,
-        monthly_score: nextMonthlyScore,
-        level_no: Number(matchedLevel?.level_no || currentLevelRow?.level_no || 1),
-          const { error: levelUpdateError } = await supabase
-    .from('member_levels')
-    .upsert(
-      {
-        member_id: memberId,
-        admin_id: adminId,
-        gym_id: gymId,
-        total_xp: nextTotalXp,
-        weekly_score: nextWeeklyScore,
-        monthly_score: nextMonthlyScore,
-        level_no: Number(matchedLevel?.level_no || currentLevelRow?.level_no || 1),
-        level_key: matchedLevel?.level_key || currentLevelRow?.level_key || 'hidden_green_1',
-level_name: matchedLevel?.level_name || currentLevelRow?.level_name || '히든 그린 Ⅰ',
-        streak_days: Number(currentLevelRow?.streak_days || 0),
-        last_activity_date: sourceDate,
-        last_xp_applied_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-      },
-      { onConflict: 'member_id' },
-    )
+  .from('member_levels')
+  .upsert(
+    {
+      member_id: memberId,
+      admin_id: adminId,
+      gym_id: gymId,
+      total_xp: nextTotalXp,
+      weekly_score: nextWeeklyScore,
+      monthly_score: nextMonthlyScore,
+      level_no: Number(matchedLevel?.level_no || currentLevelRow?.level_no || 1),
+      level_key: matchedLevel?.level_key || currentLevelRow?.level_key || 'hidden_green_1',
+      level_name: matchedLevel?.level_name || currentLevelRow?.level_name || '히든 그린 Ⅰ',
+      streak_days: Number(currentLevelRow?.streak_days || 0),
+      last_activity_date: sourceDate,
+      last_xp_applied_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    },
+    { onConflict: 'member_id' },
+  )
 
-  if (levelUpdateError) {
-    console.error('member_levels 업데이트 실패:', levelUpdateError)
-    return { ok: false, reason: 'level_update_failed'
-        streak_days: Number(currentLevelRow?.streak_days || 0),
-        last_activity_date: sourceDate,
-        last_xp_applied_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-      },
-      { onConflict: 'member_id' },
-    )
+if (levelUpdateError) {
+  console.error('member_levels 업데이트 실패:', levelUpdateError)
+  return { ok: false, reason: 'level_update_failed', error: levelUpdateError }
+}
 
-  if (levelUpdateError) {
-    console.error('member_levels 업데이트 실패:', levelUpdateError)
-    return { ok: false, reason: 'level_update_failed', error: levelUpdateError }
-  }
-
-  return { ok: true, xp: xpValue }
+return { ok: true, xp: xpValue }
 }
   const handleHealthSubmit = async (e) => {
   e.preventDefault()
