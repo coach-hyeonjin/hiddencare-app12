@@ -19544,3 +19544,151 @@ textarea:focus {
 .activity-rank-item.tier-diamond { background: linear-gradient(135deg, #a18cd1, #fbc2eb); color:#fff; }
 .activity-rank-item.tier-black { background: linear-gradient(135deg, #000000, #434343); color:#fff; }
 .activity-rank-item.tier-infinity { background: linear-gradient(135deg, #ff6a00, #ee0979); color:#fff; }
+/* ===== VIP 티어 카드 최종 적용 ===== */
+
+.growth-card-tier,
+.growth-hero-tier,
+.activity-rank-item[class*='tier-'] {
+  position: relative;
+  overflow: hidden;
+  border-radius: 18px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  box-shadow: 0 12px 30px rgba(15, 23, 42, 0.14);
+}
+
+.growth-card-tier::before,
+.growth-hero-tier::before,
+.activity-rank-item[class*='tier-']::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(180deg, rgba(255,255,255,0.12), rgba(255,255,255,0.02)),
+    linear-gradient(135deg, rgba(255,255,255,0.12), transparent 60%);
+  pointer-events: none;
+}
+
+.growth-card-tier > *,
+.growth-hero-tier > *,
+.activity-rank-item[class*='tier-'] > * {
+  position: relative;
+  z-index: 1;
+}
+
+/* ===== 성장 요약 / hero / 등급표 전부 같은 티어 배경 적용 ===== */
+.growth-card-tier.tier-green,
+.growth-hero-tier.tier-green,
+.activity-rank-item.tier-green {
+  background: linear-gradient(135deg, #0f9b0f, #00c853);
+  color: #fff;
+}
+
+.growth-card-tier.tier-silver,
+.growth-hero-tier.tier-silver,
+.activity-rank-item.tier-silver {
+  background: linear-gradient(135deg, #8f9ba8, #cfd6dd);
+  color: #0f172a;
+}
+
+.growth-card-tier.tier-gold,
+.growth-hero-tier.tier-gold,
+.activity-rank-item.tier-gold {
+  background: linear-gradient(135deg, #b8860b, #ffd54f);
+  color: #1f2937;
+}
+
+.growth-card-tier.tier-platinum,
+.growth-hero-tier.tier-platinum,
+.activity-rank-item.tier-platinum {
+  background: linear-gradient(135deg, #2563eb, #38bdf8);
+  color: #fff;
+}
+
+.growth-card-tier.tier-diamond,
+.growth-hero-tier.tier-diamond,
+.activity-rank-item.tier-diamond {
+  background: linear-gradient(135deg, #7c3aed, #ec4899);
+  color: #fff;
+}
+
+.growth-card-tier.tier-black,
+.growth-hero-tier.tier-black,
+.activity-rank-item.tier-black {
+  background: linear-gradient(135deg, #05070c, #374151);
+  color: #fff;
+}
+
+.growth-card-tier.tier-infinity,
+.growth-hero-tier.tier-infinity,
+.activity-rank-item.tier-infinity {
+  background: linear-gradient(135deg, #ff6a00, #ee0979);
+  color: #fff;
+}
+
+/* ===== 텍스트/칩 ===== */
+.growth-hero-tier-title,
+.growth-level-inline-light,
+.growth-level-list-title,
+.growth-tier-text,
+.growth-tier-score {
+  color: inherit !important;
+}
+
+.growth-hero-tier-title {
+  font-size: 30px;
+  font-weight: 800;
+  line-height: 1.08;
+}
+
+.growth-level-inline-light {
+  font-size: 24px;
+  font-weight: 800;
+  line-height: 1.1;
+}
+
+.growth-tier-chip {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: fit-content;
+  margin-top: 8px;
+  padding: 7px 13px;
+  border-radius: 999px;
+  background: rgba(255,255,255,0.18);
+  border: 1px solid rgba(255,255,255,0.2);
+  backdrop-filter: blur(8px);
+  color: inherit;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.tier-silver .growth-tier-chip,
+.tier-gold .growth-tier-chip {
+  background: rgba(255,255,255,0.32);
+  border-color: rgba(255,255,255,0.34);
+}
+
+.growth-hero-tier-sub {
+  margin-top: 10px;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: rgba(255,255,255,0.88);
+}
+
+.activity-rank-item[class*='tier-'] .compact-text,
+.activity-rank-item[class*='tier-'] .activity-rank-score,
+.activity-rank-item[class*='tier-'] strong {
+  color: inherit !important;
+}
+
+.activity-rank-item[class*='tier-']:hover,
+.growth-card-tier:hover,
+.growth-hero-tier:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 18px 40px rgba(15, 23, 42, 0.18);
+  transition: 0.2s ease;
+}
