@@ -6454,26 +6454,25 @@ const rebuildSalesXpByMonth = async (targetMonth) => {
     if (!saleBonusRule) continue
 
     await applyMemberXp({
-      memberId: sale.member_id,
-      sourceType: `sale_bonus_${saleBonusRule.minSessions}`,
-      sourceId: sale.id,
-      sourceDate: sale.sale_date,
-      note: `${saleBonusRule.label} 재정산 지급`,
-      forceXp: saleBonusRule.xp,
-    })
+  memberId: sale.member_id,
+  sourceType: `sale_bonus_${saleBonusRule.minSessions}`,
+  sourceId: sale.id,
+  sourceDate: sale.sale_date,
+  note: `${saleBonusRule.label} 재정산 지급`,
+})
 
     if (isBenefitTierMember(sale.member_id)) {
   const extraXp = getBenefitExtraXp(sale.member_id, saleBonusRule.xp)
 
   if (extraXp > 0) {
     await applyMemberXp({
-      memberId: sale.member_id,
-      sourceType: 'sale_diamond_bonus',
-      sourceId: sale.id,
-      sourceDate: sale.sale_date,
-      note: `플래티넘 이상 추가 보너스 재정산 +${extraXp}XP`,
-      forceXp: extraXp,
-    })
+  memberId: sale.member_id,
+  sourceType: 'sale_diamond_bonus',
+  sourceId: sale.id,
+  sourceDate: sale.sale_date,
+  note: `플래티넘 이상 추가 보너스 재정산 +${extraXp}XP`,
+  forceXp: extraXp,
+})
   }
 }
   }
@@ -6497,6 +6496,129 @@ const rebuildSalesXpByMonth = async (targetMonth) => {
   await loadMemberXpLogs()
 
   setMessage(`${targetMonth} 매출 XP 재정산이 완료되었습니다.`)
+}
+  const rebuildAllSalesXp = async () => {
+  if (!currentAdminId) return
+
+  const ok = window.confirm(
+    '전체 기간 매출 XP를 새 기준으로 다시 계산할까요?\n기존 매출 XP 로그를 지우고 현재 설정 기준으로 다시 적립합니다.'
+  )
+  if (!ok) return
+
+  setMessage('전체 기간 매출 XP 재정산 중입니다...')
+
+  const saleXpTypes = [
+    'sale_bonus_10',
+    'sale_bonus_20',
+    'sale_bonus_30',
+    'sale_bonus_50',
+    'sale_diamond_bonus',
+  ]
+
+  try {
+    // 1) 기존 매출 XP 로그가 걸려 있던 회원 확보
+    const { data: oldXpLogs, error: oldXpLogsError } = await supabase
+      .from('member_xp_logs')
+      .select('member_id')
+      .eq('admin_id', currentAdminId)
+      .in('source_type', saleXpTypes)
+
+    if (oldXpLogsError) {
+      console.error('기존 매출 XP 로그 조회 실패:', oldXpLogsError)
+      setMessage(`기존 매출 XP 로그 조회 실패: ${oldXpLogsError.message}`)
+      return
+    }
+
+    const oldMemberIds = [...new Set((oldXpLogs || []).map((row) => row.member_id).filter(Boolean))]
+
+    // 2) 기존 매출 XP 로그 전체 삭제
+    const { error: deleteXpError } = await supabase
+      .from('member_xp_logs')
+      .delete()
+      .eq('admin_id', currentAdminId)
+      .in('source_type', saleXpTypes)
+
+    if (deleteXpError) {
+      console.error('전체 매출 XP 로그 삭제 실패:', deleteXpError)
+      setMessage(`전체 매출 XP 로그 삭제 실패: ${deleteXpError.message}`)
+      return
+    }
+
+    // 3) 현재 남아 있는 매출 전체 조회
+    const { data: salesRows, error: salesError } = await supabase
+      .from('sales_records')
+      .select('*')
+      .eq('admin_id', currentAdminId)
+      .order('sale_date', { ascending: true })
+
+    if (salesError) {
+      console.error('매출 전체 재조회 실패:', salesError)
+      setMessage(`매출 전체 재조회 실패: ${salesError.message}`)
+      return
+    }
+
+    const sales = salesRows || []
+    let appliedBaseCount = 0
+    let appliedBenefitCount = 0
+
+    for (const sale of sales) {
+      if (!sale.member_id || !sale.sale_date) continue
+
+      const saleBonusRule = getSaleBonusRule(sale.purchased_session_count)
+      if (!saleBonusRule) continue
+
+      const saleXpResult = await applyMemberXp({
+        memberId: sale.member_id,
+        sourceType: `sale_bonus_${saleBonusRule.minSessions}`,
+        sourceId: sale.id,
+        sourceDate: sale.sale_date,
+        note: `${saleBonusRule.label} 전체 재정산 지급`,
+      })
+
+      if (saleXpResult?.ok) {
+        appliedBaseCount += 1
+      }
+
+      if (isBenefitTierMember(sale.member_id)) {
+        const extraXp = getBenefitExtraXp(sale.member_id, saleBonusRule.xp)
+
+        if (extraXp > 0) {
+          const benefitXpResult = await applyMemberXp({
+            memberId: sale.member_id,
+            sourceType: 'sale_diamond_bonus',
+            sourceId: sale.id,
+            sourceDate: sale.sale_date,
+            note: `플래티넘 이상 추가 보너스 전체 재정산 +${extraXp}XP`,
+            forceXp: extraXp,
+          })
+
+          if (benefitXpResult?.ok) {
+            appliedBenefitCount += 1
+          }
+        }
+      }
+    }
+
+    // 4) 삭제 전 걸려 있던 회원 + 현재 매출 회원 레벨 재계산
+    const currentMemberIds = [...new Set(sales.map((row) => row.member_id).filter(Boolean))]
+    const allAffectedMemberIds = [...new Set([...oldMemberIds, ...currentMemberIds])]
+
+    for (const memberId of allAffectedMemberIds) {
+      await recalcMemberLevelFromLogs(memberId)
+    }
+
+    await loadSalesRecords()
+    await loadSalesSummary(saleMonth)
+    await loadMemberLevels()
+    await loadMemberXpLogs()
+
+    setMessage(
+      `전체 기간 매출 XP 재정산 완료 · 기본 XP ${appliedBaseCount}건 / 추가 XP ${appliedBenefitCount}건`
+    )
+  } catch (error) {
+    console.error('전체 기간 매출 XP 재정산 실패:', error)
+    setMessage(`전체 기간 매출 XP 재정산 실패: ${error.message}`)
+  }
 }
   const forceRefreshSingleMemberXp = async (memberId) => {
   if (!memberId || !currentAdminId) return
@@ -11408,34 +11530,42 @@ const rebuildSalesXpByMonth = async (targetMonth) => {
   <h3>월별 매출 요약</h3>
 
   <div className="inline-actions wrap">
-    <button
-      type="button"
-      className="secondary-btn"
-      onClick={() => rebuildSalesXpByMonth(saleMonth)}
-    >
-      {saleMonth} 매출 XP 재정산
-    </button>
+  <button
+    type="button"
+    className="secondary-btn"
+    onClick={() => rebuildSalesXpByMonth(saleMonth)}
+  >
+    {saleMonth} 매출 XP 재정산
+  </button>
 
-    <button
-      type="button"
-      className="secondary-btn"
-      onClick={() =>
-        downloadCsv(`sales_${saleMonth}.csv`, [
-          ['날짜', '회원', '프로그램', '금액', '결제방법', 'VIP'],
-          ...filteredSales.map((sale) => [
-            sale.sale_date || '',
-            sale.members?.name || '',
-            sale.programs?.name || '',
-            sale.amount || 0,
-            sale.payment_method || '',
-            sale.is_vip ? 'Y' : 'N',
-          ]),
-        ])
-      }
-    >
-      CSV
-    </button>
-  </div>
+  <button
+    type="button"
+    className="secondary-btn"
+    onClick={rebuildAllSalesXp}
+  >
+    전체 매출 XP 재정산
+  </button>
+
+  <button
+    type="button"
+    className="secondary-btn"
+    onClick={() =>
+      downloadCsv(`sales_${saleMonth}.csv`, [
+        ['날짜', '회원', '프로그램', '금액', '결제방법', 'VIP'],
+        ...filteredSales.map((sale) => [
+          sale.sale_date || '',
+          sale.members?.name || '',
+          sale.programs?.name || '',
+          sale.amount || 0,
+          sale.payment_method || '',
+          sale.is_vip ? 'Y' : 'N',
+        ]),
+      ])
+    }
+  >
+    CSV
+  </button>
+</div>
 </div>
 
             <div className="stats-grid">
