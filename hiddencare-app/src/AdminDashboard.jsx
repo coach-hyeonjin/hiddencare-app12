@@ -5024,7 +5024,106 @@ await loadMemberXpLogs()
       memo: sale.memo || '',
     })
   }
+const handleBackfillPastSalesXp = async () => {
+  const ok = window.confirm(
+    '이전 매출 기록들의 XP를 일괄 반영할까요?\n이미 반영된 건 중복 지급되지 않습니다.'
+  )
+  if (!ok) return
 
+  setMessage('이전 매출 XP 반영 중입니다...')
+
+  try {
+    let query = supabase
+      .from('sales_records')
+      .select('*')
+      .order('sale_date', { ascending: false })
+
+    if (currentGymId) {
+      query = query.eq('gym_id', currentGymId)
+    } else if (currentAdminId) {
+      query = query.eq('admin_id', currentAdminId)
+    }
+
+    const { data: sales, error } = await query
+
+    if (error) {
+      console.error('이전 매출 조회 실패:', error)
+      setMessage(`이전 매출 조회 실패: ${error.message}`)
+      return
+    }
+
+    if (!sales?.length) {
+      setMessage('반영할 이전 매출 기록이 없습니다.')
+      return
+    }
+
+    let checkedCount = 0
+    let saleXpAppliedCount = 0
+    let benefitXpAppliedCount = 0
+    let skippedCount = 0
+    let failedCount = 0
+
+    for (const sale of sales) {
+      checkedCount += 1
+
+      if (!sale.member_id || !sale.sale_date) {
+        skippedCount += 1
+        continue
+      }
+
+      const saleBonusRule = getSaleBonusRule(sale.purchased_session_count)
+
+      if (!saleBonusRule) {
+        skippedCount += 1
+        continue
+      }
+
+      const saleXpResult = await applyMemberXp({
+        memberId: sale.member_id,
+        sourceType: `sale_bonus_${saleBonusRule.minSessions}`,
+        sourceId: sale.id,
+        sourceDate: sale.sale_date,
+        note: `${saleBonusRule.label} 지급`,
+        forceXp: saleBonusRule.xp,
+      })
+
+      if (saleXpResult?.ok) {
+        saleXpAppliedCount += 1
+      } else if (saleXpResult?.reason !== 'already_exists') {
+        failedCount += 1
+      }
+
+      const extraXp = getBenefitExtraXp(sale.member_id, saleBonusRule.xp)
+
+      if (extraXp > 0) {
+        const benefitXpResult = await applyMemberXp({
+          memberId: sale.member_id,
+          sourceType: 'sale_diamond_bonus',
+          sourceId: sale.id,
+          sourceDate: sale.sale_date,
+          note: `혜택 등급 등록 추가 보너스 +${extraXp}XP`,
+          forceXp: extraXp,
+        })
+
+        if (benefitXpResult?.ok) {
+          benefitXpAppliedCount += 1
+        } else if (benefitXpResult?.reason !== 'already_exists') {
+          failedCount += 1
+        }
+      }
+    }
+
+    await loadMemberLevels()
+    await loadMemberXpLogs()
+
+    setMessage(
+      `이전 매출 XP 반영 완료 · 확인 ${checkedCount}건 / 기본 XP ${saleXpAppliedCount}건 / 추가 XP ${benefitXpAppliedCount}건 / 건너뜀 ${skippedCount}건 / 실패 ${failedCount}건`
+    )
+  } catch (error) {
+    console.error('이전 매출 XP 반영 실패:', error)
+    setMessage(`이전 매출 XP 반영 실패: ${error.message}`)
+  }
+}
   const handleSaleDelete = async (saleId) => {
   if (!window.confirm('매출 기록을 삭제할까요?')) return
 
@@ -11241,13 +11340,22 @@ const rebuildSalesXpByMonth = async (targetMonth) => {
               </label>
 
               <div className="inline-actions wrap">
-                <button className="primary-btn" type="submit">
-                  {editingSaleId ? '매출 수정' : '매출 저장'}
-                </button>
-                <button type="button" className="secondary-btn" onClick={resetSaleForm}>
-                  초기화
-                </button>
-              </div>
+  <button className="primary-btn" type="submit">
+    {editingSaleId ? '매출 수정' : '매출 저장'}
+  </button>
+
+  <button type="button" className="secondary-btn" onClick={resetSaleForm}>
+    초기화
+  </button>
+
+  <button
+    type="button"
+    className="secondary-btn"
+    onClick={handleBackfillPastSalesXp}
+  >
+    이전 매출 XP 일괄 반영
+  </button>
+</div>
             </form>
           </section>
         </div>
