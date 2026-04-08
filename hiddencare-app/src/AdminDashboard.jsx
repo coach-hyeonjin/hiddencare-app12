@@ -4960,13 +4960,12 @@ const handlePartnerUsageReject = async (usageId) => {
 
     if (saleBonusRule) {
       const saleXpResult = await applyMemberXp({
-        memberId: payload.member_id,
-        sourceType: `sale_bonus_${saleBonusRule.minSessions}`,
-        sourceId: insertedSale.id,
-        sourceDate: payload.sale_date,
-        note: `${saleBonusRule.label} 지급`,
-        forceXp: saleBonusRule.xp,
-      })
+  memberId: payload.member_id,
+  sourceType: `sale_bonus_${saleBonusRule.minSessions}`,
+  sourceId: insertedSale.id,
+  sourceDate: payload.sale_date,
+  note: `${saleBonusRule.label} 지급`,
+})
 
       console.log('매출 보너스 XP 결과:', saleXpResult)
 
@@ -4975,17 +4974,16 @@ const handlePartnerUsageReject = async (usageId) => {
       }
 
       if (saleXpResult?.ok && isDiamondOrHigherMember(payload.member_id)) {
-        const extraXp = getDiamondExtraXp(saleBonusRule.xp)
+        const extraXp = getBenefitExtraXp(payload.member_id, saleBonusRule.xp)
 
         if (extraXp > 0) {
-          const diamondXpResult = await applyMemberXp({
-            memberId: payload.member_id,
-            sourceType: 'sale_diamond_bonus',
-            sourceId: insertedSale.id,
-            sourceDate: payload.sale_date,
-            note: `다이아 이상 등록 추가 보너스 +${extraXp}XP`,
-            forceXp: extraXp,
-          })
+         const diamondXpResult = await applyMemberXp({
+  memberId: payload.member_id,
+  sourceType: 'sale_diamond_bonus',
+  sourceId: insertedSale.id,
+  sourceDate: payload.sale_date,
+  note: `다이아 이상 등록 추가 보너스`,
+})
 
           console.log('다이아 추가 XP 결과:', diamondXpResult)
 
@@ -6246,7 +6244,50 @@ const getSaleBonusRule = (sessionCount = 0) => {
   const count = Number(sessionCount || 0)
   return SALE_XP_BONUS_RULES.find((rule) => count >= rule.minSessions) || null
 }
+const getXpRuleValue = (ruleCode) => {
+  const rule = memberXpSettings.find(
+    (item) => item.rule_code === ruleCode && item.is_active !== false
+  )
+  return Number(rule?.xp || 0)
+}
 
+const getSaleBonusPreviewText = (sessionCount = 0) => {
+  const count = Number(sessionCount || 0)
+
+  if (count >= 50) {
+    return `50회 등록 보너스 +${getXpRuleValue('sale_bonus_50')}XP`
+  }
+  if (count >= 30) {
+    return `30회 등록 보너스 +${getXpRuleValue('sale_bonus_30')}XP`
+  }
+  if (count >= 20) {
+    return `20회 등록 보너스 +${getXpRuleValue('sale_bonus_20')}XP`
+  }
+  if (count >= 10) {
+    return `10회 등록 보너스 +${getXpRuleValue('sale_bonus_10')}XP`
+  }
+
+  return '10회부터 등록 보너스 XP가 지급됩니다.'
+}
+
+const getBenefitPreviewText = (memberId, sessionCount = 0) => {
+  if (!memberId) {
+    return '플래티넘 / 다이아 / 블랙 / 인피니티 회원은 등급에 따라 등록 보너스 XP가 추가 지급됩니다.'
+  }
+
+  const saleBonusRule = getSaleBonusRule(sessionCount)
+  if (!saleBonusRule) {
+    return '플래티넘 / 다이아 / 블랙 / 인피니티 회원은 등급에 따라 등록 보너스 XP가 추가 지급됩니다.'
+  }
+
+  const extraXp = getBenefitExtraXp(memberId, saleBonusRule.xp)
+
+  if (extraXp > 0) {
+    return `현재 선택 회원은 등급 추가 보너스 +${extraXp}XP 대상입니다.`
+  }
+
+  return '현재 선택 회원은 추가 등급 보너스 대상이 아닙니다.'
+}
 const isBenefitTierMember = (memberId) => {
   const levelRow = memberLevels.find((item) => item.member_id === memberId)
   const levelName = String(levelRow?.level_name || '')
@@ -11288,19 +11329,11 @@ const rebuildSalesXpByMonth = async (targetMonth) => {
     value={saleForm.purchased_session_count}
     onChange={(e) => setSaleForm({ ...saleForm, purchased_session_count: e.target.value })}
   />
-  <div className="compact-text">
-    {Number(saleForm.purchased_session_count || 0) >= 50
-      ? '50회 등록 보너스 +800XP'
-      : Number(saleForm.purchased_session_count || 0) >= 30
-      ? '30회 등록 보너스 +450XP'
-      : Number(saleForm.purchased_session_count || 0) >= 20
-      ? '20회 등록 보너스 +250XP'
-      : Number(saleForm.purchased_session_count || 0) >= 10
-      ? '10회 등록 보너스 +100XP'
-      : '10회부터 등록 보너스 XP가 지급됩니다.'}
-  </div>
-                 <div className="compact-text">
-  플래티넘 / 다이아 / 블랙 / 인피니티 회원은 등급에 따라 등록 보너스 XP가 추가 지급됩니다.
+ <div className="compact-text">
+  {getSaleBonusPreviewText(saleForm.purchased_session_count)}
+</div>
+<div className="compact-text">
+  {getBenefitPreviewText(saleForm.member_id, saleForm.purchased_session_count)}
 </div>
 </label>
 
