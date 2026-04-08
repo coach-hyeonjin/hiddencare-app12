@@ -6623,23 +6623,26 @@ const rebuildSalesXpByMonth = async (targetMonth) => {
   const forceRefreshSingleMemberXp = async (memberId) => {
   if (!memberId || !currentAdminId) return
 
-  // 1️⃣ 기존 매출 XP 삭제
-  const { error: deleteSalesXpError } = await supabase
+  const targetXpTypes = [
+    'pt_workout',
+    'sale_bonus_10',
+    'sale_bonus_20',
+    'sale_bonus_30',
+    'sale_bonus_50',
+    'sale_diamond_bonus',
+  ]
+
+  // 1️⃣ 기존 XP 로그 삭제 (PT + 매출)
+  const { error: deleteXpError } = await supabase
     .from('member_xp_logs')
     .delete()
     .eq('member_id', memberId)
     .eq('admin_id', currentAdminId)
-    .in('source_type', [
-      'sale_bonus_10',
-      'sale_bonus_20',
-      'sale_bonus_30',
-      'sale_bonus_50',
-      'sale_diamond_bonus',
-    ])
+    .in('source_type', targetXpTypes)
 
-  if (deleteSalesXpError) {
-    console.error('회원 매출 XP 로그 삭제 실패:', deleteSalesXpError)
-    setMessage(`회원 매출 XP 로그 삭제 실패: ${deleteSalesXpError.message}`)
+  if (deleteXpError) {
+    console.error('회원 XP 로그 삭제 실패:', deleteXpError)
+    setMessage(`회원 XP 로그 삭제 실패: ${deleteXpError.message}`)
     return
   }
 
@@ -6649,6 +6652,7 @@ const rebuildSalesXpByMonth = async (targetMonth) => {
     .select('*')
     .eq('member_id', memberId)
     .eq('admin_id', currentAdminId)
+    .order('sale_date', { ascending: true })
 
   if (salesError) {
     console.error('회원 매출 재조회 실패:', salesError)
@@ -6656,10 +6660,8 @@ const rebuildSalesXpByMonth = async (targetMonth) => {
     return
   }
 
-  const rows = salesRows || []
-
   // 3️⃣ 매출 기준으로 XP 다시 적립
-  for (const sale of rows) {
+  for (const sale of salesRows || []) {
     if (!sale.member_id) continue
 
     const saleBonusRule = getSaleBonusRule(sale.purchased_session_count)
@@ -6671,30 +6673,56 @@ const rebuildSalesXpByMonth = async (targetMonth) => {
       sourceId: sale.id,
       sourceDate: sale.sale_date,
       note: `${saleBonusRule.label} 재정산 지급`,
-      forceXp: saleBonusRule.xp,
     })
 
-    // 💎 다이아 추가 XP
     if (isBenefitTierMember(sale.member_id)) {
-  const extraXp = getBenefitExtraXp(sale.member_id, saleBonusRule.xp)
+      const extraXp = getBenefitExtraXp(sale.member_id, saleBonusRule.xp)
 
-  if (extraXp > 0) {
+      if (extraXp > 0) {
+        await applyMemberXp({
+          memberId: sale.member_id,
+          sourceType: 'sale_diamond_bonus',
+          sourceId: sale.id,
+          sourceDate: sale.sale_date,
+          note: `플래티넘 이상 추가 보너스 재정산 +${extraXp}XP`,
+          forceXp: extraXp,
+        })
+      }
+    }
+  }
+
+  // 4️⃣ 해당 회원 PT 운동기록 다시 조회
+  const { data: workoutRows, error: workoutError } = await supabase
+    .from('workouts')
+    .select('*')
+    .eq('member_id', memberId)
+    .eq('admin_id', currentAdminId)
+    .eq('workout_type', 'pt')
+    .order('workout_date', { ascending: true })
+
+  if (workoutError) {
+    console.error('회원 PT 운동기록 재조회 실패:', workoutError)
+    setMessage(`회원 PT 운동기록 재조회 실패: ${workoutError.message}`)
+    return
+  }
+
+  // 5️⃣ PT 운동기록 XP 다시 적립
+  for (const workout of workoutRows || []) {
+    if (!workout.id || !workout.workout_date) continue
+
     await applyMemberXp({
-      memberId: sale.member_id,
-      sourceType: 'sale_diamond_bonus',
-      sourceId: sale.id,
-      sourceDate: sale.sale_date,
-      note: `플래티넘 이상 추가 보너스 재정산 +${extraXp}XP`,
-      forceXp: extraXp,
+      memberId,
+      sourceType: 'pt_workout',
+      sourceId: workout.id,
+      sourceDate: workout.workout_date,
+      note: '관리자 PT 운동기록 재정산',
     })
   }
-}
-  }
 
-  // 4️⃣ 레벨 재계산
+  // 6️⃣ 레벨 재계산
   await recalcMemberLevelFromLogs(memberId)
 
-  // 5️⃣ UI 갱신
+  // 7️⃣ UI 갱신
   await loadMemberLevels()
   await loadMemberXpLogs()
 
