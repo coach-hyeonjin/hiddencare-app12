@@ -19709,3 +19709,35 @@ textarea:focus {
   backdrop-filter: blur(6px);
   box-shadow: 0 4px 12px rgba(0,0,0,0.15);
 }
+.member-level-inline {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin-top: 6px;
+}
+
+.member-level-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: #ecfdf3;
+  color: #15803d;
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.member-level-xp,
+.member-level-totalxp {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 8px;
+  border-radius: 999px;
+  background: #eff6ff;
+  color: #1d4ed8;
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1;
+}
