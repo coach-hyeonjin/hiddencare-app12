@@ -2483,17 +2483,16 @@ return { ok: true, xp: xpValue }
         </div>
 
         <div className="growth-hero-side">
-          <div className="growth-hero-mini">
-  <div className={`growth-hero-mini growth-hero-tier ${getLevelCardClass(growthSummary.levelName)}`}>
-  <span>현재 레벨</span>
-  <strong className="growth-hero-tier-title">
-    {growthSummary.levelName}
-  </strong>
-  <div className="growth-hero-tier-sub">
-    {getLevelSubLabel(growthSummary.levelName)}
-  </div>
-  <p>Lv.{growthSummary.levelNo}</p>
-</div>
+          <div className={`growth-hero-mini growth-hero-tier ${getLevelCardClass(growthSummary.levelName)}`}>
+            <span>현재 레벨</span>
+            <strong className="growth-hero-tier-title">
+              {growthSummary.levelName}
+            </strong>
+            <div className="growth-hero-tier-sub">
+              {getLevelSubLabel(growthSummary.levelName)}
+            </div>
+            <p>Lv.{growthSummary.levelNo}</p>
+          </div>
 
           <div className="growth-hero-mini">
             <span>누적 XP</span>
@@ -2515,80 +2514,81 @@ return { ok: true, xp: xpValue }
       </button>
 
       {growthOpenSections.summary && (
-  <div className="stack-gap">
-    <div className="growth-summary-grid">
-      <div className={`growth-card growth-card-tier ${getLevelCardClass(growthSummary.levelName)}`}>
-  <span>현재 레벨</span>
-  <strong className="growth-level-inline growth-level-inline-light">
-    {growthSummary.levelName}
-  </strong>
-  <div className="growth-tier-chip">
-    {getLevelSubLabel(growthSummary.levelName)}
-  </div>
-  <div className="compact-text growth-tier-text">
-    Lv.{growthSummary.levelNo} · 현재까지 누적 XP {growthSummary.totalXp}점
-  </div>
-</div>
+        <div className="stack-gap">
+          <div className="growth-summary-grid">
+            <div className={`growth-card growth-card-tier ${getLevelCardClass(growthSummary.levelName)}`}>
+              <span>현재 레벨</span>
+              <strong className="growth-level-inline growth-level-inline-light">
+                {growthSummary.levelName}
+              </strong>
+              <div className="growth-tier-chip">
+                {getLevelSubLabel(growthSummary.levelName)}
+              </div>
+              <div className="compact-text growth-tier-text">
+                Lv.{growthSummary.levelNo} · 현재까지 누적 XP {growthSummary.totalXp}점
+              </div>
+            </div>
 
-      <div className="growth-card">
-        <span>이번 주 점수</span>
-        <strong>{growthSummary.weeklyScore}점</strong>
-        <div className="compact-text">
-          연속 활동 {growthSummary.streakDays}일
-        </div>
-      </div>
+            <div className="growth-card">
+              <span>이번 주 점수</span>
+              <strong>{growthSummary.weeklyScore}점</strong>
+              <div className="compact-text">
+                연속 활동 {growthSummary.streakDays}일
+              </div>
+            </div>
 
-      <div className="growth-card">
-        <span>다음 레벨까지</span>
-        <strong>
-          {growthSummary.nextLevel ? `${growthSummary.nextLevelDiff} XP 남음` : '최고 레벨'}
-        </strong>
-        <div className="compact-text">
-          {growthSummary.nextLevel
-            ? `다음 단계: Lv.${growthSummary.nextLevel.level_no} · ${growthSummary.nextLevel.level_name}`
-            : '이미 최고 단계입니다.'}
-        </div>
-      </div>
+            <div className="growth-card">
+              <span>다음 레벨까지</span>
+              <strong>
+                {growthSummary.nextLevel ? `${growthSummary.nextLevelDiff} XP 남음` : '최고 레벨'}
+              </strong>
+              <div className="compact-text">
+                {growthSummary.nextLevel
+                  ? `다음 단계: Lv.${growthSummary.nextLevel.level_no} · ${growthSummary.nextLevel.level_name}`
+                  : '이미 최고 단계입니다.'}
+              </div>
+            </div>
 
-      <div className="growth-card">
-        <span>최근 활동일</span>
-        <strong>{growthSummary.lastActivityDate}</strong>
-        <div className="compact-text">
-          마지막 XP 반영 기준
-        </div>
-      </div>
-    </div>
+            <div className="growth-card">
+              <span>최근 활동일</span>
+              <strong>{growthSummary.lastActivityDate}</strong>
+              <div className="compact-text">
+                마지막 XP 반영 기준
+              </div>
+            </div>
+          </div>
 
-    <section className="growth-progress-card">
-      <div className="section-head">
-        <div>
-          <h3>레벨 진행도</h3>
-          <p className="sub-text">
-            다음 단계까지 얼마나 남았는지 확인할 수 있습니다.
-          </p>
-        </div>
-        <div className="pill pill-violet">
-          진행도 {xpProgress.percent}%
-        </div>
-      </div>
+          <section className="growth-progress-card">
+            <div className="section-head">
+              <div>
+                <h3>레벨 진행도</h3>
+                <p className="sub-text">
+                  다음 단계까지 얼마나 남았는지 확인할 수 있습니다.
+                </p>
+              </div>
+              <div className="pill pill-violet">
+                진행도 {xpProgress.percent}%
+              </div>
+            </div>
 
-      <div className="progress-wrap">
-        <div className="progress-bar">
-          <div
-            className="progress-fill"
-            style={{ width: `${xpProgress.percent}%` }}
-          />
+            <div className="progress-wrap">
+              <div className="progress-bar">
+                <div
+                  className="progress-fill"
+                  style={{ width: `${xpProgress.percent}%` }}
+                />
+              </div>
+              <div className="compact-text">
+                {growthSummary.nextLevel
+                  ? `${growthSummary.nextLevel.level_name}까지 ${growthSummary.nextLevelDiff} XP 남았습니다. (${xpProgress.current} / ${xpProgress.next} XP)`
+                  : '최고 레벨에 도달했습니다.'}
+              </div>
+            </div>
+          </section>
         </div>
-        <div className="compact-text">
-          {growthSummary.nextLevel
-            ? `${growthSummary.nextLevel.level_name}까지 ${growthSummary.nextLevelDiff} XP 남았습니다. (${xpProgress.current} / ${xpProgress.next} XP)`
-            : '최고 레벨에 도달했습니다.'}
-        </div>
-      </div>
+      )}
     </section>
-  </div>
-)}
-</section>
+
     <section className="card growth-accordion-card">
       <button
         type="button"
@@ -2601,36 +2601,36 @@ return { ok: true, xp: xpValue }
 
       {growthOpenSections.levelTable && (
         <div className="list-stack">
-  {memberLevelSettings.length ? (
-    memberLevelSettings.map((item) => (
-      <div
-        key={item.id}
-        className={`activity-rank-item ${getLevelCardClass(item.level_name)}`}
-      >
-        <div className="list-card-top">
-          <div className="growth-level-list-head">
-            <strong className="growth-level-list-title">
-              Lv.{item.level_no} · {item.level_name}
-            </strong>
-            <div className="growth-tier-chip">
-              {getLevelSubLabel(item.level_name)}
-            </div>
-          </div>
+          {memberLevelSettings.length ? (
+            memberLevelSettings.map((item) => (
+              <div
+                key={item.id}
+                className={`activity-rank-item ${getLevelCardClass(item.level_name)}`}
+              >
+                <div className="list-card-top">
+                  <div className="growth-level-list-head">
+                    <strong className="growth-level-list-title">
+                      Lv.{item.level_no} · {item.level_name}
+                    </strong>
+                    <div className="growth-tier-chip">
+                      {getLevelSubLabel(item.level_name)}
+                    </div>
+                  </div>
 
-          <span className="activity-rank-score score-total growth-tier-score">
-            최소 {Number(item.min_xp || 0)} XP
-          </span>
-        </div>
+                  <span className="activity-rank-score score-total growth-tier-score">
+                    최소 {Number(item.min_xp || 0)} XP
+                  </span>
+                </div>
 
-        <div className="compact-text">
-          {item.description || '설명이 없습니다.'}
+                <div className="compact-text">
+                  {item.description || '설명이 없습니다.'}
+                </div>
+              </div>
+            ))
+          ) : (
+            <div className="workout-list-empty">레벨 등급표가 없습니다.</div>
+          )}
         </div>
-      </div>
-    ))
-  ) : (
-    <div className="workout-list-empty">레벨 등급표가 없습니다.</div>
-  )}
-</div>
       )}
     </section>
 
@@ -2750,22 +2750,23 @@ return { ok: true, xp: xpValue }
       {growthOpenSections.ranking && (
         <div className="list-stack">
           {myLevelRankInfo.myRankItem && (
-  <div className="activity-rank-item growth-rank-self my-rank-card">
-    <div className="list-card-top">
-      <strong>
-        내 순위 · {myLevelRankInfo.myRank}위 · {maskMemberName(myLevelRankInfo.myRankItem.members?.name || '회원')}
-      </strong>
-      <span className="activity-rank-score score-total">
-        Lv.{myLevelRankInfo.myRankItem.level_no} · {myLevelRankInfo.myRankItem.level_name}
-      </span>
-    </div>
-    <div className="compact-text">
-      누적 XP {Number(myLevelRankInfo.myRankItem.total_xp || 0)}점 / 주간 {Number(myLevelRankInfo.myRankItem.weekly_score || 0)}점
-    </div>
-  </div>
-)}
+            <div className="activity-rank-item growth-rank-self my-rank-card">
+              <div className="list-card-top">
+                <strong>
+                  내 순위 · {myLevelRankInfo.myRank}위 · {maskMemberName(myLevelRankInfo.myRankItem.members?.name || '회원')}
+                </strong>
+                <span className="activity-rank-score score-total">
+                  Lv.{myLevelRankInfo.myRankItem.level_no} · {myLevelRankInfo.myRankItem.level_name}
+                </span>
+              </div>
+              <div className="compact-text">
+                누적 XP {Number(myLevelRankInfo.myRankItem.total_xp || 0)}점 / 주간 {Number(myLevelRankInfo.myRankItem.weekly_score || 0)}점
+              </div>
+            </div>
+          )}
+
           {myLevelRankInfo.topTenRanking.length ? (
-  myLevelRankInfo.topTenRanking.map((item, index) => {
+            myLevelRankInfo.topTenRanking.map((item, index) => {
               const isMe = item.member_id === member?.id
 
               return (
@@ -2778,8 +2779,8 @@ return { ok: true, xp: xpValue }
                       {index + 1}위 · {maskMemberName(item.members?.name || '회원')}
                     </strong>
                     <span className="activity-rank-score score-total">
-  Lv.{item.level_no} · {item.level_name}
-</span>
+                      Lv.{item.level_no} · {item.level_name}
+                    </span>
                   </div>
                   <div className="compact-text">
                     누적 XP {Number(item.total_xp || 0)}점 / 주간 {Number(item.weekly_score || 0)}점
