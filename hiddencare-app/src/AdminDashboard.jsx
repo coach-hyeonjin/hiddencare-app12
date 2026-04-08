@@ -737,7 +737,6 @@ export default function AdminDashboard({ profile, currentAdminId, currentGymId, 
   const [memberDetailSearch, setMemberDetailSearch] = useState('')
   const [memberProgramFilter, setMemberProgramFilter] = useState('')
   const [memberStatusFilter, setMemberStatusFilter] = useState('all')
-  const [memberLevelFilter, setMemberLevelFilter] = useState('all')
   const [collapsedMembers, setCollapsedMembers] = useState({})
  
 
@@ -1878,40 +1877,7 @@ const getBurnoutSignalText = (checks = []) => {
       )
     })
   }, [exerciseSearch, exercises])
-const MEMBER_LEVEL_FILTER_OPTIONS = [
-  { value: 'all', label: '전체 등급' },
-  { value: 'none', label: '등급 없음' },
-  { value: '히든 그린 Ⅰ', label: '히든 그린 Ⅰ' },
-  { value: '히든 그린 Ⅱ', label: '히든 그린 Ⅱ' },
-  { value: '히든 그린 Ⅲ', label: '히든 그린 Ⅲ' },
-  { value: '히든 실버 Ⅰ', label: '히든 실버 Ⅰ' },
-  { value: '히든 실버 Ⅱ', label: '히든 실버 Ⅱ' },
-  { value: '히든 실버 Ⅲ', label: '히든 실버 Ⅲ' },
-  { value: '히든 골드 Ⅰ', label: '히든 골드 Ⅰ' },
-  { value: '히든 골드 Ⅱ', label: '히든 골드 Ⅱ' },
-  { value: '히든 골드 Ⅲ', label: '히든 골드 Ⅲ' },
-  { value: '히든 플래티넘 Ⅰ', label: '히든 플래티넘 Ⅰ' },
-  { value: '히든 플래티넘 Ⅱ', label: '히든 플래티넘 Ⅱ' },
-  { value: '히든 플래티넘 Ⅲ', label: '히든 플래티넘 Ⅲ' },
-  { value: '히든 다이아 Ⅰ', label: '히든 다이아 Ⅰ' },
-  { value: '히든 다이아 Ⅱ', label: '히든 다이아 Ⅱ' },
-  { value: '히든 다이아 Ⅲ', label: '히든 다이아 Ⅲ' },
-  { value: '히든 블랙 Ⅰ', label: '히든 블랙 Ⅰ' },
-  { value: '히든 블랙 Ⅱ', label: '히든 블랙 Ⅱ' },
-  { value: '히든 블랙 Ⅲ', label: '히든 블랙 Ⅲ' },
-  { value: '히든 인피니티 Ⅰ', label: '히든 인피니티 Ⅰ' },
-  { value: '히든 인피니티 Ⅱ', label: '히든 인피니티 Ⅱ' },
-  { value: '히든 인피니티 Ⅲ', label: '히든 인피니티 Ⅲ' },
-]
 
-const matchesMemberLevelFilter = (member, levelFilter) => {
-  const levelName = String(member?.member_levels?.level_name || '').trim()
-
-  if (levelFilter === 'all') return true
-  if (levelFilter === 'none') return !levelName
-
-  return levelName === levelFilter
-}
   const memberStats = useMemo(() => {
   return members.map((member) => {
     const memberWorkouts = workouts.filter(
@@ -1935,23 +1901,7 @@ const matchesMemberLevelFilter = (member, levelFilter) => {
     }
   })
 }, [members, workouts, selectedStatsMonth])
-const filteredMemberDetails = useMemo(() => {
-  return memberStats.filter((member) => {
-    const matchesKeyword =
-      !memberDetailSearch.trim() ||
-      textIncludes(member.name, memberDetailSearch) ||
-      textIncludes(member.goal, memberDetailSearch) ||
-      textIncludes(member.access_code, memberDetailSearch) ||
-      textIncludes(member.programs?.name, memberDetailSearch) ||
-      textIncludes(member.memo, memberDetailSearch)
 
-    const matchesLevel = matchesMemberLevelFilter(member, memberLevelFilter)
-
-    return matchesKeyword && matchesLevel
-  })
-}, [memberStats, memberDetailSearch, memberLevelFilter])
-  const totalMemberCount = Array.isArray(members) ? members.length : 0
-const visibleMemberCount = Array.isArray(filteredMemberStats) ? filteredMemberStats.length : 0
  const filteredMemberStats = useMemo(() => {
   return memberStats
     .filter((member) => {
@@ -1963,20 +1913,30 @@ const visibleMemberCount = Array.isArray(filteredMemberStats) ? filteredMemberSt
         textIncludes(member.programs?.name, memberSearch) ||
         textIncludes(member.memo, memberSearch)
 
-      const matchesProgram =
-        !memberProgramFilter || member.current_program_id === memberProgramFilter
-
+      const matchesProgram = !memberProgramFilter || member.current_program_id === memberProgramFilter
       const matchesStatus =
         memberStatusFilter === 'all' ||
         (memberStatusFilter === 'remaining' && member.remainingSessions > 0) ||
         (memberStatusFilter === 'ended' && member.remainingSessions <= 0)
 
-      const matchesLevel = matchesMemberLevelFilter(member, memberLevelFilter)
-
-      return matchesKeyword && matchesProgram && matchesStatus && matchesLevel
+      return matchesKeyword && matchesProgram && matchesStatus
     })
     .sort((a, b) => (a.name || '').localeCompare(b.name || '', 'ko-KR'))
-}, [memberStats, memberSearch, memberProgramFilter, memberStatusFilter, memberLevelFilter])
+}, [memberStats, memberSearch, memberProgramFilter, memberStatusFilter])
+const totalMemberCount = Array.isArray(members) ? members.length : 0
+const visibleMemberCount = Array.isArray(filteredMemberStats) ? filteredMemberStats.length : 0
+  const filteredMemberDetails = useMemo(() => {
+    return memberStats.filter((member) => {
+      return (
+        !memberDetailSearch.trim() ||
+        textIncludes(member.name, memberDetailSearch) ||
+        textIncludes(member.goal, memberDetailSearch) ||
+        textIncludes(member.access_code, memberDetailSearch) ||
+        textIncludes(member.programs?.name, memberDetailSearch) ||
+        textIncludes(member.memo, memberDetailSearch)
+      )
+    })
+  }, [memberStats, memberDetailSearch])
 const activityRankingData = useMemo(() => {
   const levelMap = (memberLevels || []).reduce((acc, row) => {
     acc[row.member_id] = row
@@ -6975,16 +6935,6 @@ const rebuildSalesXpByMonth = async (targetMonth) => {
               <option value="remaining">잔여 있음</option>
               <option value="ended">소진</option>
             </select>
-            <select
-  value={memberLevelFilter}
-  onChange={(e) => setMemberLevelFilter(e.target.value)}
->
-  {MEMBER_LEVEL_FILTER_OPTIONS.map((option) => (
-    <option key={option.value} value={option.value}>
-      {option.label}
-    </option>
-  ))}
-</select>
           </div>
         </div>
 
@@ -7023,14 +6973,6 @@ const rebuildSalesXpByMonth = async (targetMonth) => {
         >
           <div className="member-list-modern-name">
             <strong>{member.name}</strong>
-            <div className="member-level-inline">
-  <span className="member-level-badge">
-    {member.member_levels?.level_name || '등급 없음'}
-  </span>
-  <span className="member-level-xp">
-    Lv.{member.member_levels?.level_no || 0}
-  </span>
-</div>
             <span className={`pill ${statusClass}`}>
               남은 {remainingSessions}회
             </span>
@@ -7123,71 +7065,78 @@ const rebuildSalesXpByMonth = async (targetMonth) => {
       </div>
 
       <div className="stack-gap">
-       <input
-  placeholder="회원명 / 목표 / 프로그램 검색"
-  value={memberDetailSearch}
-  onChange={(e) => setMemberDetailSearch(e.target.value)}
-/>
+        <input
+          placeholder="회원명 / 목표 / 프로그램 검색"
+          value={memberDetailSearch}
+          onChange={(e) => setMemberDetailSearch(e.target.value)}
+        />
 
-<div className="member-detail-filter-row">
-  <select
-    value={memberLevelFilter}
-    onChange={(e) => setMemberLevelFilter(e.target.value)}
-  >
-    {MEMBER_LEVEL_FILTER_OPTIONS.map((option) => (
-      <option key={option.value} value={option.value}>
-        {option.label}
-      </option>
-    ))}
-  </select>
+        <div className="list-stack member-detail-search-results">
+          {members
+            .filter((member) => {
+              const keyword = memberDetailSearch.trim().toLowerCase()
+              if (!keyword) return true
+
+              return (
+                String(member.name || '').toLowerCase().includes(keyword) ||
+                String(member.goal || '').toLowerCase().includes(keyword) ||
+                String(member.programs?.name || '').toLowerCase().includes(keyword)
+              )
+            })
+            .slice(0, 8)
+            .map((member) => (
+              <button
+                key={member.id}
+                type="button"
+                className={`member-detail-search-item ${selectedMemberId === member.id ? 'active' : ''}`}
+                onClick={() => {
+                  setSelectedMemberId(member.id)
+                  setMemberDetailSearch(member.name || '')
+                }}
+              >
+                <div>
+  <strong>{member.name || '-'}</strong>
+
+  <div className="member-level-inline">
+    <span className="member-level-badge">
+      {member.member_levels?.level_name || '등급 없음'}
+    </span>
+    <span className="member-level-xp">
+      Lv.{member.member_levels?.level_no || 0}
+    </span>
+    <span className="member-level-totalxp">
+      XP {member.member_levels?.total_xp || 0}
+    </span>
+  </div>
+
+  <div className="compact-text">
+    목표: {member.goal || '-'} / 프로그램: {member.programs?.name || '프로그램 없음'}
+  </div>
 </div>
+                <span className="pill">
+                  남은 {Math.max(
+                    Number(member.total_sessions || 0) - Number(member.used_sessions || 0),
+                    0
+                  )}회
+                </span>
+              </button>
+            ))}
 
-<div className="list-stack member-detail-search-results">
-  {filteredMemberDetails.length === 0 ? (
-    <div className="workout-list-empty">검색 결과가 없습니다.</div>
-  ) : null}
-
-  {filteredMemberDetails
-    .slice(0, 8)
-    .map((member) => (
-      <button
-        key={member.id}
-        type="button"
-        className={`member-detail-search-item ${selectedMemberId === member.id ? 'active' : ''}`}
-        onClick={() => {
-          setSelectedMemberId(member.id)
-          setMemberDetailSearch(member.name || '')
-        }}
-      >
-        <div>
-          <strong>{member.name || '-'}</strong>
-
-          <div className="member-level-inline">
-            <span className="member-level-badge">
-              {member.member_levels?.level_name || '등급 없음'}
-            </span>
-            <span className="member-level-xp">
-              Lv.{member.member_levels?.level_no || 0}
-            </span>
-            <span className="member-level-totalxp">
-              XP {member.member_levels?.total_xp || 0}
-            </span>
-          </div>
-
-          <div className="compact-text">
-            목표: {member.goal || '-'} / 프로그램: {member.programs?.name || '프로그램 없음'}
-          </div>
+          {memberDetailSearch.trim() &&
+            members.filter((member) => {
+              const keyword = memberDetailSearch.trim().toLowerCase()
+              return (
+                String(member.name || '').toLowerCase().includes(keyword) ||
+                String(member.goal || '').toLowerCase().includes(keyword) ||
+                String(member.programs?.name || '').toLowerCase().includes(keyword)
+              )
+            }).length === 0 && (
+              <div className="workout-list-empty">검색 결과가 없습니다.</div>
+            )}
         </div>
+      </div>
+    </div>
 
-        <span className="pill">
-          남은 {Math.max(
-            Number(member.total_sessions || 0) - Number(member.used_sessions || 0),
-            0
-          )}회
-        </span>
-      </button>
-    ))}
-</div>
     {selectedMember ? (
       <div className="card">
         <div className="sub-card member-detail-modern-card">
@@ -9132,24 +9081,24 @@ const rebuildSalesXpByMonth = async (targetMonth) => {
     </div>
 
     <div className="workout-filter-grid">
-  <label className="field">
-    <span>운동기록 검색</span>
-    <input
-      placeholder="회원명 / 운동명 / 잘한점 / 보완점 검색"
-      value={workoutSearch}
-      onChange={(e) => setWorkoutSearch(e.target.value)}
-    />
-  </label>
+      <label className="field">
+        <span>운동기록 검색</span>
+        <input
+          placeholder="회원명 / 운동명 / 잘한점 / 보완점 검색"
+          value={workoutSearch}
+          onChange={(e) => setWorkoutSearch(e.target.value)}
+        />
+      </label>
 
-  <label className="field">
-    <span>날짜 찾기</span>
-    <input
-      type="date"
-      value={workoutDateFilter}
-      onChange={(e) => setWorkoutDateFilter(e.target.value)}
-    />
-  </label>
-</div>
+      <label className="field">
+        <span>날짜 찾기</span>
+        <input
+          type="date"
+          value={workoutDateFilter}
+          onChange={(e) => setWorkoutDateFilter(e.target.value)}
+        />
+      </label>
+    </div>
   </div>
 
   <div className="list-stack">
