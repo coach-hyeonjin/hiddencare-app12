@@ -1651,6 +1651,17 @@ const completedTaskKeysToday = useMemo(() => {
     () => members.find((member) => member.id === selectedMemberId) || null,
     [members, selectedMemberId],
   )
+  const trimmedMemberDetailSearch = String(memberDetailSearch || '').trim().toLowerCase()
+
+const filteredMemberDetailMembers = members.filter((member) => {
+  if (!trimmedMemberDetailSearch) return false
+
+  return (
+    String(member.name || '').toLowerCase().includes(trimmedMemberDetailSearch) ||
+    String(member.goal || '').toLowerCase().includes(trimmedMemberDetailSearch) ||
+    String(member.programs?.name || '').toLowerCase().includes(trimmedMemberDetailSearch)
+  )
+})
   const currentRoutineWeek = useMemo(
   () => routineForm.weeks?.[selectedRoutineWeek] || null,
   [routineForm.weeks, selectedRoutineWeek],
@@ -7496,19 +7507,14 @@ const rebuildSalesXpByMonth = async (targetMonth) => {
         />
 
         <div className="list-stack member-detail-search-results">
-          {members
-            .filter((member) => {
-              const keyword = memberDetailSearch.trim().toLowerCase()
-              if (!keyword) return true
-
-              return (
-                String(member.name || '').toLowerCase().includes(keyword) ||
-                String(member.goal || '').toLowerCase().includes(keyword) ||
-                String(member.programs?.name || '').toLowerCase().includes(keyword)
-              )
-            })
-            .slice(0, 8)
-            .map((member) => (
+          {!trimmedMemberDetailSearch ? (
+            <div className="workout-list-empty">
+              회원명 / 목표 / 프로그램명을 입력하면 검색 결과가 표시됩니다.
+            </div>
+          ) : filteredMemberDetailMembers.length === 0 ? (
+            <div className="workout-list-empty">검색 결과가 없습니다.</div>
+          ) : (
+            filteredMemberDetailMembers.slice(0, 8).map((member) => (
               <button
                 key={member.id}
                 type="button"
@@ -7519,44 +7525,36 @@ const rebuildSalesXpByMonth = async (targetMonth) => {
                 }}
               >
                 <div>
-  <strong>{member.name || '-'}</strong>
+                  <strong>{member.name || '-'}</strong>
 
-  <div className="member-level-inline">
-    <span className="member-level-badge">
-      {member.member_levels?.level_name || '등급 없음'}
-    </span>
-    <span className="member-level-xp">
-      Lv.{member.member_levels?.level_no || 0}
-    </span>
-    <span className="member-level-totalxp">
-      XP {member.member_levels?.total_xp || 0}
-    </span>
-  </div>
+                  <div className="member-level-inline">
+                    <span className="member-level-badge">
+                      {member.member_levels?.level_name || '등급 없음'}
+                    </span>
+                    <span className="member-level-xp">
+                      Lv.{member.member_levels?.level_no || 0}
+                    </span>
+                    <span className="member-level-totalxp">
+                      XP {member.member_levels?.total_xp || 0}
+                    </span>
+                  </div>
 
-  <div className="compact-text">
-    목표: {member.goal || '-'} / 프로그램: {member.programs?.name || '프로그램 없음'}
-  </div>
-</div>
+                  <div className="compact-text">
+                    목표: {member.goal || '-'} / 프로그램: {member.programs?.name || '프로그램 없음'}
+                  </div>
+                </div>
+
                 <span className="pill">
-                  남은 {Math.max(
+                  남은{' '}
+                  {Math.max(
                     Number(member.total_sessions || 0) - Number(member.used_sessions || 0),
                     0
-                  )}회
+                  )}
+                  회
                 </span>
               </button>
-            ))}
-
-          {memberDetailSearch.trim() &&
-            members.filter((member) => {
-              const keyword = memberDetailSearch.trim().toLowerCase()
-              return (
-                String(member.name || '').toLowerCase().includes(keyword) ||
-                String(member.goal || '').toLowerCase().includes(keyword) ||
-                String(member.programs?.name || '').toLowerCase().includes(keyword)
-              )
-            }).length === 0 && (
-              <div className="workout-list-empty">검색 결과가 없습니다.</div>
-            )}
+            ))
+          )}
         </div>
       </div>
     </div>
@@ -7584,13 +7582,15 @@ const rebuildSalesXpByMonth = async (targetMonth) => {
                 <span>회원명</span>
                 <strong>{selectedMember.name}</strong>
               </div>
-<div className="member-hero-item">
-  <span>회원 등급</span>
-  <strong>{selectedMember.member_levels?.level_name || '등급 없음'}</strong>
-  <div className="compact-text">
-    Lv.{selectedMember.member_levels?.level_no || 0} / XP {selectedMember.member_levels?.total_xp || 0}
-  </div>
-</div>
+
+              <div className="member-hero-item">
+                <span>회원 등급</span>
+                <strong>{selectedMember.member_levels?.level_name || '등급 없음'}</strong>
+                <div className="compact-text">
+                  Lv.{selectedMember.member_levels?.level_no || 0} / XP {selectedMember.member_levels?.total_xp || 0}
+                </div>
+              </div>
+
               <div className="member-hero-item">
                 <span>목표</span>
                 <strong>{selectedMember.goal || '-'}</strong>
@@ -7714,9 +7714,7 @@ const rebuildSalesXpByMonth = async (targetMonth) => {
                               <div className="routine-day-left">
                                 <div className="routine-day-title-row">
                                   <strong>{day.day_of_week}요일</strong>
-                                  <span className="pill">
-                                    운동 {itemCount}개
-                                  </span>
+                                  <span className="pill">운동 {itemCount}개</span>
                                 </div>
                                 <div className="routine-day-meta">
                                   요일별 루틴을 눌러 열고 닫을 수 있습니다.
@@ -8031,6 +8029,7 @@ const rebuildSalesXpByMonth = async (targetMonth) => {
     )}
   </div>
 )}
+
 
      {activeTab === '나만의 매니저' && (
   <div className="manager-page">
