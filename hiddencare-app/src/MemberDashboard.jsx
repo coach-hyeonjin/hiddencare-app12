@@ -291,7 +291,19 @@ function getLevelBadgeClass(levelName = '') {
 function getLevelSubLabel(levelName = '') {
   return getLevelTone(levelName).label
 }
+function getLevelColorClass(levelName = '') {
+  const name = String(levelName || '').trim()
 
+  if (name.includes('그린')) return 'tier-green'
+  if (name.includes('실버')) return 'tier-silver'
+  if (name.includes('골드')) return 'tier-gold'
+  if (name.includes('플래티넘')) return 'tier-platinum'
+  if (name.includes('다이아')) return 'tier-diamond'
+  if (name.includes('블랙')) return 'tier-black'
+  if (name.includes('인피니티')) return 'tier-infinity'
+
+  return 'tier-default'
+}
 function getXpLogIcon(sourceType) {
   if (sourceType === 'pt_workout') return '🏋️'
   if (sourceType === 'personal_workout') return '🔥'
@@ -2493,10 +2505,10 @@ return { ok: true, xp: xpValue }
     <div className="growth-summary-grid">
       <div className="growth-card">
         <span>현재 레벨</span>
-        <strong className="growth-level-inline">
-          {growthSummary.levelName}
-        </strong>
-        <div className={getLevelBadgeClass(growthSummary.levelName)}>
+        <strong className={`growth-level-inline ${getLevelColorClass(growthSummary.levelName)}`}>
+  {growthSummary.levelName}
+</strong>
+<div className={`${getLevelBadgeClass(growthSummary.levelName)} ${getLevelColorClass(growthSummary.levelName)}`}>
           {getLevelSubLabel(growthSummary.levelName)}
         </div>
         <div className="compact-text">
@@ -2580,16 +2592,16 @@ return { ok: true, xp: xpValue }
               <div key={item.id} className="activity-rank-item">
                <div className="list-card-top">
   <div className="growth-level-list-head">
-    <strong>
-      Lv.{item.level_no} · {item.level_name}
-    </strong>
-    <div className={getLevelBadgeClass(item.level_name)}>
+   <strong className={getLevelColorClass(item.level_name)}>
+  Lv.{item.level_no} · {item.level_name}
+</strong>
+<div className={`${getLevelBadgeClass(item.level_name)} ${getLevelColorClass(item.level_name)}`}>
       {getLevelSubLabel(item.level_name)}
     </div>
   </div>
-  <span className="activity-rank-score score-total">
-    최소 {Number(item.min_xp || 0)} XP
-  </span>
+ <span className={`activity-rank-score score-total ${getLevelColorClass(item.level_name)}`}>
+  Lv.{item.level_no} · {item.level_name}
+</span>
 </div>
                 <div className="compact-text">
                   {item.description || '설명이 없습니다.'}
