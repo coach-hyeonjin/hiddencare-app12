@@ -2489,82 +2489,80 @@ const applyMemberXp = async ({
       </button>
 
       {growthOpenSections.summary && (
-        <div className="stack-gap">
-          <div className="growth-summary-grid">
-            <div className="growth-card">
-              <span>현재 레벨</span>
-              <strong>
-                {getLevelIcon(growthSummary.levelName, growthSummary.levelNo)} Lv.{growthSummary.levelNo} · {growthSummary.levelName}
-              </strong>
-              <div className="compact-text">
-                현재까지 누적 XP {growthSummary.totalXp}점
-              </div>
-            </div>
-
-           <div className="growth-card">
-  <span>현재 레벨</span>
-  <strong className="growth-level-inline">
-    {growthSummary.levelName}
-  </strong>
-  <div className={getLevelBadgeClass(growthSummary.levelName)}>
-    {getLevelSubLabel(growthSummary.levelName)}
-  </div>
-  <div className="compact-text">
-    Lv.{growthSummary.levelNo} · 현재까지 누적 XP {growthSummary.totalXp}점
-  </div>
-</div>
-
-            <div className="growth-card">
-              <span>다음 레벨까지</span>
-              <strong>
-                {growthSummary.nextLevel ? `${growthSummary.nextLevelDiff} XP 남음` : '최고 레벨'}
-              </strong>
-              <div className="compact-text">
-                {growthSummary.nextLevel
-                  ? `다음 단계: Lv.${growthSummary.nextLevel.level_no} · ${growthSummary.nextLevel.level_name}`
-                  : '이미 최고 단계입니다.'}
-              </div>
-            </div>
-
-            <div className="growth-card">
-              <span>최근 활동일</span>
-              <strong>{growthSummary.lastActivityDate}</strong>
-              <div className="compact-text">
-                마지막 XP 반영 기준
-              </div>
-            </div>
-          </div>
-
-          <section className="growth-progress-card">
-            <div className="section-head">
-              <div>
-                <h3>레벨 진행도</h3>
-                <p className="sub-text">
-                  다음 단계까지 얼마나 남았는지 확인할 수 있습니다.
-                </p>
-              </div>
-              <div className="pill pill-violet">
-                진행도 {xpProgress.percent}%
-              </div>
-            </div>
-
-            <div className="xp-bar">
-              <div
-                className="xp-fill"
-                style={{ width: `${xpProgress.percent}%` }}
-              />
-            </div>
-
-            <div className="compact-text" style={{ marginTop: '12px' }}>
-              {growthSummary.nextLevel
-                ? `${growthSummary.nextLevel.level_name}까지 ${growthSummary.nextLevelDiff} XP 남았습니다. (${xpProgress.current} / ${xpProgress.next} XP)`
-                : '현재 최고 단계입니다.'}
-            </div>
-          </section>
+  <div className="stack-gap">
+    <div className="growth-summary-grid">
+      <div className="growth-card">
+        <span>현재 레벨</span>
+        <strong className="growth-level-inline">
+          {growthSummary.levelName}
+        </strong>
+        <div className={getLevelBadgeClass(growthSummary.levelName)}>
+          {getLevelSubLabel(growthSummary.levelName)}
         </div>
-      )}
-    </section>
+        <div className="compact-text">
+          Lv.{growthSummary.levelNo} · 현재까지 누적 XP {growthSummary.totalXp}점
+        </div>
+      </div>
 
+      <div className="growth-card">
+        <span>이번 주 점수</span>
+        <strong>{growthSummary.weeklyScore}점</strong>
+        <div className="compact-text">
+          연속 활동 {growthSummary.streakDays}일
+        </div>
+      </div>
+
+      <div className="growth-card">
+        <span>다음 레벨까지</span>
+        <strong>
+          {growthSummary.nextLevel ? `${growthSummary.nextLevelDiff} XP 남음` : '최고 레벨'}
+        </strong>
+        <div className="compact-text">
+          {growthSummary.nextLevel
+            ? `다음 단계: Lv.${growthSummary.nextLevel.level_no} · ${growthSummary.nextLevel.level_name}`
+            : '이미 최고 단계입니다.'}
+        </div>
+      </div>
+
+      <div className="growth-card">
+        <span>최근 활동일</span>
+        <strong>{growthSummary.lastActivityDate}</strong>
+        <div className="compact-text">
+          마지막 XP 반영 기준
+        </div>
+      </div>
+    </div>
+
+    <section className="growth-progress-card">
+      <div className="section-head">
+        <div>
+          <h3>레벨 진행도</h3>
+          <p className="sub-text">
+            다음 단계까지 얼마나 남았는지 확인할 수 있습니다.
+          </p>
+        </div>
+        <div className="pill pill-violet">
+          진행도 {xpProgress.percent}%
+        </div>
+      </div>
+
+      <div className="progress-wrap">
+        <div className="progress-bar">
+          <div
+            className="progress-fill"
+            style={{ width: `${xpProgress.percent}%` }}
+          />
+        </div>
+        <div className="compact-text">
+          {growthSummary.nextLevel
+            ? `${growthSummary.nextLevel.level_name}까지 ${growthSummary.nextLevelDiff} XP 남았습니다. (${xpProgress.current} / ${xpProgress.next} XP)`
+            : '최고 레벨에 도달했습니다.'}
+        </div>
+      </div>
+    </section>
+  </div>
+)}
+</section>
     <section className="card growth-accordion-card">
       <button
         type="button"
