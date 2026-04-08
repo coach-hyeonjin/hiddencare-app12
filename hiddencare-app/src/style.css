@@ -19692,3 +19692,20 @@ textarea:focus {
   box-shadow: 0 18px 40px rgba(15, 23, 42, 0.18);
   transition: 0.2s ease;
 }
+/* XP 숫자 (오른쪽 pill) 강제 가독성 보정 */
+.activity-rank-score {
+  font-weight: 700;
+  color: #0f172a !important; /* 무조건 어둡게 */
+}
+
+/* 티어 카드 안에서도 강제 */
+.activity-rank-item[class*='tier-'] .activity-rank-score {
+  background: rgba(255,255,255,0.9);
+  color: #0f172a !important;
+  border-radius: 999px;
+  padding: 6px 10px;
+}
+.activity-rank-item[class*='tier-'] .activity-rank-score {
+  backdrop-filter: blur(6px);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+}
