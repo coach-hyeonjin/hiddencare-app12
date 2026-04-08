@@ -6121,21 +6121,33 @@ const applyMemberXp = async ({
   { minSessions: 10, xp: 100, label: '10회 등록 보너스' },
 ]
 
-const DIAMOND_TIER_KEYWORDS = ['다이아', '블랙', '인피니티']
+const BENEFIT_TIER_KEYWORDS = ['플래티넘', '다이아', '블랙', '인피니티']
 
 const getSaleBonusRule = (sessionCount = 0) => {
   const count = Number(sessionCount || 0)
   return SALE_XP_BONUS_RULES.find((rule) => count >= rule.minSessions) || null
 }
 
-const isDiamondOrHigherMember = (memberId) => {
+const isBenefitTierMember = (memberId) => {
   const levelRow = memberLevels.find((item) => item.member_id === memberId)
   const levelName = String(levelRow?.level_name || '')
-  return DIAMOND_TIER_KEYWORDS.some((keyword) => levelName.includes(keyword))
+  return BENEFIT_TIER_KEYWORDS.some((keyword) => levelName.includes(keyword))
 }
 
-const getDiamondExtraXp = (baseXp = 0) => {
-  return Math.round(Number(baseXp || 0) * 0.2)
+const getBenefitExtraXpRate = (memberId) => {
+  const levelRow = memberLevels.find((item) => item.member_id === memberId)
+  const levelName = String(levelRow?.level_name || '')
+
+  if (levelName.includes('인피니티')) return 0.4
+  if (levelName.includes('블랙')) return 0.3
+  if (levelName.includes('다이아')) return 0.2
+  if (levelName.includes('플래티넘')) return 0.1
+  return 0
+}
+
+const getBenefitExtraXp = (memberId, baseXp = 0) => {
+  const rate = getBenefitExtraXpRate(memberId)
+  return Math.round(Number(baseXp || 0) * rate)
 }
  
   const recalcMemberLevelFromLogs = async (memberId) => {
@@ -6290,20 +6302,20 @@ const rebuildSalesXpByMonth = async (targetMonth) => {
       forceXp: saleBonusRule.xp,
     })
 
-    if (isDiamondOrHigherMember(sale.member_id)) {
-      const extraXp = getDiamondExtraXp(saleBonusRule.xp)
+    if (isBenefitTierMember(sale.member_id)) {
+  const extraXp = getBenefitExtraXp(sale.member_id, saleBonusRule.xp)
 
-      if (extraXp > 0) {
-        await applyMemberXp({
-          memberId: sale.member_id,
-          sourceType: 'sale_diamond_bonus',
-          sourceId: sale.id,
-          sourceDate: sale.sale_date,
-          note: `다이아 이상 등록 추가 보너스 재정산 +${extraXp}XP`,
-          forceXp: extraXp,
-        })
-      }
-    }
+  if (extraXp > 0) {
+    await applyMemberXp({
+      memberId: sale.member_id,
+      sourceType: 'sale_diamond_bonus',
+      sourceId: sale.id,
+      sourceDate: sale.sale_date,
+      note: `플래티넘 이상 추가 보너스 재정산 +${extraXp}XP`,
+      forceXp: extraXp,
+    })
+  }
+}
   }
 
   // 5) 삭제 전 로그 회원 + 현재 매출 회원 둘 다 재계산
@@ -6381,20 +6393,20 @@ const rebuildSalesXpByMonth = async (targetMonth) => {
     })
 
     // 💎 다이아 추가 XP
-    if (isDiamondOrHigherMember(sale.member_id)) {
-      const extraXp = getDiamondExtraXp(saleBonusRule.xp)
+    if (isBenefitTierMember(sale.member_id)) {
+  const extraXp = getBenefitExtraXp(sale.member_id, saleBonusRule.xp)
 
-      if (extraXp > 0) {
-        await applyMemberXp({
-          memberId: sale.member_id,
-          sourceType: 'sale_diamond_bonus',
-          sourceId: sale.id,
-          sourceDate: sale.sale_date,
-          note: `다이아 이상 추가 보너스 재정산 +${extraXp}XP`,
-          forceXp: extraXp,
-        })
-      }
-    }
+  if (extraXp > 0) {
+    await applyMemberXp({
+      memberId: sale.member_id,
+      sourceType: 'sale_diamond_bonus',
+      sourceId: sale.id,
+      sourceDate: sale.sale_date,
+      note: `플래티넘 이상 추가 보너스 재정산 +${extraXp}XP`,
+      forceXp: extraXp,
+    })
+  }
+}
   }
 
   // 4️⃣ 레벨 재계산
@@ -11138,8 +11150,8 @@ const rebuildSalesXpByMonth = async (targetMonth) => {
       : '10회부터 등록 보너스 XP가 지급됩니다.'}
   </div>
                  <div className="compact-text">
-    다이아 / 블랙 / 인피니티 회원은 등록 보너스 XP의 20%가 추가 지급됩니다.
-  </div>
+  플래티넘 / 다이아 / 블랙 / 인피니티 회원은 등급에 따라 등록 보너스 XP가 추가 지급됩니다.
+</div>
 </label>
 
                 <label className="field">
