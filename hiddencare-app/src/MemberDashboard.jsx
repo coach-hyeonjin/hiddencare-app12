@@ -291,7 +291,19 @@ function getLevelBadgeClass(levelName = '') {
 function getLevelSubLabel(levelName = '') {
   return getLevelTone(levelName).label
 }
+function getLevelCardClass(levelName = '') {
+  const name = String(levelName || '').trim()
 
+  if (name.includes('그린')) return 'tier-card-green'
+  if (name.includes('실버')) return 'tier-card-silver'
+  if (name.includes('골드')) return 'tier-card-gold'
+  if (name.includes('플래티넘')) return 'tier-card-platinum'
+  if (name.includes('다이아')) return 'tier-card-diamond'
+  if (name.includes('블랙')) return 'tier-card-black'
+  if (name.includes('인피니티')) return 'tier-card-infinity'
+
+  return 'tier-card-default'
+}
 function getLevelColorClass(levelName = '') {
   const name = String(levelName || '').trim()
 
@@ -2472,11 +2484,12 @@ return { ok: true, xp: xpValue }
 
         <div className="growth-hero-side">
           <div className="growth-hero-mini">
+  <div className={`growth-hero-mini growth-hero-tier ${getLevelCardClass(growthSummary.levelName)}`}>
   <span>현재 레벨</span>
-  <strong className="growth-level-strong">
+  <strong className="growth-hero-tier-title">
     {growthSummary.levelName}
   </strong>
-  <div className={getLevelBadgeClass(growthSummary.levelName)}>
+  <div className="growth-hero-tier-sub">
     {getLevelSubLabel(growthSummary.levelName)}
   </div>
   <p>Lv.{growthSummary.levelNo}</p>
@@ -2504,18 +2517,18 @@ return { ok: true, xp: xpValue }
       {growthOpenSections.summary && (
   <div className="stack-gap">
     <div className="growth-summary-grid">
-      <div className="growth-card">
-        <span>현재 레벨</span>
-        <strong className={`growth-level-inline ${getLevelColorClass(growthSummary.levelName)}`}>
-  {growthSummary.levelName}
-</strong>
-<div className={`${getLevelBadgeClass(growthSummary.levelName)} ${getLevelColorClass(growthSummary.levelName)}`}>
-          {getLevelSubLabel(growthSummary.levelName)}
-        </div>
-        <div className="compact-text">
-          Lv.{growthSummary.levelNo} · 현재까지 누적 XP {growthSummary.totalXp}점
-        </div>
-      </div>
+      <div className={`growth-card growth-card-tier ${getLevelCardClass(growthSummary.levelName)}`}>
+  <span>현재 레벨</span>
+  <strong className="growth-level-inline growth-level-inline-light">
+    {growthSummary.levelName}
+  </strong>
+  <div className="growth-tier-chip">
+    {getLevelSubLabel(growthSummary.levelName)}
+  </div>
+  <div className="compact-text growth-tier-text">
+    Lv.{growthSummary.levelNo} · 현재까지 누적 XP {growthSummary.totalXp}점
+  </div>
+</div>
 
       <div className="growth-card">
         <span>이번 주 점수</span>
@@ -2588,31 +2601,36 @@ return { ok: true, xp: xpValue }
 
       {growthOpenSections.levelTable && (
         <div className="list-stack">
-          {memberLevelSettings.length ? (
-            memberLevelSettings.map((item) => (
-              <div key={item.id} className="activity-rank-item">
-               <div className="list-card-top">
-  <div className="growth-level-list-head">
-   <strong className={getLevelColorClass(item.level_name)}>
-  Lv.{item.level_no} · {item.level_name}
-</strong>
-<div className={`${getLevelBadgeClass(item.level_name)} ${getLevelColorClass(item.level_name)}`}>
-      {getLevelSubLabel(item.level_name)}
-    </div>
-  </div>
- <span className={`activity-rank-score score-total ${getLevelColorClass(item.level_name)}`}>
-  Lv.{item.level_no} · {item.level_name}
-</span>
-</div>
-                <div className="compact-text">
-                  {item.description || '설명이 없습니다.'}
-                </div>
-              </div>
-            ))
-          ) : (
-            <div className="workout-list-empty">레벨 등급표가 없습니다.</div>
-          )}
+  {memberLevelSettings.length ? (
+    memberLevelSettings.map((item) => (
+      <div
+        key={item.id}
+        className={`activity-rank-item ${getLevelCardClass(item.level_name)}`}
+      >
+        <div className="list-card-top">
+          <div className="growth-level-list-head">
+            <strong className="growth-level-list-title">
+              Lv.{item.level_no} · {item.level_name}
+            </strong>
+            <div className="growth-tier-chip">
+              {getLevelSubLabel(item.level_name)}
+            </div>
+          </div>
+
+          <span className="activity-rank-score score-total growth-tier-score">
+            최소 {Number(item.min_xp || 0)} XP
+          </span>
         </div>
+
+        <div className="compact-text">
+          {item.description || '설명이 없습니다.'}
+        </div>
+      </div>
+    ))
+  ) : (
+    <div className="workout-list-empty">레벨 등급표가 없습니다.</div>
+  )}
+</div>
       )}
     </section>
 
