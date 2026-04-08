@@ -1666,6 +1666,10 @@ const filteredMemberDetailMembers = members.filter((member) => {
   () => routineForm.weeks?.[selectedRoutineWeek] || null,
   [routineForm.weeks, selectedRoutineWeek],
 )
+  const currentRoutineWeek = useMemo(
+  () => routineForm?.weeks?.[selectedRoutineWeek] || null,
+  [routineForm?.weeks, selectedRoutineWeek],
+)
   const toggleRoutineDayCollapse = (weekNumber, dayOfWeek) => {
   const key = `${weekNumber}-${dayOfWeek}`
 
