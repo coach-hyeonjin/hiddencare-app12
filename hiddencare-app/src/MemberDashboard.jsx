@@ -294,15 +294,15 @@ function getLevelSubLabel(levelName = '') {
 function getLevelCardClass(levelName = '') {
   const name = String(levelName || '').trim()
 
-  if (name.includes('그린')) return 'tier-card-green'
-  if (name.includes('실버')) return 'tier-card-silver'
-  if (name.includes('골드')) return 'tier-card-gold'
-  if (name.includes('플래티넘')) return 'tier-card-platinum'
-  if (name.includes('다이아')) return 'tier-card-diamond'
-  if (name.includes('블랙')) return 'tier-card-black'
-  if (name.includes('인피니티')) return 'tier-card-infinity'
+  if (name.includes('그린')) return 'tier-green'
+  if (name.includes('실버')) return 'tier-silver'
+  if (name.includes('골드')) return 'tier-gold'
+  if (name.includes('플래티넘')) return 'tier-platinum'
+  if (name.includes('다이아')) return 'tier-diamond'
+  if (name.includes('블랙')) return 'tier-black'
+  if (name.includes('인피니티')) return 'tier-infinity'
 
-  return 'tier-card-default'
+  return 'tier-default'
 }
 function getLevelColorClass(levelName = '') {
   const name = String(levelName || '').trim()
