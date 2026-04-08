@@ -1662,10 +1662,7 @@ const filteredMemberDetailMembers = members.filter((member) => {
     String(member.programs?.name || '').toLowerCase().includes(trimmedMemberDetailSearch)
   )
 })
-  const currentRoutineWeek = useMemo(
-  () => routineForm.weeks?.[selectedRoutineWeek] || null,
-  [routineForm.weeks, selectedRoutineWeek],
-)
+
   const currentRoutineWeek = useMemo(
   () => routineForm?.weeks?.[selectedRoutineWeek] || null,
   [routineForm?.weeks, selectedRoutineWeek],
