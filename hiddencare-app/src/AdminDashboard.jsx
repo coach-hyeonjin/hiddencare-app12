@@ -2850,15 +2850,35 @@ useEffect(() => {
     return
   }
 
-  const { data } = await supabase
+  const { data, error } = await supabase
     .from('members')
-    .select('*, programs(id, name)')
+    .select(`
+      *,
+      programs(id, name),
+      member_levels(level_name, level_no, total_xp)
+    `)
     .eq('admin_id', currentAdminId)
     .order('created_at', { ascending: false })
 
-  if (data) {
-    setMembers(data)
-    if (!selectedMemberId && data[0]) setSelectedMemberId(data[0].id)
+  if (error) {
+    console.error('회원 불러오기 실패:', error)
+    setMembers([])
+    return
+  }
+
+  const normalizedMembers = Array.isArray(data)
+    ? data.map((member) => ({
+        ...member,
+        member_levels: Array.isArray(member.member_levels)
+          ? member.member_levels[0] || null
+          : member.member_levels || null,
+      }))
+    : []
+
+  setMembers(normalizedMembers)
+
+  if (!selectedMemberId && normalizedMembers[0]) {
+    setSelectedMemberId(normalizedMembers[0].id)
   }
 }
 
@@ -7075,12 +7095,24 @@ const rebuildSalesXpByMonth = async (targetMonth) => {
                 }}
               >
                 <div>
-                  <strong>{member.name || '-'}</strong>
-                  <div className="compact-text">
-                    목표: {member.goal || '-'} / 프로그램: {member.programs?.name || '프로그램 없음'}
-                  </div>
-                </div>
+  <strong>{member.name || '-'}</strong>
 
+  <div className="member-level-inline">
+    <span className="member-level-badge">
+      {member.member_levels?.level_name || '등급 없음'}
+    </span>
+    <span className="member-level-xp">
+      Lv.{member.member_levels?.level_no || 0}
+    </span>
+    <span className="member-level-totalxp">
+      XP {member.member_levels?.total_xp || 0}
+    </span>
+  </div>
+
+  <div className="compact-text">
+    목표: {member.goal || '-'} / 프로그램: {member.programs?.name || '프로그램 없음'}
+  </div>
+</div>
                 <span className="pill">
                   남은 {Math.max(
                     Number(member.total_sessions || 0) - Number(member.used_sessions || 0),
@@ -7128,7 +7160,13 @@ const rebuildSalesXpByMonth = async (targetMonth) => {
                 <span>회원명</span>
                 <strong>{selectedMember.name}</strong>
               </div>
-
+<div className="member-hero-item">
+  <span>회원 등급</span>
+  <strong>{selectedMember.member_levels?.level_name || '등급 없음'}</strong>
+  <div className="compact-text">
+    Lv.{selectedMember.member_levels?.level_no || 0} / XP {selectedMember.member_levels?.total_xp || 0}
+  </div>
+</div>
               <div className="member-hero-item">
                 <span>목표</span>
                 <strong>{selectedMember.goal || '-'}</strong>
@@ -9885,11 +9923,24 @@ const rebuildSalesXpByMonth = async (targetMonth) => {
             dashboardOverview.endingMembers.map((member) => (
               <div key={member.id} className="dashboard-list-row">
                 <div>
-                  <strong>{member.name}</strong>
-                  <div className="compact-text">
-                    목표: {member.goal || '-'} / 프로그램: {member.programs?.name || '미지정'}
-                  </div>
-                </div>
+  <strong>{member.name || '-'}</strong>
+
+  <div className="member-level-inline">
+    <span className="member-level-badge">
+      {member.member_levels?.level_name || '등급 없음'}
+    </span>
+    <span className="member-level-xp">
+      Lv.{member.member_levels?.level_no || 0}
+    </span>
+    <span className="member-level-totalxp">
+      XP {member.member_levels?.total_xp || 0}
+    </span>
+  </div>
+
+  <div className="compact-text">
+    목표: {member.goal || '-'} / 프로그램: {member.programs?.name || '프로그램 없음'}
+  </div>
+</div>
                 <span
                   className={`pill ${
                     Number(member.remainingSessions || 0) <= 5
