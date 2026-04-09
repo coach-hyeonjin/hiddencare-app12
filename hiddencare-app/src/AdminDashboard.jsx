@@ -10479,7 +10479,7 @@ const filteredExercisesAdvanced = exercises.filter((exercise) => {
       </div>
     </section>
 
-    <section className="card">
+    <section className="card exercise-db-card">
       <div className="section-head">
         <div>
           <h2>운동 관리</h2>
@@ -10517,7 +10517,7 @@ const filteredExercisesAdvanced = exercises.filter((exercise) => {
           />
         </label>
 
-        <div className="grid-3">
+       <div className="exercise-filter-grid">
           <label className="field">
             <span>부위</span>
             <input
@@ -10599,7 +10599,7 @@ const filteredExercisesAdvanced = exercises.filter((exercise) => {
       ) : null}
 
       <div className="stack-gap">
-        <div className="grid-3">
+        <div className="exercise-filter-grid">
           <label className="field">
             <span>부위 필터</span>
             <select
@@ -10666,7 +10666,7 @@ const filteredExercisesAdvanced = exercises.filter((exercise) => {
           const inferredType = inferExerciseEntryType(exercise)
 
           return (
-            <div key={exercise.id} className="list-card">
+           <div key={exercise.id} className="list-card exercise-list-card">
               <div className="list-card-top">
                 <strong>{exercise.name}</strong>
                 <div className="inline-actions wrap">
@@ -12167,7 +12167,7 @@ const filteredExercisesAdvanced = exercises.filter((exercise) => {
                         </label>
                       </div>
 
-                      <div className="grid-3">
+                      <div className="exercise-filter-grid">
                         <label className="field">
                           <span>최소 운동 개수</span>
                           <input
