@@ -20395,3 +20395,6 @@ textarea:focus {
   font-weight: 700;
   cursor: pointer;
 }
+.program-description-box {
+  min-height: 72px;
+}
