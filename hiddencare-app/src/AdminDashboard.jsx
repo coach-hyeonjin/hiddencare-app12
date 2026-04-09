@@ -10488,23 +10488,23 @@ const filteredExercisesAdvanced = exercises.filter((exercise) => {
           </p>
         </div>
 
-        <div className="inline-actions">
-          <button
-            type="button"
-            className="danger-btn"
-            onClick={handleDeleteAllExercises}
-          >
-            전체삭제
-          </button>
+        <div className="exercise-top-actions">
+  <button
+    type="button"
+    className="danger-btn"
+    onClick={handleDeleteAllExercises}
+  >
+    전체삭제
+  </button>
 
-          <button
-            type="button"
-            className="secondary-btn"
-            onClick={() => setShowBulkInput((prev) => !prev)}
-          >
-            {showBulkInput ? '개별 입력만 보기' : '일괄 입력 열기'}
-          </button>
-        </div>
+  <button
+    type="button"
+    className="secondary-btn"
+    onClick={() => setShowBulkInput((prev) => !prev)}
+  >
+    {showBulkInput ? '개별 입력만 보기' : '일괄 입력 열기'}
+  </button>
+</div>
       </div>
 
       <form className="stack-gap" onSubmit={handleExerciseSubmit}>
