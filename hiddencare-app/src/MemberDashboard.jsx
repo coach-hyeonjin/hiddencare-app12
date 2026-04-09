@@ -787,7 +787,6 @@ const growthSummary = useMemo(() => {
   }
 }, [memberStats])
 
-
 const myActivityRankInfo = useMemo(() => {
   const myId = String(memberInfo?.id || member?.id || '')
 
@@ -804,7 +803,6 @@ const myActivityRankInfo = useMemo(() => {
   }
 
   const sorted = [...activityRankingData.totalRanking]
-
   const myIndex = sorted.findIndex((item) => String(item.id) === myId)
 
   return {
