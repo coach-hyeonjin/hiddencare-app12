@@ -46,6 +46,26 @@ const createEmptySubExercise = () => ({
   sets: [createEmptySet()],
 })
 
+const createDefaultRoutineDays = () => [
+  { day_of_week: '월', items: [] },
+  { day_of_week: '화', items: [] },
+  { day_of_week: '수', items: [] },
+  { day_of_week: '목', items: [] },
+  { day_of_week: '금', items: [] },
+  { day_of_week: '토', items: [] },
+  { day_of_week: '일', items: [] },
+]
+
+const createEmptyRoutineWeek = (weekNumber = 1) => ({
+  week_number: weekNumber,
+  days: createDefaultRoutineDays(),
+})
+
+const emptyRoutineForm = {
+  title: '',
+  weeks: [createEmptyRoutineWeek(1)],
+}
+
 const emptyWorkoutItem = {
   exercise_id: '',
   exercise_name_snapshot: '',
@@ -1667,7 +1687,24 @@ const filteredMemberDetailMembers = members.filter((member) => {
   () => routineForm?.weeks?.[selectedRoutineWeek] || null,
   [routineForm?.weeks, selectedRoutineWeek],
 )
-  const toggleRoutineDayCollapse = (weekNumber, dayOfWeek) => {
+
+const addRoutineWeek = () => {
+  setRoutineForm((prev) => {
+    const currentWeeks = Array.isArray(prev?.weeks) ? [...prev.weeks] : []
+
+    const nextWeekNumber =
+      currentWeeks.length > 0
+        ? Math.max(...currentWeeks.map((week) => Number(week.week_number || 0))) + 1
+        : 1
+
+    return {
+      ...prev,
+      weeks: [...currentWeeks, createEmptyRoutineWeek(nextWeekNumber)],
+    }
+  })
+}
+
+const toggleRoutineDayCollapse = (weekNumber, dayOfWeek) => {
   const key = `${weekNumber}-${dayOfWeek}`
 
   setCollapsedRoutineDays((prev) => ({
@@ -1675,6 +1712,7 @@ const filteredMemberDetailMembers = members.filter((member) => {
     [key]: !prev[key],
   }))
 }
+
 const selectedPartner = useMemo(
     () => partners.find((partner) => partner.id === selectedPartnerId) || null,
     [partners, selectedPartnerId],
