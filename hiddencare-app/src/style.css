@@ -20398,3 +20398,32 @@ textarea:focus {
 .program-description-box {
   min-height: 72px;
 }
+.member-program-menu-description-box p {
+  margin: 0;
+  line-height: 1.55;
+  white-space: pre-line;
+  word-break: keep-all;
+  overflow-wrap: normal;
+}
+
+.member-program-menu-description-box.compact p {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.member-program-menu-description-box p.expanded {
+  -webkit-line-clamp: unset;
+}
+
+.member-program-desc-toggle {
+  margin-top: 6px;
+  padding: 0;
+  border: none;
+  background: none;
+  color: #6366f1;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+}
