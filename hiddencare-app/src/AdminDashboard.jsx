@@ -10598,8 +10598,8 @@ const filteredExercisesAdvanced = exercises.filter((exercise) => {
         </div>
       ) : null}
 
-      <div className="stack-gap">
-        <div className="exercise-filter-grid">
+     <div className="stack-gap exercise-filter-box">
+  <div className="exercise-filter-grid">
           <label className="field">
             <span>부위 필터</span>
             <select
