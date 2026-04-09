@@ -20305,3 +20305,73 @@ textarea:focus {
     </button>
   </div>
 </div>
+.program-option-panel {
+  border: 1px solid #e5e7eb;
+  background: #f8fafc;
+  border-radius: 18px;
+  padding: 16px;
+}
+
+.program-option-panel-head {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-bottom: 12px;
+}
+
+.program-option-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+  align-items: start;
+}
+
+.checkbox-chip {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 44px;
+  padding: 10px 12px;
+  border: 1px solid #dbe2ea;
+  border-radius: 14px;
+  background: #fff;
+  font-size: 13px;
+  font-weight: 600;
+  color: #334155;
+}
+
+.checkbox-chip input {
+  margin: 0;
+}
+
+.program-order-field {
+  margin: 0;
+}
+
+.program-order-field span {
+  display: block;
+  margin-bottom: 6px;
+}
+
+.program-order-field input {
+  width: 100%;
+}
+
+.program-description-box {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+@media (max-width: 1100px) {
+  .program-option-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 720px) {
+  .program-option-grid {
+    grid-template-columns: 1fr;
+  }
+}
