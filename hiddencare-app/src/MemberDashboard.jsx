@@ -1437,38 +1437,7 @@ const clearMemberAlerts = () => {
     return { ...prev, items: nextItems }
   })
 }
-const updatePersonalEntryType = (itemIndex, entryType) => {
-  setPersonalForm((prev) => {
-    const nextItems = [...prev.items]
-    const currentItem = nextItems[itemIndex]
 
-    nextItems[itemIndex] = {
-      ...currentItem,
-      entry_type: entryType,
-      cardio_minutes: entryType === 'cardio' ? currentItem.cardio_minutes || '' : '',
-      care_minutes: entryType === 'care' ? currentItem.care_minutes || '' : '',
-      training_method: entryType === 'strength' ? currentItem.training_method || 'normal' : 'normal',
-      sets:
-        entryType === 'strength'
-          ? currentItem.sets?.length
-            ? currentItem.sets
-            : [createEmptyPersonalSet()]
-          : [createEmptyPersonalSet()],
-    }
-
-    return { ...prev, items: nextItems }
-  })
-}
-const togglePersonalItemCollapse = (itemIndex) => {
-  setPersonalForm((prev) => {
-    const nextItems = [...prev.items]
-    nextItems[itemIndex] = {
-      ...nextItems[itemIndex],
-      collapsed: !nextItems[itemIndex].collapsed,
-    }
-    return { ...prev, items: nextItems }
-  })
-}
 const updatePersonalEntryType = (itemIndex, entryType) => {
   setPersonalForm((prev) => {
     const nextItems = [...prev.items]
