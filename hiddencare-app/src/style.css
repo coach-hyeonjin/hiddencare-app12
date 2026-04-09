@@ -20371,9 +20371,9 @@ textarea:focus {
 .program-description-box p {
   margin: 0;
   line-height: 1.55;
-  white-space: normal;
+  white-space: pre-line;
   word-break: keep-all;
-  overflow-wrap: break-word;
+  overflow-wrap: normal;
 
   display: -webkit-box;
   -webkit-line-clamp: 2;
