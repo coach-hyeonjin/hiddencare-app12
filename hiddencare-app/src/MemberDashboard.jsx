@@ -113,8 +113,22 @@ const emptyPartnerUsageForm = {
 }
 function getTotalSetCount(items = []) {
   return items.reduce((sum, item) => {
-    if (item.entry_type === 'cardio' || item.entry_type === 'care') return sum
-    return sum + (item.sets?.length || 0)
+    // 유산소 / 케어는 세트 없음
+    if (item.entry_type === 'cardio' || item.entry_type === 'care') {
+      return sum
+    }
+
+    // 슈퍼세트는 sub_exercises 기준
+    if (item.training_method === 'superset') {
+      const subTotal = (item.sub_exercises || []).reduce((subSum, sub) => {
+        return subSum + ((sub.sets || []).length || 0)
+      }, 0)
+
+      return sum + subTotal
+    }
+
+    // 일반 / 드롭세트
+    return sum + ((item.sets || []).length || 0)
   }, 0)
 }
 function normalizeSets(sets = []) {
