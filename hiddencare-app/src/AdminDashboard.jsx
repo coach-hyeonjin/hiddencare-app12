@@ -152,6 +152,10 @@ const emptyProgramForm = {
   description: '',
   is_vip: false,
   is_active: true,
+  is_recommended: false,
+  is_popular: false,
+  is_visible_to_members: true,
+  display_order: 0,
 }
 
 const emptyNoticeForm = {
@@ -5023,6 +5027,11 @@ const handleDeleteAllExercises = async () => {
     setEditingProgramId(null)
   }
 
+   const resetProgramForm = () => {
+    setProgramForm(emptyProgramForm)
+    setEditingProgramId(null)
+  }
+
   const handleProgramSubmit = async (e) => {
     e.preventDefault()
 
@@ -5054,6 +5063,29 @@ const handleDeleteAllExercises = async () => {
     await loadPrograms()
     await loadMembers()
   }
+const handlePartnerSubmit = async (e) => {
+  e.preventDefault()
+  setMessage('')
+
+  const payload = {
+    name: partnerForm.name?.trim() || '',
+    category: partnerForm.category || '카페',
+    description: partnerForm.description?.trim() || '',
+    benefit: partnerForm.benefit?.trim() || '',
+    usage_condition: partnerForm.usage_condition?.trim() || '',
+    usage_guide: partnerForm.usage_guide?.trim() || '',
+    caution: partnerForm.caution?.trim() || '',
+    address: partnerForm.address?.trim() || '',
+    phone: partnerForm.phone?.trim() || '',
+    business_hours: partnerForm.business_hours?.trim() || '',
+    manager_name: partnerForm.manager_name?.trim() || '',
+    manager_phone: partnerForm.manager_phone?.trim() || '',
+    monthly_limit: Number(partnerForm.monthly_limit) || 0,
+    vip_extra_limit: Number(partnerForm.vip_extra_limit) || 0,
+    approval_required: !!partnerForm.approval_required,
+    is_active: !!partnerForm.is_active,
+    admin_id: currentAdminId || null,
+    gym_id: currentGymId || null,
 const handlePartnerSubmit = async (e) => {
   e.preventDefault()
   setMessage('')
@@ -5114,17 +5146,21 @@ const handlePartnerSubmit = async (e) => {
   await loadPartners()
 }
   const handleProgramEdit = (program) => {
-    setEditingProgramId(program.id)
-    setProgramForm({
-      id: program.id,
-      name: program.name || '',
-      price: program.price || '',
-      session_count: program.session_count || '',
-      description: program.description || '',
-      is_vip: !!program.is_vip,
-      is_active: !!program.is_active,
-    })
-  }
+  setEditingProgramId(program.id)
+  setProgramForm({
+    id: program.id,
+    name: program.name || '',
+    price: program.price || '',
+    session_count: program.session_count || '',
+    description: program.description || '',
+    is_vip: !!program.is_vip,
+    is_active: !!program.is_active,
+    is_recommended: !!program.is_recommended,
+    is_popular: !!program.is_popular,
+    is_visible_to_members: program.is_visible_to_members !== false,
+    display_order: program.display_order ?? 0,
+  })
+}
   const handleMedicalPartnerSubmit = async (e) => {
   e.preventDefault()
 
@@ -14970,34 +15006,91 @@ const filteredExercisesAdvanced = exercises.filter((exercise) => {
             </label>
 
             <div className="grid-2">
-              <label className="checkbox-line">
-                <input
-                  type="checkbox"
-                  checked={!!programForm.is_vip}
-                  onChange={(e) =>
-                    setProgramForm((prev) => ({
-                      ...prev,
-                      is_vip: e.target.checked,
-                    }))
-                  }
-                />
-                <span>VIP 프로그램</span>
-              </label>
+  <label className="checkbox-line">
+    <input
+      type="checkbox"
+      checked={!!programForm.is_vip}
+      onChange={(e) =>
+        setProgramForm((prev) => ({
+          ...prev,
+          is_vip: e.target.checked,
+        }))
+      }
+    />
+    <span>VIP 프로그램</span>
+  </label>
 
-              <label className="checkbox-line">
-                <input
-                  type="checkbox"
-                  checked={!!programForm.is_active}
-                  onChange={(e) =>
-                    setProgramForm((prev) => ({
-                      ...prev,
-                      is_active: e.target.checked,
-                    }))
-                  }
-                />
-                <span>활성화</span>
-              </label>
-            </div>
+  <label className="checkbox-line">
+    <input
+      type="checkbox"
+      checked={!!programForm.is_active}
+      onChange={(e) =>
+        setProgramForm((prev) => ({
+          ...prev,
+          is_active: e.target.checked,
+        }))
+      }
+    />
+    <span>활성화</span>
+  </label>
+
+  <label className="checkbox-line">
+    <input
+      type="checkbox"
+      checked={!!programForm.is_recommended}
+      onChange={(e) =>
+        setProgramForm((prev) => ({
+          ...prev,
+          is_recommended: e.target.checked,
+        }))
+      }
+    />
+    <span>추천 프로그램</span>
+  </label>
+
+  <label className="checkbox-line">
+    <input
+      type="checkbox"
+      checked={!!programForm.is_popular}
+      onChange={(e) =>
+        setProgramForm((prev) => ({
+          ...prev,
+          is_popular: e.target.checked,
+        }))
+      }
+    />
+    <span>인기 프로그램</span>
+  </label>
+
+  <label className="checkbox-line">
+    <input
+      type="checkbox"
+      checked={programForm.is_visible_to_members !== false}
+      onChange={(e) =>
+        setProgramForm((prev) => ({
+          ...prev,
+          is_visible_to_members: e.target.checked,
+        }))
+      }
+    />
+    <span>회원 화면 노출</span>
+  </label>
+
+  <label className="field">
+    <span>노출 순서</span>
+    <input
+      type="number"
+      value={programForm.display_order ?? 0}
+      onChange={(e) =>
+        setProgramForm((prev) => ({
+          ...prev,
+          display_order: e.target.value,
+        }))
+      }
+      placeholder="예: 0"
+    />
+  </label>
+</div>
           </div>
 
           <div className="inline-actions wrap">
@@ -15077,17 +15170,29 @@ const filteredExercisesAdvanced = exercises.filter((exercise) => {
                     </div>
                   </div>
 
-                  <div className="inline-actions wrap">
-                    <span className={`pill ${program.is_active ? 'pill-green' : 'pill-amber'}`}>
-                      {program.is_active ? '활성' : '비활성'}
-                    </span>
-                    {program.is_vip ? <span className="pill pill-violet">VIP</span> : null}
-                  </div>
+                  <<div className="inline-actions wrap">
+  <span className={`pill ${program.is_active ? 'pill-green' : 'pill-amber'}`}>
+    {program.is_active ? '활성' : '비활성'}
+  </span>
+
+  {program.is_vip ? <span className="pill pill-violet">VIP</span> : null}
+  {program.is_recommended ? <span className="pill pill-blue">추천</span> : null}
+  {program.is_popular ? <span className="pill pill-orange">인기</span> : null}
+  {program.is_visible_to_members !== false ? (
+    <span className="pill pill-green">회원노출</span>
+  ) : (
+    <span className="pill pill-dark">회원숨김</span>
+  )}
+  <span className="pill pill-soft">순서 {Number(program.display_order || 0)}</span>
+</div>
                 </div>
 
                 <div className="program-description-box">
                   {program.description || '-'}
                 </div>
+                  <div className="compact-text" style={{ marginTop: '8px' }}>
+  추천 {program.is_recommended ? 'ON' : 'OFF'} / 인기 {program.is_popular ? 'ON' : 'OFF'} / 회원노출 {program.is_visible_to_members !== false ? 'ON' : 'OFF'}
+</div>
 
                 <div className="inline-actions wrap">
                   <button
