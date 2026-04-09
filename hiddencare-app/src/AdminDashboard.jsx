@@ -5027,42 +5027,47 @@ const handleDeleteAllExercises = async () => {
     setEditingProgramId(null)
   }
 
-   const resetProgramForm = () => {
-    setProgramForm(emptyProgramForm)
-    setEditingProgramId(null)
-  }
-
+  
   const handleProgramSubmit = async (e) => {
-    e.preventDefault()
+  e.preventDefault()
 
-    const payload = {
-  name: programForm.name?.trim() || '',
-  price: Number(programForm.price) || 0,
-  session_count: Number(programForm.session_count) || 0,
-  description: programForm.description?.trim() || '',
-  is_vip: !!programForm.is_vip,
-  is_active: !!programForm.is_active,
-  admin_id: currentAdminId || null,
-  gym_id: currentGymId || null,
-}
-
-    if (!payload.name) {
-      setMessage('프로그램명을 입력해주세요.')
-      return
-    }
-
-    if (editingProgramId) {
-      await supabase.from('programs').update(payload).eq('id', editingProgramId)
-      setMessage('프로그램이 수정되었습니다.')
-    } else {
-      await supabase.from('programs').insert(payload)
-      setMessage('프로그램이 추가되었습니다.')
-    }
-
-    resetProgramForm()
-    await loadPrograms()
-    await loadMembers()
+  const payload = {
+    name: programForm.name?.trim() || '',
+    price: Number(programForm.price) || 0,
+    session_count: Number(programForm.session_count) || 0,
+    description: programForm.description?.trim() || '',
+    is_vip: !!programForm.is_vip,
+    is_active: !!programForm.is_active,
+    is_recommended: !!programForm.is_recommended,
+    is_popular: !!programForm.is_popular,
+    is_visible_to_members: programForm.is_visible_to_members !== false,
+    display_order: Number(programForm.display_order || 0),
+    admin_id: currentAdminId || null,
+    gym_id: currentGymId || null,
   }
+
+  if (!payload.name) {
+    setMessage('프로그램명을 입력해주세요.')
+    return
+  }
+
+  const query = editingProgramId
+    ? supabase.from('programs').update(payload).eq('id', editingProgramId)
+    : supabase.from('programs').insert(payload)
+
+  const { error } = await query
+
+  if (error) {
+    console.error('프로그램 저장 실패:', error)
+    setMessage(`프로그램 저장 실패: ${error.message}`)
+    return
+  }
+
+  setMessage(editingProgramId ? '프로그램이 수정되었습니다.' : '프로그램이 추가되었습니다.')
+  resetProgramForm()
+  await loadPrograms()
+  await loadMembers()
+}
 const handlePartnerSubmit = async (e) => {
   e.preventDefault()
   setMessage('')
