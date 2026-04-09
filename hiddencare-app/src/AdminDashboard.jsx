@@ -43,6 +43,8 @@ const createEmptySet = () => ({ kg: '', reps: '' })
 const createEmptySubExercise = () => ({
   exercise_id: '',
   exercise_name_snapshot: '',
+  equipment_name_snapshot: '',
+  performed_name: '',
   sets: [createEmptySet()],
 })
 
@@ -69,10 +71,15 @@ const emptyRoutineForm = {
 const emptyWorkoutItem = {
   exercise_id: '',
   exercise_name_snapshot: '',
+  equipment_name_snapshot: '',
+  performed_name: '',
+
+  entry_type: 'strength', // strength | cardio | care
   is_cardio: false,
   cardio_minutes: '',
-  sets: [createEmptySet()],
+  care_minutes: '',
 
+  sets: [createEmptySet()],
   training_method: 'normal', // normal | superset | dropset
   method_note: '',
   sub_exercises: [createEmptySubExercise(), createEmptySubExercise()],
@@ -115,6 +122,7 @@ const emptyExerciseForm = {
   body_part: '',
   category: '',
   brand_id: '',
+  guide_text: '',
 }
 
 const defaultBulkExerciseText = `뉴텍|시티드 디클라인 체스트 프레스|가슴|머신
@@ -784,6 +792,9 @@ export default function AdminDashboard({ profile, currentAdminId, currentGymId, 
   const [exerciseForm, setExerciseForm] = useState(emptyExerciseForm)
   const [editingExerciseId, setEditingExerciseId] = useState(null)
   const [exerciseSearch, setExerciseSearch] = useState('')
+  const [exerciseBodyPartFilter, setExerciseBodyPartFilter] = useState('')
+const [exerciseCategoryFilter, setExerciseCategoryFilter] = useState('')
+const [exerciseBrandFilter, setExerciseBrandFilter] = useState('')
   const [collapsedExercises, setCollapsedExercises] = useState({})
   const [bulkExerciseText, setBulkExerciseText] = useState(defaultBulkExerciseText)
   const [showBulkInput, setShowBulkInput] = useState(false)
@@ -3300,7 +3311,9 @@ const loadBrands = async () => {
     .from('exercises')
     .select('*, brands(id, name)')
     .eq('admin_id', currentAdminId)
-    .order('created_at', { ascending: false })
+    .order('body_part', { ascending: true })
+    .order('category', { ascending: true })
+    .order('name', { ascending: true })
 
   if (data) {
     const collapsed = {}
@@ -4201,7 +4214,30 @@ const toggleWorkoutItemCollapse = (itemIndex) => {
     return { ...prev, items: nextItems }
   })
 }
+const updateWorkoutEntryType = (itemIndex, entryType) => {
+  setWorkoutForm((prev) => {
+    const nextItems = [...prev.items]
+    const currentItem = nextItems[itemIndex]
 
+    nextItems[itemIndex] = {
+      ...currentItem,
+      entry_type: entryType,
+      is_cardio: entryType === 'cardio',
+      training_method: entryType === 'strength' ? currentItem.training_method || 'normal' : 'normal',
+      cardio_minutes: entryType === 'cardio' ? currentItem.cardio_minutes || '' : '',
+      care_minutes: entryType === 'care' ? currentItem.care_minutes || '' : '',
+      sets: entryType === 'strength' ? (currentItem.sets?.length ? currentItem.sets : [createEmptySet()]) : [createEmptySet()],
+      sub_exercises:
+        entryType === 'strength' && currentItem.training_method === 'superset'
+          ? currentItem.sub_exercises?.length
+            ? currentItem.sub_exercises
+            : [createEmptySubExercise(), createEmptySubExercise()]
+          : [createEmptySubExercise(), createEmptySubExercise()],
+    }
+
+    return { ...prev, items: nextItems }
+  })
+}
 const updateWorkoutTrainingMethod = (itemIndex, method) => {
   setWorkoutForm((prev) => {
     const nextItems = [...prev.items]
@@ -4209,9 +4245,11 @@ const updateWorkoutTrainingMethod = (itemIndex, method) => {
 
     nextItems[itemIndex] = {
       ...currentItem,
-      training_method: method,
+      entry_type: 'strength',
       is_cardio: false,
       cardio_minutes: '',
+      care_minutes: '',
+      training_method: method,
       sets: currentItem.sets?.length ? currentItem.sets : [createEmptySet()],
       sub_exercises:
         method === 'superset'
@@ -4227,20 +4265,29 @@ const updateWorkoutTrainingMethod = (itemIndex, method) => {
 
 const updateWorkoutItemSelect = (itemIndex, exerciseId) => {
   const found = exercises.find((exercise) => String(exercise.id) === String(exerciseId))
+  const inferredEntryType = inferExerciseEntryType(found)
 
   setWorkoutForm((prev) => {
     const nextItems = [...prev.items]
     const currentItem = nextItems[itemIndex]
-    const isCardio = found?.category === '유산소'
 
     nextItems[itemIndex] = {
       ...currentItem,
       exercise_id: found?.id || '',
-      exercise_name_snapshot: found?.name || currentItem.exercise_name_snapshot,
-      is_cardio: !!isCardio,
-      cardio_minutes: isCardio ? currentItem.cardio_minutes || '' : '',
-      training_method: isCardio ? 'normal' : currentItem.training_method || 'normal',
-      sets: isCardio ? [createEmptySet()] : currentItem.sets?.length ? currentItem.sets : [createEmptySet()],
+      equipment_name_snapshot: found?.name || '',
+      performed_name: currentItem.performed_name || found?.name || '',
+      exercise_name_snapshot: currentItem.performed_name || found?.name || '',
+      entry_type: inferredEntryType,
+      is_cardio: inferredEntryType === 'cardio',
+      cardio_minutes: inferredEntryType === 'cardio' ? currentItem.cardio_minutes || '' : '',
+      care_minutes: inferredEntryType === 'care' ? currentItem.care_minutes || '' : '',
+      training_method: inferredEntryType === 'strength' ? currentItem.training_method || 'normal' : 'normal',
+      sets:
+        inferredEntryType === 'strength'
+          ? currentItem.sets?.length
+            ? currentItem.sets
+            : [createEmptySet()]
+          : [createEmptySet()],
     }
 
     return { ...prev, items: nextItems }
@@ -4252,6 +4299,7 @@ const updateWorkoutItemName = (itemIndex, value) => {
     const nextItems = [...prev.items]
     nextItems[itemIndex] = {
       ...nextItems[itemIndex],
+      performed_name: value,
       exercise_name_snapshot: value,
     }
     return { ...prev, items: nextItems }
@@ -4269,7 +4317,9 @@ const updateWorkoutSubExerciseSelect = (itemIndex, subIndex, exerciseId) => {
     nextSubs[subIndex] = {
       ...nextSubs[subIndex],
       exercise_id: found?.id || '',
-      exercise_name_snapshot: found?.name || nextSubs[subIndex].exercise_name_snapshot,
+      equipment_name_snapshot: found?.name || '',
+      performed_name: nextSubs[subIndex].performed_name || found?.name || '',
+      exercise_name_snapshot: nextSubs[subIndex].performed_name || found?.name || '',
     }
 
     nextItems[itemIndex] = {
@@ -4289,6 +4339,7 @@ const updateWorkoutSubExerciseName = (itemIndex, subIndex, value) => {
 
     nextSubs[subIndex] = {
       ...nextSubs[subIndex],
+      performed_name: value,
       exercise_name_snapshot: value,
     }
 
@@ -4437,34 +4488,49 @@ const updateSetValue = (itemIndex, setIndex, field, value, subIndex = null) => {
 
   const cleanedItems = workoutForm.items
     .filter((item) => {
-      if (item.is_cardio) {
-        return item.exercise_name_snapshot?.trim()
+      if (item.entry_type === 'cardio') {
+        return (item.performed_name || item.equipment_name_snapshot || '').trim()
+      }
+
+      if (item.entry_type === 'care') {
+        return (item.performed_name || item.equipment_name_snapshot || '').trim()
       }
 
       if (item.training_method === 'superset') {
-        return (item.sub_exercises || []).some((sub) => sub.exercise_name_snapshot?.trim())
+        return (item.sub_exercises || []).some(
+          (sub) => (sub.performed_name || sub.exercise_name_snapshot || sub.equipment_name_snapshot || '').trim(),
+        )
       }
 
-      return item.exercise_name_snapshot?.trim()
+      return (item.performed_name || item.exercise_name_snapshot || item.equipment_name_snapshot || '').trim()
     })
     .map((item, index) => ({
       workout_id: workoutForm.id || null,
       exercise_id: item.exercise_id || null,
-      exercise_name_snapshot: item.exercise_name_snapshot?.trim() || '',
+      exercise_name_snapshot:
+        item.training_method === 'superset'
+          ? ''
+          : (item.performed_name || item.exercise_name_snapshot || item.equipment_name_snapshot || '').trim(),
+      equipment_name_snapshot: item.equipment_name_snapshot?.trim() || '',
+      performed_name: item.performed_name?.trim() || '',
       sort_order: index,
-      is_cardio: !!item.is_cardio,
-      cardio_minutes: item.is_cardio ? Number(item.cardio_minutes || 0) : null,
-      sets: item.is_cardio ? [] : normalizeSets(item.sets || []),
-
-      training_method: item.training_method || 'normal',
+      entry_type: item.entry_type || 'strength',
+      is_cardio: item.entry_type === 'cardio',
+      cardio_minutes: item.entry_type === 'cardio' ? Number(item.cardio_minutes || 0) : null,
+      care_minutes: item.entry_type === 'care' ? Number(item.care_minutes || 0) : null,
+      sets: item.entry_type === 'strength' ? normalizeSets(item.sets || []) : [],
+      training_method: item.entry_type === 'strength' ? item.training_method || 'normal' : 'normal',
       method_note: item.method_note?.trim() || '',
       sub_exercises:
-        item.training_method === 'superset'
+        item.entry_type === 'strength' && item.training_method === 'superset'
           ? (item.sub_exercises || [])
-              .filter((sub) => sub.exercise_name_snapshot?.trim())
+              .filter((sub) => (sub.performed_name || sub.exercise_name_snapshot || sub.equipment_name_snapshot || '').trim())
               .map((sub) => ({
                 exercise_id: sub.exercise_id || null,
-                exercise_name_snapshot: sub.exercise_name_snapshot?.trim() || '',
+                exercise_name_snapshot:
+                  (sub.performed_name || sub.exercise_name_snapshot || sub.equipment_name_snapshot || '').trim(),
+                equipment_name_snapshot: sub.equipment_name_snapshot?.trim() || '',
+                performed_name: sub.performed_name?.trim() || '',
                 sets: normalizeSets(sub.sets || []),
               }))
           : [],
@@ -4513,27 +4579,28 @@ const updateSetValue = (itemIndex, setIndex, field, value, subIndex = null) => {
     })),
   )
 
-await loadWorkouts()
+  await loadWorkouts()
 
-if (!workoutForm.id && workoutForm.workout_type === 'pt') {
-  await applyMemberXp({
-    memberId: workoutForm.member_id,
-    sourceType: 'pt_workout',
-    sourceId: targetWorkoutId,
-    sourceDate: workoutForm.workout_date,
-    note: '관리자 PT 운동기록 저장',
-  })
-}
+  if (!workoutForm.id && workoutForm.workout_type === 'pt') {
+    await applyMemberXp({
+      memberId: workoutForm.member_id,
+      sourceType: 'pt_workout',
+      sourceId: targetWorkoutId,
+      sourceDate: workoutForm.workout_date,
+      note: '관리자 PT 운동기록 저장',
+    })
+  }
 
-if (!workoutForm.id && workoutForm.workout_type === 'personal') {
-  await applyMemberXp({
-    memberId: workoutForm.member_id,
-    sourceType: 'personal_workout',
-    sourceId: targetWorkoutId,
-    sourceDate: workoutForm.workout_date,
-    note: '관리자 개인운동기록 저장',
-  })
-}
+  if (!workoutForm.id && workoutForm.workout_type === 'personal') {
+    await applyMemberXp({
+      memberId: workoutForm.member_id,
+      sourceType: 'personal_workout',
+      sourceId: targetWorkoutId,
+      sourceDate: workoutForm.workout_date,
+      note: '관리자 개인운동기록 저장',
+    })
+  }
+
   if (workoutForm.workout_type === 'pt') {
     const { data: freshWorkouts } = await supabase
       .from('workouts')
@@ -4571,10 +4638,17 @@ if (!workoutForm.id && workoutForm.workout_type === 'personal') {
         ? items.map((item) => ({
             exercise_id: item.exercise_id || '',
             exercise_name_snapshot: item.exercise_name_snapshot || '',
+            equipment_name_snapshot: item.equipment_name_snapshot || item.exercise_name_snapshot || '',
+            performed_name: item.performed_name || item.exercise_name_snapshot || '',
+            entry_type: item.entry_type || (item.is_cardio ? 'cardio' : 'strength'),
             is_cardio: !!item.is_cardio,
             cardio_minutes: item.cardio_minutes || '',
+            care_minutes: item.care_minutes || '',
             sets:
-              !item.is_cardio && Array.isArray(item.sets) && item.sets.length > 0
+              !item.is_cardio &&
+              item.entry_type !== 'care' &&
+              Array.isArray(item.sets) &&
+              item.sets.length > 0
                 ? item.sets
                 : [createEmptySet()],
             training_method: item.training_method || 'normal',
@@ -4584,6 +4658,8 @@ if (!workoutForm.id && workoutForm.workout_type === 'personal') {
                 ? item.sub_exercises.map((sub) => ({
                     exercise_id: sub.exercise_id || '',
                     exercise_name_snapshot: sub.exercise_name_snapshot || '',
+                    equipment_name_snapshot: sub.equipment_name_snapshot || sub.exercise_name_snapshot || '',
+                    performed_name: sub.performed_name || sub.exercise_name_snapshot || '',
                     sets: Array.isArray(sub.sets) && sub.sets.length > 0 ? sub.sets : [createEmptySet()],
                   }))
                 : [createEmptySubExercise(), createEmptySubExercise()],
@@ -4676,34 +4752,35 @@ if (!workoutForm.id && workoutForm.workout_type === 'personal') {
   }
 
   const handleExerciseSubmit = async (e) => {
-    e.preventDefault()
+  e.preventDefault()
 
-    const payload = {
-  name: exerciseForm.name?.trim() || '',
-  body_part: exerciseForm.body_part?.trim() || '',
-  category: exerciseForm.category?.trim() || '',
-  brand_id: exerciseForm.brand_id || null,
-  admin_id: currentAdminId || null,
-  gym_id: currentGymId || null,
-}
-
-    if (!payload.name) {
-      setMessage('운동명을 입력해주세요.')
-      return
-    }
-
-    if (editingExerciseId) {
-      await supabase.from('exercises').update(payload).eq('id', editingExerciseId)
-      setMessage('운동이 수정되었습니다.')
-    } else {
-      await supabase.from('exercises').insert(payload)
-      setMessage('운동이 추가되었습니다.')
-    }
-
-    setExerciseForm(emptyExerciseForm)
-    setEditingExerciseId(null)
-    await loadExercises()
+  const payload = {
+    name: exerciseForm.name?.trim() || '',
+    body_part: exerciseForm.body_part?.trim() || '',
+    category: exerciseForm.category?.trim() || '',
+    brand_id: exerciseForm.brand_id || null,
+    guide_text: exerciseForm.guide_text?.trim() || '',
+    admin_id: currentAdminId || null,
+    gym_id: currentGymId || null,
   }
+
+  if (!payload.name) {
+    setMessage('운동명(기구명)을 입력해주세요.')
+    return
+  }
+
+  if (editingExerciseId) {
+    await supabase.from('exercises').update(payload).eq('id', editingExerciseId)
+    setMessage('운동이 수정되었습니다.')
+  } else {
+    await supabase.from('exercises').insert(payload)
+    setMessage('운동이 추가되었습니다.')
+  }
+
+  setExerciseForm(emptyExerciseForm)
+  setEditingExerciseId(null)
+  await loadExercises()
+}
 
   const handleExerciseDelete = async (exerciseId) => {
     if (!window.confirm('운동을 삭제할까요?')) return
@@ -7375,7 +7452,105 @@ const rebuildSalesXpByMonth = async (targetMonth) => {
   if (loading) {
     return <div className="loading-card">데이터 불러오는 중...</div>
   }
+const TRAINING_METHOD_META = {
+  normal: {
+    label: '일반운동',
+    description: '한 가지 운동을 세트별로 진행하는 가장 기본적인 방식입니다.',
+    placeholder: '예: 한 가지 운동을 세트별로 안정적으로 진행했습니다.',
+  },
+  superset: {
+    label: '슈퍼세트',
+    description: 'A운동 후 쉬지 않고 B운동을 바로 이어서 진행하는 방식입니다.',
+    placeholder: '예: 슈퍼세트를 진행했습니다. A운동 후 휴식 없이 B운동을 바로 이어서 수행했습니다.',
+  },
+  dropset: {
+    label: '드롭세트',
+    description: '같은 운동에서 중량을 낮춰가며 연속적으로 수행하는 방식입니다.',
+    placeholder: '예: 드롭세트로 진행했습니다. 마지막 세트에서 중량을 낮춰 연속 반복했습니다.',
+  },
+}
 
+const ENTRY_TYPE_META = {
+  strength: {
+    label: '근력운동',
+    description: '세트/중량/횟수 중심으로 기록하는 일반 웨이트 운동입니다.',
+  },
+  cardio: {
+    label: '유산소',
+    description: '걷기, 러닝, 사이클처럼 시간 중심으로 기록하는 유산소 운동입니다.',
+  },
+  care: {
+    label: '케어',
+    description: '스포츠마사지, 컨디셔닝, 스트레칭처럼 케어 시간을 기록하는 항목입니다.',
+  },
+}
+
+const CARE_KEYWORDS = ['마사지', '컨디셔닝', '스트레칭', '모션패시브', '케어']
+const CARDIO_KEYWORDS = ['러닝', '런닝', '사이클', '자전거', '걷기', '트레드밀', '유산소', '수영']
+
+const inferExerciseEntryType = (exercise) => {
+  const name = String(exercise?.name || '').toLowerCase()
+  const category = String(exercise?.category || '').toLowerCase()
+  const guide = String(exercise?.guide_text || '').toLowerCase()
+
+  if (CARE_KEYWORDS.some((keyword) => name.includes(keyword) || category.includes(keyword) || guide.includes(keyword))) {
+    return 'care'
+  }
+
+  if (category.includes('유산소') || CARDIO_KEYWORDS.some((keyword) => name.includes(keyword) || category.includes(keyword))) {
+    return 'cardio'
+  }
+
+  return 'strength'
+}
+
+const getTrainingMethodMeta = (method) => TRAINING_METHOD_META[method] || TRAINING_METHOD_META.normal
+const getEntryTypeMeta = (entryType) => ENTRY_TYPE_META[entryType] || ENTRY_TYPE_META.strength
+
+const getWorkoutSummaryText = (item) => {
+  if (item.entry_type === 'care') {
+    return `케어 / ${Number(item.care_minutes || 0)}분`
+  }
+
+  if (item.entry_type === 'cardio' || item.is_cardio) {
+    return `유산소 / ${Number(item.cardio_minutes || 0)}분`
+  }
+
+  if (item.training_method === 'superset') {
+    return '슈퍼세트'
+  }
+
+  if (item.training_method === 'dropset') {
+    return `${item.performed_name || item.exercise_name_snapshot || '드롭세트'}`
+  }
+
+  return item.performed_name || item.exercise_name_snapshot || item.equipment_name_snapshot || '일반운동'
+}
+
+const exerciseBodyPartOptions = Array.from(
+  new Set(exercises.map((exercise) => String(exercise.body_part || '').trim()).filter(Boolean)),
+)
+
+const exerciseCategoryOptions = Array.from(
+  new Set(exercises.map((exercise) => String(exercise.category || '').trim()).filter(Boolean)),
+)
+
+const filteredExercisesAdvanced = exercises.filter((exercise) => {
+  const keyword = String(exerciseSearch || '').trim().toLowerCase()
+  const bodyMatch = !exerciseBodyPartFilter || String(exercise.body_part || '') === exerciseBodyPartFilter
+  const categoryMatch = !exerciseCategoryFilter || String(exercise.category || '') === exerciseCategoryFilter
+  const brandMatch = !exerciseBrandFilter || String(exercise.brand_id || '') === String(exerciseBrandFilter)
+
+  const keywordMatch =
+    !keyword ||
+    String(exercise.name || '').toLowerCase().includes(keyword) ||
+    String(exercise.body_part || '').toLowerCase().includes(keyword) ||
+    String(exercise.category || '').toLowerCase().includes(keyword) ||
+    String(exercise.brands?.name || '').toLowerCase().includes(keyword) ||
+    String(exercise.guide_text || '').toLowerCase().includes(keyword)
+
+  return bodyMatch && categoryMatch && brandMatch && keywordMatch
+})
   return (
     <div className="dashboard-shell">
       <div className="admin-alert-bar collapsible-alert-bar">
