@@ -957,10 +957,27 @@ const toggleGrowthSection = (key) => {
 }
  const loadMemberStats = async () => {
   try {
-    const adminId =
-      memberInfo?.admin_id ||
-      member?.admin_id ||
-      null
+    const memberId = memberInfo?.id || member?.id || null
+
+    if (!memberId) {
+      setMemberStats([])
+      return
+    }
+
+    const { data: memberRow, error: memberError } = await supabase
+      .from('members')
+      .select('id, admin_id')
+      .eq('id', memberId)
+      .maybeSingle()
+
+    if (memberError) {
+      console.error('활동랭킹용 회원 admin_id 조회 실패:', memberError)
+      setMemberStats([])
+      return
+    }
+
+    const adminId = memberRow?.admin_id || null
+    console.log('활동랭킹 실제 adminId', adminId)
 
     if (!adminId) {
       setMemberStats([])
@@ -970,6 +987,9 @@ const toggleGrowthSection = (key) => {
     const { data, error } = await supabase.rpc('get_member_activity_ranking', {
       p_admin_id: adminId,
     })
+
+    console.log('활동랭킹 RPC data', data)
+    console.log('활동랭킹 RPC error', error)
 
     if (error) {
       console.error('활동랭킹 RPC 조회 실패:', error)
