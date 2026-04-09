@@ -984,6 +984,7 @@ const [routineForm, setRoutineForm] = useState(emptyRoutineForm)
   const [programForm, setProgramForm] = useState(emptyProgramForm)
   const [editingProgramId, setEditingProgramId] = useState(null)
   const [programSearch, setProgramSearch] = useState('')
+  const [expandedProgramId, setExpandedProgramId] = useState(null)
 
   const [salesRecords, setSalesRecords] = useState([])
   const [saleForm, setSaleForm] = useState(emptySaleForm)
@@ -15177,8 +15178,24 @@ const filteredExercisesAdvanced = exercises.filter((exercise) => {
   </div>
 
   <div className="program-description-box">
+  <p className={expandedProgramId === program.id ? 'expanded' : ''}>
     {program.description || '-'}
-  </div>
+  </p>
+
+  {program.description && String(program.description).length > 40 ? (
+    <button
+      type="button"
+      className="program-desc-toggle"
+      onClick={() =>
+        setExpandedProgramId((prev) =>
+          prev === program.id ? null : program.id
+        )
+      }
+    >
+      {expandedProgramId === program.id ? '접기' : '더보기'}
+    </button>
+  ) : null}
+</div>
 
   
 
