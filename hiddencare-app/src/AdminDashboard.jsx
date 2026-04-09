@@ -14987,91 +14987,98 @@ const filteredExercisesAdvanced = exercises.filter((exercise) => {
               />
             </label>
 
-            <div className="grid-2">
-  <label className="checkbox-line">
-    <input
-      type="checkbox"
-      checked={!!programForm.is_vip}
-      onChange={(e) =>
-        setProgramForm((prev) => ({
-          ...prev,
-          is_vip: e.target.checked,
-        }))
-      }
-    />
-    <span>VIP 프로그램</span>
-  </label>
+            <div className="program-option-panel">
+  <div className="program-option-panel-head">
+    <strong>노출 / 판매 설정</strong>
+    <span className="compact-text">회원 화면 표시와 추천 배지를 관리합니다.</span>
+  </div>
 
-  <label className="checkbox-line">
-    <input
-      type="checkbox"
-      checked={!!programForm.is_active}
-      onChange={(e) =>
-        setProgramForm((prev) => ({
-          ...prev,
-          is_active: e.target.checked,
-        }))
-      }
-    />
-    <span>활성화</span>
-  </label>
+  <div className="program-option-grid">
+    <label className="checkbox-chip">
+      <input
+        type="checkbox"
+        checked={!!programForm.is_vip}
+        onChange={(e) =>
+          setProgramForm((prev) => ({
+            ...prev,
+            is_vip: e.target.checked,
+          }))
+        }
+      />
+      <span>VIP 프로그램</span>
+    </label>
 
-  <label className="checkbox-line">
-    <input
-      type="checkbox"
-      checked={!!programForm.is_recommended}
-      onChange={(e) =>
-        setProgramForm((prev) => ({
-          ...prev,
-          is_recommended: e.target.checked,
-        }))
-      }
-    />
-    <span>추천 프로그램</span>
-  </label>
+    <label className="checkbox-chip">
+      <input
+        type="checkbox"
+        checked={!!programForm.is_active}
+        onChange={(e) =>
+          setProgramForm((prev) => ({
+            ...prev,
+            is_active: e.target.checked,
+          }))
+        }
+      />
+      <span>활성화</span>
+    </label>
 
-  <label className="checkbox-line">
-    <input
-      type="checkbox"
-      checked={!!programForm.is_popular}
-      onChange={(e) =>
-        setProgramForm((prev) => ({
-          ...prev,
-          is_popular: e.target.checked,
-        }))
-      }
-    />
-    <span>인기 프로그램</span>
-  </label>
+    <label className="checkbox-chip">
+      <input
+        type="checkbox"
+        checked={!!programForm.is_recommended}
+        onChange={(e) =>
+          setProgramForm((prev) => ({
+            ...prev,
+            is_recommended: e.target.checked,
+          }))
+        }
+      />
+      <span>추천 프로그램</span>
+    </label>
 
-  <label className="checkbox-line">
-    <input
-      type="checkbox"
-      checked={programForm.is_visible_to_members !== false}
-      onChange={(e) =>
-        setProgramForm((prev) => ({
-          ...prev,
-          is_visible_to_members: e.target.checked,
-        }))
-      }
-    />
-    <span>회원 화면 노출</span>
-  </label>
+    <label className="checkbox-chip">
+      <input
+        type="checkbox"
+        checked={!!programForm.is_popular}
+        onChange={(e) =>
+          setProgramForm((prev) => ({
+            ...prev,
+            is_popular: e.target.checked,
+          }))
+        }
+      />
+      <span>인기 프로그램</span>
+    </label>
 
-  <label className="field">
-    <span>노출 순서</span>
-    <input
-      type="number"
-      value={programForm.display_order ?? 0}
-      onChange={(e) =>
-        setProgramForm((prev) => ({
-          ...prev,
-          display_order: e.target.value,
-        }))
-      }
-      placeholder="예: 0"
-    />
-  </label>
+    <label className="checkbox-chip">
+      <input
+        type="checkbox"
+        checked={programForm.is_visible_to_members !== false}
+        onChange={(e) =>
+          setProgramForm((prev) => ({
+            ...prev,
+            is_visible_to_members: e.target.checked,
+          }))
+        }
+      />
+      <span>회원 화면 노출</span>
+    </label>
+
+    <label className="field program-order-field">
+      <span>노출 순서</span>
+      <input
+        type="number"
+        value={programForm.display_order ?? 0}
+        onChange={(e) =>
+          setProgramForm((prev) => ({
+            ...prev,
+            display_order: e.target.value,
+          }))
+        }
+        placeholder="0"
+      />
+    </label>
+  </div>
 </div>
           </div>
 
@@ -15173,9 +15180,7 @@ const filteredExercisesAdvanced = exercises.filter((exercise) => {
     {program.description || '-'}
   </div>
 
-  <div className="compact-text" style={{ marginTop: '8px' }}>
-    추천 {program.is_recommended ? 'ON' : 'OFF'} / 인기 {program.is_popular ? 'ON' : 'OFF'} / 회원노출 {program.is_visible_to_members !== false ? 'ON' : 'OFF'}
-  </div>
+  
 
   <div className="inline-actions wrap">
     <button
