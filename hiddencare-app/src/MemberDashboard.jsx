@@ -774,9 +774,11 @@ const growthSummary = useMemo(() => {
   const totalRanking = [...(memberStats || [])]
     .filter((row) => Number(row.totalActivity || 0) > 0)
     .sort((a, b) => {
-      if (Number(b.totalActivity || 0) !== Number(a.totalActivity || 0)) {
-        return Number(b.totalActivity || 0) - Number(a.totalActivity || 0)
-      }
+      const aTotal = Number(a.totalActivity || 0)
+      const bTotal = Number(b.totalActivity || 0)
+
+      if (bTotal !== aTotal) return bTotal - aTotal
+
       return String(a.name || '').localeCompare(String(b.name || ''), 'ko-KR')
     })
 
@@ -784,39 +786,31 @@ const growthSummary = useMemo(() => {
     totalRanking,
   }
 }, [memberStats])
-  const levelMap = (memberLevelRanking || []).reduce((acc, row) => {
-    acc[row.member_id] = row
-    return acc
-  }, {})
 
-  const rankedMembers = (memberStats || []).map((memberRow) => {
-    const totalActivity =
-      Number(memberRow.ptCount || 0) + Number(memberRow.personalCount || 0)
+const myActivityRankInfo = useMemo(() => {
+  const myId = String(memberInfo?.id || member?.id || '')
 
-    const levelInfo = levelMap[memberRow.id] || null
-
+  if (
+    !myId ||
+    !Array.isArray(activityRankingData.totalRanking) ||
+    activityRankingData.totalRanking.length === 0
+  ) {
     return {
-      ...memberRow,
-      totalActivity,
-      totalXp: Number(levelInfo?.total_xp || 0),
-      levelNo: Number(levelInfo?.level_no || 1),
-      levelName: levelInfo?.level_name || '생알',
-      weeklyScore: Number(levelInfo?.weekly_score || 0),
-      lastActivityDate: levelInfo?.last_activity_date || '',
+      myRank: null,
+      myRankItem: null,
+      topTenRanking: [],
     }
-  })
+  }
 
-  const totalRanking = [...rankedMembers]
-    .filter((row) => row.totalActivity > 0)
-    .sort((a, b) => {
-      if (b.totalActivity !== a.totalActivity) return b.totalActivity - a.totalActivity
-      return String(a.name || '').localeCompare(String(b.name || ''), 'ko-KR')
-    })
+  const sorted = [...activityRankingData.totalRanking]
+  const myIndex = sorted.findIndex((item) => String(item.id) === myId)
 
   return {
-    totalRanking,
+    myRank: myIndex >= 0 ? myIndex + 1 : null,
+    myRankItem: myIndex >= 0 ? sorted[myIndex] : null,
+    topTenRanking: sorted.slice(0, 10),
   }
-}, [memberStats, memberLevelRanking])
+}, [activityRankingData.totalRanking, memberInfo?.id, member?.id])
 
 const myActivityRankInfo = useMemo(() => {
   const myId = String(memberInfo?.id || member?.id || '')
@@ -987,36 +981,43 @@ const toggleGrowthSection = (key) => {
     [key]: !prev[key],
   }))
 }
-  const loadMemberStats = async () => {
+ const loadMemberStats = async () => {
   try {
     const adminId =
-     
       memberInfo?.admin_id ||
       member?.admin_id ||
       null
 
-    const monthKey = new Date().toISOString().slice(0, 7)
-    const monthStart = `${monthKey}-01`
-
-    const nextMonthDate = new Date(`${monthKey}-01T00:00:00`)
-    nextMonthDate.setMonth(nextMonthDate.getMonth() + 1)
-    const nextMonthKey = nextMonthDate.toISOString().slice(0, 7)
-    const monthEnd = `${nextMonthKey}-01`
-
-    let memberQuery = supabase
-      .from('members')
-      .select('id, name, total_sessions, used_sessions, admin_id')
-
-    if (adminId) {
-      memberQuery = memberQuery.eq('admin_id', adminId)
-    }
-
-    const { data: membersData, error: membersError } = await memberQuery
-
-    if (membersError) {
-      console.error('회원 활동랭킹용 members 조회 실패:', membersError)
+    if (!adminId) {
+      setMemberStats([])
       return
     }
+
+    const { data, error } = await supabase.rpc('get_member_activity_ranking', {
+      p_admin_id: adminId,
+    })
+
+    if (error) {
+      console.error('활동랭킹 RPC 조회 실패:', error)
+      setMemberStats([])
+      return
+    }
+
+    const stats = (data || []).map((row) => ({
+      id: row.member_id,
+      name: row.member_name || '회원',
+      ptCount: Number(row.pt_count || 0),
+      personalCount: Number(row.personal_count || 0),
+      totalActivity: Number(row.total_activity || 0),
+      remainingSessions: Number(row.remaining_sessions || 0),
+    }))
+
+    setMemberStats(stats)
+  } catch (error) {
+    console.error('회원 활동랭킹 조회 실패:', error)
+    setMemberStats([])
+  }
+}
 
     let workoutQuery = supabase
       .from('workouts')
