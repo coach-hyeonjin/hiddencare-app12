@@ -5091,29 +5091,6 @@ const handlePartnerSubmit = async (e) => {
     is_active: !!partnerForm.is_active,
     admin_id: currentAdminId || null,
     gym_id: currentGymId || null,
-const handlePartnerSubmit = async (e) => {
-  e.preventDefault()
-  setMessage('')
-
-  const payload = {
-    name: partnerForm.name?.trim() || '',
-    category: partnerForm.category || '카페',
-    description: partnerForm.description?.trim() || '',
-    benefit: partnerForm.benefit?.trim() || '',
-    usage_condition: partnerForm.usage_condition?.trim() || '',
-    usage_guide: partnerForm.usage_guide?.trim() || '',
-    caution: partnerForm.caution?.trim() || '',
-    address: partnerForm.address?.trim() || '',
-    phone: partnerForm.phone?.trim() || '',
-    business_hours: partnerForm.business_hours?.trim() || '',
-    manager_name: partnerForm.manager_name?.trim() || '',
-    manager_phone: partnerForm.manager_phone?.trim() || '',
-    monthly_limit: Number(partnerForm.monthly_limit) || 0,
-    vip_extra_limit: Number(partnerForm.vip_extra_limit) || 0,
-    approval_required: !!partnerForm.approval_required,
-    is_active: !!partnerForm.is_active,
-    admin_id: currentAdminId || null,
-    gym_id: currentGymId || null,
   }
 
   if (!payload.name) {
