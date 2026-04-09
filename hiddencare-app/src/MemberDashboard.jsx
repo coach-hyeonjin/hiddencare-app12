@@ -993,60 +993,6 @@ const toggleGrowthSection = (key) => {
   }
 }
 
-    let workoutQuery = supabase
-      .from('workouts')
-      .select('member_id, workout_type, workout_date')
-
-    workoutQuery = workoutQuery
-      .gte('workout_date', monthStart)
-      .lt('workout_date', monthEnd)
-
-    const { data: workoutsData, error: workoutsError } = await workoutQuery
-
-    if (workoutsError) {
-      console.error('회원 활동랭킹용 workouts 조회 실패:', workoutsError)
-      return
-    }
-
-    const workoutMap = (workoutsData || []).reduce((acc, row) => {
-      const key = row.member_id
-
-      if (!acc[key]) {
-        acc[key] = {
-          ptCount: 0,
-          personalCount: 0,
-        }
-      }
-
-      if (row.workout_type === 'pt') acc[key].ptCount += 1
-      if (row.workout_type === 'personal') acc[key].personalCount += 1
-
-      return acc
-    }, {})
-
-    const stats = (membersData || []).map((row) => {
-      const workoutInfo = workoutMap[row.id] || {
-        ptCount: 0,
-        personalCount: 0,
-      }
-
-      return {
-        id: row.id,
-        name: row.name || '회원',
-        ptCount: Number(workoutInfo.ptCount || 0),
-        personalCount: Number(workoutInfo.personalCount || 0),
-        remainingSessions: Math.max(
-          Number(row.total_sessions || 0) - Number(row.used_sessions || 0),
-          0,
-        ),
-      }
-    })
-
-    setMemberStats(stats)
-  } catch (error) {
-    console.error('회원 활동랭킹용 memberStats 생성 실패:', error)
-  }
-}
   const loadAll = async () => {
     setLoading(true)
     setMessage('')
