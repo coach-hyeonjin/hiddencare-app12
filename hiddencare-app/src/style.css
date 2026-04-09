@@ -19887,3 +19887,27 @@ textarea:focus {
   background: #f8fafc;
   border: 1px solid #e5edf6;
 }
+/* ===== 운동DB 상단 버튼 정리 ===== */
+
+.exercise-top-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.exercise-top-actions .danger-btn,
+.exercise-top-actions .secondary-btn {
+  min-width: 96px;
+  height: 42px;
+  padding: 0 14px;
+  white-space: nowrap;
+  flex: 0 0 auto;
+}
+
+@media (max-width: 900px) {
+  .exercise-top-actions {
+    justify-content: flex-start;
+  }
+}
