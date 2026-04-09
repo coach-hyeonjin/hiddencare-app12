@@ -405,6 +405,7 @@ export default function MemberDashboard({ member, accessCode, onLogout }) {
 const [memberXpLogs, setMemberXpLogs] = useState([])
 const [memberLevelSettings, setMemberLevelSettings] = useState([])
 const [memberLevelRanking, setMemberLevelRanking] = useState([])
+  const [memberStats, setMemberStats] = useState([])
   const [memberXpSettings, setMemberXpSettings] = useState([])
 const [growthOpenSections, setGrowthOpenSections] = useState({
   summary: true,
@@ -768,6 +769,66 @@ const growthSummary = useMemo(() => {
     topTenRanking: sorted.slice(0, 10),
   }
 }, [memberLevelRanking, memberInfo?.id, member?.id])
+  const activityRankingData = useMemo(() => {
+  const levelMap = (memberLevelRanking || []).reduce((acc, row) => {
+    acc[row.member_id] = row
+    return acc
+  }, {})
+
+  const rankedMembers = (memberStats || []).map((memberRow) => {
+    const totalActivity =
+      Number(memberRow.ptCount || 0) + Number(memberRow.personalCount || 0)
+
+    const levelInfo = levelMap[memberRow.id] || null
+
+    return {
+      ...memberRow,
+      totalActivity,
+      totalXp: Number(levelInfo?.total_xp || 0),
+      levelNo: Number(levelInfo?.level_no || 1),
+      levelName: levelInfo?.level_name || '생알',
+      weeklyScore: Number(levelInfo?.weekly_score || 0),
+      lastActivityDate: levelInfo?.last_activity_date || '',
+    }
+  })
+
+  const totalRanking = [...rankedMembers]
+    .filter((row) => row.totalActivity > 0)
+    .sort((a, b) => {
+      if (b.totalActivity !== a.totalActivity) return b.totalActivity - a.totalActivity
+      return String(a.name || '').localeCompare(String(b.name || ''), 'ko-KR')
+    })
+
+  return {
+    totalRanking,
+  }
+}, [memberStats, memberLevelRanking])
+
+const myActivityRankInfo = useMemo(() => {
+  const myId = String(memberInfo?.id || member?.id || '')
+
+  if (
+    !myId ||
+    !Array.isArray(activityRankingData.totalRanking) ||
+    activityRankingData.totalRanking.length === 0
+  ) {
+    return {
+      myRank: null,
+      myRankItem: null,
+      topTenRanking: [],
+    }
+  }
+
+  const sorted = [...activityRankingData.totalRanking]
+
+  const myIndex = sorted.findIndex((item) => String(item.id) === myId)
+
+  return {
+    myRank: myIndex >= 0 ? myIndex + 1 : null,
+    myRankItem: myIndex >= 0 ? sorted[myIndex] : null,
+    topTenRanking: sorted.slice(0, 10),
+  }
+}, [activityRankingData.totalRanking, memberInfo?.id, member?.id])
   const xpProgress = getXpProgress(growthSummary, memberLevelSettings)
   useEffect(() => {
     loadAll()
@@ -912,6 +973,91 @@ const toggleGrowthSection = (key) => {
     [key]: !prev[key],
   }))
 }
+  const loadMemberStats = async () => {
+  try {
+    const adminId =
+      currentAdminId ||
+      memberInfo?.admin_id ||
+      member?.admin_id ||
+      null
+
+    const monthKey = new Date().toISOString().slice(0, 7)
+    const monthStart = `${monthKey}-01`
+
+    const nextMonthDate = new Date(`${monthKey}-01T00:00:00`)
+    nextMonthDate.setMonth(nextMonthDate.getMonth() + 1)
+    const nextMonthKey = nextMonthDate.toISOString().slice(0, 7)
+    const monthEnd = `${nextMonthKey}-01`
+
+    let memberQuery = supabase
+      .from('members')
+      .select('id, name, total_sessions, used_sessions, admin_id')
+
+    if (adminId) {
+      memberQuery = memberQuery.eq('admin_id', adminId)
+    }
+
+    const { data: membersData, error: membersError } = await memberQuery
+
+    if (membersError) {
+      console.error('회원 활동랭킹용 members 조회 실패:', membersError)
+      return
+    }
+
+    let workoutQuery = supabase
+      .from('workouts')
+      .select('member_id, workout_type, workout_date')
+
+    workoutQuery = workoutQuery
+      .gte('workout_date', monthStart)
+      .lt('workout_date', monthEnd)
+
+    const { data: workoutsData, error: workoutsError } = await workoutQuery
+
+    if (workoutsError) {
+      console.error('회원 활동랭킹용 workouts 조회 실패:', workoutsError)
+      return
+    }
+
+    const workoutMap = (workoutsData || []).reduce((acc, row) => {
+      const key = row.member_id
+
+      if (!acc[key]) {
+        acc[key] = {
+          ptCount: 0,
+          personalCount: 0,
+        }
+      }
+
+      if (row.workout_type === 'pt') acc[key].ptCount += 1
+      if (row.workout_type === 'personal') acc[key].personalCount += 1
+
+      return acc
+    }, {})
+
+    const stats = (membersData || []).map((row) => {
+      const workoutInfo = workoutMap[row.id] || {
+        ptCount: 0,
+        personalCount: 0,
+      }
+
+      return {
+        id: row.id,
+        name: row.name || '회원',
+        ptCount: Number(workoutInfo.ptCount || 0),
+        personalCount: Number(workoutInfo.personalCount || 0),
+        remainingSessions: Math.max(
+          Number(row.total_sessions || 0) - Number(row.used_sessions || 0),
+          0,
+        ),
+      }
+    })
+
+    setMemberStats(stats)
+  } catch (error) {
+    console.error('회원 활동랭킹용 memberStats 생성 실패:', error)
+  }
+}
   const loadAll = async () => {
     setLoading(true)
     setMessage('')
@@ -941,6 +1087,7 @@ const toggleGrowthSection = (key) => {
   loadMemberLevelRanking(adminId),
         loadMemberXpSettings(adminId),
       ])
+     await loadMemberStats() 
     } catch (error) {
       console.error('loadAll 전체 오류:', error)
       setMessage(error?.message || '데이터 불러오기 중 오류가 발생했습니다.')
@@ -2791,63 +2938,71 @@ return { ok: true, xp: xpValue }
     </section>
 
     <section className="card growth-accordion-card">
-      <button
-        type="button"
-        className="growth-section-toggle"
-        onClick={() => toggleGrowthSection('ranking')}
-      >
-        <span>5. 회원 레벨 랭킹 TOP 10</span>
-        <strong>{growthOpenSections.ranking ? '−' : '+'}</strong>
-      </button>
+  <button
+    type="button"
+    className="growth-section-toggle"
+    onClick={() => toggleGrowthSection('ranking')}
+  >
+    <span>5. 전체 활동 랭킹 TOP 10</span>
+    <strong>{growthOpenSections.ranking ? '−' : '+'}</strong>
+  </button>
 
-      {growthOpenSections.ranking && (
-        <div className="list-stack">
-          {myLevelRankInfo.myRankItem && (
-            <div className="activity-rank-item growth-rank-self my-rank-card">
+  {growthOpenSections.ranking && (
+    <div className="list-stack">
+      <div className="compact-text">
+        이번 달 기준 전체 활동횟수 순위입니다. 이름은 마스킹 처리되어 표시됩니다.
+      </div>
+
+      {myActivityRankInfo.myRankItem && (
+        <div className="activity-rank-item growth-rank-self my-rank-card">
+          <div className="list-card-top">
+            <strong>
+              내 순위 · {myActivityRankInfo.myRank}위 · {maskMemberName(myActivityRankInfo.myRankItem.name || '회원')}
+            </strong>
+            <span className="activity-rank-score score-total">
+              총 {Number(myActivityRankInfo.myRankItem.totalActivity || 0)}회
+            </span>
+          </div>
+          <div className="compact-text">
+            PT {Number(myActivityRankInfo.myRankItem.ptCount || 0)}회 / 개인운동 {Number(myActivityRankInfo.myRankItem.personalCount || 0)}회 / 남은 세션 {Number(myActivityRankInfo.myRankItem.remainingSessions || 0)}회
+          </div>
+        </div>
+      )}
+
+      {myActivityRankInfo.topTenRanking.length ? (
+        myActivityRankInfo.topTenRanking.map((item, index) => {
+          const isMe = String(item.id) === String(member?.id || memberInfo?.id || '')
+
+          return (
+            <div
+              key={item.id}
+              className={`activity-rank-item activity-rank-card ${
+                isMe ? 'growth-rank-self' : ''
+              } ${
+                index === 0 ? 'rank-1' : index === 1 ? 'rank-2' : index === 2 ? 'rank-3' : ''
+              }`}
+            >
               <div className="list-card-top">
                 <strong>
-                  내 순위 · {myLevelRankInfo.myRank}위 · {maskMemberName(myLevelRankInfo.myRankItem.members?.name || '회원')}
+                  {index + 1}위 · {maskMemberName(item.name || '회원')}
                 </strong>
                 <span className="activity-rank-score score-total">
-                  Lv.{myLevelRankInfo.myRankItem.level_no} · {myLevelRankInfo.myRankItem.level_name}
+                  총 {Number(item.totalActivity || 0)}회
                 </span>
               </div>
               <div className="compact-text">
-                누적 XP {Number(myLevelRankInfo.myRankItem.total_xp || 0)}점 / 주간 {Number(myLevelRankInfo.myRankItem.weekly_score || 0)}점
+                PT {Number(item.ptCount || 0)}회 / 개인운동 {Number(item.personalCount || 0)}회 / 남은 세션 {Number(item.remainingSessions || 0)}회
+                {isMe ? ' / 내 순위' : ''}
               </div>
             </div>
-          )}
-
-          {myLevelRankInfo.topTenRanking.length ? (
-            myLevelRankInfo.topTenRanking.map((item, index) => {
-              const isMe = item.member_id === member?.id
-
-              return (
-                <div
-                  key={item.id}
-                  className={`activity-rank-item ${isMe ? 'growth-rank-self' : ''}`}
-                >
-                  <div className="list-card-top">
-                    <strong>
-                      {index + 1}위 · {maskMemberName(item.members?.name || '회원')}
-                    </strong>
-                    <span className="activity-rank-score score-total">
-                      Lv.{item.level_no} · {item.level_name}
-                    </span>
-                  </div>
-                  <div className="compact-text">
-                    누적 XP {Number(item.total_xp || 0)}점 / 주간 {Number(item.weekly_score || 0)}점
-                    {isMe ? ' / 내 순위' : ''}
-                  </div>
-                </div>
-              )
-            })
-          ) : (
-            <div className="workout-list-empty">랭킹 데이터가 없습니다.</div>
-          )}
-        </div>
+          )
+        })
+      ) : (
+        <div className="workout-list-empty">이번 달 활동 랭킹 데이터가 없습니다.</div>
       )}
-    </section>
+    </div>
+  )}
+</section>
   </div>
 )}
       {activeTab === '건강정보' && (
