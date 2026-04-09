@@ -413,6 +413,7 @@ const [growthOpenSections, setGrowthOpenSections] = useState({
   xpGuide: false,
   xpLogs: false,
   ranking: false,
+  activityRanking: false,
 })
   const [collapsedDiets, setCollapsedDiets] = useState({})
   const [dietForm, setDietForm] = useState(emptyDietForm)
@@ -976,7 +977,7 @@ const toggleGrowthSection = (key) => {
   const loadMemberStats = async () => {
   try {
     const adminId =
-      currentAdminId ||
+     
       memberInfo?.admin_id ||
       member?.admin_id ||
       null
@@ -2937,17 +2938,80 @@ return { ok: true, xp: xpValue }
       )}
     </section>
 
-    <section className="card growth-accordion-card">
+   <section className="card growth-accordion-card">
   <button
     type="button"
     className="growth-section-toggle"
     onClick={() => toggleGrowthSection('ranking')}
   >
-    <span>5. 전체 활동 랭킹 TOP 10</span>
+    <span>5. 전체 XP 랭킹 TOP 10</span>
     <strong>{growthOpenSections.ranking ? '−' : '+'}</strong>
   </button>
 
   {growthOpenSections.ranking && (
+    <div className="list-stack">
+      {myLevelRankInfo.myRankItem && (
+        <div className="activity-rank-item growth-rank-self my-rank-card">
+          <div className="list-card-top">
+            <strong>
+              내 순위 · {myLevelRankInfo.myRank}위 · {maskMemberName(myLevelRankInfo.myRankItem.members?.name || '회원')}
+            </strong>
+            <span className="activity-rank-score score-total">
+              Lv.{myLevelRankInfo.myRankItem.level_no} · {myLevelRankInfo.myRankItem.level_name}
+            </span>
+          </div>
+          <div className="compact-text">
+            누적 XP {Number(myLevelRankInfo.myRankItem.total_xp || 0)}점 / 주간 {Number(myLevelRankInfo.myRankItem.weekly_score || 0)}점
+          </div>
+        </div>
+      )}
+
+      {myLevelRankInfo.topTenRanking.length ? (
+        myLevelRankInfo.topTenRanking.map((item, index) => {
+          const isMe = item.member_id === member?.id
+
+          return (
+            <div
+              key={item.id}
+              className={`activity-rank-item ${
+                isMe ? 'growth-rank-self' : ''
+              } ${
+                index === 0 ? 'rank-1' : index === 1 ? 'rank-2' : index === 2 ? 'rank-3' : ''
+              }`}
+            >
+              <div className="list-card-top">
+                <strong>
+                  {index + 1}위 · {maskMemberName(item.members?.name || '회원')}
+                </strong>
+                <span className="activity-rank-score score-total">
+                  Lv.{item.level_no} · {item.level_name}
+                </span>
+              </div>
+              <div className="compact-text">
+                누적 XP {Number(item.total_xp || 0)}점 / 주간 {Number(item.weekly_score || 0)}점
+                {isMe ? ' / 내 순위' : ''}
+              </div>
+            </div>
+          )
+        })
+      ) : (
+        <div className="workout-list-empty">XP 랭킹 데이터가 없습니다.</div>
+      )}
+    </div>
+  )}
+</section>
+
+<section className="card growth-accordion-card">
+  <button
+    type="button"
+    className="growth-section-toggle"
+    onClick={() => toggleGrowthSection('activityRanking')}
+  >
+    <span>6. 전체 활동 랭킹 TOP 10</span>
+    <strong>{growthOpenSections.activityRanking ? '−' : '+'}</strong>
+  </button>
+
+  {growthOpenSections.activityRanking && (
     <div className="list-stack">
       <div className="compact-text">
         이번 달 기준 전체 활동횟수 순위입니다. 이름은 마스킹 처리되어 표시됩니다.
