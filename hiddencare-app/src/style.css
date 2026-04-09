@@ -19806,3 +19806,84 @@ textarea:focus {
     grid-template-columns: 1fr;
   }
 }
+/* ===== 운동DB 간격 완화 ===== */
+
+.exercise-db-card {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.exercise-db-card form.stack-gap {
+  gap: 14px;
+}
+
+.exercise-db-card .field {
+  gap: 6px;
+}
+
+.exercise-db-card .field input,
+.exercise-db-card .field select,
+.exercise-db-card .field textarea {
+  min-height: 42px;
+}
+
+.exercise-db-card .field textarea {
+  min-height: 92px;
+}
+
+.exercise-filter-grid {
+  gap: 14px;
+  margin-top: 4px;
+}
+
+.exercise-db-card .inline-actions {
+  gap: 8px;
+}
+
+.exercise-db-card .list-stack {
+  gap: 14px;
+}
+
+.exercise-list-card {
+  padding: 8px;
+}
+
+.exercise-list-card .compact-text {
+  margin-top: 6px;
+  line-height: 1.6;
+}
+
+.exercise-list-card .inline-actions.wrap {
+  margin-top: 10px;
+  gap: 8px;
+}
+
+.exercise-list-card .detail-box {
+  margin-top: 12px;
+  padding: 14px 16px;
+}
+
+.brand-list {
+  gap: 14px;
+}
+
+.brand-item {
+  padding: 16px 18px;
+}
+
+@media (max-width: 1100px) {
+  .exercise-db-card {
+    gap: 16px;
+  }
+
+  .exercise-list-card {
+    padding: 6px;
+  }
+}
+.exercise-filter-box {
+  padding: 14px 16px;
+  border-radius: 16px;
+  background: #f8fafc;
+  border: 1px solid #e5edf6;
+}
