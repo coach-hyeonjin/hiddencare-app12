@@ -4872,14 +4872,14 @@ return { ok: true, xp: xpValue }
       )}
 
       {activeTab === '프로그램' && (
-  <div className="member-program-page">
+  <div className="member-program-page menu-style-page">
     <section className="member-program-hero">
       <div className="member-program-hero-left">
         <div className="member-program-badge">MY PROGRAM</div>
         <h2>프로그램</h2>
         <p className="member-program-hero-text">
           현재 이용 중인 프로그램과 전체 프로그램 정보를 한눈에 확인할 수 있습니다.
-          가격, 횟수, 유형, 설명까지 보기 쉽게 정리했습니다.
+          메뉴판처럼 가격, 횟수, 유형, 설명을 보기 쉽게 정리했습니다.
         </p>
       </div>
 
@@ -4911,7 +4911,9 @@ return { ok: true, xp: xpValue }
 
       <div className="member-program-summary-card">
         <span>현재 횟수</span>
-        <strong>{currentProgram?.session_count || '-'}</strong>
+        <strong>
+          {currentProgram?.session_count ? `${currentProgram.session_count}회` : '-'}
+        </strong>
         <p>회차 기준</p>
       </div>
 
@@ -4922,104 +4924,161 @@ return { ok: true, xp: xpValue }
       </div>
     </section>
 
-    <div className="member-program-layout">
-      <section className="card member-program-current-card">
+    <div className="member-program-layout menu-style-layout">
+      <section className="card member-program-current-card menu-current-card">
         <div className="member-program-section-head">
           <div>
             <div className="member-program-section-label">CURRENT PROGRAM</div>
             <h2>현재 이용 중인 프로그램</h2>
             <p className="sub-text">
-              회원에게 현재 연결된 프로그램의 상세 정보를 확인할 수 있습니다.
+              현재 연결된 프로그램을 대표 카드 형태로 확인할 수 있습니다.
             </p>
           </div>
         </div>
 
         {currentProgram ? (
-          <div className="member-program-current-box">
+          <div className="member-program-current-box menu-current-box">
             <div className="member-program-current-top">
-              <div>
+              <div className="member-program-current-title-wrap">
+                <div className="member-program-menu-chip active">현재 이용중</div>
                 <h3>{currentProgram.name}</h3>
-                <p>
-                  {Number(currentProgram.price || 0).toLocaleString()}원 /{' '}
-                  {currentProgram.session_count || 0}회
+                <p className="member-program-current-price">
+                  {Number(currentProgram.price || 0).toLocaleString()}원
                 </p>
               </div>
 
-              <span className="member-program-type-pill">
-                {currentProgram.is_vip ? 'VIP' : '일반'}
-              </span>
+              <div className="member-program-current-side">
+                <span className="member-program-type-pill strong">
+                  {currentProgram.is_vip ? 'VIP' : '일반'}
+                </span>
+                <span className="member-program-session-pill">
+                  {currentProgram.session_count || 0}회
+                </span>
+              </div>
             </div>
 
-            <div className="member-program-detail-grid">
-              <div className="detail-box">
-                <p><strong>프로그램명:</strong> {currentProgram.name}</p>
-                <p><strong>가격:</strong> {Number(currentProgram.price || 0).toLocaleString()}원</p>
+            <div className="member-program-menu-info-grid">
+              <div className="member-program-menu-info-card">
+                <span>프로그램명</span>
+                <strong>{currentProgram.name}</strong>
               </div>
 
-              <div className="detail-box">
-                <p><strong>횟수:</strong> {currentProgram.session_count || '-'}</p>
-                <p><strong>유형:</strong> {currentProgram.is_vip ? 'VIP' : '일반'}</p>
+              <div className="member-program-menu-info-card">
+                <span>가격</span>
+                <strong>{Number(currentProgram.price || 0).toLocaleString()}원</strong>
               </div>
 
-              <div className="detail-box member-program-detail-full">
-                <p><strong>설명:</strong> {currentProgram.description || '-'}</p>
+              <div className="member-program-menu-info-card">
+                <span>횟수</span>
+                <strong>{currentProgram.session_count || '-'}회</strong>
               </div>
+
+              <div className="member-program-menu-info-card">
+                <span>유형</span>
+                <strong>{currentProgram.is_vip ? 'VIP' : '일반'}</strong>
+              </div>
+            </div>
+
+            <div className="member-program-menu-description-box">
+              <div className="member-program-menu-description-label">프로그램 설명</div>
+              <p>{currentProgram.description || '설명이 등록되지 않았습니다.'}</p>
             </div>
           </div>
         ) : (
-          <div className="empty-box">현재 연결된 프로그램이 없습니다.</div>
+          <div className="empty-box member-program-empty-menu">
+            현재 연결된 프로그램이 없습니다.
+          </div>
         )}
       </section>
 
-      <section className="card member-program-list-card">
+      <section className="card member-program-list-card menu-list-card">
         <div className="member-program-section-head">
           <div>
             <div className="member-program-section-label">ALL PROGRAMS</div>
-            <h2>전체 프로그램 보기</h2>
+            <h2>전체 프로그램 메뉴</h2>
             <p className="sub-text">
-              프로그램명, 설명, 횟수, 가격 기준으로 검색해서 확인할 수 있습니다.
+              가격표처럼 프로그램을 한눈에 비교하고 확인할 수 있습니다.
             </p>
           </div>
         </div>
 
-        <div className="member-program-search-row">
+        <div className="member-program-search-row menu-search-row">
           <input
             value={programSearch}
             onChange={(e) => setProgramSearch(e.target.value)}
-            placeholder="프로그램 검색"
+            placeholder="프로그램명 / 설명 / 가격 / 횟수 검색"
           />
         </div>
 
-        <div className="list-stack">
-          {filteredPrograms.length === 0 ? (
-            <div className="empty-box">조건에 맞는 프로그램이 없습니다.</div>
-          ) : (
-            filteredPrograms.map((program) => (
-              <div key={program.id} className="member-program-record-card">
-                <div className="member-program-record-head">
-                  <div>
-                    <h3>{program.name}</h3>
-                    <p>
-                      {Number(program.price || 0).toLocaleString()}원 / {program.session_count}회
-                    </p>
-                  </div>
-                  <span className="member-program-type-pill">
-                    {program.is_vip ? 'VIP' : '일반'}
-                  </span>
-                </div>
+        {filteredPrograms.length === 0 ? (
+          <div className="empty-box">조건에 맞는 프로그램이 없습니다.</div>
+        ) : (
+          <div className="member-program-menu-grid">
+            {filteredPrograms.map((program) => {
+              const isCurrentProgram = currentProgram?.id === program.id
 
-                <div className="detail-box">
-                  <p><strong>설명:</strong> {program.description || '-'}</p>
+              return (
+                <div
+                  key={program.id}
+                  className={`member-program-record-card menu-record-card ${
+                    isCurrentProgram ? 'current' : ''
+                  }`}
+                >
+                  <div className="member-program-record-head menu-record-head">
+                    <div className="member-program-record-title-wrap">
+                      <div className="member-program-menu-chip-row">
+                        {isCurrentProgram ? (
+                          <span className="member-program-menu-chip active">이용중</span>
+                        ) : null}
+                        <span className={`member-program-menu-chip ${program.is_vip ? 'vip' : 'normal'}`}>
+                          {program.is_vip ? 'VIP' : '일반'}
+                        </span>
+                      </div>
+
+                      <h3>{program.name}</h3>
+                      <p className="member-program-record-subline">
+                        {program.session_count || 0}회 프로그램
+                      </p>
+                    </div>
+
+                    <div className="member-program-record-price-box">
+                      <strong>{Number(program.price || 0).toLocaleString()}원</strong>
+                      <span>{program.session_count || 0}회</span>
+                    </div>
+                  </div>
+
+                  <div className="member-program-menu-meta">
+                    <div className="member-program-menu-meta-item">
+                      <span>유형</span>
+                      <strong>{program.is_vip ? 'VIP' : '일반'}</strong>
+                    </div>
+
+                    <div className="member-program-menu-meta-item">
+                      <span>횟수</span>
+                      <strong>{program.session_count || 0}회</strong>
+                    </div>
+
+                    <div className="member-program-menu-meta-item">
+                      <span>가격</span>
+                      <strong>{Number(program.price || 0).toLocaleString()}원</strong>
+                    </div>
+                  </div>
+
+                  <div className="member-program-menu-description-box compact">
+                    <div className="member-program-menu-description-label">설명</div>
+                    <p>{program.description || '설명이 등록되지 않았습니다.'}</p>
+                  </div>
                 </div>
-              </div>
-            ))
-          )}
-        </div>
+              )
+            })}
+          </div>
+        )}
       </section>
     </div>
   </div>
 )}
 
+{activeTab === '코치스케줄' && (
       {activeTab === '코치스케줄' && (
   <div className="member-schedule-page">
     <section className="member-schedule-hero">
