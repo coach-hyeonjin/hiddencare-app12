@@ -1688,6 +1688,11 @@ const filteredMemberDetailMembers = members.filter((member) => {
   [routineForm?.weeks, selectedRoutineWeek],
 )
 
+const currentRoutineWeek = useMemo(
+  () => routineForm?.weeks?.[selectedRoutineWeek] || null,
+  [routineForm?.weeks, selectedRoutineWeek],
+)
+
 const addRoutineWeek = () => {
   setRoutineForm((prev) => {
     const currentWeeks = Array.isArray(prev?.weeks) ? [...prev.weeks] : []
@@ -1700,6 +1705,312 @@ const addRoutineWeek = () => {
     return {
       ...prev,
       weeks: [...currentWeeks, createEmptyRoutineWeek(nextWeekNumber)],
+    }
+  })
+}
+
+const removeRoutineWeek = (weekIndex) => {
+  setRoutineForm((prev) => {
+    const currentWeeks = Array.isArray(prev?.weeks) ? [...prev.weeks] : []
+
+    if (currentWeeks.length <= 1) {
+      return {
+        ...prev,
+        weeks: [createEmptyRoutineWeek(1)],
+      }
+    }
+
+    currentWeeks.splice(weekIndex, 1)
+
+    const normalizedWeeks = currentWeeks.map((week, index) => ({
+      ...week,
+      week_number: index + 1,
+    }))
+
+    return {
+      ...prev,
+      weeks: normalizedWeeks,
+    }
+  })
+
+  setSelectedRoutineWeek((prev) => {
+    if (prev <= 0) return 0
+    return prev - 1
+  })
+}
+
+const addRoutineItem = (weekIndex, dayIndex) => {
+  setRoutineForm((prev) => {
+    const currentWeeks = Array.isArray(prev?.weeks) ? [...prev.weeks] : []
+    const targetWeek = {
+      ...(currentWeeks[weekIndex] || createEmptyRoutineWeek(weekIndex + 1)),
+    }
+
+    const currentDays = Array.isArray(targetWeek.days) ? [...targetWeek.days] : []
+    const targetDay = {
+      ...(currentDays[dayIndex] || { day_of_week: '월', items: [] }),
+    }
+
+    const currentItems = Array.isArray(targetDay.items) ? [...targetDay.items] : []
+
+    currentItems.push({
+      exercise_id: '',
+      exercise_name_snapshot: '',
+      duration_minutes: '',
+      memo: '',
+      sets: [createEmptySet()],
+    })
+
+    targetDay.items = currentItems
+    currentDays[dayIndex] = targetDay
+    targetWeek.days = currentDays
+    currentWeeks[weekIndex] = targetWeek
+
+    return {
+      ...prev,
+      weeks: currentWeeks,
+    }
+  })
+}
+
+const removeRoutineItem = (weekIndex, dayIndex, itemIndex) => {
+  setRoutineForm((prev) => {
+    const currentWeeks = Array.isArray(prev?.weeks) ? [...prev.weeks] : []
+    const targetWeek = {
+      ...(currentWeeks[weekIndex] || createEmptyRoutineWeek(weekIndex + 1)),
+    }
+
+    const currentDays = Array.isArray(targetWeek.days) ? [...targetWeek.days] : []
+    const targetDay = {
+      ...(currentDays[dayIndex] || { day_of_week: '월', items: [] }),
+    }
+
+    const currentItems = Array.isArray(targetDay.items) ? [...targetDay.items] : []
+    currentItems.splice(itemIndex, 1)
+
+    targetDay.items = currentItems
+    currentDays[dayIndex] = targetDay
+    targetWeek.days = currentDays
+    currentWeeks[weekIndex] = targetWeek
+
+    return {
+      ...prev,
+      weeks: currentWeeks,
+    }
+  })
+}
+
+const updateRoutineItemField = (weekIndex, dayIndex, itemIndex, field, value) => {
+  setRoutineForm((prev) => {
+    const currentWeeks = Array.isArray(prev?.weeks) ? [...prev.weeks] : []
+    const targetWeek = {
+      ...(currentWeeks[weekIndex] || createEmptyRoutineWeek(weekIndex + 1)),
+    }
+
+    const currentDays = Array.isArray(targetWeek.days) ? [...targetWeek.days] : []
+    const targetDay = {
+      ...(currentDays[dayIndex] || { day_of_week: '월', items: [] }),
+    }
+
+    const currentItems = Array.isArray(targetDay.items) ? [...targetDay.items] : []
+    const targetItem = {
+      ...(currentItems[itemIndex] || {
+        exercise_id: '',
+        exercise_name_snapshot: '',
+        duration_minutes: '',
+        memo: '',
+        sets: [createEmptySet()],
+      }),
+      [field]: value,
+    }
+
+    currentItems[itemIndex] = targetItem
+    targetDay.items = currentItems
+    currentDays[dayIndex] = targetDay
+    targetWeek.days = currentDays
+    currentWeeks[weekIndex] = targetWeek
+
+    return {
+      ...prev,
+      weeks: currentWeeks,
+    }
+  })
+}
+
+const updateRoutineItemSelect = (weekIndex, dayIndex, itemIndex, exerciseId) => {
+  const selectedExercise = exercises.find(
+    (exercise) => String(exercise.id) === String(exerciseId)
+  )
+
+  setRoutineForm((prev) => {
+    const currentWeeks = Array.isArray(prev?.weeks) ? [...prev.weeks] : []
+    const targetWeek = {
+      ...(currentWeeks[weekIndex] || createEmptyRoutineWeek(weekIndex + 1)),
+    }
+
+    const currentDays = Array.isArray(targetWeek.days) ? [...targetWeek.days] : []
+    const targetDay = {
+      ...(currentDays[dayIndex] || { day_of_week: '월', items: [] }),
+    }
+
+    const currentItems = Array.isArray(targetDay.items) ? [...targetDay.items] : []
+    const targetItem = {
+      ...(currentItems[itemIndex] || {
+        exercise_id: '',
+        exercise_name_snapshot: '',
+        duration_minutes: '',
+        memo: '',
+        sets: [createEmptySet()],
+      }),
+      exercise_id: exerciseId,
+      exercise_name_snapshot: selectedExercise?.name || '',
+    }
+
+    currentItems[itemIndex] = targetItem
+    targetDay.items = currentItems
+    currentDays[dayIndex] = targetDay
+    targetWeek.days = currentDays
+    currentWeeks[weekIndex] = targetWeek
+
+    return {
+      ...prev,
+      weeks: currentWeeks,
+    }
+  })
+}
+
+const addRoutineSet = (weekIndex, dayIndex, itemIndex) => {
+  setRoutineForm((prev) => {
+    const currentWeeks = Array.isArray(prev?.weeks) ? [...prev.weeks] : []
+    const targetWeek = {
+      ...(currentWeeks[weekIndex] || createEmptyRoutineWeek(weekIndex + 1)),
+    }
+
+    const currentDays = Array.isArray(targetWeek.days) ? [...targetWeek.days] : []
+    const targetDay = {
+      ...(currentDays[dayIndex] || { day_of_week: '월', items: [] }),
+    }
+
+    const currentItems = Array.isArray(targetDay.items) ? [...targetDay.items] : []
+    const targetItem = {
+      ...(currentItems[itemIndex] || {
+        exercise_id: '',
+        exercise_name_snapshot: '',
+        duration_minutes: '',
+        memo: '',
+        sets: [createEmptySet()],
+      }),
+    }
+
+    const currentSets = Array.isArray(targetItem.sets) ? [...targetItem.sets] : []
+    currentSets.push(createEmptySet())
+    targetItem.sets = currentSets
+
+    currentItems[itemIndex] = targetItem
+    targetDay.items = currentItems
+    currentDays[dayIndex] = targetDay
+    targetWeek.days = currentDays
+    currentWeeks[weekIndex] = targetWeek
+
+    return {
+      ...prev,
+      weeks: currentWeeks,
+    }
+  })
+}
+
+const updateRoutineSetValue = (
+  weekIndex,
+  dayIndex,
+  itemIndex,
+  setIndex,
+  field,
+  value
+) => {
+  setRoutineForm((prev) => {
+    const currentWeeks = Array.isArray(prev?.weeks) ? [...prev.weeks] : []
+    const targetWeek = {
+      ...(currentWeeks[weekIndex] || createEmptyRoutineWeek(weekIndex + 1)),
+    }
+
+    const currentDays = Array.isArray(targetWeek.days) ? [...targetWeek.days] : []
+    const targetDay = {
+      ...(currentDays[dayIndex] || { day_of_week: '월', items: [] }),
+    }
+
+    const currentItems = Array.isArray(targetDay.items) ? [...targetDay.items] : []
+    const targetItem = {
+      ...(currentItems[itemIndex] || {
+        exercise_id: '',
+        exercise_name_snapshot: '',
+        duration_minutes: '',
+        memo: '',
+        sets: [createEmptySet()],
+      }),
+    }
+
+    const currentSets = Array.isArray(targetItem.sets) ? [...targetItem.sets] : []
+    const targetSet = {
+      ...(currentSets[setIndex] || createEmptySet()),
+      [field]: value,
+    }
+
+    currentSets[setIndex] = targetSet
+    targetItem.sets = currentSets
+
+    currentItems[itemIndex] = targetItem
+    targetDay.items = currentItems
+    currentDays[dayIndex] = targetDay
+    targetWeek.days = currentDays
+    currentWeeks[weekIndex] = targetWeek
+
+    return {
+      ...prev,
+      weeks: currentWeeks,
+    }
+  })
+}
+
+const removeRoutineSet = (weekIndex, dayIndex, itemIndex, setIndex) => {
+  setRoutineForm((prev) => {
+    const currentWeeks = Array.isArray(prev?.weeks) ? [...prev.weeks] : []
+    const targetWeek = {
+      ...(currentWeeks[weekIndex] || createEmptyRoutineWeek(weekIndex + 1)),
+    }
+
+    const currentDays = Array.isArray(targetWeek.days) ? [...targetWeek.days] : []
+    const targetDay = {
+      ...(currentDays[dayIndex] || { day_of_week: '월', items: [] }),
+    }
+
+    const currentItems = Array.isArray(targetDay.items) ? [...targetDay.items] : []
+    const targetItem = {
+      ...(currentItems[itemIndex] || {
+        exercise_id: '',
+        exercise_name_snapshot: '',
+        duration_minutes: '',
+        memo: '',
+        sets: [createEmptySet()],
+      }),
+    }
+
+    let currentSets = Array.isArray(targetItem.sets) ? [...targetItem.sets] : []
+    currentSets.splice(setIndex, 1)
+
+    if (currentSets.length === 0) {
+      currentSets = [createEmptySet()]
+    }
+
+    targetItem.sets = currentSets
+    currentItems[itemIndex] = targetItem
+    targetDay.items = currentItems
+    currentDays[dayIndex] = targetDay
+    targetWeek.days = currentDays
+    currentWeeks[weekIndex] = targetWeek
+
+    return {
+      ...prev,
+      weeks: currentWeeks,
     }
   })
 }
