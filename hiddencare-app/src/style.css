@@ -20253,3 +20253,55 @@ textarea:focus {
     align-items: flex-start;
   }
 }
+<div key={program.id} className="program-list-modern-card">
+  <div className="program-list-modern-top">
+    <div className="program-list-modern-name">
+      <strong>{program.name || '-'}</strong>
+      <div className="compact-text">
+        {Number(program.price || 0).toLocaleString()}원 / {program.session_count || 0}회
+      </div>
+    </div>
+
+    <div className="inline-actions wrap">
+      <span className={`pill ${program.is_active ? 'pill-green' : 'pill-amber'}`}>
+        {program.is_active ? '활성' : '비활성'}
+      </span>
+
+      {program.is_vip ? <span className="pill pill-violet">VIP</span> : null}
+      {program.is_recommended ? <span className="pill pill-blue">추천</span> : null}
+      {program.is_popular ? <span className="pill pill-orange">인기</span> : null}
+      {program.is_visible_to_members !== false ? (
+        <span className="pill pill-green">회원노출</span>
+      ) : (
+        <span className="pill pill-dark">회원숨김</span>
+      )}
+      <span className="pill pill-soft">순서 {Number(program.display_order || 0)}</span>
+    </div>
+  </div>
+
+  <div className="program-description-box">
+    {program.description || '-'}
+  </div>
+
+  <div className="compact-text" style={{ marginTop: '8px' }}>
+    추천 {program.is_recommended ? 'ON' : 'OFF'} / 인기 {program.is_popular ? 'ON' : 'OFF'} / 회원노출 {program.is_visible_to_members !== false ? 'ON' : 'OFF'}
+  </div>
+
+  <div className="inline-actions wrap">
+    <button
+      type="button"
+      className="secondary-btn"
+      onClick={() => handleProgramEdit(program)}
+    >
+      수정
+    </button>
+
+    <button
+      type="button"
+      className="danger-btn"
+      onClick={() => handleProgramDelete(program.id)}
+    >
+      삭제
+    </button>
+  </div>
+</div>
