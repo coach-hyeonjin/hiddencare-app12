@@ -770,7 +770,20 @@ const growthSummary = useMemo(() => {
     topTenRanking: sorted.slice(0, 10),
   }
 }, [memberLevelRanking, memberInfo?.id, member?.id])
-  const activityRankingData = useMemo(() => {
+ const activityRankingData = useMemo(() => {
+  const totalRanking = [...(memberStats || [])]
+    .filter((row) => Number(row.totalActivity || 0) > 0)
+    .sort((a, b) => {
+      if (Number(b.totalActivity || 0) !== Number(a.totalActivity || 0)) {
+        return Number(b.totalActivity || 0) - Number(a.totalActivity || 0)
+      }
+      return String(a.name || '').localeCompare(String(b.name || ''), 'ko-KR')
+    })
+
+  return {
+    totalRanking,
+  }
+}, [memberStats])
   const levelMap = (memberLevelRanking || []).reduce((acc, row) => {
     acc[row.member_id] = row
     return acc
