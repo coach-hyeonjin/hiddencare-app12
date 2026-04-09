@@ -571,19 +571,36 @@ const calculatedRecommendedKcal = useMemo(() => {
     })
   }, [dietLogs, dietMealFilter, dietSearch])
 
- const filteredPrograms = useMemo(() => {
-  return programs
-    .filter((program) => {
-      return (
-        !programSearch.trim() ||
-        textIncludes(program.name, programSearch) ||
-        textIncludes(program.description, programSearch) ||
-        textIncludes(program.session_count, programSearch) ||
-        textIncludes(program.price, programSearch)
-      )
+ const visiblePrograms = useMemo(() => {
+  return (programs || [])
+    .filter((program) => program.is_visible_to_members !== false)
+    .sort((a, b) => {
+      const orderDiff = Number(a.display_order || 0) - Number(b.display_order || 0)
+      if (orderDiff !== 0) return orderDiff
+      return String(a.name || '').localeCompare(String(b.name || ''), 'ko-KR')
     })
-    .sort((a, b) => (a.name || '').localeCompare(b.name || '', 'ko-KR'))
-}, [programs, programSearch])
+}, [programs])
+
+const filteredPrograms = useMemo(() => {
+  const keyword = String(programSearch || '').trim().toLowerCase()
+
+  return visiblePrograms.filter((program) => {
+    if (!keyword) return true
+
+    return (
+      String(program.name || '').toLowerCase().includes(keyword) ||
+      String(program.description || '').toLowerCase().includes(keyword) ||
+      String(program.price || '').toLowerCase().includes(keyword) ||
+      String(program.session_count || '').toLowerCase().includes(keyword)
+    )
+  })
+}, [visiblePrograms, programSearch])
+
+const featuredPrograms = useMemo(() => {
+  return visiblePrograms.filter(
+    (program) => program.is_recommended || program.is_popular
+  )
+}, [visiblePrograms])
   const filteredPartners = useMemo(() => {
     return partners
       .filter((partner) => {
@@ -4923,7 +4940,50 @@ return { ok: true, xp: xpValue }
         <p>프로그램 분류</p>
       </div>
     </section>
+{featuredPrograms.length > 0 && (
+  <section className="card member-program-featured-card">
+    <div className="member-program-section-head">
+      <div>
+        <div className="member-program-section-label">FEATURED PROGRAMS</div>
+        <h2>추천 / 인기 프로그램</h2>
+        <p className="sub-text">
+          운영자가 추천하거나 인기 표시한 프로그램을 먼저 보여드립니다.
+        </p>
+      </div>
+    </div>
 
+    <div className="member-program-featured-grid">
+      {featuredPrograms.map((program) => (
+        <div key={program.id} className="member-program-featured-item">
+          <div className="member-program-menu-chip-row">
+            {program.is_recommended ? (
+              <span className="member-program-menu-chip vip">추천</span>
+            ) : null}
+            {program.is_popular ? (
+              <span className="member-program-menu-chip normal">인기</span>
+            ) : null}
+            {currentProgram?.id === program.id ? (
+              <span className="member-program-menu-chip active">이용중</span>
+            ) : null}
+          </div>
+
+          <div className="member-program-featured-top">
+            <div>
+              <h3>{program.name}</h3>
+              <p>{program.session_count || 0}회 프로그램</p>
+            </div>
+            <strong>{Number(program.price || 0).toLocaleString()}원</strong>
+          </div>
+
+          <div className="member-program-menu-description-box compact">
+            <div className="member-program-menu-description-label">설명</div>
+            <p>{program.description || '설명이 등록되지 않았습니다.'}</p>
+          </div>
+        </div>
+      ))}
+    </div>
+  </section>
+)}
     <div className="member-program-layout menu-style-layout">
       <section className="card member-program-current-card menu-current-card">
         <div className="member-program-section-head">
