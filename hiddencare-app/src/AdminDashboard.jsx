@@ -10407,229 +10407,341 @@ const filteredExercisesAdvanced = exercises.filter((exercise) => {
   </div>
 )}
       {activeTab === '운동DB' && (
-        <div className="two-col">
-          <section className="card brand-card">
-  <div className="brand-hero">
-    <div>
-      <div className="brand-badge">BRAND MANAGE</div>
-      <h2>브랜드 관리</h2>
-      <p className="sub-text">
-        센터에서 사용하는 머신 브랜드를 등록하고 관리하는 영역입니다.
-      </p>
-    </div>
-  </div>
-
-  <form className="stack-gap brand-form" onSubmit={handleBrandSubmit}>
-    <label className="field">
-      <span>브랜드명</span>
-      <input
-        value={brandForm.name}
-        onChange={(e) => setBrandForm({ name: e.target.value })}
-        placeholder="예: 뉴텍, 라이프피트니스"
-      />
-    </label>
-
-    <div className="inline-actions wrap">
-      <button className="primary-btn" type="submit">
-        {editingBrandId ? '브랜드 수정' : '브랜드 추가'}
-      </button>
-
-      <button
-        type="button"
-        className="secondary-btn"
-        onClick={() => {
-          setBrandForm(emptyBrandForm)
-          setEditingBrandId(null)
-        }}
-      >
-        초기화
-      </button>
-    </div>
-  </form>
-
-  <div className="brand-list">
-    {brands.map((brand) => (
-      <div key={brand.id} className="brand-item">
-        <div className="brand-item-left">
-          <strong>{brand.name}</strong>
+  <div className="two-col">
+    <section className="card brand-card">
+      <div className="brand-hero">
+        <div>
+          <div className="brand-badge">BRAND MANAGE</div>
+          <h2>브랜드 관리</h2>
+          <p className="sub-text">
+            센터에서 사용하는 머신 브랜드를 등록하고 관리하는 영역입니다.
+          </p>
         </div>
+      </div>
 
-        <div className="brand-item-actions">
+      <form className="stack-gap brand-form" onSubmit={handleBrandSubmit}>
+        <label className="field">
+          <span>브랜드명</span>
+          <input
+            value={brandForm.name}
+            onChange={(e) => setBrandForm({ name: e.target.value })}
+            placeholder="예: 뉴텍, 라이프피트니스"
+          />
+        </label>
+
+        <div className="inline-actions wrap">
+          <button className="primary-btn" type="submit">
+            {editingBrandId ? '브랜드 수정' : '브랜드 추가'}
+          </button>
+
           <button
             type="button"
             className="secondary-btn"
             onClick={() => {
-              setEditingBrandId(brand.id)
-              setBrandForm({ name: brand.name })
+              setBrandForm(emptyBrandForm)
+              setEditingBrandId(null)
             }}
           >
-            수정
+            초기화
+          </button>
+        </div>
+      </form>
+
+      <div className="brand-list">
+        {brands.map((brand) => (
+          <div key={brand.id} className="brand-item">
+            <div className="brand-item-left">
+              <strong>{brand.name}</strong>
+            </div>
+
+            <div className="brand-item-actions">
+              <button
+                type="button"
+                className="secondary-btn"
+                onClick={() => {
+                  setEditingBrandId(brand.id)
+                  setBrandForm({ name: brand.name })
+                }}
+              >
+                수정
+              </button>
+
+              <button
+                type="button"
+                className="danger-btn"
+                onClick={() => handleBrandDelete(brand.id)}
+              >
+                삭제
+              </button>
+            </div>
+          </div>
+        ))}
+      </div>
+    </section>
+
+    <section className="card">
+      <div className="section-head">
+        <div>
+          <h2>운동 관리</h2>
+          <p className="sub-text">
+            기구명, 부위, 머신타입, 브랜드, 설명까지 정리해서 회원과 관리자 모두 쉽게 찾을 수 있게 만드는 영역입니다.
+          </p>
+        </div>
+
+        <div className="inline-actions">
+          <button
+            type="button"
+            className="danger-btn"
+            onClick={handleDeleteAllExercises}
+          >
+            전체삭제
           </button>
 
           <button
             type="button"
-            className="danger-btn"
-            onClick={() => handleBrandDelete(brand.id)}
+            className="secondary-btn"
+            onClick={() => setShowBulkInput((prev) => !prev)}
           >
-            삭제
+            {showBulkInput ? '개별 입력만 보기' : '일괄 입력 열기'}
           </button>
         </div>
       </div>
-    ))}
-  </div>
-</section>
 
-          <section className="card">
-            <div className="section-head">
-  <h2>운동 관리</h2>
+      <form className="stack-gap" onSubmit={handleExerciseSubmit}>
+        <label className="field">
+          <span>기구명 / 운동DB 이름</span>
+          <input
+            value={exerciseForm.name}
+            onChange={(e) => setExerciseForm({ ...exerciseForm, name: e.target.value })}
+            placeholder="예: 시티드 체스트 프레스, 스포츠 마사지(컨디셔닝)"
+          />
+        </label>
 
-  <div className="inline-actions">
-    <button
-      type="button"
-      className="danger-btn"
-      onClick={handleDeleteAllExercises}
-    >
-      전체삭제
-    </button>
+        <div className="grid-3">
+          <label className="field">
+            <span>부위</span>
+            <input
+              value={exerciseForm.body_part}
+              onChange={(e) => setExerciseForm({ ...exerciseForm, body_part: e.target.value })}
+              placeholder="예: 가슴, 등, 하체, 어깨, 케어"
+            />
+          </label>
 
-    <button
-      type="button"
-      className="secondary-btn"
-      onClick={() => setShowBulkInput((prev) => !prev)}
-    >
-      {showBulkInput ? '개별 입력만 보기' : '일괄 입력 열기'}
-    </button>
-  </div>
-</div>
+          <label className="field">
+            <span>머신타입 / 분류</span>
+            <input
+              value={exerciseForm.category}
+              onChange={(e) => setExerciseForm({ ...exerciseForm, category: e.target.value })}
+              placeholder="예: 플레이트머신, 핀머신, 프리웨이트, 기타웨이트, 케어"
+            />
+          </label>
 
-            <form className="stack-gap" onSubmit={handleExerciseSubmit}>
-              <label className="field">
-                <span>운동명</span>
-                <input value={exerciseForm.name} onChange={(e) => setExerciseForm({ ...exerciseForm, name: e.target.value })} />
-              </label>
+          <label className="field">
+            <span>브랜드</span>
+            <select
+              value={exerciseForm.brand_id}
+              onChange={(e) => setExerciseForm({ ...exerciseForm, brand_id: e.target.value })}
+            >
+              <option value="">선택 안함</option>
+              {brands.map((brand) => (
+                <option key={brand.id} value={brand.id}>
+                  {brand.name}
+                </option>
+              ))}
+            </select>
+          </label>
+        </div>
 
-              <div className="grid-3">
-                <label className="field">
-                  <span>부위</span>
-                  <input value={exerciseForm.body_part} onChange={(e) => setExerciseForm({ ...exerciseForm, body_part: e.target.value })} />
-                </label>
-                <label className="field">
-                  <span>카테고리</span>
-                  <input value={exerciseForm.category} onChange={(e) => setExerciseForm({ ...exerciseForm, category: e.target.value })} />
-                </label>
-                <label className="field">
-                  <span>브랜드</span>
-                  <select value={exerciseForm.brand_id} onChange={(e) => setExerciseForm({ ...exerciseForm, brand_id: e.target.value })}>
-                    <option value="">선택 안함</option>
-                    {brands.map((brand) => (
-                      <option key={brand.id} value={brand.id}>
-                        {brand.name}
-                      </option>
-                    ))}
-                  </select>
-                </label>
+        <label className="field">
+          <span>설명 / 안내문</span>
+          <textarea
+            rows="3"
+            value={exerciseForm.guide_text || ''}
+            onChange={(e) => setExerciseForm({ ...exerciseForm, guide_text: e.target.value })}
+            placeholder="예: 가슴 전면을 자극하는 플레이트 머신입니다. 케어 항목이면 어떤 방식인지 같이 적어주세요."
+          />
+        </label>
+
+        <div className="inline-actions wrap">
+          <button className="primary-btn" type="submit">
+            {editingExerciseId ? '운동 수정' : '운동 추가'}
+          </button>
+
+          <button
+            type="button"
+            className="secondary-btn"
+            onClick={() => {
+              setEditingExerciseId(null)
+              setExerciseForm(emptyExerciseForm)
+            }}
+          >
+            초기화
+          </button>
+        </div>
+      </form>
+
+      {showBulkInput ? (
+        <div className="sub-card">
+          <h3>운동DB 일괄 입력</h3>
+          <p className="sub-text">형식: 브랜드|운동명|부위|카테고리</p>
+          <label className="field">
+            <span>여러 줄 입력</span>
+            <textarea
+              rows="8"
+              value={bulkExerciseText}
+              onChange={(e) => setBulkExerciseText(e.target.value)}
+            />
+          </label>
+          <button type="button" className="primary-btn" onClick={handleBulkExerciseInsert}>
+            일괄 등록
+          </button>
+        </div>
+      ) : null}
+
+      <div className="stack-gap">
+        <div className="grid-3">
+          <label className="field">
+            <span>부위 필터</span>
+            <select
+              value={exerciseBodyPartFilter}
+              onChange={(e) => setExerciseBodyPartFilter(e.target.value)}
+            >
+              <option value="">전체 부위</option>
+              {exerciseBodyPartOptions.map((option) => (
+                <option key={option} value={option}>
+                  {option}
+                </option>
+              ))}
+            </select>
+          </label>
+
+          <label className="field">
+            <span>머신타입 / 분류 필터</span>
+            <select
+              value={exerciseCategoryFilter}
+              onChange={(e) => setExerciseCategoryFilter(e.target.value)}
+            >
+              <option value="">전체 분류</option>
+              {exerciseCategoryOptions.map((option) => (
+                <option key={option} value={option}>
+                  {option}
+                </option>
+              ))}
+            </select>
+          </label>
+
+          <label className="field">
+            <span>브랜드 필터</span>
+            <select
+              value={exerciseBrandFilter}
+              onChange={(e) => setExerciseBrandFilter(e.target.value)}
+            >
+              <option value="">전체 브랜드</option>
+              {brands.map((brand) => (
+                <option key={brand.id} value={brand.id}>
+                  {brand.name}
+                </option>
+              ))}
+            </select>
+          </label>
+        </div>
+
+        <label className="field">
+          <span>검색</span>
+          <input
+            value={exerciseSearch}
+            onChange={(e) => setExerciseSearch(e.target.value)}
+            placeholder="기구명 / 브랜드 / 부위 / 머신타입 / 설명 검색"
+          />
+        </label>
+      </div>
+
+      <div className="list-stack">
+        {filteredExercisesAdvanced.length === 0 ? (
+          <div className="workout-list-empty">검색 결과가 없습니다.</div>
+        ) : null}
+
+        {filteredExercisesAdvanced.map((exercise) => {
+          const collapsed = collapsedExercises[exercise.id] ?? true
+          const inferredType = inferExerciseEntryType(exercise)
+
+          return (
+            <div key={exercise.id} className="list-card">
+              <div className="list-card-top">
+                <strong>{exercise.name}</strong>
+                <div className="inline-actions wrap">
+                  <span className="pill">{exercise.brands?.name || '브랜드없음'}</span>
+                  <span className="pill">
+                    {inferredType === 'care'
+                      ? '케어'
+                      : inferredType === 'cardio'
+                      ? '유산소'
+                      : '근력운동'}
+                  </span>
+                </div>
+              </div>
+
+              <div className="compact-text">
+                간략히보기: {exercise.body_part || '-'} / {exercise.category || '-'}
               </div>
 
               <div className="inline-actions wrap">
-                <button className="primary-btn" type="submit">
-                  {editingExerciseId ? '운동 수정' : '운동 추가'}
+                <button
+                  type="button"
+                  className="secondary-btn"
+                  onClick={() =>
+                    setCollapsedExercises((prev) => ({
+                      ...prev,
+                      [exercise.id]: !collapsed,
+                    }))
+                  }
+                >
+                  {collapsed ? '상세히보기' : '간략히보기'}
                 </button>
+
                 <button
                   type="button"
                   className="secondary-btn"
                   onClick={() => {
-                    setEditingExerciseId(null)
-                    setExerciseForm(emptyExerciseForm)
+                    setEditingExerciseId(exercise.id)
+                    setExerciseForm({
+                      name: exercise.name || '',
+                      body_part: exercise.body_part || '',
+                      category: exercise.category || '',
+                      brand_id: exercise.brand_id || '',
+                      guide_text: exercise.guide_text || '',
+                    })
                   }}
                 >
-                  초기화
+                  수정
+                </button>
+
+                <button
+                  type="button"
+                  className="danger-btn"
+                  onClick={() => handleExerciseDelete(exercise.id)}
+                >
+                  삭제
                 </button>
               </div>
-            </form>
 
-            {showBulkInput ? (
-              <div className="sub-card">
-                <h3>운동DB 일괄 입력</h3>
-                <p className="sub-text">형식: 브랜드|운동명|부위|카테고리</p>
-                <label className="field">
-                  <span>여러 줄 입력</span>
-                  <textarea rows="8" value={bulkExerciseText} onChange={(e) => setBulkExerciseText(e.target.value)} />
-                </label>
-                <button type="button" className="primary-btn" onClick={handleBulkExerciseInsert}>
-                  일괄 등록
-                </button>
-              </div>
-            ) : null}
-
-            <label className="field">
-              <span>검색</span>
-              <input value={exerciseSearch} onChange={(e) => setExerciseSearch(e.target.value)} placeholder="운동명 / 브랜드 / 부위" />
-            </label>
-
-            <div className="list-stack">
-              {filteredExercises.map((exercise) => {
-                const collapsed = collapsedExercises[exercise.id] ?? true
-                return (
-                  <div key={exercise.id} className="list-card">
-                    <div className="list-card-top">
-                      <strong>{exercise.name}</strong>
-                      <span className="pill">{exercise.brands?.name || '브랜드없음'}</span>
-                    </div>
-
-                    <div className="compact-text">
-                      간략히보기: {exercise.body_part || '-'} / {exercise.category || '-'}
-                    </div>
-
-                    <div className="inline-actions wrap">
-                      <button
-                        type="button"
-                        className="secondary-btn"
-                        onClick={() =>
-                          setCollapsedExercises((prev) => ({
-                            ...prev,
-                            [exercise.id]: !collapsed,
-                          }))
-                        }
-                      >
-                        {collapsed ? '상세히보기' : '간략히보기'}
-                      </button>
-
-                      <button
-                        type="button"
-                        className="secondary-btn"
-                        onClick={() => {
-                          setEditingExerciseId(exercise.id)
-                          setExerciseForm({
-                            name: exercise.name || '',
-                            body_part: exercise.body_part || '',
-                            category: exercise.category || '',
-                            brand_id: exercise.brand_id || '',
-                          })
-                        }}
-                      >
-                        수정
-                      </button>
-
-                      <button type="button" className="danger-btn" onClick={() => handleExerciseDelete(exercise.id)}>
-                        삭제
-                      </button>
-                    </div>
-
-                    {!collapsed ? (
-                      <div className="detail-box">
-                        <p><strong>운동명:</strong> {exercise.name}</p>
-                        <p><strong>브랜드:</strong> {exercise.brands?.name || '-'}</p>
-                        <p><strong>부위:</strong> {exercise.body_part || '-'}</p>
-                        <p><strong>카테고리:</strong> {exercise.category || '-'}</p>
-                      </div>
-                    ) : null}
-                  </div>
-                )
-              })}
+              {!collapsed ? (
+                <div className="detail-box">
+                  <p><strong>기구명:</strong> {exercise.name}</p>
+                  <p><strong>브랜드:</strong> {exercise.brands?.name || '-'}</p>
+                  <p><strong>부위:</strong> {exercise.body_part || '-'}</p>
+                  <p><strong>머신타입 / 분류:</strong> {exercise.category || '-'}</p>
+                  <p><strong>기록 타입 판단:</strong> {getEntryTypeMeta(inferredType).label}</p>
+                  <p><strong>설명:</strong> {exercise.guide_text || '-'}</p>
+                </div>
+              ) : null}
             </div>
-          </section>
-        </div>
-      )}
+          )
+        })}
+      </div>
+    </section>
+  </div>
+)}
 
       {activeTab === '식단' && (
         <div className="card">
