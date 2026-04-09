@@ -787,30 +787,6 @@ const growthSummary = useMemo(() => {
   }
 }, [memberStats])
 
-const myActivityRankInfo = useMemo(() => {
-  const myId = String(memberInfo?.id || member?.id || '')
-
-  if (
-    !myId ||
-    !Array.isArray(activityRankingData.totalRanking) ||
-    activityRankingData.totalRanking.length === 0
-  ) {
-    return {
-      myRank: null,
-      myRankItem: null,
-      topTenRanking: [],
-    }
-  }
-
-  const sorted = [...activityRankingData.totalRanking]
-  const myIndex = sorted.findIndex((item) => String(item.id) === myId)
-
-  return {
-    myRank: myIndex >= 0 ? myIndex + 1 : null,
-    myRankItem: myIndex >= 0 ? sorted[myIndex] : null,
-    topTenRanking: sorted.slice(0, 10),
-  }
-}, [activityRankingData.totalRanking, memberInfo?.id, member?.id])
 
 const myActivityRankInfo = useMemo(() => {
   const myId = String(memberInfo?.id || member?.id || '')
