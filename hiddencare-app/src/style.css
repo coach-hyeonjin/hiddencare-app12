@@ -19741,3 +19741,68 @@ textarea:focus {
   font-weight: 600;
   line-height: 1;
 }
+/* ===== 운동DB 마감 보정 ===== */
+
+.brand-card,
+.exercise-db-card {
+  min-width: 0;
+}
+
+.brand-item {
+  border-radius: 16px;
+  padding: 14px 16px;
+}
+
+.brand-item-actions {
+  gap: 8px;
+}
+
+.exercise-filter-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.exercise-list-card {
+  border-radius: 18px;
+  padding: 2px;
+}
+
+.exercise-list-card .list-card-top {
+  align-items: center;
+  gap: 10px;
+}
+
+.exercise-list-card strong {
+  line-height: 1.4;
+  word-break: keep-all;
+}
+
+.exercise-list-card .inline-actions.wrap {
+  gap: 6px;
+}
+
+.exercise-list-card .pill {
+  white-space: nowrap;
+}
+
+.exercise-list-card .detail-box {
+  margin-top: 10px;
+}
+
+.exercise-db-card .field textarea {
+  min-height: 88px;
+  resize: vertical;
+}
+
+.exercise-db-card .field input,
+.exercise-db-card .field select,
+.exercise-db-card .field textarea {
+  min-width: 0;
+}
+
+@media (max-width: 1100px) {
+  .exercise-filter-grid {
+    grid-template-columns: 1fr;
+  }
+}
