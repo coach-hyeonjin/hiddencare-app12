@@ -1469,7 +1469,35 @@ const togglePersonalItemCollapse = (itemIndex) => {
     return { ...prev, items: nextItems }
   })
 }
+const updatePersonalEntryType = (itemIndex, entryType) => {
+  setPersonalForm((prev) => {
+    const nextItems = [...prev.items]
+    const currentItem = nextItems[itemIndex]
 
+    nextItems[itemIndex] = {
+      ...currentItem,
+      entry_type: entryType,
+      is_cardio: entryType === 'cardio',
+      cardio_minutes: entryType === 'cardio' ? currentItem.cardio_minutes || '' : '',
+      care_minutes: entryType === 'care' ? currentItem.care_minutes || '' : '',
+      training_method: entryType === 'strength' ? currentItem.training_method || 'normal' : 'normal',
+      sets:
+        entryType === 'strength'
+          ? currentItem.sets?.length
+            ? currentItem.sets
+            : [createEmptyPersonalSet()]
+          : [createEmptyPersonalSet()],
+      sub_exercises:
+        entryType === 'strength' && currentItem.training_method === 'superset'
+          ? currentItem.sub_exercises?.length
+            ? currentItem.sub_exercises
+            : [createEmptyPersonalSubExercise(), createEmptyPersonalSubExercise()]
+          : [createEmptyPersonalSubExercise(), createEmptyPersonalSubExercise()],
+    }
+
+    return { ...prev, items: nextItems }
+  })
+}
 const updatePersonalTrainingMethod = (itemIndex, method) => {
   setPersonalForm((prev) => {
     const nextItems = [...prev.items]
@@ -3713,31 +3741,63 @@ return { ok: true, xp: xpValue }
               {!item.collapsed && (
                 <div className="member-personal-item-body">
                   <label className="field">
-                    <span>훈련 방식</span>
-                    <select
-                      value={item.training_method || 'normal'}
-                      onChange={(e) => updatePersonalTrainingMethod(itemIndex, e.target.value)}
-                    >
-                      <option value="normal">일반운동</option>
-                      <option value="superset">슈퍼세트</option>
-                      <option value="dropset">드롭세트</option>
-                    </select>
-                  </label>
+  <span>기록 종류</span>
+  <select
+    value={item.entry_type || 'strength'}
+    onChange={(e) => updatePersonalEntryType(itemIndex, e.target.value)}
+  >
+    <option value="strength">근력운동</option>
+    <option value="cardio">유산소</option>
+    <option value="care">케어</option>
+  </select>
+</label>
 
-                  {(item.training_method === 'superset' || item.training_method === 'dropset') && (
-                    <div className="detail-box">
-                      <p>
-                        <strong>
-                          {item.training_method === 'superset' ? '슈퍼세트' : '드롭세트'} 안내
-                        </strong>
-                      </p>
-                      <div className="compact-text">
-                        {item.training_method === 'superset'
-                          ? '슈퍼세트: 두 가지 운동을 쉬는 시간 없이 연속으로 수행하는 방식입니다.'
-                          : '드롭세트: 같은 운동에서 무게를 낮춰가며 연속 수행하는 방식입니다.'}
-                      </div>
-                    </div>
-                  )}
+{item.entry_type === 'strength' ? (
+  <>
+    <label className="field">
+      <span>훈련 방식</span>
+      <select
+        value={item.training_method || 'normal'}
+        onChange={(e) => updatePersonalTrainingMethod(itemIndex, e.target.value)}
+      >
+        <option value="normal">일반운동</option>
+        <option value="superset">슈퍼세트</option>
+        <option value="dropset">드롭세트</option>
+      </select>
+    </label>
+
+    {(item.training_method === 'superset' || item.training_method === 'dropset') && (
+      <div className="detail-box">
+        <p>
+          <strong>
+            {item.training_method === 'superset' ? '슈퍼세트' : '드롭세트'} 안내
+          </strong>
+        </p>
+        <div className="compact-text">
+          {item.training_method === 'superset'
+            ? '슈퍼세트: 두 가지 운동을 쉬는 시간 없이 연속으로 수행하는 방식입니다.'
+            : '드롭세트: 같은 운동에서 무게를 낮춰가며 연속 수행하는 방식입니다.'}
+        </div>
+      </div>
+    )}
+  </>
+) : item.entry_type === 'cardio' ? (
+  <div className="detail-box">
+    <p><strong>유산소 안내</strong></p>
+    <div className="compact-text">
+      걷기, 러닝, 사이클처럼 시간 중심으로 기록하는 운동입니다.
+    </div>
+  </div>
+) : (
+  <div className="detail-box">
+    <p><strong>케어 안내</strong></p>
+    <div className="compact-text">
+      마사지, 스트레칭, 컨디셔닝처럼 케어 시간을 기록하는 항목입니다.
+    </div>
+  </div>
+)}
+
+                
 
                   <label className="field">
                     <span>추가 메모</span>
