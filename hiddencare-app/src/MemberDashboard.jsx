@@ -5078,7 +5078,7 @@ return { ok: true, xp: xpValue }
   </div>
 )}
 
-{activeTab === '코치스케줄' && (
+
       {activeTab === '코치스케줄' && (
   <div className="member-schedule-page">
     <section className="member-schedule-hero">
