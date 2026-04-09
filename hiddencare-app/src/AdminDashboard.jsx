@@ -1683,10 +1683,7 @@ const filteredMemberDetailMembers = members.filter((member) => {
   )
 })
 
-  const currentRoutineWeek = useMemo(
-  () => routineForm?.weeks?.[selectedRoutineWeek] || null,
-  [routineForm?.weeks, selectedRoutineWeek],
-)
+  
 
 const currentRoutineWeek = useMemo(
   () => routineForm?.weeks?.[selectedRoutineWeek] || null,
