@@ -432,7 +432,8 @@ const [manual, setManual] = useState(null)
   const [programs, setPrograms] = useState([])
   const [currentProgram, setCurrentProgram] = useState(null)
   const [programSearch, setProgramSearch] = useState('')
-
+const [expandedMemberProgramId, setExpandedMemberProgramId] = useState(null)
+  
   const [coaches, setCoaches] = useState([])
   const [coachSchedules, setCoachSchedules] = useState([])
   const [coachScheduleSlotsMap, setCoachScheduleSlotsMap] = useState({})
@@ -4976,9 +4977,26 @@ return { ok: true, xp: xpValue }
           </div>
 
           <div className="member-program-menu-description-box compact">
-            <div className="member-program-menu-description-label">설명</div>
-            <p>{program.description || '설명이 등록되지 않았습니다.'}</p>
-          </div>
+  <div className="member-program-menu-description-label">설명</div>
+
+  <p className={expandedMemberProgramId === program.id ? 'expanded' : ''}>
+    {program.description || '설명이 등록되지 않았습니다.'}
+  </p>
+
+  {program.description && String(program.description).length > 40 ? (
+    <button
+      type="button"
+      className="member-program-desc-toggle"
+      onClick={() =>
+        setExpandedMemberProgramId((prev) =>
+          prev === program.id ? null : program.id
+        )
+      }
+    >
+      {expandedMemberProgramId === program.id ? '접기' : '더보기'}
+    </button>
+  ) : null}
+</div>
         </div>
       ))}
     </div>
@@ -5125,9 +5143,26 @@ return { ok: true, xp: xpValue }
                   </div>
 
                   <div className="member-program-menu-description-box compact">
-                    <div className="member-program-menu-description-label">설명</div>
-                    <p>{program.description || '설명이 등록되지 않았습니다.'}</p>
-                  </div>
+  <div className="member-program-menu-description-label">설명</div>
+
+  <p className={expandedMemberProgramId === program.id ? 'expanded' : ''}>
+    {program.description || '설명이 등록되지 않았습니다.'}
+  </p>
+
+  {program.description && String(program.description).length > 40 ? (
+    <button
+      type="button"
+      className="member-program-desc-toggle"
+      onClick={() =>
+        setExpandedMemberProgramId((prev) =>
+          prev === program.id ? null : program.id
+        )
+      }
+    >
+      {expandedMemberProgramId === program.id ? '접기' : '더보기'}
+    </button>
+  ) : null}
+</div>
                 </div>
               )
             })}
