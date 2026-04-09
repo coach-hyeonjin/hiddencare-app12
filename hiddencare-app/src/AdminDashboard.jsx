@@ -9544,7 +9544,7 @@ const filteredExercisesAdvanced = exercises.filter((exercise) => {
         <div className="record-page-badge">WORKOUT LOG</div>
         <h2>운동 기록 관리</h2>
         <p className="record-page-hero-text">
-          회원별 운동 기록 작성, 세트 입력, 통증 기록, 저장된 운동 로그 확인까지
+          회원별 운동 기록 작성, 기구 선택, 실제 수행 운동명 입력, 유산소/케어 시간 기록까지
           한 화면에서 관리하는 영역입니다.
         </p>
       </div>
@@ -9565,668 +9565,844 @@ const filteredExercisesAdvanced = exercises.filter((exercise) => {
     </div>
 
     <div className="two-col">
-         <section className="card record-form-card-modern">
-  <div className="record-card-head">
-    <div>
-      <div className="record-card-label">WRITE LOG</div>
-      <h3>운동 기록 작성 / 수정</h3>
-      <p className="sub-text">
-        회원 선택, 운동 입력, 세트 구성, 통증 기록까지 순서대로 작성합니다.
-      </p>
-    </div>
-  </div>
-
-  <form className="stack-gap" onSubmit={handleWorkoutSubmit}>
-              <div className="record-top-grid">
-  <label className="field">
-    <span>회원 선택</span>
-    <select
-      value={workoutForm.member_id}
-      onChange={(e) =>
-        setWorkoutForm({ ...workoutForm, member_id: e.target.value })
-      }
-    >
-      <option value="">회원 선택</option>
-      {members.map((member) => (
-        <option key={member.id} value={member.id}>
-          {member.name}
-        </option>
-      ))}
-    </select>
-  </label>
-
-  <label className="field">
-    <span>날짜</span>
-    <input
-      type="date"
-      value={workoutForm.workout_date}
-      onChange={(e) =>
-        setWorkoutForm({ ...workoutForm, workout_date: e.target.value })
-      }
-    />
-  </label>
-
-  <label className="field">
-    <span>기록 타입</span>
-    <select
-      value={workoutForm.workout_type}
-      onChange={(e) =>
-        setWorkoutForm({ ...workoutForm, workout_type: e.target.value })
-      }
-    >
-      <option value="pt">PT</option>
-      <option value="personal">개인운동</option>
-    </select>
-  </label>
-</div>
-
-              <div className="stack-gap">
-                {workoutForm.items.map((item, itemIndex) => (
-  <div key={itemIndex} className="record-exercise-card">
-   <div className="record-exercise-head">
-      <strong>운동 {itemIndex + 1}</strong>
-      <div className="inline-actions wrap">
-        <button
-          type="button"
-          className="secondary-btn"
-          onClick={() => toggleWorkoutItemCollapse(itemIndex)}
-        >
-          {item.collapsed ? '상세히보기' : '간략히보기'}
-        </button>
-        <button
-          type="button"
-          className="danger-btn"
-          onClick={() => removeWorkoutItem(itemIndex)}
-          disabled={workoutForm.items.length === 1}
-        >
-          운동 삭제
-        </button>
-      </div>
-    </div>
-
-    <div className="record-exercise-summary">
-      간략히보기:{' '}
-      {item.is_cardio
-        ? `유산소 / ${item.cardio_minutes || 0}분`
-        : item.training_method === 'superset'
-        ? '슈퍼세트'
-        : item.training_method === 'dropset'
-        ? '드롭세트'
-        : item.exercise_name_snapshot || '일반운동'}
-    </div>
-
-    {!item.collapsed && (
-      <div className="stack-gap record-exercise-body">
-        <label className="field">
-          <span>훈련 방식</span>
-          <select
-            value={item.training_method || 'normal'}
-            onChange={(e) => updateWorkoutTrainingMethod(itemIndex, e.target.value)}
-          >
-            <option value="normal">일반운동</option>
-            <option value="superset">슈퍼세트</option>
-            <option value="dropset">드롭세트</option>
-          </select>
-        </label>
-
-        {(item.training_method === 'superset' || item.training_method === 'dropset') && (
-          <div className="detail-box">
-            <p>
-              <strong>{item.training_method === 'superset' ? '슈퍼세트' : '드롭세트'} 안내</strong>
+      <section className="card record-form-card-modern">
+        <div className="record-card-head">
+          <div>
+            <div className="record-card-label">WRITE LOG</div>
+            <h3>운동 기록 작성 / 수정</h3>
+            <p className="sub-text">
+              회원 선택, 운동 입력, 유형 선택, 세트/시간 기록, 통증 기록까지 순서대로 작성합니다.
             </p>
-            <div className="compact-text">
-              {item.training_method === 'superset'
-                ? '슈퍼세트: 두 가지 운동을 쉬는 시간 없이 연속으로 수행하는 방식입니다.'
-                : '드롭세트: 같은 운동에서 무게를 낮춰가며 연속 수행하는 방식입니다.'}
-            </div>
           </div>
-        )}
+        </div>
 
-        <label className="field">
-          <span>추가 메모</span>
-          <input
-            value={item.method_note || ''}
-            onChange={(e) => updateWorkoutItemField(itemIndex, 'method_note', e.target.value)}
-            placeholder="예: A끝나고 바로 B / 마지막 세트 드롭"
-          />
-        </label>
-
-        {item.training_method === 'superset' ? (
-          <div className="stack-gap">
-            {[0, 1].map((subIndex) => {
-              const sub = item.sub_exercises?.[subIndex] || createEmptySubExercise()
-
-              return (
-                <div key={subIndex} className="detail-box">
-                  <div className="list-card-top">
-                    <strong>{subIndex === 0 ? '운동 A' : '운동 B'}</strong>
-                  </div>
-
-                  <label className="field">
-                    <span>운동DB 선택</span>
-                    <select
-                      value={sub.exercise_id}
-                      onChange={(e) => updateWorkoutSubExerciseSelect(itemIndex, subIndex, e.target.value)}
-                    >
-                      <option value="">선택 안함</option>
-                      {exercises.map((exercise) => (
-                        <option key={exercise.id} value={exercise.id}>
-                          [{exercise.brands?.name || '브랜드없음'}] {exercise.name}
-                        </option>
-                      ))}
-                    </select>
-                  </label>
-
-                  <label className="field">
-                    <span>운동명 직접 입력</span>
-                    <input
-                      value={sub.exercise_name_snapshot}
-                      onChange={(e) => updateWorkoutSubExerciseName(itemIndex, subIndex, e.target.value)}
-                      placeholder={subIndex === 0 ? '예: 랫풀다운' : '예: 시티드로우'}
-                    />
-                  </label>
-
-                  <div className="stack-gap">
-                    {(sub.sets || []).map((setRow, setIndex) => (
-                      <div className="set-row" key={setIndex}>
-                        <input
-                          placeholder="kg"
-                          value={setRow.kg}
-                          onChange={(e) => updateSetValue(itemIndex, setIndex, 'kg', e.target.value, subIndex)}
-                        />
-                        <input
-                          placeholder="reps"
-                          value={setRow.reps}
-                          onChange={(e) => updateSetValue(itemIndex, setIndex, 'reps', e.target.value, subIndex)}
-                        />
-                        <button
-                          type="button"
-                          className="danger-btn"
-                          onClick={() => removeSet(itemIndex, setIndex, subIndex)}
-                          disabled={(sub.sets || []).length === 1}
-                        >
-                          세트 삭제
-                        </button>
-                      </div>
-                    ))}
-
-                    <button type="button" className="secondary-btn" onClick={() => addSet(itemIndex, subIndex)}>
-                      세트 추가
-                    </button>
-                  </div>
-                </div>
-              )
-            })}
-          </div>
-        ) : (
-          <>
+        <form className="stack-gap" onSubmit={handleWorkoutSubmit}>
+          <div className="record-top-grid">
             <label className="field">
-              <span>운동DB 선택</span>
-              <select value={item.exercise_id} onChange={(e) => updateWorkoutItemSelect(itemIndex, e.target.value)}>
-                <option value="">선택 안함</option>
-                {exercises.map((exercise) => (
-                  <option key={exercise.id} value={exercise.id}>
-                    [{exercise.brands?.name || '브랜드없음'}] {exercise.name}
+              <span>회원 선택</span>
+              <select
+                value={workoutForm.member_id}
+                onChange={(e) =>
+                  setWorkoutForm({ ...workoutForm, member_id: e.target.value })
+                }
+              >
+                <option value="">회원 선택</option>
+                {members.map((member) => (
+                  <option key={member.id} value={member.id}>
+                    {member.name}
                   </option>
                 ))}
               </select>
             </label>
 
             <label className="field">
-              <span>운동명 직접 입력</span>
+              <span>날짜</span>
               <input
-                value={item.exercise_name_snapshot}
-                onChange={(e) => updateWorkoutItemName(itemIndex, e.target.value)}
-                placeholder="예: 힙쓰러스트, 밴드 워크, 스쿼트"
+                type="date"
+                value={workoutForm.workout_date}
+                onChange={(e) =>
+                  setWorkoutForm({ ...workoutForm, workout_date: e.target.value })
+                }
               />
             </label>
 
-            {item.is_cardio ? (
-              <label className="field">
-                <span>유산소 시간(분)</span>
-                <input
-                  type="number"
-                  value={item.cardio_minutes || ''}
-                  onChange={(e) => updateWorkoutItemField(itemIndex, 'cardio_minutes', e.target.value)}
-                  placeholder="예: 20"
-                />
-              </label>
-            ) : (
-              <div className="stack-gap">
-                {(item.sets || []).map((setRow, setIndex) => (
-                  <div className="set-row" key={setIndex}>
-                    <input
-                      placeholder="kg"
-                      value={setRow.kg}
-                      onChange={(e) => updateSetValue(itemIndex, setIndex, 'kg', e.target.value)}
-                    />
-                    <input
-                      placeholder="reps"
-                      value={setRow.reps}
-                      onChange={(e) => updateSetValue(itemIndex, setIndex, 'reps', e.target.value)}
-                    />
+            <label className="field">
+              <span>기록 타입</span>
+              <select
+                value={workoutForm.workout_type}
+                onChange={(e) =>
+                  setWorkoutForm({ ...workoutForm, workout_type: e.target.value })
+                }
+              >
+                <option value="pt">PT</option>
+                <option value="personal">개인운동</option>
+              </select>
+            </label>
+          </div>
+
+          <div className="stack-gap">
+            {workoutForm.items.map((item, itemIndex) => (
+              <div key={itemIndex} className="record-exercise-card">
+                <div className="record-exercise-head">
+                  <strong>운동 {itemIndex + 1}</strong>
+                  <div className="inline-actions wrap">
+                    <button
+                      type="button"
+                      className="secondary-btn"
+                      onClick={() => toggleWorkoutItemCollapse(itemIndex)}
+                    >
+                      {item.collapsed ? '상세히보기' : '간략히보기'}
+                    </button>
                     <button
                       type="button"
                       className="danger-btn"
-                      onClick={() => removeSet(itemIndex, setIndex)}
-                      disabled={(item.sets || []).length === 1}
+                      onClick={() => removeWorkoutItem(itemIndex)}
+                      disabled={workoutForm.items.length === 1}
                     >
-                      세트 삭제
+                      운동 삭제
                     </button>
                   </div>
-                ))}
+                </div>
 
-                <button type="button" className="secondary-btn" onClick={() => addSet(itemIndex)}>
-                  세트 추가
-                </button>
+                <div className="record-exercise-summary">
+                  간략히보기: {getWorkoutSummaryText(item)}
+                </div>
+
+                {!item.collapsed && (
+                  <div className="stack-gap record-exercise-body">
+                    <label className="field">
+                      <span>기록 종류</span>
+                      <select
+                        value={item.entry_type || 'strength'}
+                        onChange={(e) => updateWorkoutEntryType(itemIndex, e.target.value)}
+                      >
+                        <option value="strength">근력운동</option>
+                        <option value="cardio">유산소</option>
+                        <option value="care">케어</option>
+                      </select>
+                    </label>
+
+                    <div className="detail-box">
+                      <p>
+                        <strong>{getEntryTypeMeta(item.entry_type).label} 안내</strong>
+                      </p>
+                      <div className="compact-text">
+                        {getEntryTypeMeta(item.entry_type).description}
+                      </div>
+                    </div>
+
+                    {item.entry_type === 'strength' ? (
+                      <>
+                        <label className="field">
+                          <span>훈련 방식</span>
+                          <select
+                            value={item.training_method || 'normal'}
+                            onChange={(e) => updateWorkoutTrainingMethod(itemIndex, e.target.value)}
+                          >
+                            <option value="normal">일반운동</option>
+                            <option value="superset">슈퍼세트</option>
+                            <option value="dropset">드롭세트</option>
+                          </select>
+                        </label>
+
+                        <div className="detail-box">
+                          <p>
+                            <strong>{getTrainingMethodMeta(item.training_method).label} 안내</strong>
+                          </p>
+                          <div className="compact-text">
+                            {getTrainingMethodMeta(item.training_method).description}
+                          </div>
+                        </div>
+
+                        <label className="field">
+                          <span>추가 메모</span>
+                          <input
+                            value={item.method_note || ''}
+                            onChange={(e) => updateWorkoutItemField(itemIndex, 'method_note', e.target.value)}
+                            placeholder={getTrainingMethodMeta(item.training_method).placeholder}
+                          />
+                        </label>
+
+                        {item.training_method === 'superset' ? (
+                          <div className="stack-gap">
+                            {[0, 1].map((subIndex) => {
+                              const sub = item.sub_exercises?.[subIndex] || createEmptySubExercise()
+
+                              return (
+                                <div key={subIndex} className="detail-box">
+                                  <div className="list-card-top">
+                                    <strong>{subIndex === 0 ? '운동 A' : '운동 B'}</strong>
+                                  </div>
+
+                                  <label className="field">
+                                    <span>사용 기구 선택</span>
+                                    <select
+                                      value={sub.exercise_id}
+                                      onChange={(e) =>
+                                        updateWorkoutSubExerciseSelect(itemIndex, subIndex, e.target.value)
+                                      }
+                                    >
+                                      <option value="">선택 안함</option>
+                                      {exercises.map((exercise) => (
+                                        <option key={exercise.id} value={exercise.id}>
+                                          [{exercise.body_part || '-'} / {exercise.category || '-'} / {exercise.brands?.name || '브랜드없음'}] {exercise.name}
+                                        </option>
+                                      ))}
+                                    </select>
+                                  </label>
+
+                                  <label className="field">
+                                    <span>선택된 기구명</span>
+                                    <input
+                                      value={sub.equipment_name_snapshot || ''}
+                                      readOnly
+                                      placeholder="운동DB에서 선택한 기구명이 표시됩니다."
+                                    />
+                                  </label>
+
+                                  <label className="field">
+                                    <span>실제 수행 운동명</span>
+                                    <input
+                                      value={sub.performed_name || ''}
+                                      onChange={(e) =>
+                                        updateWorkoutSubExerciseName(itemIndex, subIndex, e.target.value)
+                                      }
+                                      placeholder={subIndex === 0 ? '예: 랫풀다운' : '예: 시티드로우'}
+                                    />
+                                  </label>
+
+                                  <div className="stack-gap">
+                                    {(sub.sets || []).map((setRow, setIndex) => (
+                                      <div className="set-row" key={setIndex}>
+                                        <input
+                                          placeholder="kg"
+                                          value={setRow.kg}
+                                          onChange={(e) =>
+                                            updateSetValue(itemIndex, setIndex, 'kg', e.target.value, subIndex)
+                                          }
+                                        />
+                                        <input
+                                          placeholder="reps"
+                                          value={setRow.reps}
+                                          onChange={(e) =>
+                                            updateSetValue(itemIndex, setIndex, 'reps', e.target.value, subIndex)
+                                          }
+                                        />
+                                        <button
+                                          type="button"
+                                          className="danger-btn"
+                                          onClick={() => removeSet(itemIndex, setIndex, subIndex)}
+                                          disabled={(sub.sets || []).length === 1}
+                                        >
+                                          세트 삭제
+                                        </button>
+                                      </div>
+                                    ))}
+
+                                    <button
+                                      type="button"
+                                      className="secondary-btn"
+                                      onClick={() => addSet(itemIndex, subIndex)}
+                                    >
+                                      세트 추가
+                                    </button>
+                                  </div>
+                                </div>
+                              )
+                            })}
+                          </div>
+                        ) : (
+                          <>
+                            <label className="field">
+                              <span>사용 기구 선택</span>
+                              <select
+                                value={item.exercise_id}
+                                onChange={(e) => updateWorkoutItemSelect(itemIndex, e.target.value)}
+                              >
+                                <option value="">선택 안함</option>
+                                {exercises.map((exercise) => (
+                                  <option key={exercise.id} value={exercise.id}>
+                                    [{exercise.body_part || '-'} / {exercise.category || '-'} / {exercise.brands?.name || '브랜드없음'}] {exercise.name}
+                                  </option>
+                                ))}
+                              </select>
+                            </label>
+
+                            <label className="field">
+                              <span>선택된 기구명</span>
+                              <input
+                                value={item.equipment_name_snapshot || ''}
+                                readOnly
+                                placeholder="운동DB에서 선택한 기구명이 표시됩니다."
+                              />
+                            </label>
+
+                            <label className="field">
+                              <span>실제 수행 운동명</span>
+                              <input
+                                value={item.performed_name || ''}
+                                onChange={(e) => updateWorkoutItemName(itemIndex, e.target.value)}
+                                placeholder="예: 힙쓰러스트, 밴드 워크, 스쿼트"
+                              />
+                            </label>
+
+                            <div className="stack-gap">
+                              {(item.sets || []).map((setRow, setIndex) => (
+                                <div className="set-row" key={setIndex}>
+                                  <input
+                                    placeholder="kg"
+                                    value={setRow.kg}
+                                    onChange={(e) =>
+                                      updateSetValue(itemIndex, setIndex, 'kg', e.target.value)
+                                    }
+                                  />
+                                  <input
+                                    placeholder="reps"
+                                    value={setRow.reps}
+                                    onChange={(e) =>
+                                      updateSetValue(itemIndex, setIndex, 'reps', e.target.value)
+                                    }
+                                  />
+                                  <button
+                                    type="button"
+                                    className="danger-btn"
+                                    onClick={() => removeSet(itemIndex, setIndex)}
+                                    disabled={(item.sets || []).length === 1}
+                                  >
+                                    세트 삭제
+                                  </button>
+                                </div>
+                              ))}
+
+                              <button
+                                type="button"
+                                className="secondary-btn"
+                                onClick={() => addSet(itemIndex)}
+                              >
+                                세트 추가
+                              </button>
+                            </div>
+                          </>
+                        )}
+                      </>
+                    ) : item.entry_type === 'cardio' ? (
+                      <>
+                        <label className="field">
+                          <span>사용 기구 / 종목 선택</span>
+                          <select
+                            value={item.exercise_id}
+                            onChange={(e) => updateWorkoutItemSelect(itemIndex, e.target.value)}
+                          >
+                            <option value="">선택 안함</option>
+                            {exercises.map((exercise) => (
+                              <option key={exercise.id} value={exercise.id}>
+                                [{exercise.body_part || '-'} / {exercise.category || '-'} / {exercise.brands?.name || '브랜드없음'}] {exercise.name}
+                              </option>
+                            ))}
+                          </select>
+                        </label>
+
+                        <label className="field">
+                          <span>선택된 기구명 / 종목명</span>
+                          <input
+                            value={item.equipment_name_snapshot || ''}
+                            readOnly
+                            placeholder="운동DB에서 선택한 항목이 표시됩니다."
+                          />
+                        </label>
+
+                        <label className="field">
+                          <span>실제 수행 운동명</span>
+                          <input
+                            value={item.performed_name || ''}
+                            onChange={(e) => updateWorkoutItemName(itemIndex, e.target.value)}
+                            placeholder="예: 트레드밀 걷기, 수영, 싸이클"
+                          />
+                        </label>
+
+                        <label className="field">
+                          <span>유산소 시간(분)</span>
+                          <input
+                            type="number"
+                            value={item.cardio_minutes || ''}
+                            onChange={(e) => updateWorkoutItemField(itemIndex, 'cardio_minutes', e.target.value)}
+                            placeholder="예: 20"
+                          />
+                        </label>
+                      </>
+                    ) : (
+                      <>
+                        <label className="field">
+                          <span>케어 항목 선택</span>
+                          <select
+                            value={item.exercise_id}
+                            onChange={(e) => updateWorkoutItemSelect(itemIndex, e.target.value)}
+                          >
+                            <option value="">선택 안함</option>
+                            {exercises.map((exercise) => (
+                              <option key={exercise.id} value={exercise.id}>
+                                [{exercise.body_part || '-'} / {exercise.category || '-'} / {exercise.brands?.name || '브랜드없음'}] {exercise.name}
+                              </option>
+                            ))}
+                          </select>
+                        </label>
+
+                        <label className="field">
+                          <span>선택된 케어 항목명</span>
+                          <input
+                            value={item.equipment_name_snapshot || ''}
+                            readOnly
+                            placeholder="운동DB에서 선택한 케어 항목이 표시됩니다."
+                          />
+                        </label>
+
+                        <label className="field">
+                          <span>실제 진행 내용</span>
+                          <input
+                            value={item.performed_name || ''}
+                            onChange={(e) => updateWorkoutItemName(itemIndex, e.target.value)}
+                            placeholder="예: 우측 어깨 스포츠마사지, 고관절 컨디셔닝"
+                          />
+                        </label>
+
+                        <label className="field">
+                          <span>케어 시간(분)</span>
+                          <input
+                            type="number"
+                            value={item.care_minutes || ''}
+                            onChange={(e) => updateWorkoutItemField(itemIndex, 'care_minutes', e.target.value)}
+                            placeholder="예: 15"
+                          />
+                        </label>
+
+                        <label className="field">
+                          <span>케어 메모</span>
+                          <input
+                            value={item.method_note || ''}
+                            onChange={(e) => updateWorkoutItemField(itemIndex, 'method_note', e.target.value)}
+                            placeholder="예: 어깨 주변 긴장 완화 위주로 진행했습니다."
+                          />
+                        </label>
+                      </>
+                    )}
+                  </div>
+                )}
               </div>
-            )}
-          </>
-        )}
-      </div>
-    )}
-  </div>
-))}
-                <button type="button" className="secondary-btn" onClick={addWorkoutItem}>
-                  운동 추가
-                </button>
-              </div>
+            ))}
 
-              <label className="field">
-                <span>잘한점</span>
-                <textarea rows="3" value={workoutForm.good} onChange={(e) => setWorkoutForm({ ...workoutForm, good: e.target.value })} />
-              </label>
-
-              <label className="field">
-                <span>보완점</span>
-                <textarea rows="3" value={workoutForm.improve} onChange={(e) => setWorkoutForm({ ...workoutForm, improve: e.target.value })} />
-              </label>
-<div className="record-pain-card">
-  <div className="record-card-head">
-    <div>
-      <div className="record-card-label">PAIN LOG</div>
-      <h3>통증 기록</h3>
-      <p className="sub-text">
-        재활 회원이거나 평소 통증이 있는 경우, 또는 운동 중 새 통증이 생긴 경우만 기록합니다.
-      </p>
-    </div>
-  </div>
-  <label className="checkbox-line">
-    <input
-      type="checkbox"
-      checked={!!workoutForm.pain_enabled}
-      onChange={(e) =>
-        setWorkoutForm((prev) => ({
-          ...prev,
-          pain_enabled: e.target.checked,
-          pain_logs:
-            e.target.checked
-              ? (prev.pain_logs?.length ? prev.pain_logs : [{ ...emptyPainLog }])
-              : [],
-        }))
-      }
-    />
-    <span>오늘 통증 상태를 기록합니다</span>
-  </label>
-
-  {workoutForm.pain_enabled && (
-    <div className="stack-gap" style={{ marginTop: '14px' }}>
-      {(workoutForm.pain_logs || []).map((pain, index) => (
-        <div key={index} className="detail-box">
-          <div className="list-card-top">
-            <strong>통증 기록 {index + 1}</strong>
-            <button
-              type="button"
-              className="danger-btn"
-              onClick={() => removePainLog(index)}
-            >
-              삭제
+            <button type="button" className="secondary-btn" onClick={addWorkoutItem}>
+              운동 추가
             </button>
           </div>
 
-          <div className="form-row" style={{ marginTop: '12px' }}>
+          <label className="field">
+            <span>잘한점</span>
+            <textarea
+              rows="3"
+              value={workoutForm.good}
+              onChange={(e) => setWorkoutForm({ ...workoutForm, good: e.target.value })}
+            />
+          </label>
+
+          <label className="field">
+            <span>보완점</span>
+            <textarea
+              rows="3"
+              value={workoutForm.improve}
+              onChange={(e) => setWorkoutForm({ ...workoutForm, improve: e.target.value })}
+            />
+          </label>
+
+          <div className="record-pain-card">
+            <div className="record-card-head">
+              <div>
+                <div className="record-card-label">PAIN LOG</div>
+                <h3>통증 기록</h3>
+                <p className="sub-text">
+                  재활 회원이거나 평소 통증이 있는 경우, 또는 운동 중 새 통증이 생긴 경우만 기록합니다.
+                </p>
+              </div>
+            </div>
+
+            <label className="checkbox-line">
+              <input
+                type="checkbox"
+                checked={!!workoutForm.pain_enabled}
+                onChange={(e) =>
+                  setWorkoutForm((prev) => ({
+                    ...prev,
+                    pain_enabled: e.target.checked,
+                    pain_logs:
+                      e.target.checked
+                        ? (prev.pain_logs?.length ? prev.pain_logs : [{ ...emptyPainLog }])
+                        : [],
+                  }))
+                }
+              />
+              <span>오늘 통증 상태를 기록합니다</span>
+            </label>
+
+            {workoutForm.pain_enabled && (
+              <div className="stack-gap" style={{ marginTop: '14px' }}>
+                {(workoutForm.pain_logs || []).map((pain, index) => (
+                  <div key={index} className="detail-box">
+                    <div className="list-card-top">
+                      <strong>통증 기록 {index + 1}</strong>
+                      <button
+                        type="button"
+                        className="danger-btn"
+                        onClick={() => removePainLog(index)}
+                      >
+                        삭제
+                      </button>
+                    </div>
+
+                    <div className="form-row" style={{ marginTop: '12px' }}>
+                      <label className="field">
+                        <span>구분</span>
+                        <select
+                          value={pain.pain_type || 'existing'}
+                          onChange={(e) => updatePainLog(index, 'pain_type', e.target.value)}
+                        >
+                          <option value="rehab">재활 회원 관리 중</option>
+                          <option value="existing">평소 통증이 있어 기록</option>
+                          <option value="new">운동 중 새 불편감 발생</option>
+                        </select>
+                      </label>
+
+                      <label className="field">
+                        <span>부위</span>
+                        <select
+                          value={pain.body_part || ''}
+                          onChange={(e) => updatePainLog(index, 'body_part', e.target.value)}
+                        >
+                          <option value="">선택</option>
+                          <option value="목">목</option>
+                          <option value="어깨">어깨</option>
+                          <option value="팔꿈치">팔꿈치</option>
+                          <option value="손목">손목</option>
+                          <option value="등">등</option>
+                          <option value="허리">허리</option>
+                          <option value="고관절">고관절</option>
+                          <option value="무릎">무릎</option>
+                          <option value="발목">발목</option>
+                          <option value="기타">기타</option>
+                        </select>
+                      </label>
+                    </div>
+
+                    <div className="form-row">
+                      <label className="field">
+                        <span>어떤 움직임에서</span>
+                        <input
+                          placeholder="예: 스쿼트 하강 / 팔 옆으로 들기 / 걷기"
+                          value={pain.movement_name || ''}
+                          onChange={(e) => updatePainLog(index, 'movement_name', e.target.value)}
+                        />
+                      </label>
+
+                      <label className="field">
+                        <span>언제 아픈지</span>
+                        <select
+                          value={pain.pain_timing || ''}
+                          onChange={(e) => updatePainLog(index, 'pain_timing', e.target.value)}
+                        >
+                          <option value="">선택</option>
+                          <option value="평상시">평상시</option>
+                          <option value="운동 전">운동 전</option>
+                          <option value="운동 중">운동 중</option>
+                          <option value="운동 후">운동 후</option>
+                        </select>
+                      </label>
+                    </div>
+
+                    <label className="field">
+                      <span>통증 점수 (VAS 0~10)</span>
+                      <input
+                        type="range"
+                        min="0"
+                        max="10"
+                        step="1"
+                        value={pain.pain_score ?? 0}
+                        onChange={(e) => updatePainLog(index, 'pain_score', Number(e.target.value))}
+                      />
+                      <div className="compact-text">
+                        현재 점수: {pain.pain_score ?? 0}점 / {getPainScoreLabel(pain.pain_score)}
+                      </div>
+                      <div className="compact-text">
+                        0~2 문제 없음 / 3~4 주의 / 5~6 조절 필요 / 7 이상 중단 고려
+                      </div>
+                    </label>
+
+                    <label className="field">
+                      <span>메모</span>
+                      <textarea
+                        rows="3"
+                        placeholder="예: 끝범위에서 찝힘 / 당김 / 저림 / 뻐근함"
+                        value={pain.pain_note || ''}
+                        onChange={(e) => updatePainLog(index, 'pain_note', e.target.value)}
+                      />
+                    </label>
+                  </div>
+                ))}
+
+                <button type="button" className="secondary-btn" onClick={addPainLog}>
+                  통증 기록 추가
+                </button>
+              </div>
+            )}
+          </div>
+
+          <div className="inline-actions wrap">
+            <button className="primary-btn" type="submit">
+              {workoutForm.id ? '운동 기록 수정' : '운동 기록 저장'}
+            </button>
+            <button type="button" className="secondary-btn" onClick={resetWorkoutForm}>
+              작성 초기화
+            </button>
+          </div>
+        </form>
+      </section>
+
+      <section className="card record-list-card-modern">
+        <div className="record-card-head">
+          <div>
+            <div className="record-card-label">LOG LIST</div>
+            <h3>운동 기록 목록</h3>
+            <p className="sub-text">
+              날짜별로 저장된 운동 기록을 확인하고 수정 / 삭제할 수 있습니다.
+            </p>
+          </div>
+        </div>
+
+        <div className="stack-gap">
+          <div className="workout-filter-grid">
             <label className="field">
-              <span>구분</span>
-              <select
-                value={pain.pain_type || 'existing'}
-                onChange={(e) => updatePainLog(index, 'pain_type', e.target.value)}
-              >
-                <option value="rehab">재활 회원 관리 중</option>
-                <option value="existing">평소 통증이 있어 기록</option>
-                <option value="new">운동 중 새 불편감 발생</option>
+              <span>회원 검색</span>
+              <select value={workoutMemberFilter} onChange={(e) => setWorkoutMemberFilter(e.target.value)}>
+                <option value="">전체 회원</option>
+                {members.map((member) => (
+                  <option key={member.id} value={member.id}>
+                    {member.name}
+                  </option>
+                ))}
               </select>
             </label>
 
             <label className="field">
-              <span>부위</span>
-              <select
-                value={pain.body_part || ''}
-                onChange={(e) => updatePainLog(index, 'body_part', e.target.value)}
-              >
-                <option value="">선택</option>
-                <option value="목">목</option>
-                <option value="어깨">어깨</option>
-                <option value="팔꿈치">팔꿈치</option>
-                <option value="손목">손목</option>
-                <option value="등">등</option>
-                <option value="허리">허리</option>
-                <option value="고관절">고관절</option>
-                <option value="무릎">무릎</option>
-                <option value="발목">발목</option>
-                <option value="기타">기타</option>
+              <span>기록 타입</span>
+              <select value={workoutTypeFilter} onChange={(e) => setWorkoutTypeFilter(e.target.value)}>
+                <option value="all">전체 타입</option>
+                <option value="pt">PT</option>
+                <option value="personal">개인운동</option>
               </select>
             </label>
           </div>
 
-          <div className="form-row">
+          <div className="workout-filter-grid">
             <label className="field">
-              <span>어떤 움직임에서</span>
+              <span>운동기록 검색</span>
               <input
-                placeholder="예: 스쿼트 하강 / 팔 옆으로 들기 / 걷기"
-                value={pain.movement_name || ''}
-                onChange={(e) => updatePainLog(index, 'movement_name', e.target.value)}
+                placeholder="회원명 / 운동명 / 잘한점 / 보완점 검색"
+                value={workoutSearch}
+                onChange={(e) => setWorkoutSearch(e.target.value)}
               />
             </label>
 
             <label className="field">
-              <span>언제 아픈지</span>
-              <select
-                value={pain.pain_timing || ''}
-                onChange={(e) => updatePainLog(index, 'pain_timing', e.target.value)}
-              >
-                <option value="">선택</option>
-                <option value="평상시">평상시</option>
-                <option value="운동 전">운동 전</option>
-                <option value="운동 중">운동 중</option>
-                <option value="운동 후">운동 후</option>
-              </select>
+              <span>날짜 찾기</span>
+              <input
+                type="date"
+                value={workoutDateFilter}
+                onChange={(e) => setWorkoutDateFilter(e.target.value)}
+              />
             </label>
           </div>
-
-          <label className="field">
-            <span>통증 점수 (VAS 0~10)</span>
-            <input
-              type="range"
-              min="0"
-              max="10"
-              step="1"
-              value={pain.pain_score ?? 0}
-              onChange={(e) => updatePainLog(index, 'pain_score', Number(e.target.value))}
-            />
-            <div className="compact-text">
-              현재 점수: {pain.pain_score ?? 0}점 / {getPainScoreLabel(pain.pain_score)}
-            </div>
-            <div className="compact-text">
-              0~2 문제 없음 / 3~4 주의 / 5~6 조절 필요 / 7 이상 중단 고려
-            </div>
-          </label>
-
-          <label className="field">
-            <span>메모</span>
-            <textarea
-              rows="3"
-              placeholder="예: 끝범위에서 찝힘 / 당김 / 저림 / 뻐근함"
-              value={pain.pain_note || ''}
-              onChange={(e) => updatePainLog(index, 'pain_note', e.target.value)}
-            />
-          </label>
-        </div>
-      ))}
-
-      <button type="button" className="secondary-btn" onClick={addPainLog}>
-        통증 기록 추가
-      </button>
-    </div>
-  )}
-</div>
-              <div className="inline-actions wrap">
-                <button className="primary-btn" type="submit">
-                  {workoutForm.id ? '운동 기록 수정' : '운동 기록 저장'}
-                </button>
-                <button type="button" className="secondary-btn" onClick={resetWorkoutForm}>
-                  작성 초기화
-                </button>
-              </div>
-            </form>
-          </section>
-
-          <section className="card record-list-card-modern">
-  <div className="record-card-head">
-    <div>
-      <div className="record-card-label">LOG LIST</div>
-      <h3>운동 기록 목록</h3>
-      <p className="sub-text">
-        날짜별로 저장된 운동 기록을 확인하고 수정 / 삭제할 수 있습니다.
-      </p>
-    </div>
-  </div>
-
-  <div className="stack-gap">
-    <div className="workout-filter-grid">
-      <label className="field">
-        <span>회원 검색</span>
-        <select value={workoutMemberFilter} onChange={(e) => setWorkoutMemberFilter(e.target.value)}>
-          <option value="">전체 회원</option>
-          {members.map((member) => (
-            <option key={member.id} value={member.id}>
-              {member.name}
-            </option>
-          ))}
-        </select>
-      </label>
-
-      <label className="field">
-        <span>기록 타입</span>
-        <select value={workoutTypeFilter} onChange={(e) => setWorkoutTypeFilter(e.target.value)}>
-          <option value="all">전체 타입</option>
-          <option value="pt">PT</option>
-          <option value="personal">개인운동</option>
-        </select>
-      </label>
-    </div>
-
-    <div className="workout-filter-grid">
-      <label className="field">
-        <span>운동기록 검색</span>
-        <input
-          placeholder="회원명 / 운동명 / 잘한점 / 보완점 검색"
-          value={workoutSearch}
-          onChange={(e) => setWorkoutSearch(e.target.value)}
-        />
-      </label>
-
-      <label className="field">
-        <span>날짜 찾기</span>
-        <input
-          type="date"
-          value={workoutDateFilter}
-          onChange={(e) => setWorkoutDateFilter(e.target.value)}
-        />
-      </label>
-    </div>
-  </div>
-
-  <div className="list-stack">
-    {groupedWorkoutCards.length === 0 ? (
-      <div className="workout-list-empty">검색 결과가 없습니다.</div>
-    ) : null}
-
-    {groupedWorkoutCards.map(([date, workoutsByDate]) => (
-      <div key={date} className="workout-group">
-        <div className="workout-group-head">
-          <h3>{date}</h3>
-          <span className="pill">{workoutsByDate.length}개 기록</span>
         </div>
 
         <div className="list-stack">
-          {workoutsByDate.map((workout) => {
-            const collapsed = collapsedWorkouts[workout.id] ?? true
-            return (
-              <div key={workout.id} className="list-card workout-list-card">
-                <div className="list-card-top">
-                  <strong>
-                    {workout.member?.name || '회원없음'} / {workout.workout_type === 'pt' ? 'PT' : '개인운동'}
-                  </strong>
-                  <span className="pill workout-date-chip">{workout.workout_date}</span>
-                </div>
+          {groupedWorkoutCards.length === 0 ? (
+            <div className="workout-list-empty">검색 결과가 없습니다.</div>
+          ) : null}
 
-                <div className="compact-text">
-                  간략히보기: 운동 {workout.items.length}개 / 총세트 {getTotalSetCount(workout.items)}세트
-                </div>
+          {groupedWorkoutCards.map(([date, workoutsByDate]) => (
+            <div key={date} className="workout-group">
+              <div className="workout-group-head">
+                <h3>{date}</h3>
+                <span className="pill">{workoutsByDate.length}개 기록</span>
+              </div>
 
-                {workout?.pain_enabled && (workout?.pain_logs?.length || 0) > 0 ? (
-                  <div className="compact-text">
-                    통증기록:{' '}
-                    {workout.pain_logs
-                      ?.filter((log) => log?.body_part || log?.pain_score !== null)
-                      ?.map((log) => `${log?.body_part || '부위미입력'} ${log?.pain_score ?? '-'}점`)
-                      ?.join(' / ')}
-                  </div>
-                ) : null}
+              <div className="list-stack">
+                {workoutsByDate.map((workout) => {
+                  const collapsed = collapsedWorkouts[workout.id] ?? true
+                  return (
+                    <div key={workout.id} className="list-card workout-list-card">
+                      <div className="list-card-top">
+                        <strong>
+                          {workout.member?.name || '회원없음'} / {workout.workout_type === 'pt' ? 'PT' : '개인운동'}
+                        </strong>
+                        <span className="pill workout-date-chip">{workout.workout_date}</span>
+                      </div>
 
-                <div className="inline-actions wrap">
-                  <button
-                    type="button"
-                    className="secondary-btn"
-                    onClick={() =>
-                      setCollapsedWorkouts((prev) => ({
-                        ...prev,
-                        [workout.id]: !collapsed,
-                      }))
-                    }
-                  >
-                    {collapsed ? '상세히보기' : '간략히보기'}
-                  </button>
-
-                  <button
-                    type="button"
-                    className="secondary-btn"
-                    onClick={() => handleWorkoutEdit(workout)}
-                  >
-                    수정
-                  </button>
-
-                  <button
-                    type="button"
-                    className="danger-btn"
-                    onClick={() => handleWorkoutDelete(workout)}
-                  >
-                    삭제
-                  </button>
-                </div>
-
-                {!collapsed ? (
-                  <div className="detail-box">
-                    <div className="workout-detail-items">
-                      {workout.items.map((item, itemIndex) => (
-                        <div key={item.id || itemIndex} className="record-item-box">
-                          <div className="list-card-top">
-                            <strong>
-                              {item.training_method === 'superset'
-                                ? `슈퍼세트 ${itemIndex + 1}`
-                                : item.training_method === 'dropset'
-                                ? `${item.exercise_name_snapshot || `운동 ${itemIndex + 1}`} (드롭세트)`
-                                : item.exercise_name_snapshot || `운동 ${itemIndex + 1}`}
-                            </strong>
-
-                            {item.training_method && item.training_method !== 'normal' ? (
-                              <span className="pill">
-                                {item.training_method === 'superset' ? '슈퍼세트' : '드롭세트'}
-                              </span>
-                            ) : null}
-                          </div>
-
-                          {item.is_cardio ? (
-                            <div className="compact-text">유산소 {item.cardio_minutes || 0}분</div>
-                          ) : item.training_method === 'superset' ? (
-                            <div className="stack-gap" style={{ marginTop: '8px' }}>
-                              {(item.sub_exercises || []).map((sub, subIndex) => (
-                                <div key={subIndex} className="detail-box">
-                                  <p>
-                                    <strong>{subIndex === 0 ? '운동 A' : '운동 B'}:</strong>{' '}
-                                    {sub.exercise_name_snapshot || '-'}
-                                  </p>
-
-                                  {(sub.sets || []).length > 0 ? (
-                                    <ul className="set-list">
-                                      {(sub.sets || []).map((setRow, idx) => (
-                                        <li key={idx}>
-                                          {idx + 1}세트 - {setRow.kg || '-'}kg / {setRow.reps || '-'}회
-                                        </li>
-                                      ))}
-                                    </ul>
-                                  ) : (
-                                    <div className="compact-text">세트 정보 없음</div>
-                                  )}
-                                </div>
-                              ))}
-
-                              {item.method_note ? (
-                                <div className="compact-text">메모: {item.method_note}</div>
-                              ) : null}
-                            </div>
-                          ) : (
-                            <>
-                              {(item.sets || []).length > 0 ? (
-                                <ul className="set-list">
-                                  {(item.sets || []).map((setRow, idx) => (
-                                    <li key={idx}>
-                                      {idx + 1}세트 - {setRow.kg || '-'}kg / {setRow.reps || '-'}회
-                                    </li>
-                                  ))}
-                                </ul>
-                              ) : (
-                                <div className="compact-text">세트 정보 없음</div>
-                              )}
-
-                              {item.method_note ? (
-                                <div className="compact-text">메모: {item.method_note}</div>
-                              ) : null}
-                            </>
-                          )}
-                        </div>
-                      ))}
-                    </div>
-
-                    <div className="workout-detail-summary">
-                      <p><strong>잘한점:</strong> {workout.good || '-'}</p>
-                      <p><strong>보완점:</strong> {workout.improve || '-'}</p>
+                      <div className="compact-text">
+                        간략히보기: 운동 {workout.items.length}개 / 총세트 {getTotalSetCount(workout.items)}세트
+                      </div>
 
                       {workout?.pain_enabled && (workout?.pain_logs?.length || 0) > 0 ? (
+                        <div className="compact-text">
+                          통증기록:{' '}
+                          {workout.pain_logs
+                            ?.filter((log) => log?.body_part || log?.pain_score !== null)
+                            ?.map((log) => `${log?.body_part || '부위미입력'} ${log?.pain_score ?? '-'}점`)
+                            ?.join(' / ')}
+                        </div>
+                      ) : null}
+
+                      <div className="inline-actions wrap">
+                        <button
+                          type="button"
+                          className="secondary-btn"
+                          onClick={() =>
+                            setCollapsedWorkouts((prev) => ({
+                              ...prev,
+                              [workout.id]: !collapsed,
+                            }))
+                          }
+                        >
+                          {collapsed ? '상세히보기' : '간략히보기'}
+                        </button>
+
+                        <button
+                          type="button"
+                          className="secondary-btn"
+                          onClick={() => handleWorkoutEdit(workout)}
+                        >
+                          수정
+                        </button>
+
+                        <button
+                          type="button"
+                          className="danger-btn"
+                          onClick={() => handleWorkoutDelete(workout)}
+                        >
+                          삭제
+                        </button>
+                      </div>
+
+                      {!collapsed ? (
                         <div className="detail-box">
-                          <p><strong>[통증 기록]</strong></p>
+                          <div className="workout-detail-items">
+                            {workout.items.map((item, itemIndex) => (
+                              <div key={item.id || itemIndex} className="record-item-box">
+                                <div className="list-card-top">
+                                  <strong>
+                                    {item.entry_type === 'care'
+                                      ? `${item.performed_name || item.equipment_name_snapshot || `케어 ${itemIndex + 1}`}`
+                                      : item.training_method === 'superset'
+                                      ? `슈퍼세트 ${itemIndex + 1}`
+                                      : item.training_method === 'dropset'
+                                      ? `${item.performed_name || item.exercise_name_snapshot || `운동 ${itemIndex + 1}`} (드롭세트)`
+                                      : item.performed_name || item.exercise_name_snapshot || `운동 ${itemIndex + 1}`}
+                                  </strong>
 
-                          {(workout.pain_logs || []).map((log, index) => (
-                            <div key={index} className="compact-text">
-                              {index + 1}. [{log?.pain_type || '-'}] {log?.body_part || '-'} /{' '}
-                              {log?.movement_name || '-'} / {log?.pain_timing || '-'} / VAS{' '}
-                              {log?.pain_score ?? '-'} / {log?.pain_note || '-'}
-                            </div>
-                          ))}
+                                  <span className="pill">
+                                    {item.entry_type === 'care'
+                                      ? '케어'
+                                      : item.entry_type === 'cardio'
+                                      ? '유산소'
+                                      : item.training_method === 'superset'
+                                      ? '슈퍼세트'
+                                      : item.training_method === 'dropset'
+                                      ? '드롭세트'
+                                      : '근력운동'}
+                                  </span>
+                                </div>
 
-                          <div style={{ height: '8px' }} />
+                                {item.equipment_name_snapshot ? (
+                                  <div className="compact-text">
+                                    사용 기구: {item.equipment_name_snapshot}
+                                  </div>
+                                ) : null}
 
-                          <p><strong>VAS 기준:</strong></p>
-                          <div className="compact-text">0: 통증 없음</div>
-                          <div className="compact-text">1~2: 거의 신경 쓰이지 않는 통증</div>
-                          <div className="compact-text">3~4: 움직일 때 불편하지만 운동 가능</div>
-                          <div className="compact-text">5~6: 운동 시 집중이 흐트러질 정도</div>
-                          <div className="compact-text">7~8: 운동 수행이 어려움</div>
-                          <div className="compact-text">9: 일상생활에서도 지속적인 통증</div>
-                          <div className="compact-text">10: 견디기 힘든 극심한 통증</div>
+                                {item.entry_type === 'cardio' ? (
+                                  <div className="compact-text">유산소 {item.cardio_minutes || 0}분</div>
+                                ) : item.entry_type === 'care' ? (
+                                  <div className="compact-text">케어 {item.care_minutes || 0}분</div>
+                                ) : item.training_method === 'superset' ? (
+                                  <div className="stack-gap" style={{ marginTop: '8px' }}>
+                                    {(item.sub_exercises || []).map((sub, subIndex) => (
+                                      <div key={subIndex} className="detail-box">
+                                        <p>
+                                          <strong>{subIndex === 0 ? '운동 A' : '운동 B'}:</strong>{' '}
+                                          {sub.performed_name || sub.exercise_name_snapshot || '-'}
+                                        </p>
+
+                                        {sub.equipment_name_snapshot ? (
+                                          <div className="compact-text">
+                                            사용 기구: {sub.equipment_name_snapshot}
+                                          </div>
+                                        ) : null}
+
+                                        {(sub.sets || []).length > 0 ? (
+                                          <ul className="set-list">
+                                            {(sub.sets || []).map((setRow, idx) => (
+                                              <li key={idx}>
+                                                {idx + 1}세트 - {setRow.kg || '-'}kg / {setRow.reps || '-'}회
+                                              </li>
+                                            ))}
+                                          </ul>
+                                        ) : (
+                                          <div className="compact-text">세트 정보 없음</div>
+                                        )}
+                                      </div>
+                                    ))}
+
+                                    {item.method_note ? (
+                                      <div className="compact-text">메모: {item.method_note}</div>
+                                    ) : null}
+                                  </div>
+                                ) : (
+                                  <>
+                                    {(item.sets || []).length > 0 ? (
+                                      <ul className="set-list">
+                                        {(item.sets || []).map((setRow, idx) => (
+                                          <li key={idx}>
+                                            {idx + 1}세트 - {setRow.kg || '-'}kg / {setRow.reps || '-'}회
+                                          </li>
+                                        ))}
+                                      </ul>
+                                    ) : (
+                                      <div className="compact-text">세트 정보 없음</div>
+                                    )}
+
+                                    {item.method_note ? (
+                                      <div className="compact-text">메모: {item.method_note}</div>
+                                    ) : null}
+                                  </>
+                                )}
+                              </div>
+                            ))}
+                          </div>
+
+                          <div className="workout-detail-summary">
+                            <p><strong>잘한점:</strong> {workout.good || '-'}</p>
+                            <p><strong>보완점:</strong> {workout.improve || '-'}</p>
+
+                            {workout?.pain_enabled && (workout?.pain_logs?.length || 0) > 0 ? (
+                              <div className="detail-box">
+                                <p><strong>[통증 기록]</strong></p>
+
+                                {(workout.pain_logs || []).map((log, index) => (
+                                  <div key={index} className="compact-text">
+                                    {index + 1}. [{log?.pain_type || '-'}] {log?.body_part || '-'} /{' '}
+                                    {log?.movement_name || '-'} / {log?.pain_timing || '-'} / VAS{' '}
+                                    {log?.pain_score ?? '-'} / {log?.pain_note || '-'}
+                                  </div>
+                                ))}
+
+                                <div style={{ height: '8px' }} />
+
+                                <p><strong>VAS 기준:</strong></p>
+                                <div className="compact-text">0: 통증 없음</div>
+                                <div className="compact-text">1~2: 거의 신경 쓰이지 않는 통증</div>
+                                <div className="compact-text">3~4: 움직일 때 불편하지만 운동 가능</div>
+                                <div className="compact-text">5~6: 운동 시 집중이 흐트러질 정도</div>
+                                <div className="compact-text">7~8: 운동 수행이 어려움</div>
+                                <div className="compact-text">9: 일상생활에서도 지속적인 통증</div>
+                                <div className="compact-text">10: 견디기 힘든 극심한 통증</div>
+                              </div>
+                            ) : null}
+                          </div>
                         </div>
                       ) : null}
                     </div>
-                  </div>
-                ) : null}
+                  )
+                })}
               </div>
-            )
-          })}
+            </div>
+          ))}
         </div>
-      </div>
-    ))}
-  </div>
-</section>
+      </section>
     </div>
   </div>
 )}
