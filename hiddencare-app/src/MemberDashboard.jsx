@@ -5058,9 +5058,26 @@ return { ok: true, xp: xpValue }
             </div>
 
             <div className="member-program-menu-description-box">
-              <div className="member-program-menu-description-label">프로그램 설명</div>
-              <p>{currentProgram.description || '설명이 등록되지 않았습니다.'}</p>
-            </div>
+  <div className="member-program-menu-description-label">프로그램 설명</div>
+
+  <p className={expandedMemberProgramId === currentProgram.id ? 'expanded' : ''}>
+    {currentProgram.description || '설명이 등록되지 않았습니다.'}
+  </p>
+
+  {currentProgram.description && String(currentProgram.description).length > 40 ? (
+    <button
+      type="button"
+      className="member-program-desc-toggle"
+      onClick={() =>
+        setExpandedMemberProgramId((prev) =>
+          prev === currentProgram.id ? null : currentProgram.id
+        )
+      }
+    >
+      {expandedMemberProgramId === currentProgram.id ? '접기' : '더보기'}
+    </button>
+  ) : null}
+</div>
           </div>
         ) : (
           <div className="empty-box member-program-empty-menu">
