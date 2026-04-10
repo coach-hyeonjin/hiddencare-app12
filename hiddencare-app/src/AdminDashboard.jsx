@@ -831,6 +831,9 @@ const [mealPlanForm, setMealPlanForm] = useState(emptyMealPlanForm)
 const [mealPlanMonth, setMealPlanMonth] = useState(new Date().toISOString().slice(0, 7))
 const [memberNutritionProfiles, setMemberNutritionProfiles] = useState([])
 const [memberMealPlans, setMemberMealPlans] = useState([])
+  const [mealPlanViewMonth, setMealPlanViewMonth] = useState(new Date().toISOString().slice(0, 7))
+const [editingMealPlanId, setEditingMealPlanId] = useState(null)
+const [mealPlanEditMeals, setMealPlanEditMeals] = useState([])
   const [activityRankingOpenSections, setActivityRankingOpenSections] = useState({
   summary: true,
   pt: true,
@@ -1426,13 +1429,148 @@ const handleMealPlanMonthGenerate = async () => {
   if (!mealPlanForm.member_id) return
   loadMemberMealPlanProfile(mealPlanForm.member_id)
 }, [mealPlanForm.member_id])
-
+useEffect(() => {
+  if (!mealPlanForm.member_id || !mealPlanViewMonth) return
+  loadMealPlansByMonth(mealPlanForm.member_id, mealPlanViewMonth)
+}, [mealPlanForm.member_id, mealPlanViewMonth])
 useEffect(() => {
   setMealPlanForm((prev) => ({
     ...prev,
     meal_slots: buildMealSlotsByCount(prev.meals_per_day),
   }))
 }, [mealPlanForm.meals_per_day])
+  const loadMealPlansByMonth = async (memberId, monthValue) => {
+  if (!memberId || !monthValue) {
+    setMemberMealPlans([])
+    return
+  }
+
+  const [year, month] = String(monthValue).split('-').map(Number)
+  if (!year || !month) {
+    setMemberMealPlans([])
+    return
+  }
+
+  const lastDay = new Date(year, month, 0).getDate()
+
+  const { data, error } = await supabase
+    .from('member_meal_plans')
+    .select('*')
+    .eq('member_id', memberId)
+    .gte('plan_date', `${year}-${String(month).padStart(2, '0')}-01`)
+    .lte('plan_date', `${year}-${String(month).padStart(2, '0')}-${String(lastDay).padStart(2, '0')}`)
+    .order('plan_date', { ascending: true })
+
+  if (error) {
+    console.error('월별 식단 불러오기 실패:', error)
+    alert('월별 식단 불러오기 실패')
+    return
+  }
+
+  setMemberMealPlans(data || [])
+}
+
+const handleMealPlanDelete = async (planId) => {
+  if (!window.confirm('이 날짜 식단을 삭제할까요?')) return
+
+  const { error } = await supabase
+    .from('member_meal_plans')
+    .delete()
+    .eq('id', planId)
+
+  if (error) {
+    console.error('식단 삭제 실패:', error)
+    alert('식단 삭제 실패')
+    return
+  }
+
+  setMemberMealPlans((prev) => prev.filter((item) => item.id !== planId))
+}
+
+const handleMealPlanDeleteMonth = async () => {
+  if (!mealPlanForm.member_id || !mealPlanViewMonth) {
+    alert('회원과 조회 월을 확인해주세요')
+    return
+  }
+
+  if (!window.confirm(`${mealPlanViewMonth} 월 식단을 전체 삭제할까요?`)) return
+
+  const [year, month] = String(mealPlanViewMonth).split('-').map(Number)
+  const lastDay = new Date(year, month, 0).getDate()
+
+  const { error } = await supabase
+    .from('member_meal_plans')
+    .delete()
+    .eq('member_id', mealPlanForm.member_id)
+    .gte('plan_date', `${year}-${String(month).padStart(2, '0')}-01`)
+    .lte('plan_date', `${year}-${String(month).padStart(2, '0')}-${String(lastDay).padStart(2, '0')}`)
+
+  if (error) {
+    console.error('월 전체 식단 삭제 실패:', error)
+    alert('월 전체 식단 삭제 실패')
+    return
+  }
+
+  setMemberMealPlans([])
+  alert('월 전체 식단 삭제 완료')
+}
+
+const handleMealPlanEditStart = (plan) => {
+  setEditingMealPlanId(plan.id)
+  setMealPlanEditMeals(
+    Array.isArray(plan.meals_json)
+      ? plan.meals_json.map((meal) => ({
+          ...meal,
+          slot: meal.slot || '',
+          menu: meal.menu || '',
+        }))
+      : []
+  )
+}
+
+const updateMealPlanEditMeal = (index, value) => {
+  setMealPlanEditMeals((prev) =>
+    prev.map((meal, idx) =>
+      idx === index
+        ? { ...meal, menu: value }
+        : meal
+    )
+  )
+}
+
+const handleMealPlanEditCancel = () => {
+  setEditingMealPlanId(null)
+  setMealPlanEditMeals([])
+}
+
+const handleMealPlanUpdate = async (plan) => {
+  const nextMeals = Array.isArray(mealPlanEditMeals) ? mealPlanEditMeals : []
+
+  const { error } = await supabase
+    .from('member_meal_plans')
+    .update({
+      meals_json: nextMeals,
+    })
+    .eq('id', plan.id)
+
+  if (error) {
+    console.error('식단 수정 저장 실패:', error)
+    alert('식단 수정 저장 실패')
+    return
+  }
+
+  setMemberMealPlans((prev) =>
+    prev.map((item) =>
+      item.id === plan.id
+        ? { ...item, meals_json: nextMeals }
+        : item
+    )
+  )
+
+  setEditingMealPlanId(null)
+  setMealPlanEditMeals([])
+  alert('식단 수정 저장 완료')
+}
 const managerScoreCards = useMemo(() => {
     const currentMonth = new Date().toISOString().slice(0, 7)
 
@@ -11368,48 +11506,121 @@ const filteredExercisesAdvanced = exercises.filter((exercise) => {
       ) : null}
 
       <div className="list-stack">
-        <div className="section-head">
-          <div>
-            <h3>생성된 월간 식단</h3>
-            <p className="sub-text">
-              현재 선택한 회원의 해당 월 식단 생성 결과입니다.
-            </p>
+  <div className="section-head">
+    <div>
+      <h3>월별 식단 기록 보기</h3>
+      <p className="sub-text">
+        선택한 회원의 월별 식단 기록을 조회하고 수정/삭제할 수 있습니다.
+      </p>
+    </div>
+
+    <div className="inline-actions wrap">
+      <input
+        type="month"
+        value={mealPlanViewMonth}
+        onChange={(e) => setMealPlanViewMonth(e.target.value)}
+      />
+
+      <button
+        type="button"
+        className="secondary-btn"
+        onClick={() => loadMealPlansByMonth(mealPlanForm.member_id, mealPlanViewMonth)}
+      >
+        조회
+      </button>
+
+      <button
+        type="button"
+        className="danger-btn"
+        onClick={handleMealPlanDeleteMonth}
+      >
+        월 전체 삭제
+      </button>
+    </div>
+  </div>
+
+  {memberMealPlans.length === 0 ? (
+    <div className="workout-list-empty">해당 월 식단 기록이 없습니다.</div>
+  ) : (
+    memberMealPlans.map((plan) => (
+      <div key={plan.id} className="list-card">
+        <div className="list-card-top">
+          <strong>{plan.plan_date}</strong>
+          <div className="inline-actions wrap">
+            <span className="pill">{plan.day_type}</span>
+
+            <button
+              type="button"
+              className="secondary-btn"
+              onClick={() => handleMealPlanEditStart(plan)}
+            >
+              수정
+            </button>
+
+            <button
+              type="button"
+              className="danger-btn"
+              onClick={() => handleMealPlanDelete(plan.id)}
+            >
+              삭제
+            </button>
           </div>
         </div>
 
-        {memberMealPlans.length === 0 ? (
-          <div className="workout-list-empty">아직 생성된 식단이 없습니다.</div>
-        ) : (
-          memberMealPlans.map((plan) => (
-  <div key={plan.id} className="list-card">
-    <div className="list-card-top">
-      <strong>{plan.plan_date}</strong>
-      <span className="pill">{plan.day_type}</span>
-    </div>
+        <div className="compact-text" style={{ marginBottom: '8px' }}>
+          총 {plan.total_kcal || 0} kcal / 탄 {plan.total_carbs_g || 0} / 단 {plan.total_protein_g || 0} / 지 {plan.total_fat_g || 0}
+        </div>
 
-    <div className="compact-text" style={{ marginBottom: '8px' }}>
-      총 {plan.total_kcal || 0} kcal / 탄 {plan.total_carbs_g || 0} / 단 {plan.total_protein_g || 0} / 지 {plan.total_fat_g || 0}
-    </div>
+        <div className="compact-text" style={{ marginBottom: '10px' }}>
+          식사 수: {Array.isArray(plan.meals_json) ? plan.meals_json.length : 0}끼
+        </div>
 
-    <div className="compact-text" style={{ marginBottom: '10px' }}>
-      식사 수: {Array.isArray(plan.meals_json) ? plan.meals_json.length : 0}끼
-    </div>
+        {editingMealPlanId === plan.id ? (
+          <div className="detail-box">
+            {mealPlanEditMeals.map((meal, index) => (
+              <label key={index} className="field" style={{ marginBottom: '10px' }}>
+                <span>{meal.slot || `식사 ${index + 1}`}</span>
+                <textarea
+                  rows="2"
+                  value={meal.menu || ''}
+                  onChange={(e) => updateMealPlanEditMeal(index, e.target.value)}
+                />
+              </label>
+            ))}
 
-    {Array.isArray(plan.meals_json) && plan.meals_json.length > 0 ? (
-      <div className="detail-box">
-        {plan.meals_json.map((meal, index) => (
-          <div key={index} className="compact-text" style={{ marginBottom: '6px' }}>
-            <strong>{meal.slot || `식사 ${index + 1}`}</strong>: {meal.menu || '-'}
+            <div className="inline-actions wrap" style={{ marginTop: '10px' }}>
+              <button
+                type="button"
+                className="primary-btn"
+                onClick={() => handleMealPlanUpdate(plan)}
+              >
+                수정 저장
+              </button>
+
+              <button
+                type="button"
+                className="secondary-btn"
+                onClick={handleMealPlanEditCancel}
+              >
+                취소
+              </button>
+            </div>
           </div>
-        ))}
-      </div>
-    ) : (
-      <div className="compact-text">식단 내용이 없습니다.</div>
-    )}
-  </div>
-))
+        ) : Array.isArray(plan.meals_json) && plan.meals_json.length > 0 ? (
+          <div className="detail-box">
+            {plan.meals_json.map((meal, index) => (
+              <div key={index} className="compact-text" style={{ marginBottom: '6px' }}>
+                <strong>{meal.slot || `식사 ${index + 1}`}</strong>: {meal.menu || '-'}
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="compact-text">식단 내용이 없습니다.</div>
         )}
       </div>
+    ))
+  )}
+</div>
     </div>
   </div>
 )}
