@@ -660,6 +660,7 @@ const selectedMealPlan = useMemo(() => {
   if (!selectedMealPlanDate) return null
   return mealPlans.find((plan) => plan.plan_date === selectedMealPlanDate) || null
 }, [mealPlans, selectedMealPlanDate])
+
 const getMealPlanProgress = (plan) => {
   const meals = Array.isArray(plan?.meals_json) ? plan.meals_json : []
   const checks = Array.isArray(plan?.checked_slots) ? plan.checked_slots : []
@@ -682,7 +683,13 @@ const getMealPlanProgress = (plan) => {
 const selectedMealPlanProgress = useMemo(() => {
   return selectedMealPlan ? getMealPlanProgress(selectedMealPlan) : null
 }, [selectedMealPlan])
-  const todayMealPlanProgress = useMemo(() => {
+
+const todayMealPlan = useMemo(() => {
+  const today = new Date().toISOString().slice(0, 10)
+  return mealPlans.find((plan) => plan.plan_date === today) || mealPlans[0] || null
+}, [mealPlans])
+
+const todayMealPlanProgress = useMemo(() => {
   return todayMealPlan ? getMealPlanProgress(todayMealPlan) : null
 }, [todayMealPlan])
 
@@ -807,10 +814,6 @@ const handleMealCheckSave = async (plan, meal, status) => {
     [key]: status === 'skipped' ? reason : '',
   }))
 }
-const todayMealPlan = useMemo(() => {
-  const today = new Date().toISOString().slice(0, 10)
-  return mealPlans.find((plan) => plan.plan_date === today) || mealPlans[0] || null
-}, [mealPlans])
 
   
  const visiblePrograms = useMemo(() => {
