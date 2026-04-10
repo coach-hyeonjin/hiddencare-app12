@@ -414,7 +414,9 @@ const [growthOpenSections, setGrowthOpenSections] = useState({
   xpLogs: false,
   ranking: false,
   activityRanking: false,
+  participationRanking: false,
 })
+  
   const [collapsedDiets, setCollapsedDiets] = useState({})
   const [dietForm, setDietForm] = useState(emptyDietForm)
   const [dietSearch, setDietSearch] = useState('')
@@ -829,6 +831,58 @@ const myActivityRankInfo = useMemo(() => {
     topTenRanking: sorted.slice(0, 10),
   }
 }, [activityRankingData.totalRanking, memberInfo?.id, member?.id])
+  const participationRankingData = useMemo(() => {
+  const totalRanking = [...(memberStats || [])]
+    .map((row) => {
+      const ptCount = Number(row.ptCount || 0)
+      const personalCount = Number(row.personalCount || 0)
+      const participationScore = ptCount * 2 + personalCount
+
+      return {
+        ...row,
+        participationScore,
+      }
+    })
+    .filter((row) => Number(row.participationScore || 0) > 0)
+    .sort((a, b) => {
+      const scoreDiff = Number(b.participationScore || 0) - Number(a.participationScore || 0)
+      if (scoreDiff !== 0) return scoreDiff
+
+      const ptDiff = Number(b.ptCount || 0) - Number(a.ptCount || 0)
+      if (ptDiff !== 0) return ptDiff
+
+      return String(a.name || '').localeCompare(String(b.name || ''), 'ko-KR')
+    })
+
+  return {
+    totalRanking,
+  }
+}, [memberStats])
+
+const myParticipationRankInfo = useMemo(() => {
+  const myId = String(memberInfo?.id || member?.id || '')
+
+  if (
+    !myId ||
+    !Array.isArray(participationRankingData.totalRanking) ||
+    participationRankingData.totalRanking.length === 0
+  ) {
+    return {
+      myRank: null,
+      myRankItem: null,
+      topTenRanking: [],
+    }
+  }
+
+  const sorted = [...participationRankingData.totalRanking]
+  const myIndex = sorted.findIndex((item) => String(item.id) === myId)
+
+  return {
+    myRank: myIndex >= 0 ? myIndex + 1 : null,
+    myRankItem: myIndex >= 0 ? sorted[myIndex] : null,
+    topTenRanking: sorted.slice(0, 10),
+  }
+}, [participationRankingData.totalRanking, memberInfo?.id, member?.id])
   const xpProgress = getXpProgress(growthSummary, memberLevelSettings)
   useEffect(() => {
     loadAll()
@@ -3035,6 +3089,72 @@ return { ok: true, xp: xpValue }
         })
       ) : (
         <div className="workout-list-empty">이번 달 활동 랭킹 데이터가 없습니다.</div>
+      )}
+    </div>
+  )}
+</section>
+    <section className="card growth-accordion-card">
+  <button
+    type="button"
+    className="growth-section-toggle"
+    onClick={() => toggleGrowthSection('participationRanking')}
+  >
+    <span>7. 참여 점수 랭킹 TOP 10</span>
+    <strong>{growthOpenSections.participationRanking ? '−' : '+'}</strong>
+  </button>
+
+  {growthOpenSections.participationRanking && (
+    <div className="list-stack">
+      <div className="compact-text">
+        PT 1회 = 2점 / 개인운동 1회 = 1점 기준입니다. 이름은 가운데 마스킹 처리되어 표시됩니다.
+      </div>
+
+      {myParticipationRankInfo.myRankItem && (
+        <div className="activity-rank-item growth-rank-self my-rank-card">
+          <div className="list-card-top">
+            <strong>
+              내 순위 · {myParticipationRankInfo.myRank}위 · {maskMemberName(myParticipationRankInfo.myRankItem.name || '회원')}
+            </strong>
+            <span className="activity-rank-score score-total">
+              총 {Number(myParticipationRankInfo.myRankItem.participationScore || 0)}점
+            </span>
+          </div>
+          <div className="compact-text">
+            PT {Number(myParticipationRankInfo.myRankItem.ptCount || 0)}회 / 개인운동 {Number(myParticipationRankInfo.myRankItem.personalCount || 0)}회 / 총 활동 {Number(myParticipationRankInfo.myRankItem.totalActivity || 0)}회
+          </div>
+        </div>
+      )}
+
+      {myParticipationRankInfo.topTenRanking.length ? (
+        myParticipationRankInfo.topTenRanking.map((item, index) => {
+          const isMe = String(item.id) === String(member?.id || memberInfo?.id || '')
+
+          return (
+            <div
+              key={item.id}
+              className={`activity-rank-item activity-rank-card ${
+                isMe ? 'growth-rank-self' : ''
+              } ${
+                index === 0 ? 'rank-1' : index === 1 ? 'rank-2' : index === 2 ? 'rank-3' : ''
+              }`}
+            >
+              <div className="list-card-top">
+                <strong>
+                  {index + 1}위 · {maskMemberName(item.name || '회원')}
+                </strong>
+                <span className="activity-rank-score score-total">
+                  총 {Number(item.participationScore || 0)}점
+                </span>
+              </div>
+              <div className="compact-text">
+                PT {Number(item.ptCount || 0)}회 / 개인운동 {Number(item.personalCount || 0)}회 / 총 활동 {Number(item.totalActivity || 0)}회
+                {isMe ? ' / 내 순위' : ''}
+              </div>
+            </div>
+          )
+        })
+      ) : (
+        <div className="workout-list-empty">참여 점수 랭킹 데이터가 없습니다.</div>
       )}
     </div>
   )}
