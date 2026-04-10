@@ -682,6 +682,45 @@ const getMealPlanProgress = (plan) => {
 const selectedMealPlanProgress = useMemo(() => {
   return selectedMealPlan ? getMealPlanProgress(selectedMealPlan) : null
 }, [selectedMealPlan])
+  const todayMealPlanProgress = useMemo(() => {
+  return todayMealPlan ? getMealPlanProgress(todayMealPlan) : null
+}, [todayMealPlan])
+
+const monthlyMealPlanProgress = useMemo(() => {
+  const plans = Array.isArray(mealPlans) ? mealPlans : []
+
+  if (plans.length === 0) {
+    return {
+      total: 0,
+      doneCount: 0,
+      skippedCount: 0,
+      pendingCount: 0,
+      percent: 0,
+    }
+  }
+
+  const merged = plans.reduce(
+    (acc, plan) => {
+      const progress = getMealPlanProgress(plan)
+      acc.total += progress.total
+      acc.doneCount += progress.doneCount
+      acc.skippedCount += progress.skippedCount
+      acc.pendingCount += progress.pendingCount
+      return acc
+    },
+    {
+      total: 0,
+      doneCount: 0,
+      skippedCount: 0,
+      pendingCount: 0,
+    }
+  )
+
+  return {
+    ...merged,
+    percent: merged.total > 0 ? Math.round((merged.doneCount / merged.total) * 100) : 0,
+  }
+}, [mealPlans])
   const getMealCheckEntry = (plan, slot) => {
   const logs = Array.isArray(plan?.checked_slots) ? plan.checked_slots : []
   return logs.find((item) => item.slot === slot) || null
@@ -5205,6 +5244,68 @@ return { ok: true, xp: xpValue }
         )}
       </section>
     </div>
+    <section className="meal-progress-dashboard-card">
+  <div className="meal-planner-card-label">MEAL PROGRESS</div>
+
+  <div className="meal-progress-dashboard-top">
+    <div>
+      <h3>식단 달성률 그래프</h3>
+      <p className="meal-planner-card-sub">
+        먹었어요 체크 기준으로 오늘 식단과 이번 달 전체 식단 달성률을 한눈에 보여줍니다.
+      </p>
+    </div>
+
+    <div className="meal-progress-dashboard-badge">
+      이번 달 평균 {monthlyMealPlanProgress.percent}%
+    </div>
+  </div>
+
+  <div className="meal-progress-dashboard-grid">
+    <div className="meal-progress-stat-card">
+      <span>오늘 달성률</span>
+      <strong>{todayMealPlanProgress?.percent || 0}%</strong>
+
+      <div className="meal-progress-bar">
+        <div
+          className="meal-progress-fill"
+          style={{ width: `${todayMealPlanProgress?.percent || 0}%` }}
+        />
+      </div>
+
+      <p>
+        완료 {todayMealPlanProgress?.doneCount || 0} / 총 {todayMealPlanProgress?.total || 0}끼
+      </p>
+    </div>
+
+    <div className="meal-progress-stat-card">
+      <span>이번 달 평균 달성률</span>
+      <strong>{monthlyMealPlanProgress.percent}%</strong>
+
+      <div className="meal-progress-bar">
+        <div
+          className="meal-progress-fill"
+          style={{ width: `${monthlyMealPlanProgress.percent}%` }}
+        />
+      </div>
+
+      <p>
+        완료 {monthlyMealPlanProgress.doneCount} / 총 {monthlyMealPlanProgress.total}끼
+      </p>
+    </div>
+
+    <div className="meal-progress-stat-card">
+      <span>못 먹음</span>
+      <strong>{monthlyMealPlanProgress.skippedCount}</strong>
+      <p>이번 달 누적 못 먹음 체크 수</p>
+    </div>
+
+    <div className="meal-progress-stat-card">
+      <span>미체크</span>
+      <strong>{monthlyMealPlanProgress.pendingCount}</strong>
+      <p>아직 체크되지 않은 식단 수</p>
+    </div>
+  </div>
+</section>
     <div className="card">
       <div className="member-diet-section-head">
         <div>
