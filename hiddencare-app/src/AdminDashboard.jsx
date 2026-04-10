@@ -831,6 +831,8 @@ const [mealPlanForm, setMealPlanForm] = useState(emptyMealPlanForm)
 const [mealPlanMonth, setMealPlanMonth] = useState(new Date().toISOString().slice(0, 7))
 const [memberNutritionProfiles, setMemberNutritionProfiles] = useState([])
 const [memberMealPlans, setMemberMealPlans] = useState([])
+  const [mealComplianceMonth, setMealComplianceMonth] = useState(new Date().toISOString().slice(0, 7))
+const [memberMealCompliancePlans, setMemberMealCompliancePlans] = useState([])
   const [mealPlanViewMonth, setMealPlanViewMonth] = useState(new Date().toISOString().slice(0, 7))
 const [editingMealPlanId, setEditingMealPlanId] = useState(null)
 const [mealPlanEditMeals, setMealPlanEditMeals] = useState([])
@@ -1469,7 +1471,53 @@ useEffect(() => {
 
   setMemberMealPlans(data || [])
 }
+const loadMealComplianceByMonth = async (memberId, monthValue) => {
+  if (!memberId || !monthValue) {
+    setMemberMealCompliancePlans([])
+    return
+  }
 
+  const [year, month] = String(monthValue).split('-').map(Number)
+  const lastDay = new Date(year, month, 0).getDate()
+
+  const { data, error } = await supabase
+    .from('member_meal_plans')
+    .select('*')
+    .eq('member_id', memberId)
+    .gte('plan_date', `${year}-${String(month).padStart(2, '0')}-01`)
+    .lte('plan_date', `${year}-${String(month).padStart(2, '0')}-${String(lastDay).padStart(2, '0')}`)
+    .order('plan_date', { ascending: true })
+
+  if (error) {
+    console.error('회원 식단 수행률 불러오기 실패:', error)
+    alert('회원 식단 수행률 불러오기 실패')
+    return
+  }
+
+  setMemberMealCompliancePlans(data || [])
+}
+  useEffect(() => {
+  if (!mealPlanForm.member_id || !mealComplianceMonth) return
+  loadMealComplianceByMonth(mealPlanForm.member_id, mealComplianceMonth)
+}, [mealPlanForm.member_id, mealComplianceMonth])
+  const getAdminMealPlanProgress = (plan) => {
+  const meals = Array.isArray(plan?.meals_json) ? plan.meals_json : []
+  const checks = Array.isArray(plan?.checked_slots) ? plan.checked_slots : []
+
+  const total = meals.length
+  const doneCount = checks.filter((item) => item.status === 'done').length
+  const skippedCount = checks.filter((item) => item.status === 'skipped').length
+  const pendingCount = Math.max(total - doneCount - skippedCount, 0)
+  const percent = total > 0 ? Math.round((doneCount / total) * 100) : 0
+
+  return {
+    total,
+    doneCount,
+    skippedCount,
+    pendingCount,
+    percent,
+  }
+}
 const handleMealPlanDelete = async (planId) => {
   if (!window.confirm('이 날짜 식단을 삭제할까요?')) return
 
@@ -11619,6 +11667,73 @@ const filteredExercisesAdvanced = exercises.filter((exercise) => {
         )}
       </div>
     ))
+  )}
+</div>
+      <div className="list-stack" style={{ marginTop: '20px' }}>
+  <div className="section-head">
+    <div>
+      <h3>회원 식단 수행률 보기</h3>
+      <p className="sub-text">
+        회원이 실제로 식단을 얼마나 지켰는지 월별로 확인하는 영역입니다.
+      </p>
+    </div>
+
+    <div className="inline-actions wrap">
+      <input
+        type="month"
+        value={mealComplianceMonth}
+        onChange={(e) => setMealComplianceMonth(e.target.value)}
+      />
+
+      <button
+        type="button"
+        className="secondary-btn"
+        onClick={() => loadMealComplianceByMonth(mealPlanForm.member_id, mealComplianceMonth)}
+      >
+        조회
+      </button>
+    </div>
+  </div>
+
+  {memberMealCompliancePlans.length === 0 ? (
+    <div className="workout-list-empty">해당 월 수행 기록이 없습니다.</div>
+  ) : (
+    <>
+      <div className="detail-box">
+        <p>
+          <strong>월 평균 수행률:</strong>{' '}
+          {Math.round(
+            memberMealCompliancePlans.reduce(
+              (sum, plan) => sum + getAdminMealPlanProgress(plan).percent,
+              0
+            ) / Math.max(memberMealCompliancePlans.length, 1)
+          )}%
+        </p>
+      </div>
+
+      <div className="list-stack">
+        {memberMealCompliancePlans.map((plan) => {
+          const progress = getAdminMealPlanProgress(plan)
+
+          return (
+            <div key={plan.id} className="list-card">
+              <div className="list-card-top">
+                <strong>{plan.plan_date}</strong>
+                <span className="pill">{progress.percent}%</span>
+              </div>
+
+              <div className="compact-text">
+                완료 {progress.doneCount} / 못 먹음 {progress.skippedCount} / 미체크 {progress.pendingCount} / 총 {progress.total}끼
+              </div>
+
+              <div className="compact-text">
+                유형: {plan.day_type || '-'} / 총 {plan.total_kcal || 0} kcal
+              </div>
+            </div>
+          )
+        })}
+      </div>
+    </>
   )}
 </div>
     </div>
