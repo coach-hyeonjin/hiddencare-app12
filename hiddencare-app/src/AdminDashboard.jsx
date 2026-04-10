@@ -824,6 +824,7 @@ const emptyMealPlanForm = {
   target_fat_g: '',
   excluded_foods: '',
   preferred_foods: '',
+  allergies: '',
   notes: '',
 }
 
@@ -1216,6 +1217,9 @@ const handleMealPlanSave = async () => {
     preferred_foods: mealPlanForm.preferred_foods
       ? mealPlanForm.preferred_foods.split(',').map((v) => v.trim()).filter(Boolean)
       : [],
+    allergies: mealPlanForm.allergies
+  ? mealPlanForm.allergies.split(',').map((v) => v.trim()).filter(Boolean)
+  : [],
     notes: mealPlanForm.notes || '',
   }
 
@@ -1279,6 +1283,7 @@ const loadMemberMealPlanProfile = async (memberId) => {
     target_fat_g: data.target_fat_g || '',
     excluded_foods: Array.isArray(data.excluded_foods) ? data.excluded_foods.join(', ') : '',
     preferred_foods: Array.isArray(data.preferred_foods) ? data.preferred_foods.join(', ') : '',
+    allergies: Array.isArray(data.allergies) ? data.allergies.join(', ') : '',
     notes: data.notes || '',
   })
 }
@@ -1404,15 +1409,54 @@ const getMealRotationIndex = (dateString, slot) => {
 
   return dayNumber + Number(slotOffsetMap[slot] || 0)
 }
+const filterMealsByPreference = (pool, preferences = {}) => {
+  const liked = Array.isArray(preferences.liked)
+    ? preferences.liked.map((item) => String(item || '').trim().toLowerCase()).filter(Boolean)
+    : []
 
-const getRotatingMealExample = (goalType, slot, dayType, dateString) => {
-  const pool = getMealPoolByGoalAndSlot(goalType, slot, dayType)
+  const disliked = Array.isArray(preferences.disliked)
+    ? preferences.disliked.map((item) => String(item || '').trim().toLowerCase()).filter(Boolean)
+    : []
+
+  const allergies = Array.isArray(preferences.allergies)
+    ? preferences.allergies.map((item) => String(item || '').trim().toLowerCase()).filter(Boolean)
+    : []
+
+  const blocked = [...new Set([...disliked, ...allergies])]
+
+  let filtered = pool.filter((meal) => {
+    const lower = String(meal || '').toLowerCase()
+    return !blocked.some((word) => lower.includes(word))
+  })
+
+  if (filtered.length === 0) {
+    filtered = pool
+  }
+
+  if (liked.length > 0) {
+    const likedFirst = filtered.filter((meal) => {
+      const lower = String(meal || '').toLowerCase()
+      return liked.some((word) => lower.includes(word))
+    })
+
+    if (likedFirst.length > 0) {
+      return likedFirst
+    }
+  }
+
+  return filtered
+}
+const getRotatingMealExample = (goalType, slot, dayType, dateString, preferences = {}) => {
+  const rawPool = getMealPoolByGoalAndSlot(goalType, slot, dayType)
+  const pool = filterMealsByPreference(rawPool, preferences)
+
   const index = getMealRotationIndex(dateString, slot) % pool.length
   return pool[index]
 }
 
-const getMealAlternatives = (goalType, slot, dayType, dateString, count = 2) => {
-  const pool = getMealPoolByGoalAndSlot(goalType, slot, dayType)
+const getMealAlternatives = (goalType, slot, dayType, dateString, count = 2, preferences = {}) => {
+  const rawPool = getMealPoolByGoalAndSlot(goalType, slot, dayType)
+  const pool = filterMealsByPreference(rawPool, preferences)
 
   if (pool.length <= 1) return []
 
@@ -1449,7 +1493,20 @@ const handleMealPlanMonthGenerate = async () => {
   const daysInMonth = new Date(year, month, 0).getDate()
   const mealSlots = buildMealSlotsByCount(mealPlanForm.meals_per_day)
   const trainingDays = Number(mealPlanForm.training_days_per_week || 3)
-
+const preferences = {
+  liked: String(mealPlanForm.preferred_foods || '')
+    .split(',')
+    .map((item) => item.trim())
+    .filter(Boolean),
+  disliked: String(mealPlanForm.excluded_foods || '')
+    .split(',')
+    .map((item) => item.trim())
+    .filter(Boolean),
+  allergies: String(mealPlanForm.allergies || '')
+    .split(',')
+    .map((item) => item.trim())
+    .filter(Boolean),
+}
   const rows = []
 
   for (let day = 1; day <= daysInMonth; day += 1) {
@@ -1486,8 +1543,8 @@ const handleMealPlanMonthGenerate = async () => {
         slot === '점심' ? '12:30' :
         slot === '운동후' ? '16:30' :
         slot === '간식' ? '16:30' : '19:30',
-      menu: getRotatingMealExample(mealPlanForm.goal_type, slot, dayType, date),
-alternatives: getMealAlternatives(mealPlanForm.goal_type, slot, dayType, date, 2),
+      menu: getRotatingMealExample(mealPlanForm.goal_type, slot, dayType, date, preferences),
+alternatives: getMealAlternatives(mealPlanForm.goal_type, slot, dayType, date, 2, preferences),
   carbs_g: Math.round(carbs / mealSlots.length),
   protein_g: Math.round(protein / mealSlots.length),
   fat_g: Math.round(fat / mealSlots.length),
@@ -11622,7 +11679,19 @@ const filteredExercisesAdvanced = exercises.filter((exercise) => {
           placeholder="예: 닭가슴살, 연어, 고구마"
         />
       </label>
-
+<label className="field">
+  <span>알레르기 / 절대 제외 음식 (쉼표로 구분)</span>
+  <input
+    value={mealPlanForm.allergies}
+    onChange={(e) =>
+      setMealPlanForm((prev) => ({
+        ...prev,
+        allergies: e.target.value,
+      }))
+    }
+    placeholder="예: 우유, 견과류, 갑각류"
+  />
+</label>
       <label className="field">
         <span>코치 메모</span>
         <textarea
