@@ -11381,21 +11381,33 @@ const filteredExercisesAdvanced = exercises.filter((exercise) => {
           <div className="workout-list-empty">아직 생성된 식단이 없습니다.</div>
         ) : (
           memberMealPlans.map((plan) => (
-            <div key={plan.id} className="list-card">
-              <div className="list-card-top">
-                <strong>{plan.plan_date}</strong>
-                <span className="pill">{plan.day_type}</span>
-              </div>
+  <div key={plan.id} className="list-card">
+    <div className="list-card-top">
+      <strong>{plan.plan_date}</strong>
+      <span className="pill">{plan.day_type}</span>
+    </div>
 
-              <div className="compact-text">
-                총 {plan.total_kcal || 0} kcal / 탄 {plan.total_carbs_g || 0} / 단 {plan.total_protein_g || 0} / 지 {plan.total_fat_g || 0}
-              </div>
+    <div className="compact-text" style={{ marginBottom: '8px' }}>
+      총 {plan.total_kcal || 0} kcal / 탄 {plan.total_carbs_g || 0} / 단 {plan.total_protein_g || 0} / 지 {plan.total_fat_g || 0}
+    </div>
 
-              <div className="compact-text">
-                식사 수: {Array.isArray(plan.meals_json) ? plan.meals_json.length : 0}끼
-              </div>
-            </div>
-          ))
+    <div className="compact-text" style={{ marginBottom: '10px' }}>
+      식사 수: {Array.isArray(plan.meals_json) ? plan.meals_json.length : 0}끼
+    </div>
+
+    {Array.isArray(plan.meals_json) && plan.meals_json.length > 0 ? (
+      <div className="detail-box">
+        {plan.meals_json.map((meal, index) => (
+          <div key={index} className="compact-text" style={{ marginBottom: '6px' }}>
+            <strong>{meal.slot || `식사 ${index + 1}`}</strong>: {meal.menu || '-'}
+          </div>
+        ))}
+      </div>
+    ) : (
+      <div className="compact-text">식단 내용이 없습니다.</div>
+    )}
+  </div>
+))
         )}
       </div>
     </div>
