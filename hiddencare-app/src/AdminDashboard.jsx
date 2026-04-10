@@ -1282,43 +1282,152 @@ const loadMemberMealPlanProfile = async (memberId) => {
     notes: data.notes || '',
   })
 }
-const getMealExampleByGoalAndSlot = (goalType, slot, dayType) => {
-  if (goalType === 'diet') {
-    if (slot === '아침') return '오트밀 60g · 계란 2개 · 바나나 1개'
-    if (slot === '점심') return '현미밥 150g · 닭가슴살 150g · 샐러드'
-    if (slot === '간식') return '그릭요거트 1개 · 아몬드 소량'
-    if (slot === '저녁') return dayType === 'training'
-      ? '잡곡밥 120g · 연어 150g · 나물반찬'
-      : '두부 200g · 샐러드 · 계란 2개'
-    if (slot === '오전간식') return '삶은계란 2개'
-    if (slot === '운동후') return '프로틴 1회 · 바나나 1개'
+const getMealPoolByGoalAndSlot = (goalType, slot, dayType) => {
+  const common = {
+    아침: [
+      '밥 200g · 계란 3개 · 닭가슴살 100g',
+      '오트밀 80g · 그릭요거트 1개 · 바나나 1개',
+      '고구마 200g · 계란 2개 · 닭가슴살 120g',
+      '현미밥 150g · 두부 200g · 김치',
+      '식빵 2장 · 땅콩버터 · 삶은계란 2개',
+      '밥 180g · 연어 120g · 계란 1개',
+    ],
+    점심: [
+      '현미밥 200g · 소고기 150g · 야채반찬',
+      '잡곡밥 180g · 닭다리살 150g · 나물반찬',
+      '밥 200g · 제육 150g · 상추',
+      '현미밥 180g · 연어 150g · 샐러드',
+      '고구마 250g · 닭가슴살 150g · 아보카도',
+      '밥 200g · 두부부침 · 계란말이 · 김치',
+    ],
+    저녁: [
+      '잡곡밥 180g · 연어 150g · 샐러드',
+      '현미밥 150g · 닭가슴살 150g · 야채볶음',
+      '고구마 200g · 계란 3개 · 샐러드',
+      '밥 180g · 소고기 120g · 나물반찬',
+      '두부 250g · 밥 120g · 김치',
+      '현미밥 150g · 오징어볶음 · 샐러드',
+    ],
+    간식: [
+      '프로틴 1회 · 바나나 1개',
+      '그릭요거트 1개 · 아몬드 소량',
+      '삶은계란 2개 · 방울토마토',
+      '고구마 100g · 프로틴 1회',
+      '우유 · 식빵 2장',
+      '사과 1개 · 프로틴바 1개',
+    ],
+    오전간식: [
+      '삶은계란 2개',
+      '그릭요거트 1개',
+      '바나나 1개 · 아몬드 소량',
+      '프로틴 음료 1개',
+    ],
+    운동후: [
+      '프로틴 1회 · 바나나 1개',
+      '초코우유 · 바나나 1개',
+      '프로틴 1회 · 식빵 2장',
+      '그릭요거트 · 꿀 소량',
+    ],
   }
 
-  if (goalType === 'muscle_gain') {
-    if (slot === '아침') return '밥 200g · 계란 3개 · 닭가슴살 100g'
-    if (slot === '점심') return '현미밥 200g · 소고기 150g · 야채반찬'
-    if (slot === '간식') return '고구마 150g · 프로틴 1회'
-    if (slot === '저녁') return '잡곡밥 180g · 연어 150g · 샐러드'
-    if (slot === '오전간식') return '바나나 1개 · 그릭요거트 1개'
-    if (slot === '운동후') return '프로틴 1회 · 바나나 1개'
+  const dietRest = {
+    저녁: [
+      '두부 200g · 샐러드 · 계란 2개',
+      '닭가슴살 150g · 샐러드 · 고구마 100g',
+      '연어 120g · 샐러드 · 방울토마토',
+      '계란 3개 · 두부 150g · 나물반찬',
+      '닭안심 150g · 채소볶음',
+    ],
+    간식: [
+      '그릭요거트 1개',
+      '삶은계란 2개',
+      '방울토마토 · 치즈 1장',
+      '프로틴 1회',
+    ],
   }
 
-  if (goalType === 'bulk') {
-    if (slot === '아침') return '밥 250g · 계란 3개 · 닭가슴살 150g'
-    if (slot === '점심') return '밥 250g · 소고기 180g · 야채반찬'
-    if (slot === '간식') return '고구마 200g · 프로틴 1회'
-    if (slot === '저녁') return '밥 220g · 연어 180g · 샐러드'
-    if (slot === '오전간식') return '식빵 2장 · 땅콩버터 · 우유'
-    if (slot === '운동후') return '프로틴 1회 · 바나나 2개'
+  const bulkExtra = {
+    아침: [
+      '밥 250g · 계란 4개 · 닭가슴살 150g',
+      '오트밀 100g · 우유 · 바나나 2개 · 프로틴 1회',
+    ],
+    점심: [
+      '밥 250g · 소고기 180g · 야채반찬',
+      '현미밥 250g · 닭다리살 180g · 아보카도',
+    ],
+    저녁: [
+      '잡곡밥 220g · 연어 180g · 샐러드',
+      '밥 220g · 제육 180g · 김치',
+    ],
+    간식: [
+      '고구마 200g · 프로틴 1회',
+      '식빵 2장 · 땅콩버터 · 우유',
+    ],
   }
 
-  if (slot === '아침') return '현미밥 · 계란 · 과일'
-  if (slot === '점심') return '밥 · 단백질식품 · 채소'
-  if (slot === '간식') return '요거트 또는 프로틴'
-  if (slot === '저녁') return '단백질식품 · 채소 · 적당량 탄수화물'
-  if (slot === '오전간식') return '과일 또는 삶은계란'
-  if (slot === '운동후') return '프로틴 또는 바나나'
-  return '식단 구성'
+  let result = { ...common }
+
+  if (goalType === 'diet' || goalType === 'recomposition') {
+    if (dayType === 'rest') {
+      result = {
+        ...result,
+        저녁: dietRest.저녁,
+        간식: dietRest.간식,
+      }
+    }
+  }
+
+  if (goalType === 'muscle_gain' || goalType === 'bulk') {
+    result = {
+      ...result,
+      아침: [...bulkExtra.아침, ...result.아침],
+      점심: [...bulkExtra.점심, ...result.점심],
+      저녁: [...bulkExtra.저녁, ...result.저녁],
+      간식: [...bulkExtra.간식, ...result.간식],
+    }
+  }
+
+  return result[slot] || ['현미밥 · 단백질식품 · 채소']
+}
+
+const getMealRotationIndex = (dateString, slot) => {
+  const dayNumber = Number(String(dateString || '').slice(-2)) || 1
+
+  const slotOffsetMap = {
+    아침: 0,
+    오전간식: 1,
+    점심: 2,
+    운동후: 3,
+    간식: 4,
+    저녁: 5,
+  }
+
+  return dayNumber + Number(slotOffsetMap[slot] || 0)
+}
+
+const getRotatingMealExample = (goalType, slot, dayType, dateString) => {
+  const pool = getMealPoolByGoalAndSlot(goalType, slot, dayType)
+  const index = getMealRotationIndex(dateString, slot) % pool.length
+  return pool[index]
+}
+
+const getMealAlternatives = (goalType, slot, dayType, dateString, count = 2) => {
+  const pool = getMealPoolByGoalAndSlot(goalType, slot, dayType)
+
+  if (pool.length <= 1) return []
+
+  const startIndex = getMealRotationIndex(dateString, slot) % pool.length
+  const result = []
+
+  for (let i = 1; i < pool.length; i += 1) {
+    const nextItem = pool[(startIndex + i) % pool.length]
+    if (!result.includes(nextItem)) {
+      result.push(nextItem)
+    }
+    if (result.length >= count) break
+  }
+
+  return result
 }
 const handleMealPlanMonthGenerate = async () => {
   if (!mealPlanForm.member_id) {
@@ -1377,7 +1486,8 @@ const handleMealPlanMonthGenerate = async () => {
         slot === '점심' ? '12:30' :
         slot === '운동후' ? '16:30' :
         slot === '간식' ? '16:30' : '19:30',
-      menu: getMealExampleByGoalAndSlot(mealPlanForm.goal_type, slot, dayType),
+      menu: getRotatingMealExample(mealPlanForm.goal_type, slot, dayType, date),
+alternatives: getMealAlternatives(mealPlanForm.goal_type, slot, dayType, date, 2),
   carbs_g: Math.round(carbs / mealSlots.length),
   protein_g: Math.round(protein / mealSlots.length),
   fat_g: Math.round(fat / mealSlots.length),
