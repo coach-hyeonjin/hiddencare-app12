@@ -427,6 +427,7 @@ const [growthOpenSections, setGrowthOpenSections] = useState({
 const [mealPlanMonth, setMealPlanMonth] = useState(new Date().toISOString().slice(0, 7))
 const [collapsedMealPlans, setCollapsedMealPlans] = useState({})
   const [mealPlanProfile, setMealPlanProfile] = useState(null)
+  const [selectedMealPlanDate, setSelectedMealPlanDate] = useState('')
   const [healthLogs, setHealthLogs] = useState([])
   const [collapsedHealthLogs, setCollapsedHealthLogs] = useState({})
   const [healthForm, setHealthForm] = useState(emptyHealthForm)
@@ -621,11 +622,48 @@ const mealPlanPurposeInfo = useMemo(() => {
     mealsPerDay: Number(mealPlanProfile?.meals_per_day || 0),
   }
 }, [mealPlanProfile])
+const mealPlanCalendarData = useMemo(() => {
+  const [year, month] = String(mealPlanMonth || '').split('-').map(Number)
 
+  if (!year || !month) {
+    return {
+      days: [],
+      blanks: [],
+    }
+  }
+
+  const firstDay = new Date(year, month - 1, 1).getDay()
+  const daysInMonth = new Date(year, month, 0).getDate()
+
+  const planMap = new Map(
+    (mealPlans || []).map((plan) => [plan.plan_date, plan])
+  )
+
+  const blanks = Array.from({ length: firstDay }, (_, index) => `blank-${index}`)
+
+  const days = Array.from({ length: daysInMonth }, (_, index) => {
+    const day = index + 1
+    const date = `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`
+    return {
+      date,
+      day,
+      plan: planMap.get(date) || null,
+    }
+  })
+
+  return { days, blanks }
+}, [mealPlans, mealPlanMonth])
+
+const selectedMealPlan = useMemo(() => {
+  if (!selectedMealPlanDate) return null
+  return mealPlans.find((plan) => plan.plan_date === selectedMealPlanDate) || null
+}, [mealPlans, selectedMealPlanDate])
 const todayMealPlan = useMemo(() => {
   const today = new Date().toISOString().slice(0, 10)
   return mealPlans.find((plan) => plan.plan_date === today) || mealPlans[0] || null
 }, [mealPlans])
+
+  
  const visiblePrograms = useMemo(() => {
   return (programs || [])
     .filter((program) => program.is_visible_to_members !== false)
@@ -938,7 +976,20 @@ const myParticipationRankInfo = useMemo(() => {
   const xpProgress = getXpProgress(growthSummary, memberLevelSettings)
   useEffect(() => {
     loadAll()
-  }, [member?.id])
+ }, [member?.id, mealPlanMonth])
+  useEffect(() => {
+  if (todayMealPlan?.plan_date) {
+    setSelectedMealPlanDate(todayMealPlan.plan_date)
+    return
+  }
+
+  if (mealPlans.length > 0) {
+    setSelectedMealPlanDate(mealPlans[0].plan_date)
+    return
+  }
+
+  setSelectedMealPlanDate('')
+}, [todayMealPlan, mealPlans])
 useEffect(() => {
   const latestNotice = notices[0]
   const storageKey = `member_last_notice_${member?.id || 'default'}`
@@ -5072,73 +5123,146 @@ return { ok: true, xp: xpValue }
       </div>
 
       <div className="list-stack">
-        {mealPlans.length === 0 ? (
-          <div className="workout-list-empty">해당 월에 등록된 식단 계획이 없습니다.</div>
-        ) : (
-          mealPlans.map((plan) => {
-            const collapsed = collapsedMealPlans[plan.id] ?? true
+  {mealPlans.length === 0 ? (
+    <div className="workout-list-empty">해당 월에 등록된 식단 계획이 없습니다.</div>
+  ) : (
+    <>
+      <div
+        style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(7, minmax(0, 1fr))',
+          gap: '10px',
+          marginBottom: '20px',
+        }}
+      >
+        {['일', '월', '화', '수', '목', '금', '토'].map((day) => (
+          <div
+            key={day}
+            style={{
+              fontSize: '12px',
+              fontWeight: 700,
+              color: '#667085',
+              textAlign: 'center',
+              paddingBottom: '6px',
+            }}
+          >
+            {day}
+          </div>
+        ))}
 
-            return (
-              <div key={plan.id} className="member-diet-log-item">
-                <div className="member-diet-log-top">
-                  <div>
-                    <div className="member-diet-log-title-row">
-                      <strong>{plan.plan_date}</strong>
-                      <span className="pill">{plan.day_type}</span>
-                    </div>
+        {mealPlanCalendarData.blanks.map((blank) => (
+          <div key={blank} />
+        ))}
 
-                    <div className="member-diet-log-summary">
-                      총 {plan.total_kcal || 0} kcal / 탄 {plan.total_carbs_g || 0} / 단 {plan.total_protein_g || 0} / 지 {plan.total_fat_g || 0}
-                    </div>
-                  </div>
+        {mealPlanCalendarData.days.map((item) => {
+          const isSelected = selectedMealPlanDate === item.date
+          const plan = item.plan
 
-                  <div className="member-diet-log-right">
-                    <div className="member-diet-mini-chip">
-                      식사 {Array.isArray(plan.meals_json) ? plan.meals_json.length : 0}끼
-                    </div>
-                  </div>
-                </div>
-
-                <div className="inline-actions wrap">
-                  <button
-                    type="button"
-                    className="secondary-btn"
-                    onClick={() =>
-                      setCollapsedMealPlans((prev) => ({
-                        ...prev,
-                        [plan.id]: !collapsed,
-                      }))
-                    }
-                  >
-                    {collapsed ? '상세히보기' : '간략히보기'}
-                  </button>
-                </div>
-
-                {!collapsed ? (
-                  <div className="member-diet-detail-box">
-                    {Array.isArray(plan.meals_json) && plan.meals_json.length > 0 ? (
-                      <div className="member-diet-content-box">
-                        <span>오늘 식단</span>
-
-                        {plan.meals_json.map((meal, index) => (
-                          <p key={index} style={{ marginBottom: '8px' }}>
-                            <strong>{meal.slot || `식사 ${index + 1}`}</strong>: {meal.menu || '-'}
-                          </p>
-                        ))}
-                      </div>
-                    ) : (
-                      <div className="member-diet-content-box">
-                        <span>오늘 식단</span>
-                        <p>식단 내용이 없습니다.</p>
-                      </div>
-                    )}
-                  </div>
-                ) : null}
+          return (
+            <button
+              key={item.date}
+              type="button"
+              onClick={() => setSelectedMealPlanDate(item.date)}
+              style={{
+                minHeight: '108px',
+                borderRadius: '16px',
+                border: isSelected ? '2px solid #6366f1' : '1px solid #d9e1f2',
+                background: plan ? '#ffffff' : '#f8fafc',
+                padding: '10px',
+                textAlign: 'left',
+                cursor: 'pointer',
+              }}
+            >
+              <div style={{ fontSize: '14px', fontWeight: 700, marginBottom: '8px' }}>
+                {item.day}
               </div>
-            )
-          })
+
+              {plan ? (
+                <>
+                  <div style={{ fontSize: '11px', marginBottom: '6px', color: '#4f46e5', fontWeight: 700 }}>
+                    {plan.day_type}
+                  </div>
+                  <div style={{ fontSize: '11px', color: '#667085', marginBottom: '4px' }}>
+                    {Array.isArray(plan.meals_json) ? plan.meals_json.length : 0}끼
+                  </div>
+                  <div style={{ fontSize: '11px', color: '#667085' }}>
+                    {plan.total_kcal || 0} kcal
+                  </div>
+                </>
+              ) : (
+                <div style={{ fontSize: '11px', color: '#98a2b3' }}>식단 없음</div>
+              )}
+            </button>
+          )
+        })}
+      </div>
+
+      <div className="card" style={{ padding: '18px' }}>
+        {!selectedMealPlan ? (
+          <div className="workout-list-empty">선택한 날짜의 식단이 없습니다.</div>
+        ) : (
+          <>
+            <div className="member-diet-section-head" style={{ marginBottom: '12px' }}>
+              <div>
+                <div className="member-diet-section-label">SELECTED DAY</div>
+                <h2>{selectedMealPlan.plan_date} 식단</h2>
+                <p className="sub-text">
+                  선택한 날짜의 상세 식단입니다.
+                </p>
+              </div>
+            </div>
+
+            <div className="member-diet-detail-grid" style={{ marginBottom: '14px' }}>
+              <div className="member-diet-detail-card">
+                <span>유형</span>
+                <strong>{selectedMealPlan.day_type}</strong>
+              </div>
+
+              <div className="member-diet-detail-card">
+                <span>하루 열량</span>
+                <strong>{selectedMealPlan.total_kcal || 0} kcal</strong>
+              </div>
+
+              <div className="member-diet-detail-card">
+                <span>탄수화물</span>
+                <strong>{selectedMealPlan.total_carbs_g || 0} g</strong>
+              </div>
+
+              <div className="member-diet-detail-card">
+                <span>단백질</span>
+                <strong>{selectedMealPlan.total_protein_g || 0} g</strong>
+              </div>
+
+              <div className="member-diet-detail-card">
+                <span>지방</span>
+                <strong>{selectedMealPlan.total_fat_g || 0} g</strong>
+              </div>
+
+              <div className="member-diet-detail-card">
+                <span>식사 수</span>
+                <strong>{Array.isArray(selectedMealPlan.meals_json) ? selectedMealPlan.meals_json.length : 0}끼</strong>
+              </div>
+            </div>
+
+            <div className="member-diet-content-box">
+              <span>식단 상세</span>
+
+              {Array.isArray(selectedMealPlan.meals_json) && selectedMealPlan.meals_json.length > 0 ? (
+                selectedMealPlan.meals_json.map((meal, index) => (
+                  <p key={index} style={{ marginBottom: '8px' }}>
+                    <strong>{meal.slot || `식사 ${index + 1}`}</strong>: {meal.menu || '-'}
+                  </p>
+                ))
+              ) : (
+                <p>등록된 식단이 없습니다.</p>
+              )}
+            </div>
+          </>
         )}
       </div>
+    </>
+  )}
+</div>
     </div>
   </div>
 )}
