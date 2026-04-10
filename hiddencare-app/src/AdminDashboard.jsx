@@ -1126,10 +1126,22 @@ const handleMealPlanGenerate = () => {
   const member = members.find((m) => m.id === mealPlanForm.member_id)
   if (!member) return alert('회원 선택')
 
-  const health = memberHealthLogs.find((h) => h.member_id === member.id)
-  if (!health) return alert('인바디 없음')
+  const memberHealthList = memberHealthLogs
+    .filter((h) => h.member_id === member.id)
+    .sort((a, b) => String(b.record_date || '').localeCompare(String(a.record_date || '')))
+
+  const health = memberHealthList[0]
+
+  if (!health) {
+    alert('해당 회원 건강정보 없음')
+    return
+  }
 
   const weight = Number(health.weight_kg || 0)
+  if (!weight) {
+    alert('체중 데이터 없음')
+    return
+  }
 
   let kcal = weight * 30
 
@@ -1141,7 +1153,7 @@ const handleMealPlanGenerate = () => {
 
   const protein = weight * 2
   const fat = weight * 0.8
-  const carb = (kcal - (protein * 4 + fat * 9)) / 4
+  const carb = (kcal - protein * 4 - fat * 9) / 4
 
   const mealsPerDay = Number(mealPlanForm.meals_per_day || 3)
 
