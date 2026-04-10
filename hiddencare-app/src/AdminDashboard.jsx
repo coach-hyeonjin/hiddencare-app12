@@ -1122,15 +1122,28 @@ const [selectedXpMemberId, setSelectedXpMemberId] = useState('')
   })
 const [editingManagerActionId, setEditingManagerActionId] = useState(null)
 
-const handleMealPlanGenerate = () => {
+const handleMealPlanGenerate = async () => {
   const member = members.find((m) => m.id === mealPlanForm.member_id)
-  if (!member) return alert('회원 선택')
+  if (!member) {
+    alert('회원 선택')
+    return
+  }
 
-  const memberHealthList = memberHealthLogs
-    .filter((h) => h.member_id === member.id)
-    .sort((a, b) => String(b.record_date || '').localeCompare(String(a.record_date || '')))
+  const { data: healthData, error: healthError } = await supabase
+    .from('member_health_logs')
+    .select('*')
+    .eq('member_id', member.id)
+    .order('record_date', { ascending: false })
+    .order('created_at', { ascending: false })
+    .limit(1)
 
-  const health = memberHealthList[0]
+  if (healthError) {
+    console.error('건강정보 불러오기 실패:', healthError)
+    alert('건강정보 불러오기 실패')
+    return
+  }
+
+  const health = Array.isArray(healthData) ? healthData[0] : null
 
   if (!health) {
     alert('해당 회원 건강정보 없음')
@@ -1138,6 +1151,7 @@ const handleMealPlanGenerate = () => {
   }
 
   const weight = Number(health.weight_kg || 0)
+
   if (!weight) {
     alert('체중 데이터 없음')
     return
