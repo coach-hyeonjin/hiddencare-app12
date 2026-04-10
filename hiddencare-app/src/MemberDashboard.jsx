@@ -426,7 +426,7 @@ const [growthOpenSections, setGrowthOpenSections] = useState({
   const [mealPlans, setMealPlans] = useState([])
 const [mealPlanMonth, setMealPlanMonth] = useState(new Date().toISOString().slice(0, 7))
 const [collapsedMealPlans, setCollapsedMealPlans] = useState({})
-  
+  const [mealPlanProfile, setMealPlanProfile] = useState(null)
   const [healthLogs, setHealthLogs] = useState([])
   const [collapsedHealthLogs, setCollapsedHealthLogs] = useState({})
   const [healthForm, setHealthForm] = useState(emptyHealthForm)
@@ -578,7 +578,54 @@ const calculatedRecommendedKcal = useMemo(() => {
       return matchesMeal && matchesKeyword
     })
   }, [dietLogs, dietMealFilter, dietSearch])
+const mealPlanPurposeInfo = useMemo(() => {
+  const goalType = String(mealPlanProfile?.goal_type || '').trim()
 
+  const goalMap = {
+    diet: {
+      label: '체지방 감량',
+      reason:
+        '체지방을 줄이고 몸을 더 가볍게 만들기 위해 총 섭취 열량을 조절하고, 단백질을 충분히 확보하는 식단입니다.',
+    },
+    recomposition: {
+      label: '체형 개선',
+      reason:
+        '체지방은 줄이고 몸의 균형과 라인을 더 좋게 만들기 위해, 과하지 않은 열량과 안정적인 단백질 섭취를 맞추는 식단입니다.',
+    },
+    maintenance: {
+      label: '유지',
+      reason:
+        '현재 몸 상태를 안정적으로 유지하기 위해 과식이나 부족함 없이, 일정한 열량과 균형 잡힌 식사를 이어가는 식단입니다.',
+    },
+    muscle_gain: {
+      label: '근비대',
+      reason:
+        '근육량을 늘리고 운동 후 회복을 돕기 위해 단백질과 총 섭취 열량을 충분히 확보하는 식단입니다.',
+    },
+    bulk: {
+      label: '벌크업',
+      reason:
+        '체중과 근육량 증가를 목표로, 전체 섭취 열량과 탄수화물 비중을 높여 몸을 키우기 위한 식단입니다.',
+    },
+  }
+
+  const current = goalMap[goalType] || {
+    label: '맞춤 식단',
+    reason: '현재 회원님 상태와 목표에 맞춰 코치가 설정한 맞춤 식단입니다.',
+  }
+
+  return {
+    label: current.label,
+    reason: current.reason,
+    targetKcal: Number(mealPlanProfile?.target_kcal || 0),
+    mealsPerDay: Number(mealPlanProfile?.meals_per_day || 0),
+  }
+}, [mealPlanProfile])
+
+const todayMealPlan = useMemo(() => {
+  const today = new Date().toISOString().slice(0, 10)
+  return mealPlans.find((plan) => plan.plan_date === today) || mealPlans[0] || null
+}, [mealPlans])
  const visiblePrograms = useMemo(() => {
   return (programs || [])
     .filter((program) => program.is_visible_to_members !== false)
@@ -1103,6 +1150,14 @@ const toggleGrowthSection = (key) => {
   loadWorkouts(),
   loadDietLogs(),
   loadMealPlans(),
+        loadExercises(adminId),
+loadWorkouts(),
+loadDietLogs(),
+loadMealPlans(),
+loadMealPlanProfile(),
+loadHealthLogs(),
+loadRoutine(),
+loadManual(),
   loadHealthLogs(),
   loadRoutine(),
   loadManual(),
@@ -1353,6 +1408,20 @@ const loadMemberLevelRanking = async (targetAdminId = null) => {
       setCollapsedHealthLogs(collapsed)
     }
   }
+  const loadMealPlanProfile = async () => {
+  const { data, error } = await supabase
+    .from('member_nutrition_profiles')
+    .select('*')
+    .eq('member_id', member.id)
+    .maybeSingle()
+
+  if (error) {
+    console.error('회원 식단 프로필 불러오기 실패:', error)
+    return
+  }
+
+  setMealPlanProfile(data || null)
+}
 const loadMealPlans = async () => {
   const [year, month] = String(mealPlanMonth || '').split('-').map(Number)
 
@@ -4883,7 +4952,98 @@ return { ok: true, xp: xpValue }
         </div>
       </div>
     </section>
+    <div className="two-col member-diet-layout" style={{ marginBottom: '20px' }}>
+      <section className="card member-diet-log-card">
+        <div className="member-diet-section-head">
+          <div>
+            <div className="member-diet-section-label">WHY THIS PLAN</div>
+            <h2>왜 이 식단을 하나요?</h2>
+            <p className="sub-text">
+              코치가 설정한 현재 식단 목적과 이유를 안내하는 영역입니다.
+            </p>
+          </div>
+        </div>
 
+        <div className="member-diet-detail-box">
+          <div className="member-diet-detail-grid">
+            <div className="member-diet-detail-card">
+              <span>현재 목적</span>
+              <strong>{mealPlanPurposeInfo.label}</strong>
+            </div>
+
+            <div className="member-diet-detail-card">
+              <span>하루 목표 열량</span>
+              <strong>{mealPlanPurposeInfo.targetKcal || 0} kcal</strong>
+            </div>
+
+            <div className="member-diet-detail-card">
+              <span>식사 횟수</span>
+              <strong>{mealPlanPurposeInfo.mealsPerDay || 0}끼</strong>
+            </div>
+          </div>
+
+          <div className="member-diet-content-box">
+            <span>식단 목적 설명</span>
+            <p>{mealPlanPurposeInfo.reason}</p>
+          </div>
+        </div>
+      </section>
+
+      <section className="card member-diet-log-card">
+        <div className="member-diet-section-head">
+          <div>
+            <div className="member-diet-section-label">TODAY MEAL</div>
+            <h2>오늘 식단</h2>
+            <p className="sub-text">
+              오늘 날짜 기준으로 적용되는 식단을 먼저 보여주는 영역입니다.
+            </p>
+          </div>
+        </div>
+
+        {!todayMealPlan ? (
+          <div className="workout-list-empty">오늘 확인할 식단이 없습니다.</div>
+        ) : (
+          <div className="member-diet-detail-box">
+            <div className="member-diet-detail-grid">
+              <div className="member-diet-detail-card">
+                <span>날짜</span>
+                <strong>{todayMealPlan.plan_date}</strong>
+              </div>
+
+              <div className="member-diet-detail-card">
+                <span>유형</span>
+                <strong>{todayMealPlan.day_type}</strong>
+              </div>
+
+              <div className="member-diet-detail-card">
+                <span>하루 열량</span>
+                <strong>{todayMealPlan.total_kcal || 0} kcal</strong>
+              </div>
+
+              <div className="member-diet-detail-card">
+                <span>탄단지</span>
+                <strong>
+                  탄 {todayMealPlan.total_carbs_g || 0} / 단 {todayMealPlan.total_protein_g || 0} / 지 {todayMealPlan.total_fat_g || 0}
+                </strong>
+              </div>
+            </div>
+
+            <div className="member-diet-content-box">
+              <span>오늘 식단</span>
+              {Array.isArray(todayMealPlan.meals_json) && todayMealPlan.meals_json.length > 0 ? (
+                todayMealPlan.meals_json.map((meal, index) => (
+                  <p key={index} style={{ marginBottom: '8px' }}>
+                    <strong>{meal.slot || `식사 ${index + 1}`}</strong>: {meal.menu || '-'}
+                  </p>
+                ))
+              ) : (
+                <p>등록된 식단이 없습니다.</p>
+              )}
+            </div>
+          </div>
+        )}
+      </section>
+    </div>
     <div className="card">
       <div className="member-diet-section-head">
         <div>
