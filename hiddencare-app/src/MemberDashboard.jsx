@@ -660,6 +660,28 @@ const selectedMealPlan = useMemo(() => {
   if (!selectedMealPlanDate) return null
   return mealPlans.find((plan) => plan.plan_date === selectedMealPlanDate) || null
 }, [mealPlans, selectedMealPlanDate])
+const getMealPlanProgress = (plan) => {
+  const meals = Array.isArray(plan?.meals_json) ? plan.meals_json : []
+  const checks = Array.isArray(plan?.checked_slots) ? plan.checked_slots : []
+
+  const total = meals.length
+  const doneCount = checks.filter((item) => item.status === 'done').length
+  const skippedCount = checks.filter((item) => item.status === 'skipped').length
+  const pendingCount = Math.max(total - doneCount - skippedCount, 0)
+  const percent = total > 0 ? Math.round((doneCount / total) * 100) : 0
+
+  return {
+    total,
+    doneCount,
+    skippedCount,
+    pendingCount,
+    percent,
+  }
+}
+
+const selectedMealPlanProgress = useMemo(() => {
+  return selectedMealPlan ? getMealPlanProgress(selectedMealPlan) : null
+}, [selectedMealPlan])
   const getMealCheckEntry = (plan, slot) => {
   const logs = Array.isArray(plan?.checked_slots) ? plan.checked_slots : []
   return logs.find((item) => item.slot === slot) || null
@@ -5266,18 +5288,21 @@ return { ok: true, xp: xpValue }
               </div>
 
               {plan ? (
-                <>
-                  <div style={{ fontSize: '11px', marginBottom: '6px', color: '#4f46e5', fontWeight: 700 }}>
-                    {plan.day_type}
-                  </div>
-                  <div style={{ fontSize: '11px', color: '#667085', marginBottom: '4px' }}>
-                    {Array.isArray(plan.meals_json) ? plan.meals_json.length : 0}끼
-                  </div>
-                  <div style={{ fontSize: '11px', color: '#667085' }}>
-                    {plan.total_kcal || 0} kcal
-                  </div>
-                </>
-              ) : (
+  <>
+    <div style={{ fontSize: '11px', marginBottom: '6px', color: '#4f46e5', fontWeight: 700 }}>
+      {plan.day_type}
+    </div>
+    <div style={{ fontSize: '11px', color: '#667085', marginBottom: '4px' }}>
+      {Array.isArray(plan.meals_json) ? plan.meals_json.length : 0}끼
+    </div>
+    <div style={{ fontSize: '11px', color: '#667085', marginBottom: '4px' }}>
+      {plan.total_kcal || 0} kcal
+    </div>
+    <div style={{ fontSize: '11px', color: '#16a34a', fontWeight: 700 }}>
+      완료 {getMealPlanProgress(plan).doneCount}/{getMealPlanProgress(plan).total}
+    </div>
+  </>
+) : (
                 <div style={{ fontSize: '11px', color: '#98a2b3' }}>식단 없음</div>
               )}
             </button>
@@ -5330,6 +5355,16 @@ return { ok: true, xp: xpValue }
                 <span>식사 수</span>
                 <strong>{Array.isArray(selectedMealPlan.meals_json) ? selectedMealPlan.meals_json.length : 0}끼</strong>
               </div>
+              <div className="member-diet-detail-card">
+  <span>수행률</span>
+  <strong>{selectedMealPlanProgress?.percent || 0}%</strong>
+</div>
+              <div className="member-diet-detail-card">
+  <span>완료 / 못 먹음 / 미체크</span>
+  <strong>
+    {selectedMealPlanProgress?.doneCount || 0} / {selectedMealPlanProgress?.skippedCount || 0} / {selectedMealPlanProgress?.pendingCount || 0}
+  </strong>
+</div>
             </div>
 
            <div className="member-diet-content-box">
