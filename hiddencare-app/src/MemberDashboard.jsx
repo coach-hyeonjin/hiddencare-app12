@@ -428,6 +428,8 @@ const [mealPlanMonth, setMealPlanMonth] = useState(new Date().toISOString().slic
 const [collapsedMealPlans, setCollapsedMealPlans] = useState({})
   const [mealPlanProfile, setMealPlanProfile] = useState(null)
   const [selectedMealPlanDate, setSelectedMealPlanDate] = useState('')
+  const [mealCheckDrafts, setMealCheckDrafts] = useState({})
+const [savingMealCheckKey, setSavingMealCheckKey] = useState('')
   const [healthLogs, setHealthLogs] = useState([])
   const [collapsedHealthLogs, setCollapsedHealthLogs] = useState({})
   const [healthForm, setHealthForm] = useState(emptyHealthForm)
@@ -658,6 +660,92 @@ const selectedMealPlan = useMemo(() => {
   if (!selectedMealPlanDate) return null
   return mealPlans.find((plan) => plan.plan_date === selectedMealPlanDate) || null
 }, [mealPlans, selectedMealPlanDate])
+  const getMealCheckEntry = (plan, slot) => {
+  const logs = Array.isArray(plan?.checked_slots) ? plan.checked_slots : []
+  return logs.find((item) => item.slot === slot) || null
+}
+
+const getMealCheckStatusText = (status) => {
+  if (status === 'done') return '완료'
+  if (status === 'skipped') return '못 먹음'
+  return '미체크'
+}
+
+const updateMealCheckDraft = (planId, slot, value) => {
+  const key = `${planId}-${slot}`
+  setMealCheckDrafts((prev) => ({
+    ...prev,
+    [key]: value,
+  }))
+}
+
+const handleMealCheckSave = async (plan, meal, status) => {
+  const slot = meal.slot || '식사'
+  const key = `${plan.id}-${slot}`
+  const reason = String(mealCheckDrafts[key] || '').trim()
+
+  if (status === 'skipped' && !reason) {
+    alert('못 먹은 이유를 입력해주세요.')
+    return
+  }
+
+  setSavingMealCheckKey(key)
+
+  const currentLogs = Array.isArray(plan.checked_slots) ? [...plan.checked_slots] : []
+  const filteredLogs = currentLogs.filter((item) => item.slot !== slot)
+
+  const nextEntry = {
+    slot,
+    status,
+    reason: status === 'skipped' ? reason : '',
+    checked_at: new Date().toISOString(),
+  }
+
+  const nextLogs = [...filteredLogs, nextEntry]
+
+  const allSlots = Array.isArray(plan.meals_json)
+    ? plan.meals_json.map((item) => item.slot || '식사')
+    : []
+
+  const isChecked =
+    allSlots.length > 0 &&
+    allSlots.every((slotName) =>
+      nextLogs.some((log) => log.slot === slotName && log.status === 'done')
+    )
+
+  const { error } = await supabase
+    .from('member_meal_plans')
+    .update({
+      checked_slots: nextLogs,
+      is_checked: isChecked,
+    })
+    .eq('id', plan.id)
+
+  setSavingMealCheckKey('')
+
+  if (error) {
+    console.error('식단 체크 저장 실패:', error)
+    alert('식단 체크 저장 실패')
+    return
+  }
+
+  setMealPlans((prev) =>
+    prev.map((item) =>
+      item.id === plan.id
+        ? {
+            ...item,
+            checked_slots: nextLogs,
+            is_checked: isChecked,
+          }
+        : item
+    )
+  )
+
+  setMealCheckDrafts((prev) => ({
+    ...prev,
+    [key]: status === 'skipped' ? reason : '',
+  }))
+}
 const todayMealPlan = useMemo(() => {
   const today = new Date().toISOString().slice(0, 10)
   return mealPlans.find((plan) => plan.plan_date === today) || mealPlans[0] || null
@@ -5244,19 +5332,73 @@ return { ok: true, xp: xpValue }
               </div>
             </div>
 
-            <div className="member-diet-content-box">
-              <span>식단 상세</span>
+           <div className="member-diet-content-box">
+  <span>식단 상세 / 완료 체크</span>
 
-              {Array.isArray(selectedMealPlan.meals_json) && selectedMealPlan.meals_json.length > 0 ? (
-                selectedMealPlan.meals_json.map((meal, index) => (
-                  <p key={index} style={{ marginBottom: '8px' }}>
-                    <strong>{meal.slot || `식사 ${index + 1}`}</strong>: {meal.menu || '-'}
-                  </p>
-                ))
-              ) : (
-                <p>등록된 식단이 없습니다.</p>
-              )}
+  {Array.isArray(selectedMealPlan.meals_json) && selectedMealPlan.meals_json.length > 0 ? (
+    selectedMealPlan.meals_json.map((meal, index) => {
+      const slot = meal.slot || `식사 ${index + 1}`
+      const checkEntry = getMealCheckEntry(selectedMealPlan, slot)
+      const draftKey = `${selectedMealPlan.id}-${slot}`
+      const draftReason =
+        mealCheckDrafts[draftKey] ?? checkEntry?.reason ?? ''
+
+      return (
+        <div
+          key={index}
+          className="detail-box"
+          style={{ marginTop: '12px' }}
+        >
+          <p style={{ marginBottom: '8px' }}>
+            <strong>{slot}</strong>: {meal.menu || '-'}
+          </p>
+
+          <div className="inline-actions wrap" style={{ marginBottom: '8px' }}>
+            <span className="pill">
+              {getMealCheckStatusText(checkEntry?.status)}
+            </span>
+
+            <button
+              type="button"
+              className="primary-btn"
+              onClick={() => handleMealCheckSave(selectedMealPlan, meal, 'done')}
+              disabled={savingMealCheckKey === draftKey}
+            >
+              먹었어요
+            </button>
+
+            <button
+              type="button"
+              className="secondary-btn"
+              onClick={() => handleMealCheckSave(selectedMealPlan, meal, 'skipped')}
+              disabled={savingMealCheckKey === draftKey}
+            >
+              못 먹었어요
+            </button>
+          </div>
+
+          <label className="field">
+            <span>못 먹은 이유</span>
+            <textarea
+              rows="2"
+              value={draftReason}
+              onChange={(e) => updateMealCheckDraft(selectedMealPlan.id, slot, e.target.value)}
+              placeholder="예: 외식 일정이 있었어요 / 시간이 없었어요 / 속이 불편했어요"
+            />
+          </label>
+
+          {checkEntry?.status === 'skipped' && checkEntry?.reason ? (
+            <div className="compact-text" style={{ marginTop: '6px' }}>
+              저장된 이유: {checkEntry.reason}
             </div>
+          ) : null}
+        </div>
+      )
+    })
+  ) : (
+    <p>등록된 식단이 없습니다.</p>
+  )}
+</div>
           </>
         )}
       </div>
