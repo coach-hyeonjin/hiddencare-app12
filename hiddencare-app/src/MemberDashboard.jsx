@@ -9,6 +9,7 @@ const TABS = [
   '운동기록',
   '개인운동입력',
   '식단',
+  '식단플래너',
   '루틴',
   '프로그램',
   '코치스케줄',
@@ -422,6 +423,10 @@ const [growthOpenSections, setGrowthOpenSections] = useState({
   const [dietSearch, setDietSearch] = useState('')
   const [dietMealFilter, setDietMealFilter] = useState('all')
 
+  const [mealPlans, setMealPlans] = useState([])
+const [mealPlanMonth, setMealPlanMonth] = useState(new Date().toISOString().slice(0, 7))
+const [collapsedMealPlans, setCollapsedMealPlans] = useState({})
+  
   const [healthLogs, setHealthLogs] = useState([])
   const [collapsedHealthLogs, setCollapsedHealthLogs] = useState({})
   const [healthForm, setHealthForm] = useState(emptyHealthForm)
@@ -1094,26 +1099,27 @@ const toggleGrowthSection = (key) => {
       const adminId = loadedMember?.admin_id || member?.admin_id || null
 
       await Promise.all([
-        loadExercises(adminId),
-        loadWorkouts(),
-        loadDietLogs(),
-        loadHealthLogs(),
-        loadRoutine(),
-        loadManual(),
-        loadPrograms(adminId),
-        loadPartners(adminId),
-        loadMedicalPartners(adminId),
-        loadPartnerUsages(),
-        loadCoaches(adminId),
-        loadCoachSchedules(adminId),
-        loadNotices(adminId),
-        loadInquiries(),
-        loadMemberLevel(loadedMember),
+  loadExercises(adminId),
+  loadWorkouts(),
+  loadDietLogs(),
+  loadMealPlans(),
+  loadHealthLogs(),
+  loadRoutine(),
+  loadManual(),
+  loadPrograms(adminId),
+  loadPartners(adminId),
+  loadMedicalPartners(adminId),
+  loadPartnerUsages(),
+  loadCoaches(adminId),
+  loadCoachSchedules(adminId),
+  loadNotices(adminId),
+  loadInquiries(),
+  loadMemberLevel(loadedMember),
   loadMemberXpLogs(loadedMember),
   loadMemberLevelSettings(adminId),
   loadMemberLevelRanking(adminId),
-        loadMemberXpSettings(adminId),
-      ])
+  loadMemberXpSettings(adminId),
+])
      await loadMemberStats() 
     } catch (error) {
       console.error('loadAll 전체 오류:', error)
@@ -1347,7 +1353,37 @@ const loadMemberLevelRanking = async (targetAdminId = null) => {
       setCollapsedHealthLogs(collapsed)
     }
   }
+const loadMealPlans = async () => {
+  const [year, month] = String(mealPlanMonth || '').split('-').map(Number)
 
+  if (!year || !month) {
+    setMealPlans([])
+    return
+  }
+
+  const lastDay = new Date(year, month, 0).getDate()
+
+  const { data, error } = await supabase
+    .from('member_meal_plans')
+    .select('*')
+    .eq('member_id', member.id)
+    .gte('plan_date', `${year}-${String(month).padStart(2, '0')}-01`)
+    .lte('plan_date', `${year}-${String(month).padStart(2, '0')}-${String(lastDay).padStart(2, '0')}`)
+    .order('plan_date', { ascending: true })
+
+  if (error) {
+    console.error('회원 식단 플랜 불러오기 실패:', error)
+    return
+  }
+
+  const collapsed = {}
+  ;(data || []).forEach((item) => {
+    collapsed[item.id] = true
+  })
+
+  setMealPlans(data || [])
+  setCollapsedMealPlans(collapsed)
+}
  const loadRoutine = async () => {
   const { data } = await supabase
     .from('member_routines')
@@ -4821,7 +4857,131 @@ return { ok: true, xp: xpValue }
           </div>
         </div>
       )}
+{activeTab === '식단플래너' && (
+  <div className="member-diet-page">
+    <section className="member-diet-hero">
+      <div className="member-diet-hero-left">
+        <div className="member-diet-badge">MY MEAL PLAN</div>
+        <h2>식단 플래너</h2>
+        <p className="member-diet-hero-text">
+          코치가 설정한 월간 식단 계획을 날짜별로 확인할 수 있는 공간입니다.
+          오늘 어떤 식단으로 먹어야 하는지 바로 확인해보세요.
+        </p>
+      </div>
 
+      <div className="member-diet-hero-right">
+        <div className="member-diet-hero-mini">
+          <span>조회 월</span>
+          <strong>{mealPlanMonth || '-'}</strong>
+          <p>현재 보고 있는 월간 식단입니다.</p>
+        </div>
+
+        <div className="member-diet-hero-mini">
+          <span>식단 수</span>
+          <strong>{mealPlans.length}일</strong>
+          <p>해당 월에 생성된 식단 기록 수입니다.</p>
+        </div>
+      </div>
+    </section>
+
+    <div className="card">
+      <div className="member-diet-section-head">
+        <div>
+          <div className="member-diet-section-label">MONTHLY MEAL PLAN</div>
+          <h2>월별 식단 보기</h2>
+          <p className="sub-text">
+            날짜별로 아침, 점심, 저녁, 간식 메뉴를 확인할 수 있습니다.
+          </p>
+        </div>
+      </div>
+
+      <div className="inline-actions wrap" style={{ marginBottom: '16px' }}>
+        <input
+          type="month"
+          value={mealPlanMonth}
+          onChange={(e) => setMealPlanMonth(e.target.value)}
+        />
+
+        <button
+          type="button"
+          className="secondary-btn"
+          onClick={loadMealPlans}
+        >
+          조회
+        </button>
+      </div>
+
+      <div className="list-stack">
+        {mealPlans.length === 0 ? (
+          <div className="workout-list-empty">해당 월에 등록된 식단 계획이 없습니다.</div>
+        ) : (
+          mealPlans.map((plan) => {
+            const collapsed = collapsedMealPlans[plan.id] ?? true
+
+            return (
+              <div key={plan.id} className="member-diet-log-item">
+                <div className="member-diet-log-top">
+                  <div>
+                    <div className="member-diet-log-title-row">
+                      <strong>{plan.plan_date}</strong>
+                      <span className="pill">{plan.day_type}</span>
+                    </div>
+
+                    <div className="member-diet-log-summary">
+                      총 {plan.total_kcal || 0} kcal / 탄 {plan.total_carbs_g || 0} / 단 {plan.total_protein_g || 0} / 지 {plan.total_fat_g || 0}
+                    </div>
+                  </div>
+
+                  <div className="member-diet-log-right">
+                    <div className="member-diet-mini-chip">
+                      식사 {Array.isArray(plan.meals_json) ? plan.meals_json.length : 0}끼
+                    </div>
+                  </div>
+                </div>
+
+                <div className="inline-actions wrap">
+                  <button
+                    type="button"
+                    className="secondary-btn"
+                    onClick={() =>
+                      setCollapsedMealPlans((prev) => ({
+                        ...prev,
+                        [plan.id]: !collapsed,
+                      }))
+                    }
+                  >
+                    {collapsed ? '상세히보기' : '간략히보기'}
+                  </button>
+                </div>
+
+                {!collapsed ? (
+                  <div className="member-diet-detail-box">
+                    {Array.isArray(plan.meals_json) && plan.meals_json.length > 0 ? (
+                      <div className="member-diet-content-box">
+                        <span>오늘 식단</span>
+
+                        {plan.meals_json.map((meal, index) => (
+                          <p key={index} style={{ marginBottom: '8px' }}>
+                            <strong>{meal.slot || `식사 ${index + 1}`}</strong>: {meal.menu || '-'}
+                          </p>
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="member-diet-content-box">
+                        <span>오늘 식단</span>
+                        <p>식단 내용이 없습니다.</p>
+                      </div>
+                    )}
+                  </div>
+                ) : null}
+              </div>
+            )
+          })
+        )}
+      </div>
+    </div>
+  </div>
+)}
             {activeTab === '루틴' && (
         <div className="member-routine-page">
           <section className="member-routine-hero">
