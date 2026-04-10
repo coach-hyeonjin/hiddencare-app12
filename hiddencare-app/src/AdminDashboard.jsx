@@ -1200,7 +1200,185 @@ const handleMealPlanSave = async () => {
 
   alert('식단 설정 저장 완료')
 }
+const buildMealSlotsByCount = (count) => {
+  const mealSlotsMap = {
+    2: ['점심', '저녁'],
+    3: ['아침', '점심', '저녁'],
+    4: ['아침', '점심', '간식', '저녁'],
+    5: ['아침', '오전간식', '점심', '운동후', '저녁'],
+  }
 
+  return mealSlotsMap[Number(count) || 3] || ['아침', '점심', '저녁']
+}
+
+const loadMemberMealPlanProfile = async (memberId) => {
+  if (!memberId) return
+
+  const { data, error } = await supabase
+    .from('member_nutrition_profiles')
+    .select('*')
+    .eq('member_id', memberId)
+    .maybeSingle()
+
+  if (error) {
+    console.error('식단 설정 불러오기 실패:', error)
+    return
+  }
+
+  if (!data) {
+    setMealPlanForm((prev) => ({
+      ...emptyMealPlanForm,
+      member_id: memberId,
+    }))
+    return
+  }
+
+  setMealPlanForm({
+    member_id: data.member_id || '',
+    goal_type: data.goal_type || 'diet',
+    meals_per_day: Number(data.meals_per_day || 3),
+    meal_slots: Array.isArray(data.meal_slots) ? data.meal_slots : buildMealSlotsByCount(data.meals_per_day),
+    activity_level: data.activity_level || 'light',
+    training_days_per_week: Number(data.training_days_per_week || 3),
+    training_time: data.training_time || 'evening',
+    use_training_rest_split: !!data.use_training_rest_split,
+    target_kcal: data.target_kcal || '',
+    target_carbs_g: data.target_carbs_g || '',
+    target_protein_g: data.target_protein_g || '',
+    target_fat_g: data.target_fat_g || '',
+    excluded_foods: Array.isArray(data.excluded_foods) ? data.excluded_foods.join(', ') : '',
+    preferred_foods: Array.isArray(data.preferred_foods) ? data.preferred_foods.join(', ') : '',
+    notes: data.notes || '',
+  })
+}
+
+const handleMealPlanMonthGenerate = async () => {
+  if (!mealPlanForm.member_id) {
+    alert('회원 선택')
+    return
+  }
+
+  if (!mealPlanForm.target_kcal) {
+    alert('먼저 자동 계산을 해주세요')
+    return
+  }
+
+  const [year, month] = String(mealPlanMonth || '').split('-').map(Number)
+  if (!year || !month) {
+    alert('생성 월 확인')
+    return
+  }
+
+  const daysInMonth = new Date(year, month, 0).getDate()
+  const mealSlots = buildMealSlotsByCount(mealPlanForm.meals_per_day)
+  const trainingDays = Number(mealPlanForm.training_days_per_week || 3)
+
+  const rows = []
+
+  for (let day = 1; day <= daysInMonth; day += 1) {
+    const date = `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`
+
+    const dayIndex = new Date(date).getDay()
+    const isTrainingDay = trainingDays >= 5
+      ? ![0].includes(dayIndex)
+      : trainingDays >= 3
+      ? [1, 3, 5].includes(dayIndex)
+      : [2, 4].includes(dayIndex)
+
+    const dayType = mealPlanForm.use_training_rest_split
+      ? isTrainingDay ? 'training' : 'rest'
+      : 'rest'
+
+    const baseKcal = Number(mealPlanForm.target_kcal || 0)
+    const adjustedKcal =
+      mealPlanForm.use_training_rest_split
+        ? dayType === 'training'
+          ? baseKcal + 100
+          : baseKcal - 100
+        : baseKcal
+
+    const carbs = Number(mealPlanForm.target_carbs_g || 0)
+    const protein = Number(mealPlanForm.target_protein_g || 0)
+    const fat = Number(mealPlanForm.target_fat_g || 0)
+
+    const mealsJson = mealSlots.map((slot, index) => ({
+      slot,
+      time:
+        slot === '아침' ? '08:00' :
+        slot === '오전간식' ? '10:30' :
+        slot === '점심' ? '12:30' :
+        slot === '운동후' ? '16:30' :
+        slot === '간식' ? '16:30' : '19:30',
+      menu:
+        mealPlanForm.goal_type === 'diet'
+          ? index === 0
+            ? '오트밀 60g · 그릭요거트 1개 · 바나나 1개'
+            : index === mealSlots.length - 1
+            ? '잡곡밥 100g · 연어 150g · 나물반찬'
+            : '현미밥 150g · 닭가슴살 150g · 샐러드'
+          : mealPlanForm.goal_type === 'bulk'
+          ? '밥 200g · 닭가슴살/소고기 150g · 계란/과일 추가'
+          : '현미밥 · 단백질식품 · 채소 구성',
+      carbs_g: Math.round(carbs / mealSlots.length),
+      protein_g: Math.round(protein / mealSlots.length),
+      fat_g: Math.round(fat / mealSlots.length),
+      kcal: Math.round(adjustedKcal / mealSlots.length),
+    }))
+
+    rows.push({
+      member_id: mealPlanForm.member_id,
+      admin_id: currentAdminId || null,
+      plan_date: date,
+      day_type: dayType,
+      total_kcal: adjustedKcal,
+      total_carbs_g: carbs,
+      total_protein_g: protein,
+      total_fat_g: fat,
+      meals_json: mealsJson,
+      coach_memo: mealPlanForm.notes || '',
+      checked_slots: [],
+      is_checked: false,
+    })
+  }
+
+  const { error } = await supabase
+    .from('member_meal_plans')
+    .upsert(rows, { onConflict: 'member_id,plan_date' })
+
+  if (error) {
+    console.error('월간 식단 생성 실패:', error)
+    alert('월간 식단 생성 실패')
+    return
+  }
+
+  const { data: planData, error: loadError } = await supabase
+    .from('member_meal_plans')
+    .select('*')
+    .eq('member_id', mealPlanForm.member_id)
+    .gte('plan_date', `${year}-${String(month).padStart(2, '0')}-01`)
+    .lte('plan_date', `${year}-${String(month).padStart(2, '0')}-${String(daysInMonth).padStart(2, '0')}`)
+    .order('plan_date', { ascending: true })
+
+  if (loadError) {
+    console.error('생성 후 식단 목록 불러오기 실패:', loadError)
+    alert('생성은 되었지만 목록 불러오기 실패')
+    return
+  }
+
+  setMemberMealPlans(planData || [])
+  alert('월간 식단 생성 완료')
+}
+  useEffect(() => {
+  if (!mealPlanForm.member_id) return
+  loadMemberMealPlanProfile(mealPlanForm.member_id)
+}, [mealPlanForm.member_id])
+
+useEffect(() => {
+  setMealPlanForm((prev) => ({
+    ...prev,
+    meal_slots: buildMealSlotsByCount(prev.meals_per_day),
+  }))
+}, [mealPlanForm.meals_per_day])
 const managerScoreCards = useMemo(() => {
     const currentMonth = new Date().toISOString().slice(0, 7)
 
@@ -10920,112 +11098,252 @@ const filteredExercisesAdvanced = exercises.filter((exercise) => {
       <div>
         <h2>식단 설정 (자동 생성)</h2>
         <p className="sub-text">
-          회원별 목표에 맞는 식단을 자동 계산하고 월간 식단을 생성합니다.
+          회원별 목표에 맞는 식단을 자동 계산하고 월간 식단까지 생성하는 관리 탭입니다.
         </p>
       </div>
     </div>
 
     <div className="stack-gap">
+      <div className="grid-2">
+        <label className="field">
+          <span>회원 선택</span>
+          <select
+            value={mealPlanForm.member_id}
+            onChange={(e) =>
+              setMealPlanForm((prev) => ({
+                ...prev,
+                member_id: e.target.value,
+              }))
+            }
+          >
+            <option value="">회원 선택</option>
+            {members.map((m) => (
+              <option key={m.id} value={m.id}>
+                {m.name}
+              </option>
+            ))}
+          </select>
+        </label>
 
-      {/* 회원 선택 */}
-      <label className="field">
-        <span>회원 선택</span>
-        <select
-          value={mealPlanForm.member_id}
-          onChange={(e) =>
-            setMealPlanForm((prev) => ({
-              ...prev,
-              member_id: e.target.value,
-            }))
-          }
-        >
-          <option value="">회원 선택</option>
-          {members.map((m) => (
-            <option key={m.id} value={m.id}>
-              {m.name}
-            </option>
-          ))}
-        </select>
-      </label>
+        <label className="field">
+          <span>목표</span>
+          <select
+            value={mealPlanForm.goal_type}
+            onChange={(e) =>
+              setMealPlanForm((prev) => ({
+                ...prev,
+                goal_type: e.target.value,
+              }))
+            }
+          >
+            <option value="diet">체지방 감량</option>
+            <option value="recomposition">체형 개선</option>
+            <option value="maintenance">유지</option>
+            <option value="muscle_gain">근비대</option>
+            <option value="bulk">벌크업</option>
+          </select>
+        </label>
+      </div>
 
-      {/* 목표 */}
-      <label className="field">
-        <span>목표</span>
-        <select
-          value={mealPlanForm.goal_type}
-          onChange={(e) =>
-            setMealPlanForm((prev) => ({
-              ...prev,
-              goal_type: e.target.value,
-            }))
-          }
-        >
-          <option value="diet">체지방 감량</option>
-          <option value="recomposition">체형 개선</option>
-          <option value="maintenance">유지</option>
-          <option value="muscle_gain">근비대</option>
-          <option value="bulk">벌크업</option>
-        </select>
-      </label>
+      <div className="grid-2">
+        <label className="field">
+          <span>식사 횟수</span>
+          <select
+            value={mealPlanForm.meals_per_day}
+            onChange={(e) =>
+              setMealPlanForm((prev) => ({
+                ...prev,
+                meals_per_day: Number(e.target.value),
+              }))
+            }
+          >
+            <option value={2}>2끼</option>
+            <option value={3}>3끼</option>
+            <option value={4}>4끼</option>
+            <option value={5}>5끼</option>
+          </select>
+        </label>
 
-      {/* 식사 횟수 */}
-      <label className="field">
-        <span>식사 횟수</span>
-        <select
-          value={mealPlanForm.meals_per_day}
-          onChange={(e) =>
-            setMealPlanForm((prev) => ({
-              ...prev,
-              meals_per_day: Number(e.target.value),
-            }))
-          }
-        >
-          <option value={2}>2끼</option>
-          <option value={3}>3끼</option>
-          <option value={4}>4끼</option>
-          <option value={5}>5끼</option>
-        </select>
-      </label>
+        <label className="field">
+          <span>식단 생성 월</span>
+          <input
+            type="month"
+            value={mealPlanMonth}
+            onChange={(e) => setMealPlanMonth(e.target.value)}
+          />
+        </label>
+      </div>
 
-      {/* 월 선택 */}
+      <div className="grid-2">
+        <label className="field">
+          <span>활동량</span>
+          <select
+            value={mealPlanForm.activity_level}
+            onChange={(e) =>
+              setMealPlanForm((prev) => ({
+                ...prev,
+                activity_level: e.target.value,
+              }))
+            }
+          >
+            <option value="low">낮음</option>
+            <option value="light">가벼운 활동</option>
+            <option value="moderate">보통</option>
+            <option value="high">높음</option>
+            <option value="very_high">매우 높음</option>
+          </select>
+        </label>
+
+        <label className="field">
+          <span>주간 운동일 수</span>
+          <input
+            type="number"
+            min="0"
+            max="7"
+            value={mealPlanForm.training_days_per_week}
+            onChange={(e) =>
+              setMealPlanForm((prev) => ({
+                ...prev,
+                training_days_per_week: e.target.value,
+              }))
+            }
+          />
+        </label>
+      </div>
+
+      <div className="grid-2">
+        <label className="field">
+          <span>운동 시간대</span>
+          <select
+            value={mealPlanForm.training_time}
+            onChange={(e) =>
+              setMealPlanForm((prev) => ({
+                ...prev,
+                training_time: e.target.value,
+              }))
+            }
+          >
+            <option value="morning">오전</option>
+            <option value="afternoon">오후</option>
+            <option value="evening">저녁</option>
+            <option value="night">밤</option>
+          </select>
+        </label>
+
+        <label className="checkbox-line">
+          <input
+            type="checkbox"
+            checked={!!mealPlanForm.use_training_rest_split}
+            onChange={(e) =>
+              setMealPlanForm((prev) => ({
+                ...prev,
+                use_training_rest_split: e.target.checked,
+              }))
+            }
+          />
+          <span>훈련일 / 휴식일 식단 분리</span>
+        </label>
+      </div>
+
       <label className="field">
-        <span>식단 생성 월</span>
+        <span>못 먹는 음식 (쉼표로 구분)</span>
         <input
-          type="month"
-          value={mealPlanMonth}
-          onChange={(e) => setMealPlanMonth(e.target.value)}
+          value={mealPlanForm.excluded_foods}
+          onChange={(e) =>
+            setMealPlanForm((prev) => ({
+              ...prev,
+              excluded_foods: e.target.value,
+            }))
+          }
+          placeholder="예: 우유, 견과류, 갑각류"
         />
       </label>
 
-      {/* 버튼 영역 */}
+      <label className="field">
+        <span>선호 음식 (쉼표로 구분)</span>
+        <input
+          value={mealPlanForm.preferred_foods}
+          onChange={(e) =>
+            setMealPlanForm((prev) => ({
+              ...prev,
+              preferred_foods: e.target.value,
+            }))
+          }
+          placeholder="예: 닭가슴살, 연어, 고구마"
+        />
+      </label>
+
+      <label className="field">
+        <span>코치 메모</span>
+        <textarea
+          rows="4"
+          value={mealPlanForm.notes}
+          onChange={(e) =>
+            setMealPlanForm((prev) => ({
+              ...prev,
+              notes: e.target.value,
+            }))
+          }
+          placeholder="예: 저녁 늦게 먹는 패턴 / 주말 외식 많음 / 단백질 보충 필요"
+        />
+      </label>
+
       <div className="inline-actions wrap">
-        <button
-          className="primary-btn"
-          type="button"
-          onClick={handleMealPlanGenerate}
-        >
-          월간 식단 자동 생성
+        <button className="primary-btn" type="button" onClick={handleMealPlanGenerate}>
+          자동 계산
         </button>
 
-        <button
-          className="secondary-btn"
-          type="button"
-          onClick={handleMealPlanSave}
-        >
+        <button className="secondary-btn" type="button" onClick={handleMealPlanSave}>
           식단 설정 저장
+        </button>
+
+        <button className="primary-btn" type="button" onClick={handleMealPlanMonthGenerate}>
+          월간 식단 생성
         </button>
       </div>
 
-      {/* 결과 미리보기 */}
-      {mealPlanForm.target_kcal && (
+      {(mealPlanForm.target_kcal || mealPlanForm.target_carbs_g || mealPlanForm.target_protein_g || mealPlanForm.target_fat_g) ? (
         <div className="detail-box">
-          <p><strong>예상 결과</strong></p>
-          <p>칼로리: {mealPlanForm.target_kcal} kcal</p>
-          <p>탄수화물: {mealPlanForm.target_carbs_g} g</p>
-          <p>단백질: {mealPlanForm.target_protein_g} g</p>
-          <p>지방: {mealPlanForm.target_fat_g} g</p>
+          <p><strong>자동 계산 결과</strong></p>
+          <p>하루 목표 열량: {mealPlanForm.target_kcal || 0} kcal</p>
+          <p>탄수화물: {mealPlanForm.target_carbs_g || 0} g</p>
+          <p>단백질: {mealPlanForm.target_protein_g || 0} g</p>
+          <p>지방: {mealPlanForm.target_fat_g || 0} g</p>
+          <p>식사 슬롯: {(mealPlanForm.meal_slots || []).join(' / ')}</p>
         </div>
-      )}
+      ) : null}
+
+      <div className="list-stack">
+        <div className="section-head">
+          <div>
+            <h3>생성된 월간 식단</h3>
+            <p className="sub-text">
+              현재 선택한 회원의 해당 월 식단 생성 결과입니다.
+            </p>
+          </div>
+        </div>
+
+        {memberMealPlans.length === 0 ? (
+          <div className="workout-list-empty">아직 생성된 식단이 없습니다.</div>
+        ) : (
+          memberMealPlans.map((plan) => (
+            <div key={plan.id} className="list-card">
+              <div className="list-card-top">
+                <strong>{plan.plan_date}</strong>
+                <span className="pill">{plan.day_type}</span>
+              </div>
+
+              <div className="compact-text">
+                총 {plan.total_kcal || 0} kcal / 탄 {plan.total_carbs_g || 0} / 단 {plan.total_protein_g || 0} / 지 {plan.total_fat_g || 0}
+              </div>
+
+              <div className="compact-text">
+                식사 수: {Array.isArray(plan.meals_json) ? plan.meals_json.length : 0}끼
+              </div>
+            </div>
+          ))
+        )}
+      </div>
     </div>
   </div>
 )}
