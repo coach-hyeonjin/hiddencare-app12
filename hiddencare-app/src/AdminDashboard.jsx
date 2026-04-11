@@ -207,6 +207,28 @@ const emptyMedicalPartnerForm = {
   manager_phone: '',
   is_active: true,
 }
+
+const emptyFoodMasterForm = {
+  name: '',
+  aliases: '',
+  category_major: 'protein',
+  category_minor: 'animal_protein',
+  source_type: 'animal',
+  kcal_per_100g: '',
+  carbs_per_100g: '',
+  protein_per_100g: '',
+  fat_per_100g: '',
+  saturated_fat_per_100g: '',
+  unsaturated_fat_per_100g: '',
+  sugar_per_100g: '',
+  fiber_per_100g: '',
+  sodium_mg_per_100g: '',
+  typical_portion_g: '',
+  tags: '',
+  note: '',
+}
+
+
 const emptySaleForm = {
   id: null,
   member_id: '',
@@ -834,6 +856,8 @@ const [memberNutritionProfiles, setMemberNutritionProfiles] = useState([])
 const [memberMealPlans, setMemberMealPlans] = useState([])
   const [foodMaster, setFoodMaster] = useState([])
   const [foodMasterSearch, setFoodMasterSearch] = useState('')
+  const [foodMasterForm, setFoodMasterForm] = useState(emptyFoodMasterForm)
+const [savingFoodMaster, setSavingFoodMaster] = useState(false)
   const [showFoodMasterPanel, setShowFoodMasterPanel] = useState(false)
 const [foodMasterLoaded, setFoodMasterLoaded] = useState(false)
   const [mealComplianceMonth, setMealComplianceMonth] = useState(new Date().toISOString().slice(0, 7))
@@ -1464,6 +1488,61 @@ const loadFoodMaster = async () => {
   setFoodMasterLoaded(true)
   return data || []
 }
+const handleFoodMasterSave = async () => {
+  const name = String(foodMasterForm.name || '').trim()
+
+  if (!name) {
+    alert('음식명을 입력해주세요.')
+    return
+  }
+
+  setSavingFoodMaster(true)
+
+  const payload = {
+    name,
+    category_major: String(foodMasterForm.category_major || 'protein').trim(),
+    category_minor: String(foodMasterForm.category_minor || '').trim() || null,
+    source_type: String(foodMasterForm.source_type || '').trim() || null,
+    kcal_per_100g: Number(foodMasterForm.kcal_per_100g || 0),
+    carbs_per_100g: Number(foodMasterForm.carbs_per_100g || 0),
+    protein_per_100g: Number(foodMasterForm.protein_per_100g || 0),
+    fat_per_100g: Number(foodMasterForm.fat_per_100g || 0),
+    saturated_fat_per_100g: Number(foodMasterForm.saturated_fat_per_100g || 0),
+    unsaturated_fat_per_100g: Number(foodMasterForm.unsaturated_fat_per_100g || 0),
+    sugar_per_100g: Number(foodMasterForm.sugar_per_100g || 0),
+    fiber_per_100g: Number(foodMasterForm.fiber_per_100g || 0),
+    sodium_mg_per_100g: Number(foodMasterForm.sodium_mg_per_100g || 0),
+    typical_portion_g: Number(foodMasterForm.typical_portion_g || 0),
+    tags: String(foodMasterForm.tags || '')
+      .split(',')
+      .map((item) => item.trim())
+      .filter(Boolean),
+    aliases: String(foodMasterForm.aliases || '')
+      .split(',')
+      .map((item) => item.trim())
+      .filter(Boolean),
+    note: String(foodMasterForm.note || '').trim(),
+    is_active: true,
+    is_common: true,
+  }
+
+  const { error } = await supabase
+    .from('food_master')
+    .upsert(payload, { onConflict: 'name_normalized' })
+
+  setSavingFoodMaster(false)
+
+  if (error) {
+    console.error('food_master 저장 실패:', error)
+    alert('food_master 저장 실패')
+    return
+  }
+
+  await loadFoodMaster()
+  setFoodMasterForm(emptyFoodMasterForm)
+  alert('음식 등록 완료')
+}
+  
 const loadMemberMealPlanProfile = async (memberId) => {
   if (!memberId) return
 
@@ -2538,7 +2617,12 @@ const applyFoodSuggestionToField = (fieldName, foodName) => {
     [fieldName]: replaceLastCommaWord(prev[fieldName], foodName),
   }))
 }
-
+const handleFoodMasterFormChange = (field, value) => {
+  setFoodMasterForm((prev) => ({
+    ...prev,
+    [field]: value,
+  }))
+}
   const preferredFoodSuggestions = useMemo(() => {
   return getFoodSuggestionsForInput(mealPlanForm.preferred_foods, foodMaster)
 }, [mealPlanForm.preferred_foods, foodMaster])
@@ -12615,6 +12699,214 @@ const filteredExercisesAdvanced = exercises.filter((exercise) => {
 
   {showFoodMasterPanel ? (
     <div className="stack-gap">
+
+      <div className="sub-card meal-food-register-card">
+  <div className="list-card-top">
+    <div>
+      <strong>음식 수기 등록</strong>
+      <p className="sub-text">
+        새 음식을 직접 등록하면 자동 추천과 식단 반영 후보에 바로 포함됩니다.
+      </p>
+    </div>
+    <span className="status-pill">food_master 등록</span>
+  </div>
+
+  <div className="grid-2">
+    <label className="field">
+      <span>음식명</span>
+      <input
+        value={foodMasterForm.name}
+        onChange={(e) => handleFoodMasterFormChange('name', e.target.value)}
+        placeholder="예: 닭봉, 소고기 안심"
+      />
+    </label>
+
+    <label className="field">
+      <span>aliases (쉼표 구분)</span>
+      <input
+        value={foodMasterForm.aliases}
+        onChange={(e) => handleFoodMasterFormChange('aliases', e.target.value)}
+        placeholder="예: 치킨윙, 닭봉구이"
+      />
+    </label>
+  </div>
+
+  <div className="grid-3">
+    <label className="field">
+      <span>대분류</span>
+      <select
+        value={foodMasterForm.category_major}
+        onChange={(e) => handleFoodMasterFormChange('category_major', e.target.value)}
+      >
+        <option value="carb">carb</option>
+        <option value="protein">protein</option>
+        <option value="fat">fat</option>
+        <option value="vegetable">vegetable</option>
+        <option value="fruit">fruit</option>
+        <option value="dairy">dairy</option>
+        <option value="mixed">mixed</option>
+      </select>
+    </label>
+
+    <label className="field">
+      <span>소분류</span>
+      <input
+        value={foodMasterForm.category_minor}
+        onChange={(e) => handleFoodMasterFormChange('category_minor', e.target.value)}
+        placeholder="예: animal_protein"
+      />
+    </label>
+
+    <label className="field">
+      <span>원천</span>
+      <select
+        value={foodMasterForm.source_type}
+        onChange={(e) => handleFoodMasterFormChange('source_type', e.target.value)}
+      >
+        <option value="animal">animal</option>
+        <option value="plant">plant</option>
+        <option value="mixed">mixed</option>
+      </select>
+    </label>
+  </div>
+
+  <div className="grid-4">
+    <label className="field">
+      <span>kcal</span>
+      <input
+        type="number"
+        value={foodMasterForm.kcal_per_100g}
+        onChange={(e) => handleFoodMasterFormChange('kcal_per_100g', e.target.value)}
+        placeholder="100g 기준"
+      />
+    </label>
+
+    <label className="field">
+      <span>탄수화물</span>
+      <input
+        type="number"
+        value={foodMasterForm.carbs_per_100g}
+        onChange={(e) => handleFoodMasterFormChange('carbs_per_100g', e.target.value)}
+        placeholder="g"
+      />
+    </label>
+
+    <label className="field">
+      <span>단백질</span>
+      <input
+        type="number"
+        value={foodMasterForm.protein_per_100g}
+        onChange={(e) => handleFoodMasterFormChange('protein_per_100g', e.target.value)}
+        placeholder="g"
+      />
+    </label>
+
+    <label className="field">
+      <span>지방</span>
+      <input
+        type="number"
+        value={foodMasterForm.fat_per_100g}
+        onChange={(e) => handleFoodMasterFormChange('fat_per_100g', e.target.value)}
+        placeholder="g"
+      />
+    </label>
+  </div>
+
+  <div className="grid-4">
+    <label className="field">
+      <span>포화지방</span>
+      <input
+        type="number"
+        value={foodMasterForm.saturated_fat_per_100g}
+        onChange={(e) => handleFoodMasterFormChange('saturated_fat_per_100g', e.target.value)}
+        placeholder="g"
+      />
+    </label>
+
+    <label className="field">
+      <span>불포화지방</span>
+      <input
+        type="number"
+        value={foodMasterForm.unsaturated_fat_per_100g}
+        onChange={(e) => handleFoodMasterFormChange('unsaturated_fat_per_100g', e.target.value)}
+        placeholder="g"
+      />
+    </label>
+
+    <label className="field">
+      <span>당류</span>
+      <input
+        type="number"
+        value={foodMasterForm.sugar_per_100g}
+        onChange={(e) => handleFoodMasterFormChange('sugar_per_100g', e.target.value)}
+        placeholder="g"
+      />
+    </label>
+
+    <label className="field">
+      <span>식이섬유</span>
+      <input
+        type="number"
+        value={foodMasterForm.fiber_per_100g}
+        onChange={(e) => handleFoodMasterFormChange('fiber_per_100g', e.target.value)}
+        placeholder="g"
+      />
+    </label>
+  </div>
+
+  <div className="grid-3">
+    <label className="field">
+      <span>나트륨</span>
+      <input
+        type="number"
+        value={foodMasterForm.sodium_mg_per_100g}
+        onChange={(e) => handleFoodMasterFormChange('sodium_mg_per_100g', e.target.value)}
+        placeholder="mg"
+      />
+    </label>
+
+    <label className="field">
+      <span>1회 섭취량</span>
+      <input
+        type="number"
+        value={foodMasterForm.typical_portion_g}
+        onChange={(e) => handleFoodMasterFormChange('typical_portion_g', e.target.value)}
+        placeholder="g"
+      />
+    </label>
+
+    <label className="field">
+      <span>tags (쉼표 구분)</span>
+      <input
+        value={foodMasterForm.tags}
+        onChange={(e) => handleFoodMasterFormChange('tags', e.target.value)}
+        placeholder="예: high_protein, diet"
+      />
+    </label>
+  </div>
+
+  <label className="field">
+    <span>메모</span>
+    <textarea
+      rows={2}
+      value={foodMasterForm.note}
+      onChange={(e) => handleFoodMasterFormChange('note', e.target.value)}
+      placeholder="예: 감량용으로 자주 사용, 간편식 대체용"
+    />
+  </label>
+
+  <div className="meal-food-register-actions">
+    <button
+      type="button"
+      className="primary-btn"
+      onClick={handleFoodMasterSave}
+      disabled={savingFoodMaster}
+    >
+      {savingFoodMaster ? '저장 중...' : '음식 등록'}
+    </button>
+  </div>
+</div>
+      
       <label className="field">
         <span>음식 검색</span>
         <input
