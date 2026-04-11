@@ -20432,7 +20432,53 @@ textarea:focus {
   flex-direction: column;
   gap: 18px;
 }
+.meal-food-suggestion-wrap {
+  margin-top: 8px;
+}
 
+.meal-food-suggestion-title {
+  font-size: 12px;
+  font-weight: 700;
+  color: #5b6475;
+  margin-bottom: 8px;
+}
+
+.meal-food-suggestion-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.meal-food-suggestion-btn {
+  border: 1px solid #d8deea;
+  background: #f8fafc;
+  border-radius: 12px;
+  padding: 8px 10px;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 3px;
+  min-width: 140px;
+  transition: 0.2s ease;
+}
+
+.meal-food-suggestion-btn:hover {
+  border-color: #8aa4ff;
+  background: #eef4ff;
+}
+
+.meal-food-suggestion-btn strong {
+  font-size: 13px;
+  color: #1f2937;
+}
+
+.meal-food-suggestion-btn span {
+  font-size: 11px;
+  color: #6b7280;
+  text-align: left;
+  line-height: 1.35;
+}
 .meal-planner-admin-hero {
   display: grid;
   grid-template-columns: 1.3fr 1fr;
