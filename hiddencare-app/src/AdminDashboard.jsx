@@ -13624,7 +13624,7 @@ const filteredExercisesAdvanced = exercises.filter((exercise) => {
             </button>
           </div>
 
-          {(mealPlanForm.target_kcal ||
+                    {(mealPlanForm.target_kcal ||
             mealPlanForm.target_carbs_g ||
             mealPlanForm.target_protein_g ||
             mealPlanForm.target_fat_g) ? (
