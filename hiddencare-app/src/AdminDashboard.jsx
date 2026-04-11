@@ -2416,9 +2416,9 @@ let adjustedKcal = baseKcal
 
     const slotCount = mealSlots.length || 1
 
-    let dayRecentUsedIds = []
+   let dayRecentUsedIds = []
 let daySlotUsedNames = []
-    let dayType = 'diet'
+let dayType = 'diet'
 
 if (generalMealDays.includes(day - 1)) {
   dayType = 'general'
@@ -2435,6 +2435,7 @@ if (snackDays.includes(day - 1)) {
 if (alcoholDays.includes(day - 1)) {
   dayType = 'free'
 }
+
 let dayPreferredIncludedCount = 0
 const mealsJson = mealSlots.map((slot) => {
   const slotTarget = {
@@ -2531,7 +2532,7 @@ dayPreferredIncludedCount = Number(mealResult?.nextPreferredIncludedCount || day
     .from('member_meal_plans')
     .upsert(rows, { onConflict: 'member_id,plan_date' })
 
-  if (error) {
+ if (error) {
   console.error('월간 식단 생성 실패:', error)
   alert(`월간 식단 생성 실패: ${error.message}`)
   return
@@ -13612,20 +13613,7 @@ const filteredExercisesAdvanced = exercises.filter((exercise) => {
     월간 식단 생성
   </button>
 </div>
-          <div className="inline-actions wrap">
-            <button className="primary-btn" type="button" onClick={handleMealPlanGenerate}>
-              자동 계산
-            </button>
-
-            <button className="secondary-btn" type="button" onClick={handleMealPlanSave}>
-              식단 설정 저장
-            </button>
-
-            <button className="primary-btn" type="button" onClick={handleMealPlanMonthGenerate}>
-              월간 식단 생성
-            </button>
-          </div>
-
+          
                     {(mealPlanForm.target_kcal ||
             mealPlanForm.target_carbs_g ||
             mealPlanForm.target_protein_g ||
