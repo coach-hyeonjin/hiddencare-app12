@@ -2331,6 +2331,125 @@ const getMealAlternatives = (
 
   return result
 }
+const getLifestyleMealSlots = (form) => {
+  const baseSlots = Array.isArray(form?.meal_slots) && form.meal_slots.length
+    ? [...form.meal_slots]
+    : ['아침', '점심', '저녁']
+
+  const structuredMode = String(form?.meal_structure_mode || 'structured')
+  const snackFrequency = Number(form?.snack_frequency_per_week || 0)
+  const lateNightFrequency = Number(form?.late_night_meal_frequency_per_week || 0)
+
+  let nextSlots = [...baseSlots]
+
+  if (structuredMode !== 'structured' && snackFrequency >= 3 && !nextSlots.includes('간식')) {
+    nextSlots.splice(Math.min(2, nextSlots.length), 0, '간식')
+  }
+
+  if (lateNightFrequency >= 3 && !nextSlots.includes('야식')) {
+    nextSlots.push('야식')
+  }
+
+  return nextSlots
+}
+
+const getLifestyleAdjustedDayPlan = ({
+  mealPlanForm,
+  isTrainingDay,
+  dayType,
+  baseKcal,
+  totalCarbs,
+  totalProtein,
+  totalFat,
+}) => {
+  const dietMode = String(mealPlanForm?.diet_mode || 'balanced')
+  const adaptationStrategy = String(mealPlanForm?.adaptation_strategy || 'gradual')
+  const currentMealPattern = String(mealPlanForm?.current_meal_pattern || 'mixed')
+  const mealStructureMode = String(mealPlanForm?.meal_structure_mode || 'structured')
+
+  let kcal = Number(baseKcal || 0)
+  let carbs = Number(totalCarbs || 0)
+  let protein = Number(totalProtein || 0)
+  let fat = Number(totalFat || 0)
+
+  if (dietMode === 'aggressive') {
+    kcal = Math.round(kcal * 0.9)
+    carbs = Math.round(carbs * 0.88)
+    fat = Math.round(fat * 0.92)
+  } else if (dietMode === 'relaxed') {
+    kcal = Math.round(kcal * 1.05)
+    carbs = Math.round(carbs * 1.05)
+    fat = Math.round(fat * 1.05)
+  }
+
+  if (adaptationStrategy === 'gradual') {
+    kcal = Math.round(kcal * 0.97)
+  } else if (adaptationStrategy === 'fast') {
+    kcal = Math.round(kcal * 0.93)
+    carbs = Math.round(carbs * 0.95)
+  }
+
+  if (currentMealPattern === 'mixed') {
+    // 유지
+  } else if (currentMealPattern === 'outside_often') {
+    fat = Math.round(fat * 0.95)
+    carbs = Math.round(carbs * 0.97)
+  } else if (currentMealPattern === 'late_heavy') {
+    carbs = Math.round(carbs * 0.95)
+    fat = Math.round(fat * 0.95)
+    protein = Math.round(protein * 1.03)
+  }
+
+  if (mealStructureMode !== 'structured') {
+    carbs = Math.round(carbs * 0.98)
+  }
+
+  if (dayType === 'general') {
+    kcal = Math.round(kcal * 1.08)
+    carbs = Math.round(carbs * 1.08)
+    fat = Math.round(fat * 1.08)
+  }
+
+  if (dayType === 'free') {
+    kcal = Math.round(kcal * 1.15)
+    carbs = Math.round(carbs * 1.1)
+    fat = Math.round(fat * 1.15)
+  }
+
+  if (dayType === 'alcohol') {
+    kcal = Math.round(kcal * 1.1)
+    carbs = Math.round(carbs * 0.85)
+    fat = Math.round(fat * 0.92)
+    protein = Math.round(protein * 1.05)
+  }
+
+  if (dayType === 'refeed') {
+    carbs = Math.round(carbs * 1.2)
+    fat = Math.round(fat * 0.9)
+  }
+
+  if (isTrainingDay && dayType === 'diet') {
+    carbs = Math.round(carbs * 1.05)
+  }
+
+  if (!isTrainingDay && dayType === 'diet') {
+    carbs = Math.round(carbs * 0.95)
+    fat = Math.round(fat * 1.03)
+  }
+
+  kcal = Math.max(0, kcal)
+  carbs = Math.max(0, carbs)
+  protein = Math.max(0, protein)
+  fat = Math.max(0, fat)
+
+  return {
+    kcal,
+    carbs,
+    protein,
+    fat,
+  }
+}
+  
 const getRandomDays = (totalDays, count) => {
   const days = Array.from({ length: totalDays }, (_, i) => i)
   const result = []
@@ -2394,7 +2513,7 @@ const alcoholDays = getRandomDays(daysInMonth, Number(mealPlanForm.allowed_alcoh
   }
 
   const rows = []
-
+const generationMealSlots = getLifestyleMealSlots(mealPlanForm)
   for (let day = 1; day <= daysInMonth; day += 1) {
     const date = `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`
 
@@ -2408,13 +2527,11 @@ const alcoholDays = getRandomDays(daysInMonth, Number(mealPlanForm.allowed_alcoh
         : [2, 4].includes(dayIndex)
 
    const baseKcal = Number(mealPlanForm.target_kcal || 0)
-let adjustedKcal = baseKcal
+const baseCarbs = Number(mealPlanForm.target_carbs_g || 0)
+const baseProtein = Number(mealPlanForm.target_protein_g || 0)
+const baseFat = Number(mealPlanForm.target_fat_g || 0)
 
-    const totalCarbs = Number(mealPlanForm.target_carbs_g || 0)
-    const totalProtein = Number(mealPlanForm.target_protein_g || 0)
-    const totalFat = Number(mealPlanForm.target_fat_g || 0)
-
-    const slotCount = mealSlots.length || 1
+const slotCount = generationMealSlots.length || 1
 
    let dayRecentUsedIds = []
 let daySlotUsedNames = []
@@ -2435,14 +2552,23 @@ if (snackDays.includes(day - 1)) {
 if (alcoholDays.includes(day - 1)) {
   dayType = 'free'
 }
+const adjustedDayPlan = getLifestyleAdjustedDayPlan({
+  mealPlanForm,
+  isTrainingDay,
+  dayType,
+  baseKcal,
+  totalCarbs: baseCarbs,
+  totalProtein: baseProtein,
+  totalFat: baseFat,
+})
 
 let dayPreferredIncludedCount = 0
-const mealsJson = mealSlots.map((slot) => {
+const mealsJson = generationMealSlots.map((slot) => {
   const slotTarget = {
-    carbs_g: Math.round(totalCarbs / slotCount),
-    protein_g: Math.round(totalProtein / slotCount),
-    fat_g: Math.round(totalFat / slotCount),
-  }
+  carbs_g: Math.round(adjustedDayPlan.carbs / slotCount),
+  protein_g: Math.round(adjustedDayPlan.protein / slotCount),
+  fat_g: Math.round(adjustedDayPlan.fat / slotCount),
+}
 
   const mealResult = getRotatingMealExample(
     mealPlanForm.goal_type,
@@ -2514,10 +2640,10 @@ dayPreferredIncludedCount = Number(mealResult?.nextPreferredIncludedCount || day
       admin_id: currentAdminId || null,
       plan_date: date,
       day_type: dayType,
-      total_kcal: adjustedKcal,
-      total_carbs_g: totalCarbs,
-      total_protein_g: totalProtein,
-      total_fat_g: totalFat,
+      total_kcal: adjustedDayPlan.kcal,
+total_carbs_g: adjustedDayPlan.carbs,
+total_protein_g: adjustedDayPlan.protein,
+total_fat_g: adjustedDayPlan.fat,
       meals_json: mealsJson,
       meals_summary_json: mealsSummaryJson,
       coach_memo: mealPlanForm.notes || '',
