@@ -2429,11 +2429,11 @@ if (freeMealDays.includes(day - 1)) {
 }
 
 if (snackDays.includes(day - 1)) {
-  dayType = 'snack'
+  dayType = 'general'
 }
 
 if (alcoholDays.includes(day - 1)) {
-  dayType = 'alcohol'
+  dayType = 'free'
 }
 let dayPreferredIncludedCount = 0
 const mealsJson = mealSlots.map((slot) => {
@@ -2532,10 +2532,10 @@ dayPreferredIncludedCount = Number(mealResult?.nextPreferredIncludedCount || day
     .upsert(rows, { onConflict: 'member_id,plan_date' })
 
   if (error) {
-    console.error('월간 식단 생성 실패:', error)
-    alert('월간 식단 생성 실패')
-    return
-  }
+  console.error('월간 식단 생성 실패:', error)
+  alert(`월간 식단 생성 실패: ${error.message}`)
+  return
+}
 
   const { error: profileVersionError } = await supabase
     .from('member_nutrition_profiles')
