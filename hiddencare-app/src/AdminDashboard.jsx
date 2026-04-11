@@ -858,6 +858,8 @@ const [memberMealPlans, setMemberMealPlans] = useState([])
   const [foodMasterSearch, setFoodMasterSearch] = useState('')
   const [foodMasterForm, setFoodMasterForm] = useState(emptyFoodMasterForm)
 const [savingFoodMaster, setSavingFoodMaster] = useState(false)
+  const [editingFoodMasterId, setEditingFoodMasterId] = useState(null)
+const [foodMasterSubmittingMode, setFoodMasterSubmittingMode] = useState('create')
   const [showFoodMasterPanel, setShowFoodMasterPanel] = useState(false)
   const [showAllFoodMaster, setShowAllFoodMaster] = useState(false)
 const [foodMasterLoaded, setFoodMasterLoaded] = useState(false)
@@ -1527,9 +1529,22 @@ const handleFoodMasterSave = async () => {
     is_common: true,
   }
 
-  const { error } = await supabase
-    .from('food_master')
-    .upsert(payload, { onConflict: 'name_normalized' })
+  let error = null
+
+  if (editingFoodMasterId) {
+    const response = await supabase
+      .from('food_master')
+      .update(payload)
+      .eq('id', editingFoodMasterId)
+
+    error = response.error
+  } else {
+    const response = await supabase
+      .from('food_master')
+      .upsert(payload, { onConflict: 'name_normalized' })
+
+    error = response.error
+  }
 
   setSavingFoodMaster(false)
 
@@ -1540,10 +1555,33 @@ const handleFoodMasterSave = async () => {
   }
 
   await loadFoodMaster()
-  setFoodMasterForm(emptyFoodMasterForm)
-  alert('음식 등록 완료')
+  handleFoodMasterCancelEdit()
+  alert(editingFoodMasterId ? '음식 수정 완료' : '음식 등록 완료')
 }
-  
+  const handleFoodMasterDeactivate = async (food) => {
+  if (!food?.id) return
+
+  const confirmed = window.confirm(`${food.name} 음식을 비활성화할까요?`)
+  if (!confirmed) return
+
+  const { error } = await supabase
+    .from('food_master')
+    .update({ is_active: false })
+    .eq('id', food.id)
+
+  if (error) {
+    console.error('food_master 비활성화 실패:', error)
+    alert('food_master 비활성화 실패')
+    return
+  }
+
+  if (editingFoodMasterId === food.id) {
+    handleFoodMasterCancelEdit()
+  }
+
+  await loadFoodMaster()
+  alert('음식 비활성화 완료')
+}
 const loadMemberMealPlanProfile = async (memberId) => {
   if (!memberId) return
 
@@ -2624,6 +2662,37 @@ const handleFoodMasterFormChange = (field, value) => {
     [field]: value,
   }))
 }
+  const handleFoodMasterEditStart = (food) => {
+  setEditingFoodMasterId(food.id)
+  setFoodMasterSubmittingMode('edit')
+  setShowFoodMasterPanel(true)
+
+  setFoodMasterForm({
+    name: food.name || '',
+    aliases: Array.isArray(food.aliases) ? food.aliases.join(', ') : '',
+    category_major: food.category_major || 'protein',
+    category_minor: food.category_minor || '',
+    source_type: food.source_type || 'animal',
+    kcal_per_100g: food.kcal_per_100g || '',
+    carbs_per_100g: food.carbs_per_100g || '',
+    protein_per_100g: food.protein_per_100g || '',
+    fat_per_100g: food.fat_per_100g || '',
+    saturated_fat_per_100g: food.saturated_fat_per_100g || '',
+    unsaturated_fat_per_100g: food.unsaturated_fat_per_100g || '',
+    sugar_per_100g: food.sugar_per_100g || '',
+    fiber_per_100g: food.fiber_per_100g || '',
+    sodium_mg_per_100g: food.sodium_mg_per_100g || '',
+    typical_portion_g: food.typical_portion_g || '',
+    tags: Array.isArray(food.tags) ? food.tags.join(', ') : '',
+    note: food.note || '',
+  })
+}
+  const handleFoodMasterCancelEdit = () => {
+  setEditingFoodMasterId(null)
+  setFoodMasterSubmittingMode('create')
+  setFoodMasterForm(emptyFoodMasterForm)
+}
+  
   const preferredFoodSuggestions = useMemo(() => {
   return getFoodSuggestionsForInput(mealPlanForm.preferred_foods, foodMaster)
 }, [mealPlanForm.preferred_foods, foodMaster])
@@ -12893,15 +12962,30 @@ const filteredExercisesAdvanced = exercises.filter((exercise) => {
         </label>
 
         <div className="meal-food-register-actions">
-          <button
-            type="button"
-            className="primary-btn"
-            onClick={handleFoodMasterSave}
-            disabled={savingFoodMaster}
-          >
-            {savingFoodMaster ? '저장 중...' : '음식 등록'}
-          </button>
-        </div>
+  <button
+    type="button"
+    className="primary-btn"
+    onClick={handleFoodMasterSave}
+    disabled={savingFoodMaster}
+  >
+    {savingFoodMaster
+      ? '저장 중...'
+      : editingFoodMasterId
+      ? '수정 저장'
+      : '음식 등록'}
+  </button>
+
+  {editingFoodMasterId ? (
+    <button
+      type="button"
+      className="secondary-btn"
+      onClick={handleFoodMasterCancelEdit}
+      disabled={savingFoodMaster}
+    >
+      취소
+    </button>
+  ) : null}
+</div>
       </div>
 
       <label className="field">
@@ -12938,12 +13022,32 @@ const filteredExercisesAdvanced = exercises.filter((exercise) => {
           <div className="list-stack">
             {displayFoods.slice(0, showAllFoodMaster ? 100 : 10).map((food) => (
               <div key={food.id} className="detail-box meal-food-db-item">
-                <div className="list-card-top">
-                  <strong>{food.name}</strong>
-                  <span className="status-pill">
-                    {food.category_major || '-'}
-                  </span>
-                </div>
+                
+               <div className="list-card-top">
+  <strong>{food.name}</strong>
+
+  <div className="inline-actions wrap">
+    <span className="status-pill">
+      {food.category_major || '-'}
+    </span>
+
+    <button
+      type="button"
+      className="secondary-btn"
+      onClick={() => handleFoodMasterEditStart(food)}
+    >
+      수정
+    </button>
+
+    <button
+      type="button"
+      className="danger-btn"
+      onClick={() => handleFoodMasterDeactivate(food)}
+    >
+      비활성화
+    </button>
+  </div>
+</div>
 
                 <div className="compact-text">
                   {food.category_minor || '-'} / {food.source_type || '-'}
