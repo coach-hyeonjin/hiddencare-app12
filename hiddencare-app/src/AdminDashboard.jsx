@@ -1646,25 +1646,55 @@ const getFoodsByCategories = (foods, categories = [], blockedSet = new Set()) =>
   })
 }
 
-const sortFoodsForPick = (foods, preferredSet, goalType, dateString, slot, offset = 0) => {
+const sortFoodsForPick = (
+  foods,
+  preferredSet,
+  goalType,
+  dateString,
+  slot,
+  offset = 0,
+  recentUsedIds = [],
+  slotUsedNames = []
+) => {
   const seed = getRotationSeed(dateString, slot, offset)
+  const recentSet = new Set(recentUsedIds || [])
+  const slotNameSet = new Set((slotUsedNames || []).map((item) => String(item || '').trim()))
 
   return [...foods].sort((a, b) => {
-    const aPreferred = preferredSet.has(a.id) ? 5 : 0
-    const bPreferred = preferredSet.has(b.id) ? 5 : 0
+    const getScore = (food) => {
+      let score = 0
 
-    const aGoal = getFoodTagScore(a, goalType)
-    const bGoal = getFoodTagScore(b, goalType)
+      if (preferredSet.has(food.id)) score += 6
 
-    const aScore = aPreferred + aGoal
-    const bScore = bPreferred + bGoal
+      score += getFoodTagScore(food, goalType) * 2
 
-    if (aScore !== bScore) return bScore - aScore
+      if (recentSet.has(food.id)) score -= 6
 
-    const aSeed = (seed + String(a.name || '').length) % 7
-    const bSeed = (seed + String(b.name || '').length) % 7
+      if (slotNameSet.has(String(food.name || '').trim())) score -= 8
 
-    if (aSeed !== bSeed) return bSeed - aSeed
+      const category = String(food?.category_major || '').trim()
+      const minor = String(food?.category_minor || '').trim()
+
+      if (goalType === 'diet' || goalType === 'recomposition') {
+        if (category === 'protein' && Number(food.fat_per_100g || 0) <= 5) score += 2
+        if (minor === 'unsaturated_fat') score += 1
+      }
+
+      if (goalType === 'muscle_gain' || goalType === 'bulk') {
+        if (category === 'protein' && Number(food.protein_per_100g || 0) >= 18) score += 2
+        if (category === 'carb') score += 1
+      }
+
+      const nameSeed = (seed + String(food.name || '').length) % 5
+      score += nameSeed * 0.01
+
+      return score
+    }
+
+    const scoreA = getScore(a)
+    const scoreB = getScore(b)
+
+    if (scoreA !== scoreB) return scoreB - scoreA
 
     return String(a.name || '').localeCompare(String(b.name || ''), 'ko-KR')
   })
@@ -1680,6 +1710,8 @@ const pickFood = ({
   slot = '',
   offset = 0,
   usedIds = new Set(),
+  recentUsedIds = [],
+  slotUsedNames = [],
 }) => {
   const candidates = getFoodsByCategories(foods, categories, blockedSet).filter(
     (food) => !usedIds.has(food.id)
@@ -1687,8 +1719,23 @@ const pickFood = ({
 
   if (!candidates.length) return null
 
-  const sorted = sortFoodsForPick(candidates, preferredSet, goalType, dateString, slot, offset)
-  return sorted[0] || null
+  const sorted = sortFoodsForPick(
+    candidates,
+    preferredSet,
+    goalType,
+    dateString,
+    slot,
+    offset,
+    recentUsedIds,
+    slotUsedNames
+  )
+
+  if (!sorted.length) return null
+
+  const topScoreFoods = sorted.slice(0, Math.min(3, sorted.length))
+
+  const rotationIndex = getRotationSeed(dateString, slot, offset) % topScoreFoods.length
+  return topScoreFoods[rotationIndex] || topScoreFoods[0] || null
 }
 
 const calcPortionByMacro = ({
@@ -1762,6 +1809,8 @@ const buildSingleMealPlan = ({
   targetProtein,
   targetFat,
   offset = 0,
+  recentUsedIds = [],
+  slotUsedNames = [],
 }) => {
   const config = getMealCategoryConfig(slot, goalType, dayType)
   const usedIds = new Set()
@@ -1776,6 +1825,8 @@ const buildSingleMealPlan = ({
     slot,
     offset,
     usedIds,
+    recentUsedIds,
+    slotUsedNames,
   })
 
   if (carbFood) usedIds.add(carbFood.id)
@@ -1790,6 +1841,8 @@ const buildSingleMealPlan = ({
     slot,
     offset: offset + 1,
     usedIds,
+    recentUsedIds,
+    slotUsedNames,
   })
 
   if (proteinFood) usedIds.add(proteinFood.id)
@@ -1804,6 +1857,8 @@ const buildSingleMealPlan = ({
     slot,
     offset: offset + 2,
     usedIds,
+    recentUsedIds,
+    slotUsedNames,
   })
 
   const mealItems = []
@@ -1863,6 +1918,16 @@ const buildSingleMealPlan = ({
 
   const summary = sumMealItems(mealItems)
 
+  const nextUsedIds = [
+    ...recentUsedIds,
+    ...mealItems.map((item) => item.food_id).filter(Boolean),
+  ].slice(-8)
+
+  const nextSlotUsedNames = [
+    ...slotUsedNames,
+    ...mealItems.map((item) => item.name).filter(Boolean),
+  ].slice(-8)
+
   return {
     items: mealItems,
     menu: formatMealMenu(mealItems),
@@ -1871,6 +1936,8 @@ const buildSingleMealPlan = ({
     protein_g: Math.round(summary.protein_g),
     fat_g: Math.round(summary.fat_g),
     sodium_mg: Math.round(summary.sodium_mg),
+    nextUsedIds,
+    nextSlotUsedNames,
   }
 }
 
@@ -1881,12 +1948,14 @@ const getRotatingMealExample = (
   dateString,
   preferences = {},
   foods = [],
-  target = {}
+  target = {},
+  recentUsedIds = [],
+  slotUsedNames = []
 ) => {
   const preferredSet = preferences.preferredSet || new Set()
   const blockedSet = preferences.blockedSet || new Set()
 
-  const result = buildSingleMealPlan({
+  return buildSingleMealPlan({
     foods,
     goalType,
     slot,
@@ -1898,9 +1967,9 @@ const getRotatingMealExample = (
     targetProtein: Number(target.protein_g || 0),
     targetFat: Number(target.fat_g || 0),
     offset: 0,
+    recentUsedIds,
+    slotUsedNames,
   })
-
-  return result
 }
 
 const getMealAlternatives = (
@@ -1911,7 +1980,9 @@ const getMealAlternatives = (
   count = 2,
   preferences = {},
   foods = [],
-  target = {}
+  target = {},
+  recentUsedIds = [],
+  slotUsedNames = []
 ) => {
   const preferredSet = preferences.preferredSet || new Set()
   const blockedSet = preferences.blockedSet || new Set()
@@ -1930,7 +2001,9 @@ const getMealAlternatives = (
       targetCarbs: Number(target.carbs_g || 0),
       targetProtein: Number(target.protein_g || 0),
       targetFat: Number(target.fat_g || 0),
-      offset: i,
+      offset: i + 2,
+      recentUsedIds,
+      slotUsedNames,
     })
 
     if (alt?.menu && !result.includes(alt.menu)) {
@@ -2020,58 +2093,68 @@ const handleMealPlanMonthGenerate = async () => {
 
     const slotCount = mealSlots.length || 1
 
-    const mealsJson = mealSlots.map((slot) => {
-      const slotTarget = {
-        carbs_g: Math.round(totalCarbs / slotCount),
-        protein_g: Math.round(totalProtein / slotCount),
-        fat_g: Math.round(totalFat / slotCount),
-      }
+    let dayRecentUsedIds = []
+let daySlotUsedNames = []
 
-      const mealResult = getRotatingMealExample(
-        mealPlanForm.goal_type,
-        slot,
-        dayType,
-        date,
-        { preferredSet, blockedSet },
-        foods,
-        slotTarget
-      )
+const mealsJson = mealSlots.map((slot) => {
+  const slotTarget = {
+    carbs_g: Math.round(totalCarbs / slotCount),
+    protein_g: Math.round(totalProtein / slotCount),
+    fat_g: Math.round(totalFat / slotCount),
+  }
 
-      const alternatives = getMealAlternatives(
-        mealPlanForm.goal_type,
-        slot,
-        dayType,
-        date,
-        2,
-        { preferredSet, blockedSet },
-        foods,
-        slotTarget
-      )
+  const mealResult = getRotatingMealExample(
+    mealPlanForm.goal_type,
+    slot,
+    dayType,
+    date,
+    { preferredSet, blockedSet },
+    foods,
+    slotTarget,
+    dayRecentUsedIds,
+    daySlotUsedNames
+  )
 
-      return {
-        slot,
-        time:
-          slot === '아침'
-            ? '08:00'
-            : slot === '오전간식'
-            ? '10:30'
-            : slot === '점심'
-            ? '12:30'
-            : slot === '운동후'
-            ? '16:30'
-            : slot === '간식'
-            ? '16:30'
-            : '19:30',
-        menu: mealResult.menu || '식단 생성 실패',
-        alternatives,
-        food_items: mealResult.items || [],
-        carbs_g: Number(mealResult.carbs_g || 0),
-        protein_g: Number(mealResult.protein_g || 0),
-        fat_g: Number(mealResult.fat_g || 0),
-        kcal: Number(mealResult.kcal || 0),
-        sodium_mg: Number(mealResult.sodium_mg || 0),
-      }
-    })
+  dayRecentUsedIds = Array.isArray(mealResult?.nextUsedIds) ? mealResult.nextUsedIds : dayRecentUsedIds
+  daySlotUsedNames = Array.isArray(mealResult?.nextSlotUsedNames) ? mealResult.nextSlotUsedNames : daySlotUsedNames
+
+  const alternatives = getMealAlternatives(
+    mealPlanForm.goal_type,
+    slot,
+    dayType,
+    date,
+    2,
+    { preferredSet, blockedSet },
+    foods,
+    slotTarget,
+    dayRecentUsedIds,
+    daySlotUsedNames
+  )
+
+  return {
+    slot,
+    time:
+      slot === '아침'
+        ? '08:00'
+        : slot === '오전간식'
+        ? '10:30'
+        : slot === '점심'
+        ? '12:30'
+        : slot === '운동후'
+        ? '16:30'
+        : slot === '간식'
+        ? '16:30'
+        : '19:30',
+    menu: mealResult.menu || '식단 생성 실패',
+    alternatives,
+    food_items: mealResult.items || [],
+    carbs_g: Number(mealResult.carbs_g || 0),
+    protein_g: Number(mealResult.protein_g || 0),
+    fat_g: Number(mealResult.fat_g || 0),
+    kcal: Number(mealResult.kcal || 0),
+    sodium_mg: Number(mealResult.sodium_mg || 0),
+  }
+})
 
     const mealsSummaryJson = mealsJson.map((meal) => ({
       slot: meal.slot,
