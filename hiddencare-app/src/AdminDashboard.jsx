@@ -13602,10 +13602,8 @@ const filteredExercisesAdvanced = exercises.filter((exercise) => {
     }
   />
 </label>
-  </div>
-            
 </div>
-
+</div>
           <div className="inline-actions wrap">
             <button className="primary-btn" type="button" onClick={handleMealPlanGenerate}>
               자동 계산
