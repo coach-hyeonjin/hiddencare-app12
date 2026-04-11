@@ -11446,8 +11446,8 @@ img {
 
 /* ===== 위험 상태 ===== */
 .coach-danger-box {
-  border-radius: 14px;
   padding: 16px;
+  border-radius: 14px;
   background: #fef2f2;
   border: 1px solid #fca5a5;
   color: #7f1d1d;
@@ -20858,5 +20858,30 @@ textarea:focus {
 
   .meal-progress-stat-card strong {
     font-size: 24px;
+  }
+}
+/* ===== 식단 설정 확장 grid ===== */
+
+.grid-5 {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 12px;
+}
+
+@media (max-width: 1200px) {
+  .grid-5 {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 768px) {
+  .grid-5 {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 520px) {
+  .grid-5 {
+    grid-template-columns: 1fr;
   }
 }
