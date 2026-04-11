@@ -12937,17 +12937,26 @@ const filteredExercisesAdvanced = exercises.filter((exercise) => {
         ※ 선호 음식 / 제외 음식 / 알레르기 입력칸에는 아래 대표명이나 별칭을 쓰면 더 정확하게 인식됩니다.
       </div>
 
-      {!foodMasterSearch.trim() && !showAllFoodMaster ? (
-  <div className="workout-list-empty">
-    검색어를 입력하거나 전체 보기를 누르면 음식 목록이 표시됩니다.
-  </div>
-) : (foodMasterSearch.trim() ? filteredFoodMaster : foodMaster).length === 0 ? (
-  <div className="workout-list-empty">검색 결과가 없습니다.</div>
-) : (
-  <div className="list-stack">
-    {(foodMasterSearch.trim() ? filteredFoodMaster : foodMaster)
-      .slice(0, showAllFoodMaster ? 100 : 10)
-      .map((food) => (
+      {(() => {
+  const displayFoods = foodMasterSearch.trim() ? filteredFoodMaster : foodMaster
+
+  if (!foodMasterSearch.trim() && !showAllFoodMaster) {
+    return (
+      <div className="workout-list-empty">
+        검색어를 입력하거나 전체 보기를 누르면 음식 목록이 표시됩니다.
+      </div>
+    )
+  }
+
+  if (!displayFoods || displayFoods.length === 0) {
+    return (
+      <div className="workout-list-empty">검색 결과가 없습니다.</div>
+    )
+  }
+
+  return (
+    <div className="list-stack">
+      {displayFoods.slice(0, showAllFoodMaster ? 100 : 10).map((food) => (
         <div key={food.id} className="detail-box meal-food-db-item">
           <div className="list-card-top">
             <strong>{food.name}</strong>
@@ -12979,8 +12988,9 @@ const filteredExercisesAdvanced = exercises.filter((exercise) => {
           ) : null}
         </div>
       ))}
-  </div>
-)}
+    </div>
+  )
+})()}
           <label className="field">
             <span>코치 메모</span>
             <textarea
