@@ -692,7 +692,10 @@ const todayMealPlan = useMemo(() => {
 const todayMealPlanProgress = useMemo(() => {
   return todayMealPlan ? getMealPlanProgress(todayMealPlan) : null
 }, [todayMealPlan])
-
+const todayMealSlots = useMemo(() => {
+  return Array.isArray(todayMealPlan?.meals_json) ? todayMealPlan.meals_json : []
+}, [todayMealPlan])
+  
 const monthlyMealPlanProgress = useMemo(() => {
   const plans = Array.isArray(mealPlans) ? mealPlans : []
 
@@ -738,7 +741,21 @@ const getMealCheckStatusText = (status) => {
   if (status === 'skipped') return '못 먹음'
   return '미체크'
 }
+const getMealFoodItems = (meal) => {
+  return Array.isArray(meal?.food_items) ? meal.food_items : []
+}
 
+const getMealDisplaySummary = (meal) => {
+  const foodItems = getMealFoodItems(meal)
+
+  if (foodItems.length > 0) {
+    return foodItems
+      .map((item) => `${item.name} ${Number(item.grams || 0)}g`)
+      .join(' · ')
+  }
+
+  return meal?.menu || '-'
+}
 const updateMealCheckDraft = (planId, slot, value) => {
   const key = `${planId}-${slot}`
   setMealCheckDrafts((prev) => ({
@@ -5192,61 +5209,121 @@ return { ok: true, xp: xpValue }
         </div>
       </section>
 
-      <section className="card member-diet-log-card">
-        <div className="member-diet-section-head">
-          <div>
-            <div className="member-diet-section-label">TODAY MEAL</div>
-            <h2>오늘 식단</h2>
-            <p className="sub-text">
-              오늘 날짜 기준으로 적용되는 식단을 먼저 보여주는 영역입니다.
-            </p>
-          </div>
+      <section className="card member-today-meal-card">
+  <div className="list-card-top">
+    <div>
+      <div className="member-diet-section-label">TODAY MEAL</div>
+      <h2>오늘 식단</h2>
+      <p className="sub-text">
+        오늘 날짜 기준 식단과 끼니별 구성, 진행 상태를 바로 확인할 수 있습니다.
+      </p>
+    </div>
+
+    <div className="inline-actions wrap">
+      <span className="status-pill">
+        {todayMealPlan?.plan_date || '-'}
+      </span>
+      <span className="status-pill">
+        {todayMealPlan?.day_type || '-'}
+      </span>
+    </div>
+  </div>
+
+  {!todayMealPlan ? (
+    <div className="workout-list-empty">오늘 확인할 식단이 없습니다.</div>
+  ) : (
+    <div className="stack-gap">
+      <div className="member-today-meal-summary-grid">
+        <div className="detail-box">
+          <span>오늘 총 열량</span>
+          <strong>{Number(todayMealPlan.total_kcal || 0)} kcal</strong>
         </div>
 
-        {!todayMealPlan ? (
-          <div className="workout-list-empty">오늘 확인할 식단이 없습니다.</div>
+        <div className="detail-box">
+          <span>탄수화물</span>
+          <strong>{Number(todayMealPlan.total_carbs_g || 0)} g</strong>
+        </div>
+
+        <div className="detail-box">
+          <span>단백질</span>
+          <strong>{Number(todayMealPlan.total_protein_g || 0)} g</strong>
+        </div>
+
+        <div className="detail-box">
+          <span>지방</span>
+          <strong>{Number(todayMealPlan.total_fat_g || 0)} g</strong>
+        </div>
+      </div>
+
+      {todayMealPlanProgress ? (
+        <div className="detail-box">
+          <p><strong>오늘 식단 진행률</strong></p>
+          <p>
+            완료 {todayMealPlanProgress.doneCount} / 못 먹음 {todayMealPlanProgress.skippedCount} / 미체크 {todayMealPlanProgress.pendingCount}
+          </p>
+          <p>진행률 {todayMealPlanProgress.percent}%</p>
+        </div>
+      ) : null}
+
+      <div className="list-stack">
+        {todayMealSlots.length === 0 ? (
+          <div className="workout-list-empty">오늘 식단 끼니 정보가 없습니다.</div>
         ) : (
-          <div className="member-diet-detail-box">
-            <div className="member-diet-detail-grid">
-              <div className="member-diet-detail-card">
-                <span>날짜</span>
-                <strong>{todayMealPlan.plan_date}</strong>
-              </div>
+          todayMealSlots.map((meal, index) => {
+            const checkEntry = getMealCheckEntry(todayMealPlan, meal.slot || '식사')
+            const foodItems = getMealFoodItems(meal)
 
-              <div className="member-diet-detail-card">
-                <span>유형</span>
-                <strong>{todayMealPlan.day_type}</strong>
-              </div>
+            return (
+              <div
+                key={`${meal.slot || '식사'}-${index}`}
+                className="detail-box member-today-meal-slot-card"
+              >
+                <div className="list-card-top">
+                  <strong>{meal.slot || `식사 ${index + 1}`}</strong>
+                  <span className="status-pill">
+                    {getMealCheckStatusText(checkEntry?.status)}
+                  </span>
+                </div>
 
-              <div className="member-diet-detail-card">
-                <span>하루 열량</span>
-                <strong>{todayMealPlan.total_kcal || 0} kcal</strong>
-              </div>
+                <div className="compact-text">
+                  시간: {meal.time || '-'}
+                </div>
 
-              <div className="member-diet-detail-card">
-                <span>탄단지</span>
-                <strong>
-                  탄 {todayMealPlan.total_carbs_g || 0} / 단 {todayMealPlan.total_protein_g || 0} / 지 {todayMealPlan.total_fat_g || 0}
-                </strong>
-              </div>
-            </div>
+                <div className="compact-text">
+                  kcal {Number(meal.kcal || 0)} / 탄 {Number(meal.carbs_g || 0)}g / 단 {Number(meal.protein_g || 0)}g / 지 {Number(meal.fat_g || 0)}g
+                </div>
 
-            <div className="member-diet-content-box">
-              <span>오늘 식단</span>
-              {Array.isArray(todayMealPlan.meals_json) && todayMealPlan.meals_json.length > 0 ? (
-                todayMealPlan.meals_json.map((meal, index) => (
-                  <p key={index} style={{ marginBottom: '8px' }}>
-                    <strong>{meal.slot || `식사 ${index + 1}`}</strong>: {meal.menu || '-'}
-                  </p>
-                ))
-              ) : (
-                <p>등록된 식단이 없습니다.</p>
-              )}
-            </div>
-          </div>
+                {foodItems.length > 0 ? (
+                  <div className="member-meal-food-item-list">
+                    {foodItems.map((item, itemIndex) => (
+                      <div
+                        key={`${item.name || 'food'}-${itemIndex}`}
+                        className="member-meal-food-item"
+                      >
+                        <strong>{item.name}</strong>
+                        <span>{Number(item.grams || 0)}g</span>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="compact-text">{meal.menu || '-'}</div>
+                )}
+
+                {Array.isArray(meal.alternatives) && meal.alternatives.length > 0 ? (
+                  <div className="compact-text">
+                    <strong>대체 음식:</strong> {meal.alternatives.join(' / ')}
+                  </div>
+                ) : null}
+              </div>
+            )
+          })
         )}
-      </section>
+      </div>
     </div>
+  )}
+</section>
+    </div>
+    
     <section className="meal-progress-dashboard-card">
   <div className="meal-planner-card-label">MEAL PROGRESS</div>
 
@@ -5488,10 +5565,27 @@ return { ok: true, xp: xpValue }
           className="detail-box"
           style={{ marginTop: '12px' }}
         >
-          <p style={{ marginBottom: '8px' }}>
-            <strong>{slot}</strong>: {meal.menu || '-'}
-          </p>
+          <div className="compact-text" style={{ marginBottom: '8px' }}>
+  <strong>{slot}</strong>: {getMealDisplaySummary(meal)}
+</div>
 
+<div className="compact-text" style={{ marginBottom: '8px' }}>
+  kcal {Number(meal.kcal || 0)} / 탄 {Number(meal.carbs_g || 0)}g / 단 {Number(meal.protein_g || 0)}g / 지 {Number(meal.fat_g || 0)}g
+</div>
+
+{getMealFoodItems(meal).length > 0 ? (
+  <div className="member-meal-food-item-list" style={{ marginBottom: '10px' }}>
+    {getMealFoodItems(meal).map((item, itemIndex) => (
+      <div
+        key={`${item.name || 'food'}-${itemIndex}`}
+        className="member-meal-food-item"
+      >
+        <strong>{item.name}</strong>
+        <span>{Number(item.grams || 0)}g</span>
+      </div>
+    ))}
+  </div>
+) : null}
           <div className="inline-actions wrap" style={{ marginBottom: '8px' }}>
             <span className="pill">
               {getMealCheckStatusText(checkEntry?.status)}
