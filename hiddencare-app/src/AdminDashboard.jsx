@@ -2454,6 +2454,102 @@ const handleMealPlanUpdate = async (plan) => {
     return searchText.includes(keyword)
   })
 }, [foodMaster, foodMasterSearch])
+
+  const splitCommaWords = (value) => {
+  return String(value || '')
+    .split(',')
+    .map((item) => item.trim())
+    .filter(Boolean)
+}
+
+const getLastCommaKeyword = (value) => {
+  const parts = String(value || '').split(',')
+  return String(parts[parts.length - 1] || '').trim().toLowerCase()
+}
+
+const getFoodSuggestionScore = (food, keyword) => {
+  if (!keyword) return 0
+
+  const name = String(food?.name || '').toLowerCase()
+  const aliases = Array.isArray(food?.aliases)
+    ? food.aliases.map((item) => String(item || '').toLowerCase())
+    : []
+
+  let score = 0
+
+  if (name === keyword) score += 100
+  if (name.startsWith(keyword)) score += 50
+  if (name.includes(keyword)) score += 25
+
+  aliases.forEach((alias) => {
+    if (alias === keyword) score += 80
+    else if (alias.startsWith(keyword)) score += 40
+    else if (alias.includes(keyword)) score += 20
+  })
+
+  return score
+}
+
+const getFoodSuggestionsForInput = (rawValue, foods = []) => {
+  const keyword = getLastCommaKeyword(rawValue)
+
+  if (!keyword) return []
+
+  const selectedWords = splitCommaWords(rawValue)
+    .slice(0, -1)
+    .map((item) => item.toLowerCase())
+
+  const selectedSet = new Set(selectedWords)
+
+  return (Array.isArray(foods) ? foods : [])
+    .map((food) => ({
+      food,
+      score: getFoodSuggestionScore(food, keyword),
+    }))
+    .filter(({ food, score }) => {
+      if (score <= 0) return false
+      return !selectedSet.has(String(food?.name || '').toLowerCase())
+    })
+    .sort((a, b) => {
+      if (a.score !== b.score) return b.score - a.score
+      return String(a.food?.name || '').localeCompare(String(b.food?.name || ''), 'ko-KR')
+    })
+    .slice(0, 8)
+    .map(({ food }) => food)
+}
+
+const replaceLastCommaWord = (rawValue, nextWord) => {
+  const parts = String(rawValue || '').split(',')
+
+  if (parts.length === 0) return nextWord
+
+  parts[parts.length - 1] = nextWord
+
+  return parts
+    .map((item) => String(item || '').trim())
+    .filter((item, index, arr) => !(item === '' && index < arr.length - 1))
+    .join(', ')
+}
+
+const applyFoodSuggestionToField = (fieldName, foodName) => {
+  setMealPlanForm((prev) => ({
+    ...prev,
+    [fieldName]: replaceLastCommaWord(prev[fieldName], foodName),
+  }))
+}
+
+  const preferredFoodSuggestions = useMemo(() => {
+  return getFoodSuggestionsForInput(mealPlanForm.preferred_foods, foodMaster)
+}, [mealPlanForm.preferred_foods, foodMaster])
+
+const excludedFoodSuggestions = useMemo(() => {
+  return getFoodSuggestionsForInput(mealPlanForm.excluded_foods, foodMaster)
+}, [mealPlanForm.excluded_foods, foodMaster])
+
+const allergyFoodSuggestions = useMemo(() => {
+  return getFoodSuggestionsForInput(mealPlanForm.allergies, foodMaster)
+}, [mealPlanForm.allergies, foodMaster])
+  
 const managerScoreCards = useMemo(() => {
     const currentMonth = new Date().toISOString().slice(0, 7)
 
@@ -12384,6 +12480,28 @@ const filteredExercisesAdvanced = exercises.filter((exercise) => {
               }
               placeholder="예: 우유, 견과류, 갑각류"
             />
+            {excludedFoodSuggestions.length > 0 ? (
+  <div className="meal-food-suggestion-wrap">
+    <div className="meal-food-suggestion-title">추천 음식</div>
+    <div className="meal-food-suggestion-list">
+      {excludedFoodSuggestions.map((food) => (
+        <button
+          key={food.id}
+          type="button"
+          className="meal-food-suggestion-btn"
+          onClick={() => applyFoodSuggestionToField('excluded_foods', food.name)}
+        >
+          <strong>{food.name}</strong>
+          <span>
+            {Array.isArray(food.aliases) && food.aliases.length > 0
+              ? food.aliases.slice(0, 3).join(', ')
+              : '대표명'}
+          </span>
+        </button>
+      ))}
+    </div>
+  </div>
+) : null}
           </label>
 
           <label className="field">
@@ -12398,6 +12516,42 @@ const filteredExercisesAdvanced = exercises.filter((exercise) => {
               }
               placeholder="예: 닭가슴살, 연어, 고구마"
             />
+              <label className="field">
+            <span>못 먹는 음식 (쉼표로 구분)</span>
+            <input
+              value={mealPlanForm.excluded_foods}
+              onChange={(e) =>
+                setMealPlanForm((prev) => ({
+                  ...prev,
+                  excluded_foods: e.target.value,
+                }))
+              }
+              placeholder="예: 우유, 견과류, 갑각류"
+            />
+            {excludedFoodSuggestions.length > 0 ? (
+  <div className="meal-food-suggestion-wrap">
+    <div className="meal-food-suggestion-title">추천 음식</div>
+    <div className="meal-food-suggestion-list">
+      {excludedFoodSuggestions.map((food) => (
+        <button
+          key={food.id}
+          type="button"
+          className="meal-food-suggestion-btn"
+          onClick={() => applyFoodSuggestionToField('excluded_foods', food.name)}
+        >
+          <strong>{food.name}</strong>
+          <span>
+            {Array.isArray(food.aliases) && food.aliases.length > 0
+              ? food.aliases.slice(0, 3).join(', ')
+              : '대표명'}
+          </span>
+        </button>
+      ))}
+    </div>
+  </div>
+) : null}
+          </label>
+
           </label>
 
           <label className="field">
@@ -12412,6 +12566,28 @@ const filteredExercisesAdvanced = exercises.filter((exercise) => {
               }
               placeholder="예: 우유, 견과류, 갑각류"
             />
+            {allergyFoodSuggestions.length > 0 ? (
+  <div className="meal-food-suggestion-wrap">
+    <div className="meal-food-suggestion-title">추천 음식</div>
+    <div className="meal-food-suggestion-list">
+      {allergyFoodSuggestions.map((food) => (
+        <button
+          key={food.id}
+          type="button"
+          className="meal-food-suggestion-btn"
+          onClick={() => applyFoodSuggestionToField('allergies', food.name)}
+        >
+          <strong>{food.name}</strong>
+          <span>
+            {Array.isArray(food.aliases) && food.aliases.length > 0
+              ? food.aliases.slice(0, 3).join(', ')
+              : '대표명'}
+          </span>
+        </button>
+      ))}
+    </div>
+  </div>
+) : null}
           </label>
 <div className="sub-card">
   <div className="list-card-top">
