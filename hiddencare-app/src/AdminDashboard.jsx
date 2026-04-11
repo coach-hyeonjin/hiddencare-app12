@@ -862,6 +862,8 @@ const emptyMealPlanForm = {
   allowed_bread_per_week: 2,
   allowed_dessert_per_week: 1,
   meal_structure_mode: 'structured',
+    alcohol_frequency_per_week: 0,
+  allowed_alcohol_per_week: 1,
 }
 
 const [mealPlanForm, setMealPlanForm] = useState(emptyMealPlanForm)
@@ -1310,6 +1312,7 @@ const handleMealPlanGenerate = async () => {
     inputs_json: {
       mealPlanForm,
       latestHealth: health,
+          
     },
     result_json: {
       bmr,
@@ -1335,6 +1338,8 @@ const handleMealPlanGenerate = async () => {
     allowed_bread_per_week: Number(mealPlanForm.allowed_bread_per_week || 0),
     allowed_dessert_per_week: Number(mealPlanForm.allowed_dessert_per_week || 0),
     meal_structure_mode: mealPlanForm.meal_structure_mode || 'structured',
+      alcohol_frequency_per_week: Number(mealPlanForm.alcohol_frequency_per_week || 0),
+    allowed_alcohol_per_week: Number(mealPlanForm.allowed_alcohol_per_week || 0),
     },
   }
 
@@ -1397,7 +1402,10 @@ const handleMealPlanGenerate = async () => {
           allowed_bread_per_week: Number(mealPlanForm.allowed_bread_per_week || 0),
           allowed_dessert_per_week: Number(mealPlanForm.allowed_dessert_per_week || 0),
           meal_structure_mode: mealPlanForm.meal_structure_mode || 'structured',
+          alcohol_frequency_per_week: Number(mealPlanForm.alcohol_frequency_per_week || 0),
+  allowed_alcohol_per_week: Number(mealPlanForm.allowed_alcohol_per_week || 0),
           last_calculation_id: calculationId,
+        
         },
         { onConflict: 'member_id' }
       )
@@ -1461,6 +1469,8 @@ const handleMealPlanSave = async () => {
     allowed_bread_per_week: Number(mealPlanForm.allowed_bread_per_week || 0),
     allowed_dessert_per_week: Number(mealPlanForm.allowed_dessert_per_week || 0),
     meal_structure_mode: mealPlanForm.meal_structure_mode || 'structured',
+        alcohol_frequency_per_week: Number(mealPlanForm.alcohol_frequency_per_week || 0),
+    allowed_alcohol_per_week: Number(mealPlanForm.allowed_alcohol_per_week || 0),
   }
 
   const { error } = await supabase
@@ -1691,6 +1701,8 @@ const loadMemberMealPlanProfile = async (memberId) => {
       allowed_bread_per_week: Number(data?.allowed_bread_per_week || 0),
       allowed_dessert_per_week: Number(data?.allowed_dessert_per_week || 0),
       meal_structure_mode: data?.meal_structure_mode || 'structured',
+          alcohol_frequency_per_week: Number(data?.alcohol_frequency_per_week || 0),
+      allowed_alcohol_per_week: Number(data?.allowed_alcohol_per_week || 0),
   })
 }
 const normalizeCommaTextToArray = (value) => {
@@ -2319,7 +2331,17 @@ const getMealAlternatives = (
 
   return result
 }
-  
+const getRandomDays = (totalDays, count) => {
+  const days = Array.from({ length: totalDays }, (_, i) => i)
+  const result = []
+
+  while (result.length < count && days.length > 0) {
+    const idx = Math.floor(Math.random() * days.length)
+    result.push(days.splice(idx, 1)[0])
+  }
+
+  return result
+}  
 const handleMealPlanMonthGenerate = async () => {
   if (!mealPlanForm.member_id) {
     alert('회원 선택')
@@ -2349,6 +2371,11 @@ const handleMealPlanMonthGenerate = async () => {
   }
 
   const daysInMonth = new Date(year, month, 0).getDate()
+const generalMealDays = getRandomDays(daysInMonth, Number(mealPlanForm.allowed_general_meals_per_week || 0))
+const freeMealDays = getRandomDays(daysInMonth, Number(mealPlanForm.allowed_free_meals_per_week || 0))
+const snackDays = getRandomDays(daysInMonth, Number(mealPlanForm.allowed_snacks_per_week || 0))
+const alcoholDays = getRandomDays(daysInMonth, Number(mealPlanForm.allowed_alcohol_per_week || 0))
+  
   const mealSlots = buildMealSlotsByCount(mealPlanForm.meals_per_day)
   const trainingDays = Number(mealPlanForm.training_days_per_week || 3)
 
@@ -2401,6 +2428,23 @@ const handleMealPlanMonthGenerate = async () => {
 
     let dayRecentUsedIds = []
 let daySlotUsedNames = []
+    let dayType = 'diet'
+
+if (generalMealDays.includes(day - 1)) {
+  dayType = 'general'
+}
+
+if (freeMealDays.includes(day - 1)) {
+  dayType = 'free'
+}
+
+if (snackDays.includes(day - 1)) {
+  dayType = 'snack'
+}
+
+if (alcoholDays.includes(day - 1)) {
+  dayType = 'alcohol'
+}
 let dayPreferredIncludedCount = 0
 const mealsJson = mealSlots.map((slot) => {
   const slotTarget = {
@@ -13444,6 +13488,22 @@ const filteredExercisesAdvanced = exercises.filter((exercise) => {
         }
       />
     </label>
+
+    <label className="field">
+  <span>주간 음주 빈도</span>
+  <input
+    type="number"
+    min="0"
+    max="14"
+    value={mealPlanForm.alcohol_frequency_per_week}
+    onChange={(e) =>
+      setMealPlanForm((prev) => ({
+        ...prev,
+        alcohol_frequency_per_week: e.target.value,
+      }))
+    }
+  />
+</label>
   </div>
 
   <div className="grid-5">
@@ -13526,9 +13586,25 @@ const filteredExercisesAdvanced = exercises.filter((exercise) => {
         }
       />
     </label>
+
+    <label className="field">
+  <span>허용 음주/주</span>
+  <input
+    type="number"
+    min="0"
+    max="14"
+    value={mealPlanForm.allowed_alcohol_per_week}
+    onChange={(e) =>
+      setMealPlanForm((prev) => ({
+        ...prev,
+        allowed_alcohol_per_week: e.target.value,
+      }))
+    }
+  />
+</label>
   </div>
+            
 </div>
-          </label>
 
           <div className="inline-actions wrap">
             <button className="primary-btn" type="button" onClick={handleMealPlanGenerate}>
