@@ -20472,7 +20472,12 @@ textarea:focus {
   gap: 8px;
   margin-top: 10px;
 }
-
+.meal-food-db-actions {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 8px;
+  margin-bottom: 8px;
+}
 .detail-chip {
   display: inline-flex;
   align-items: center;
