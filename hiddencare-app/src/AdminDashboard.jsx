@@ -834,6 +834,7 @@ const [memberNutritionProfiles, setMemberNutritionProfiles] = useState([])
 const [memberMealPlans, setMemberMealPlans] = useState([])
   const [foodMaster, setFoodMaster] = useState([])
   const [foodMasterSearch, setFoodMasterSearch] = useState('')
+  const [showFoodMasterPanel, setShowFoodMasterPanel] = useState(false)
 const [foodMasterLoaded, setFoodMasterLoaded] = useState(false)
   const [mealComplianceMonth, setMealComplianceMonth] = useState(new Date().toISOString().slice(0, 7))
 const [memberMealCompliancePlans, setMemberMealCompliancePlans] = useState([])
@@ -2433,8 +2434,8 @@ const handleMealPlanUpdate = async (plan) => {
   const rows = Array.isArray(foodMaster) ? foodMaster : []
 
   if (!keyword) {
-    return rows
-  }
+  return []
+}
 
   return rows.filter((food) => {
     const aliases = Array.isArray(food.aliases) ? food.aliases.join(' ') : ''
@@ -12589,79 +12590,88 @@ const filteredExercisesAdvanced = exercises.filter((exercise) => {
   </div>
 ) : null}
           </label>
-<div className="sub-card">
-  <div className="list-card-top">
+<div className="sub-card meal-food-db-card">
+  <button
+    type="button"
+    className="meal-food-db-toggle"
+    onClick={() => setShowFoodMasterPanel((prev) => !prev)}
+  >
     <div>
       <strong>음식 DB 보기</strong>
       <p className="sub-text">
-        아래 음식명과 별칭을 기준으로 입력하면 식단 반영 정확도가 더 올라갑니다.
+        입력할 음식명을 검색해서 시스템이 인식하는 대표명과 별칭을 빠르게 확인할 수 있습니다.
       </p>
     </div>
     <span className="status-pill">
-      총 {filteredFoodMaster.length}개
+      {showFoodMasterPanel ? '닫기' : '열기'}
     </span>
+  </button>
+
+  <div className="meal-food-db-summary">
+    <div className="detail-chip">등록 음식 {Array.isArray(foodMaster) ? foodMaster.length : 0}개</div>
+    <div className="detail-chip">검색 결과 {filteredFoodMaster.length}개</div>
+    <div className="detail-chip">기본은 접힘</div>
   </div>
 
-  <div className="stack-gap">
-    <label className="field">
-      <span>음식 검색</span>
-      <input
-        placeholder="예: 닭다리살, 연어, 소고기, 서브웨이"
-        value={foodMasterSearch}
-        onChange={(e) => setFoodMasterSearch(e.target.value)}
-      />
-    </label>
+  {showFoodMasterPanel ? (
+    <div className="stack-gap">
+      <label className="field">
+        <span>음식 검색</span>
+        <input
+          placeholder="예: 닭다리살, 연어, 소고기, 서브웨이"
+          value={foodMasterSearch}
+          onChange={(e) => setFoodMasterSearch(e.target.value)}
+        />
+      </label>
 
-    <div className="compact-text">
-      ※ 선호 음식 / 제외 음식 / 알레르기 입력칸에는 아래 대표명이나 별칭을 쓰면 더 정확하게 인식됩니다.
-    </div>
+      <div className="compact-text">
+        ※ 선호 음식 / 제외 음식 / 알레르기 입력칸에는 아래 대표명이나 별칭을 쓰면 더 정확하게 인식됩니다.
+      </div>
 
-    <div className="list-stack">
-      {filteredFoodMaster.length === 0 ? (
+      {!foodMasterSearch.trim() ? (
+        <div className="workout-list-empty">
+          검색어를 입력하면 인식 가능한 음식 후보가 표시됩니다.
+        </div>
+      ) : filteredFoodMaster.length === 0 ? (
         <div className="workout-list-empty">검색 결과가 없습니다.</div>
       ) : (
-        filteredFoodMaster.slice(0, 30).map((food) => (
-          <div key={food.id} className="detail-box">
-            <div className="list-card-top">
-              <strong>{food.name}</strong>
-              <span className="status-pill">
-                {food.category_major || '-'}
-              </span>
-            </div>
-
-            <div className="compact-text">
-              {food.category_minor || '-'} / {food.source_type || '-'}
-            </div>
-
-            <div className="compact-text">
-              <strong>aliases:</strong>{' '}
-              {Array.isArray(food.aliases) && food.aliases.length > 0
-                ? food.aliases.join(', ')
-                : '-'}
-            </div>
-
-            <div className="compact-text">
-              <strong>100g 기준:</strong>{' '}
-              kcal {Number(food.kcal_per_100g || 0)} / 탄 {Number(food.carbs_per_100g || 0)}g / 단 {Number(food.protein_per_100g || 0)}g / 지 {Number(food.fat_per_100g || 0)}g / 나트륨 {Number(food.sodium_mg_per_100g || 0)}mg
-            </div>
-
-            <div className="compact-text">
-              <strong>tags:</strong>{' '}
-              {Array.isArray(food.tags) && food.tags.length > 0
-                ? food.tags.join(', ')
-                : '-'}
-            </div>
-
-            {food.note ? (
-              <div className="compact-text">
-                <strong>메모:</strong> {food.note}
+        <div className="list-stack">
+          {filteredFoodMaster.slice(0, 8).map((food) => (
+            <div key={food.id} className="detail-box meal-food-db-item">
+              <div className="list-card-top">
+                <strong>{food.name}</strong>
+                <span className="status-pill">
+                  {food.category_major || '-'}
+                </span>
               </div>
-            ) : null}
-          </div>
-        ))
+
+              <div className="compact-text">
+                {food.category_minor || '-'} / {food.source_type || '-'}
+              </div>
+
+              <div className="compact-text">
+                <strong>aliases:</strong>{' '}
+                {Array.isArray(food.aliases) && food.aliases.length > 0
+                  ? food.aliases.join(', ')
+                  : '-'}
+              </div>
+
+              <div className="compact-text">
+                <strong>100g 기준:</strong>{' '}
+                kcal {Number(food.kcal_per_100g || 0)} / 탄 {Number(food.carbs_per_100g || 0)}g / 단 {Number(food.protein_per_100g || 0)}g / 지 {Number(food.fat_per_100g || 0)}g / 나트륨 {Number(food.sodium_mg_per_100g || 0)}mg
+              </div>
+
+              {food.note ? (
+                <div className="compact-text">
+                  <strong>메모:</strong> {food.note}
+                </div>
+              ) : null}
+            </div>
+          ))}
+        </div>
       )}
     </div>
-  </div>
+  ) : null}
 </div>
           <label className="field">
             <span>코치 메모</span>
