@@ -14080,7 +14080,7 @@ const filteredExercisesAdvanced = exercises.filter((exercise) => {
     </div>
   )
 })
-          </>
+         
         )}
       </div>
 
