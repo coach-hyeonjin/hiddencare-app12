@@ -2348,7 +2348,7 @@ const mealsJson = mealSlots.map((slot) => {
     foods,
     slotTarget,
     dayRecentUsedIds,
-    daySlotUsedNames
+    daySlotUsedNames,
     dayPreferredIncludedCount
   )
 
