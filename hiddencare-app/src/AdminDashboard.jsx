@@ -2407,18 +2407,8 @@ const alcoholDays = getRandomDays(daysInMonth, Number(mealPlanForm.allowed_alcoh
         ? [1, 3, 5].includes(dayIndex)
         : [2, 4].includes(dayIndex)
 
-    const dayType = mealPlanForm.use_training_rest_split
-      ? isTrainingDay
-        ? 'training'
-        : 'rest'
-      : 'rest'
-
-    const baseKcal = Number(mealPlanForm.target_kcal || 0)
-    const adjustedKcal = mealPlanForm.use_training_rest_split
-      ? dayType === 'training'
-        ? baseKcal + 100
-        : baseKcal - 100
-      : baseKcal
+   const baseKcal = Number(mealPlanForm.target_kcal || 0)
+let adjustedKcal = baseKcal
 
     const totalCarbs = Number(mealPlanForm.target_carbs_g || 0)
     const totalProtein = Number(mealPlanForm.target_protein_g || 0)
@@ -13507,102 +13497,118 @@ const filteredExercisesAdvanced = exercises.filter((exercise) => {
   </div>
 
   <div className="grid-5">
-    <label className="field">
-      <span>허용 일반식/주</span>
-      <input
-        type="number"
-        min="0"
-        max="14"
-        value={mealPlanForm.allowed_general_meals_per_week}
-        onChange={(e) =>
-          setMealPlanForm((prev) => ({
-            ...prev,
-            allowed_general_meals_per_week: e.target.value,
-          }))
-        }
-      />
-    </label>
+  <label className="field">
+    <span>허용 일반식/주</span>
+    <input
+      type="number"
+      min="0"
+      max="14"
+      value={mealPlanForm.allowed_general_meals_per_week}
+      onChange={(e) =>
+        setMealPlanForm((prev) => ({
+          ...prev,
+          allowed_general_meals_per_week: e.target.value,
+        }))
+      }
+    />
+  </label>
 
-    <label className="field">
-      <span>허용 자유식/주</span>
-      <input
-        type="number"
-        min="0"
-        max="14"
-        value={mealPlanForm.allowed_free_meals_per_week}
-        onChange={(e) =>
-          setMealPlanForm((prev) => ({
-            ...prev,
-            allowed_free_meals_per_week: e.target.value,
-          }))
-        }
-      />
-    </label>
+  <label className="field">
+    <span>허용 자유식/주</span>
+    <input
+      type="number"
+      min="0"
+      max="14"
+      value={mealPlanForm.allowed_free_meals_per_week}
+      onChange={(e) =>
+        setMealPlanForm((prev) => ({
+          ...prev,
+          allowed_free_meals_per_week: e.target.value,
+        }))
+      }
+    />
+  </label>
 
-    <label className="field">
-      <span>허용 간식/주</span>
-      <input
-        type="number"
-        min="0"
-        max="14"
-        value={mealPlanForm.allowed_snacks_per_week}
-        onChange={(e) =>
-          setMealPlanForm((prev) => ({
-            ...prev,
-            allowed_snacks_per_week: e.target.value,
-          }))
-        }
-      />
-    </label>
+  <label className="field">
+    <span>허용 간식/주</span>
+    <input
+      type="number"
+      min="0"
+      max="14"
+      value={mealPlanForm.allowed_snacks_per_week}
+      onChange={(e) =>
+        setMealPlanForm((prev) => ({
+          ...prev,
+          allowed_snacks_per_week: e.target.value,
+        }))
+      }
+    />
+  </label>
 
-    <label className="field">
-      <span>허용 빵/주</span>
-      <input
-        type="number"
-        min="0"
-        max="14"
-        value={mealPlanForm.allowed_bread_per_week}
-        onChange={(e) =>
-          setMealPlanForm((prev) => ({
-            ...prev,
-            allowed_bread_per_week: e.target.value,
-          }))
-        }
-      />
-    </label>
+  <label className="field">
+    <span>허용 빵/주</span>
+    <input
+      type="number"
+      min="0"
+      max="14"
+      value={mealPlanForm.allowed_bread_per_week}
+      onChange={(e) =>
+        setMealPlanForm((prev) => ({
+          ...prev,
+          allowed_bread_per_week: e.target.value,
+        }))
+      }
+    />
+  </label>
 
-    <label className="field">
-      <span>허용 디저트/주</span>
-      <input
-        type="number"
-        min="0"
-        max="14"
-        value={mealPlanForm.allowed_dessert_per_week}
-        onChange={(e) =>
-          setMealPlanForm((prev) => ({
-            ...prev,
-            allowed_dessert_per_week: e.target.value,
-          }))
-        }
-      />
-    </label>
-
-    <label className="field">
-  <span>허용 음주/주</span>
-  <input
-    type="number"
-    min="0"
-    max="14"
-    value={mealPlanForm.allowed_alcohol_per_week}
-    onChange={(e) =>
-      setMealPlanForm((prev) => ({
-        ...prev,
-        allowed_alcohol_per_week: e.target.value,
-      }))
-    }
-  />
-</label>
+  <label className="field">
+    <span>허용 디저트/주</span>
+    <input
+      type="number"
+      min="0"
+      max="14"
+      value={mealPlanForm.allowed_dessert_per_week}
+      onChange={(e) =>
+        setMealPlanForm((prev) => ({
+          ...prev,
+          allowed_dessert_per_week: e.target.value,
+        }))
+      }
+    />
+  </label>
 </div>
+
+<div className="grid-1">
+  <label className="field">
+    <span>허용 음주/주</span>
+    <input
+      type="number"
+      min="0"
+      max="14"
+      value={mealPlanForm.allowed_alcohol_per_week}
+      onChange={(e) =>
+        setMealPlanForm((prev) => ({
+          ...prev,
+          allowed_alcohol_per_week: e.target.value,
+        }))
+      }
+    />
+  </label>
+</div>
+</div>
+
+<div className="inline-actions wrap">
+  <button className="primary-btn" type="button" onClick={handleMealPlanGenerate}>
+    자동 계산
+  </button>
+
+  <button className="secondary-btn" type="button" onClick={handleMealPlanSave}>
+    식단 설정 저장
+  </button>
+
+  <button className="primary-btn" type="button" onClick={handleMealPlanMonthGenerate}>
+    월간 식단 생성
+  </button>
 </div>
           <div className="inline-actions wrap">
             <button className="primary-btn" type="button" onClick={handleMealPlanGenerate}>
