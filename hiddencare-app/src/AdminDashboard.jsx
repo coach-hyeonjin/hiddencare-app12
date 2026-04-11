@@ -13301,19 +13301,21 @@ const filteredExercisesAdvanced = exercises.filter((exercise) => {
   ) : null}
 </div>
           <label className="field">
-            <span>코치 메모</span>
-            <textarea
-              rows="4"
-              value={mealPlanForm.notes}
-              onChange={(e) =>
-                setMealPlanForm((prev) => ({
-                  ...prev,
-                  notes: e.target.value,
-                }))
-              }
-              placeholder="예: 저녁 늦게 먹는 패턴 / 주말 외식 많음 / 단백질 보충 필요"
-            />
-            <div className="sub-card">
+  <span>코치 메모</span>
+  <textarea
+    rows="4"
+    value={mealPlanForm.notes}
+    onChange={(e) =>
+      setMealPlanForm((prev) => ({
+        ...prev,
+        notes: e.target.value,
+      }))
+    }
+    placeholder="예: 저녁 늦게 먹는 패턴 / 주말 외식 많음 / 단백질 보충 필요"
+  />
+</label>
+
+<div className="sub-card">
   <div className="list-card-top">
     <div>
       <strong>식단 운영 강도 / 생활습관 설정</strong>
