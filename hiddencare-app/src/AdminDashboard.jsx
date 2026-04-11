@@ -12591,54 +12591,41 @@ const filteredExercisesAdvanced = exercises.filter((exercise) => {
           </label>
 
           <label className="field">
-            <span>선호 음식 (쉼표로 구분)</span>
-            <input
-              value={mealPlanForm.preferred_foods}
-              onChange={(e) =>
-                setMealPlanForm((prev) => ({
-                  ...prev,
-                  preferred_foods: e.target.value,
-                }))
-              }
-              placeholder="예: 닭가슴살, 연어, 고구마"
-            />
-              <label className="field">
-            <span>못 먹는 음식 (쉼표로 구분)</span>
-            <input
-              value={mealPlanForm.excluded_foods}
-              onChange={(e) =>
-                setMealPlanForm((prev) => ({
-                  ...prev,
-                  excluded_foods: e.target.value,
-                }))
-              }
-              placeholder="예: 우유, 견과류, 갑각류"
-            />
-            {excludedFoodSuggestions.length > 0 ? (
-  <div className="meal-food-suggestion-wrap">
-    <div className="meal-food-suggestion-title">추천 음식</div>
-    <div className="meal-food-suggestion-list">
-      {excludedFoodSuggestions.map((food) => (
-        <button
-          key={food.id}
-          type="button"
-          className="meal-food-suggestion-btn"
-          onClick={() => applyFoodSuggestionToField('excluded_foods', food.name)}
-        >
-          <strong>{food.name}</strong>
-          <span>
-            {Array.isArray(food.aliases) && food.aliases.length > 0
-              ? food.aliases.slice(0, 3).join(', ')
-              : '대표명'}
-          </span>
-        </button>
-      ))}
-    </div>
-  </div>
-) : null}
-          </label>
+  <span>선호 음식 (쉼표로 구분)</span>
+  <input
+    value={mealPlanForm.preferred_foods}
+    onChange={(e) =>
+      setMealPlanForm((prev) => ({
+        ...prev,
+        preferred_foods: e.target.value,
+      }))
+    }
+    placeholder="예: 닭가슴살, 연어, 고구마"
+  />
 
-          </label>
+  {preferredFoodSuggestions.length > 0 ? (
+    <div className="meal-food-suggestion-wrap">
+      <div className="meal-food-suggestion-title">추천 음식</div>
+      <div className="meal-food-suggestion-list">
+        {preferredFoodSuggestions.map((food) => (
+          <button
+            key={food.id}
+            type="button"
+            className="meal-food-suggestion-btn"
+            onClick={() => applyFoodSuggestionToField('preferred_foods', food.name)}
+          >
+            <strong>{food.name}</strong>
+            <span>
+              {Array.isArray(food.aliases) && food.aliases.length > 0
+                ? food.aliases.slice(0, 3).join(', ')
+                : '대표명'}
+            </span>
+          </button>
+        ))}
+      </div>
+    </div>
+  ) : null}
+</label>
 
           <label className="field">
             <span>알레르기 / 절대 제외 음식 (쉼표로 구분)</span>
@@ -12698,232 +12685,225 @@ const filteredExercisesAdvanced = exercises.filter((exercise) => {
     <div className="detail-chip">기본은 접힘</div>
   </div>
 
-<div className="meal-food-db-summary">
-  <div className="detail-chip">등록 음식 {Array.isArray(foodMaster) ? foodMaster.length : 0}개</div>
-  <div className="detail-chip">검색 결과 {filteredFoodMaster.length}개</div>
-  <div className="detail-chip">기본은 접힘</div>
-</div>
-
-<div className="meal-food-db-actions">
-  <button
-    type="button"
-    className="secondary-btn"
-    onClick={() => setShowAllFoodMaster((prev) => !prev)}
-  >
-    {showAllFoodMaster ? '전체 접기' : '전체 보기'}
-  </button>
-</div>
-
-{showFoodMasterPanel ? (
-    <div className="stack-gap">
-
-      <div className="sub-card meal-food-register-card">
-  <div className="list-card-top">
-    <div>
-      <strong>음식 수기 등록</strong>
-      <p className="sub-text">
-        새 음식을 직접 등록하면 자동 추천과 식단 반영 후보에 바로 포함됩니다.
-      </p>
-    </div>
-    <span className="status-pill">food_master 등록</span>
-  </div>
-
-  <div className="grid-2">
-    <label className="field">
-      <span>음식명</span>
-      <input
-        value={foodMasterForm.name}
-        onChange={(e) => handleFoodMasterFormChange('name', e.target.value)}
-        placeholder="예: 닭봉, 소고기 안심"
-      />
-    </label>
-
-    <label className="field">
-      <span>aliases (쉼표 구분)</span>
-      <input
-        value={foodMasterForm.aliases}
-        onChange={(e) => handleFoodMasterFormChange('aliases', e.target.value)}
-        placeholder="예: 치킨윙, 닭봉구이"
-      />
-    </label>
-  </div>
-
-  <div className="grid-3">
-    <label className="field">
-      <span>대분류</span>
-      <select
-        value={foodMasterForm.category_major}
-        onChange={(e) => handleFoodMasterFormChange('category_major', e.target.value)}
-      >
-        <option value="carb">carb</option>
-        <option value="protein">protein</option>
-        <option value="fat">fat</option>
-        <option value="vegetable">vegetable</option>
-        <option value="fruit">fruit</option>
-        <option value="dairy">dairy</option>
-        <option value="mixed">mixed</option>
-      </select>
-    </label>
-
-    <label className="field">
-      <span>소분류</span>
-      <input
-        value={foodMasterForm.category_minor}
-        onChange={(e) => handleFoodMasterFormChange('category_minor', e.target.value)}
-        placeholder="예: animal_protein"
-      />
-    </label>
-
-    <label className="field">
-      <span>원천</span>
-      <select
-        value={foodMasterForm.source_type}
-        onChange={(e) => handleFoodMasterFormChange('source_type', e.target.value)}
-      >
-        <option value="animal">animal</option>
-        <option value="plant">plant</option>
-        <option value="mixed">mixed</option>
-      </select>
-    </label>
-  </div>
-
-  <div className="grid-4">
-    <label className="field">
-      <span>kcal</span>
-      <input
-        type="number"
-        value={foodMasterForm.kcal_per_100g}
-        onChange={(e) => handleFoodMasterFormChange('kcal_per_100g', e.target.value)}
-        placeholder="100g 기준"
-      />
-    </label>
-
-    <label className="field">
-      <span>탄수화물</span>
-      <input
-        type="number"
-        value={foodMasterForm.carbs_per_100g}
-        onChange={(e) => handleFoodMasterFormChange('carbs_per_100g', e.target.value)}
-        placeholder="g"
-      />
-    </label>
-
-    <label className="field">
-      <span>단백질</span>
-      <input
-        type="number"
-        value={foodMasterForm.protein_per_100g}
-        onChange={(e) => handleFoodMasterFormChange('protein_per_100g', e.target.value)}
-        placeholder="g"
-      />
-    </label>
-
-    <label className="field">
-      <span>지방</span>
-      <input
-        type="number"
-        value={foodMasterForm.fat_per_100g}
-        onChange={(e) => handleFoodMasterFormChange('fat_per_100g', e.target.value)}
-        placeholder="g"
-      />
-    </label>
-  </div>
-
-  <div className="grid-4">
-    <label className="field">
-      <span>포화지방</span>
-      <input
-        type="number"
-        value={foodMasterForm.saturated_fat_per_100g}
-        onChange={(e) => handleFoodMasterFormChange('saturated_fat_per_100g', e.target.value)}
-        placeholder="g"
-      />
-    </label>
-
-    <label className="field">
-      <span>불포화지방</span>
-      <input
-        type="number"
-        value={foodMasterForm.unsaturated_fat_per_100g}
-        onChange={(e) => handleFoodMasterFormChange('unsaturated_fat_per_100g', e.target.value)}
-        placeholder="g"
-      />
-    </label>
-
-    <label className="field">
-      <span>당류</span>
-      <input
-        type="number"
-        value={foodMasterForm.sugar_per_100g}
-        onChange={(e) => handleFoodMasterFormChange('sugar_per_100g', e.target.value)}
-        placeholder="g"
-      />
-    </label>
-
-    <label className="field">
-      <span>식이섬유</span>
-      <input
-        type="number"
-        value={foodMasterForm.fiber_per_100g}
-        onChange={(e) => handleFoodMasterFormChange('fiber_per_100g', e.target.value)}
-        placeholder="g"
-      />
-    </label>
-  </div>
-
-  <div className="grid-3">
-    <label className="field">
-      <span>나트륨</span>
-      <input
-        type="number"
-        value={foodMasterForm.sodium_mg_per_100g}
-        onChange={(e) => handleFoodMasterFormChange('sodium_mg_per_100g', e.target.value)}
-        placeholder="mg"
-      />
-    </label>
-
-    <label className="field">
-      <span>1회 섭취량</span>
-      <input
-        type="number"
-        value={foodMasterForm.typical_portion_g}
-        onChange={(e) => handleFoodMasterFormChange('typical_portion_g', e.target.value)}
-        placeholder="g"
-      />
-    </label>
-
-    <label className="field">
-      <span>tags (쉼표 구분)</span>
-      <input
-        value={foodMasterForm.tags}
-        onChange={(e) => handleFoodMasterFormChange('tags', e.target.value)}
-        placeholder="예: high_protein, diet"
-      />
-    </label>
-  </div>
-
-  <label className="field">
-    <span>메모</span>
-    <textarea
-      rows={2}
-      value={foodMasterForm.note}
-      onChange={(e) => handleFoodMasterFormChange('note', e.target.value)}
-      placeholder="예: 감량용으로 자주 사용, 간편식 대체용"
-    />
-  </label>
-
-  <div className="meal-food-register-actions">
+  <div className="meal-food-db-actions">
     <button
       type="button"
-      className="primary-btn"
-      onClick={handleFoodMasterSave}
-      disabled={savingFoodMaster}
+      className="secondary-btn"
+      onClick={() => setShowAllFoodMaster((prev) => !prev)}
     >
-      {savingFoodMaster ? '저장 중...' : '음식 등록'}
+      {showAllFoodMaster ? '전체 접기' : '전체 보기'}
     </button>
   </div>
-</div>
-      
+
+  {showFoodMasterPanel ? (
+    <div className="stack-gap">
+      <div className="sub-card meal-food-register-card">
+        <div className="list-card-top">
+          <div>
+            <strong>음식 수기 등록</strong>
+            <p className="sub-text">
+              새 음식을 직접 등록하면 자동 추천과 식단 반영 후보에 바로 포함됩니다.
+            </p>
+          </div>
+          <span className="status-pill">food_master 등록</span>
+        </div>
+
+        <div className="grid-2">
+          <label className="field">
+            <span>음식명</span>
+            <input
+              value={foodMasterForm.name}
+              onChange={(e) => handleFoodMasterFormChange('name', e.target.value)}
+              placeholder="예: 닭봉, 소고기 안심"
+            />
+          </label>
+
+          <label className="field">
+            <span>aliases (쉼표 구분)</span>
+            <input
+              value={foodMasterForm.aliases}
+              onChange={(e) => handleFoodMasterFormChange('aliases', e.target.value)}
+              placeholder="예: 치킨윙, 닭봉구이"
+            />
+          </label>
+        </div>
+
+        <div className="grid-3">
+          <label className="field">
+            <span>대분류</span>
+            <select
+              value={foodMasterForm.category_major}
+              onChange={(e) => handleFoodMasterFormChange('category_major', e.target.value)}
+            >
+              <option value="carb">carb</option>
+              <option value="protein">protein</option>
+              <option value="fat">fat</option>
+              <option value="vegetable">vegetable</option>
+              <option value="fruit">fruit</option>
+              <option value="dairy">dairy</option>
+              <option value="mixed">mixed</option>
+            </select>
+          </label>
+
+          <label className="field">
+            <span>소분류</span>
+            <input
+              value={foodMasterForm.category_minor}
+              onChange={(e) => handleFoodMasterFormChange('category_minor', e.target.value)}
+              placeholder="예: animal_protein"
+            />
+          </label>
+
+          <label className="field">
+            <span>원천</span>
+            <select
+              value={foodMasterForm.source_type}
+              onChange={(e) => handleFoodMasterFormChange('source_type', e.target.value)}
+            >
+              <option value="animal">animal</option>
+              <option value="plant">plant</option>
+              <option value="mixed">mixed</option>
+            </select>
+          </label>
+        </div>
+
+        <div className="grid-4">
+          <label className="field">
+            <span>kcal</span>
+            <input
+              type="number"
+              value={foodMasterForm.kcal_per_100g}
+              onChange={(e) => handleFoodMasterFormChange('kcal_per_100g', e.target.value)}
+              placeholder="100g 기준"
+            />
+          </label>
+
+          <label className="field">
+            <span>탄수화물</span>
+            <input
+              type="number"
+              value={foodMasterForm.carbs_per_100g}
+              onChange={(e) => handleFoodMasterFormChange('carbs_per_100g', e.target.value)}
+              placeholder="g"
+            />
+          </label>
+
+          <label className="field">
+            <span>단백질</span>
+            <input
+              type="number"
+              value={foodMasterForm.protein_per_100g}
+              onChange={(e) => handleFoodMasterFormChange('protein_per_100g', e.target.value)}
+              placeholder="g"
+            />
+          </label>
+
+          <label className="field">
+            <span>지방</span>
+            <input
+              type="number"
+              value={foodMasterForm.fat_per_100g}
+              onChange={(e) => handleFoodMasterFormChange('fat_per_100g', e.target.value)}
+              placeholder="g"
+            />
+          </label>
+        </div>
+
+        <div className="grid-4">
+          <label className="field">
+            <span>포화지방</span>
+            <input
+              type="number"
+              value={foodMasterForm.saturated_fat_per_100g}
+              onChange={(e) => handleFoodMasterFormChange('saturated_fat_per_100g', e.target.value)}
+              placeholder="g"
+            />
+          </label>
+
+          <label className="field">
+            <span>불포화지방</span>
+            <input
+              type="number"
+              value={foodMasterForm.unsaturated_fat_per_100g}
+              onChange={(e) => handleFoodMasterFormChange('unsaturated_fat_per_100g', e.target.value)}
+              placeholder="g"
+            />
+          </label>
+
+          <label className="field">
+            <span>당류</span>
+            <input
+              type="number"
+              value={foodMasterForm.sugar_per_100g}
+              onChange={(e) => handleFoodMasterFormChange('sugar_per_100g', e.target.value)}
+              placeholder="g"
+            />
+          </label>
+
+          <label className="field">
+            <span>식이섬유</span>
+            <input
+              type="number"
+              value={foodMasterForm.fiber_per_100g}
+              onChange={(e) => handleFoodMasterFormChange('fiber_per_100g', e.target.value)}
+              placeholder="g"
+            />
+          </label>
+        </div>
+
+        <div className="grid-3">
+          <label className="field">
+            <span>나트륨</span>
+            <input
+              type="number"
+              value={foodMasterForm.sodium_mg_per_100g}
+              onChange={(e) => handleFoodMasterFormChange('sodium_mg_per_100g', e.target.value)}
+              placeholder="mg"
+            />
+          </label>
+
+          <label className="field">
+            <span>1회 섭취량</span>
+            <input
+              type="number"
+              value={foodMasterForm.typical_portion_g}
+              onChange={(e) => handleFoodMasterFormChange('typical_portion_g', e.target.value)}
+              placeholder="g"
+            />
+          </label>
+
+          <label className="field">
+            <span>tags (쉼표 구분)</span>
+            <input
+              value={foodMasterForm.tags}
+              onChange={(e) => handleFoodMasterFormChange('tags', e.target.value)}
+              placeholder="예: high_protein, diet"
+            />
+          </label>
+        </div>
+
+        <label className="field">
+          <span>메모</span>
+          <textarea
+            rows={2}
+            value={foodMasterForm.note}
+            onChange={(e) => handleFoodMasterFormChange('note', e.target.value)}
+            placeholder="예: 감량용으로 자주 사용, 간편식 대체용"
+          />
+        </label>
+
+        <div className="meal-food-register-actions">
+          <button
+            type="button"
+            className="primary-btn"
+            onClick={handleFoodMasterSave}
+            disabled={savingFoodMaster}
+          >
+            {savingFoodMaster ? '저장 중...' : '음식 등록'}
+          </button>
+        </div>
+      </div>
+
       <label className="field">
         <span>음식 검색</span>
         <input
@@ -12938,59 +12918,62 @@ const filteredExercisesAdvanced = exercises.filter((exercise) => {
       </div>
 
       {(() => {
-  const displayFoods = foodMasterSearch.trim() ? filteredFoodMaster : foodMaster
+        const displayFoods = foodMasterSearch.trim() ? filteredFoodMaster : foodMaster
 
-  if (!foodMasterSearch.trim() && !showAllFoodMaster) {
-    return (
-      <div className="workout-list-empty">
-        검색어를 입력하거나 전체 보기를 누르면 음식 목록이 표시됩니다.
-      </div>
-    )
-  }
-
-  if (!displayFoods || displayFoods.length === 0) {
-    return (
-      <div className="workout-list-empty">검색 결과가 없습니다.</div>
-    )
-  }
-
-  return (
-    <div className="list-stack">
-      {displayFoods.slice(0, showAllFoodMaster ? 100 : 10).map((food) => (
-        <div key={food.id} className="detail-box meal-food-db-item">
-          <div className="list-card-top">
-            <strong>{food.name}</strong>
-            <span className="status-pill">
-              {food.category_major || '-'}
-            </span>
-          </div>
-
-          <div className="compact-text">
-            {food.category_minor || '-'} / {food.source_type || '-'}
-          </div>
-
-          <div className="compact-text">
-            <strong>aliases:</strong>{' '}
-            {Array.isArray(food.aliases) && food.aliases.length > 0
-              ? food.aliases.join(', ')
-              : '-'}
-          </div>
-
-          <div className="compact-text">
-            <strong>100g 기준:</strong>{' '}
-            kcal {Number(food.kcal_per_100g || 0)} / 탄 {Number(food.carbs_per_100g || 0)}g / 단 {Number(food.protein_per_100g || 0)}g / 지 {Number(food.fat_per_100g || 0)}g / 나트륨 {Number(food.sodium_mg_per_100g || 0)}mg
-          </div>
-
-          {food.note ? (
-            <div className="compact-text">
-              <strong>메모:</strong> {food.note}
+        if (!foodMasterSearch.trim() && !showAllFoodMaster) {
+          return (
+            <div className="workout-list-empty">
+              검색어를 입력하거나 전체 보기를 누르면 음식 목록이 표시됩니다.
             </div>
-          ) : null}
-        </div>
-      ))}
+          )
+        }
+
+        if (!displayFoods || displayFoods.length === 0) {
+          return (
+            <div className="workout-list-empty">검색 결과가 없습니다.</div>
+          )
+        }
+
+        return (
+          <div className="list-stack">
+            {displayFoods.slice(0, showAllFoodMaster ? 100 : 10).map((food) => (
+              <div key={food.id} className="detail-box meal-food-db-item">
+                <div className="list-card-top">
+                  <strong>{food.name}</strong>
+                  <span className="status-pill">
+                    {food.category_major || '-'}
+                  </span>
+                </div>
+
+                <div className="compact-text">
+                  {food.category_minor || '-'} / {food.source_type || '-'}
+                </div>
+
+                <div className="compact-text">
+                  <strong>aliases:</strong>{' '}
+                  {Array.isArray(food.aliases) && food.aliases.length > 0
+                    ? food.aliases.join(', ')
+                    : '-'}
+                </div>
+
+                <div className="compact-text">
+                  <strong>100g 기준:</strong>{' '}
+                  kcal {Number(food.kcal_per_100g || 0)} / 탄 {Number(food.carbs_per_100g || 0)}g / 단 {Number(food.protein_per_100g || 0)}g / 지 {Number(food.fat_per_100g || 0)}g / 나트륨 {Number(food.sodium_mg_per_100g || 0)}mg
+                </div>
+
+                {food.note ? (
+                  <div className="compact-text">
+                    <strong>메모:</strong> {food.note}
+                  </div>
+                ) : null}
+              </div>
+            ))}
+          </div>
+        )
+      })()}
     </div>
-  )
-})()}
+  ) : null}
+</div>
           <label className="field">
             <span>코치 메모</span>
             <textarea
