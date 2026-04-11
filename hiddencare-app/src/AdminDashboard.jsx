@@ -833,6 +833,7 @@ const [mealPlanMonth, setMealPlanMonth] = useState(new Date().toISOString().slic
 const [memberNutritionProfiles, setMemberNutritionProfiles] = useState([])
 const [memberMealPlans, setMemberMealPlans] = useState([])
   const [foodMaster, setFoodMaster] = useState([])
+  const [foodMasterSearch, setFoodMasterSearch] = useState('')
 const [foodMasterLoaded, setFoodMasterLoaded] = useState(false)
   const [mealComplianceMonth, setMealComplianceMonth] = useState(new Date().toISOString().slice(0, 7))
 const [memberMealCompliancePlans, setMemberMealCompliancePlans] = useState([])
@@ -2426,6 +2427,33 @@ const handleMealPlanUpdate = async (plan) => {
   setMealPlanEditMeals([])
   alert('식단 수정 저장 완료')
 }
+  const filteredFoodMaster = useMemo(() => {
+  const keyword = String(foodMasterSearch || '').trim().toLowerCase()
+
+  const rows = Array.isArray(foodMaster) ? foodMaster : []
+
+  if (!keyword) {
+    return rows
+  }
+
+  return rows.filter((food) => {
+    const aliases = Array.isArray(food.aliases) ? food.aliases.join(' ') : ''
+    const tags = Array.isArray(food.tags) ? food.tags.join(' ') : ''
+
+    const searchText = [
+      food.name,
+      food.category_major,
+      food.category_minor,
+      aliases,
+      tags,
+      food.note,
+    ]
+      .map((item) => String(item || '').toLowerCase())
+      .join(' ')
+
+    return searchText.includes(keyword)
+  })
+}, [foodMaster, foodMasterSearch])
 const managerScoreCards = useMemo(() => {
     const currentMonth = new Date().toISOString().slice(0, 7)
 
@@ -12385,7 +12413,80 @@ const filteredExercisesAdvanced = exercises.filter((exercise) => {
               placeholder="예: 우유, 견과류, 갑각류"
             />
           </label>
+<div className="sub-card">
+  <div className="list-card-top">
+    <div>
+      <strong>음식 DB 보기</strong>
+      <p className="sub-text">
+        아래 음식명과 별칭을 기준으로 입력하면 식단 반영 정확도가 더 올라갑니다.
+      </p>
+    </div>
+    <span className="status-pill">
+      총 {filteredFoodMaster.length}개
+    </span>
+  </div>
 
+  <div className="stack-gap">
+    <label className="field">
+      <span>음식 검색</span>
+      <input
+        placeholder="예: 닭다리살, 연어, 소고기, 서브웨이"
+        value={foodMasterSearch}
+        onChange={(e) => setFoodMasterSearch(e.target.value)}
+      />
+    </label>
+
+    <div className="compact-text">
+      ※ 선호 음식 / 제외 음식 / 알레르기 입력칸에는 아래 대표명이나 별칭을 쓰면 더 정확하게 인식됩니다.
+    </div>
+
+    <div className="list-stack">
+      {filteredFoodMaster.length === 0 ? (
+        <div className="workout-list-empty">검색 결과가 없습니다.</div>
+      ) : (
+        filteredFoodMaster.slice(0, 30).map((food) => (
+          <div key={food.id} className="detail-box">
+            <div className="list-card-top">
+              <strong>{food.name}</strong>
+              <span className="status-pill">
+                {food.category_major || '-'}
+              </span>
+            </div>
+
+            <div className="compact-text">
+              {food.category_minor || '-'} / {food.source_type || '-'}
+            </div>
+
+            <div className="compact-text">
+              <strong>aliases:</strong>{' '}
+              {Array.isArray(food.aliases) && food.aliases.length > 0
+                ? food.aliases.join(', ')
+                : '-'}
+            </div>
+
+            <div className="compact-text">
+              <strong>100g 기준:</strong>{' '}
+              kcal {Number(food.kcal_per_100g || 0)} / 탄 {Number(food.carbs_per_100g || 0)}g / 단 {Number(food.protein_per_100g || 0)}g / 지 {Number(food.fat_per_100g || 0)}g / 나트륨 {Number(food.sodium_mg_per_100g || 0)}mg
+            </div>
+
+            <div className="compact-text">
+              <strong>tags:</strong>{' '}
+              {Array.isArray(food.tags) && food.tags.length > 0
+                ? food.tags.join(', ')
+                : '-'}
+            </div>
+
+            {food.note ? (
+              <div className="compact-text">
+                <strong>메모:</strong> {food.note}
+              </div>
+            ) : null}
+          </div>
+        ))
+      )}
+    </div>
+  </div>
+</div>
           <label className="field">
             <span>코치 메모</span>
             <textarea
