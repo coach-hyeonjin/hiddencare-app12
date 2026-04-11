@@ -20439,7 +20439,15 @@ textarea:focus {
                .meal-food-db-card {
   gap: 12px;
 }
+.meal-food-register-card {
+  margin-bottom: 12px;
+}
 
+.meal-food-register-actions {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 8px;
+}
 .meal-food-db-toggle {
   width: 100%;
   border: 1px solid #dbe3f0;
