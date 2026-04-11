@@ -20436,6 +20436,50 @@ textarea:focus {
   margin-top: 8px;
 }
 
+               .meal-food-db-card {
+  gap: 12px;
+}
+
+.meal-food-db-toggle {
+  width: 100%;
+  border: 1px solid #dbe3f0;
+  background: #f8fafc;
+  border-radius: 16px;
+  padding: 14px 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  cursor: pointer;
+  text-align: left;
+}
+
+.meal-food-db-toggle:hover {
+  background: #f1f5f9;
+}
+
+.meal-food-db-summary {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.detail-chip {
+  display: inline-flex;
+  align-items: center;
+  padding: 6px 10px;
+  border-radius: 999px;
+  background: #eef2ff;
+  color: #465277;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.meal-food-db-item {
+  padding: 14px 16px;
+}
+               
 .meal-food-suggestion-title {
   font-size: 12px;
   font-weight: 700;
