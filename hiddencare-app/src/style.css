@@ -20448,6 +20448,14 @@ textarea:focus {
   justify-content: flex-end;
   margin-top: 8px;
 }
+               .meal-food-register-actions {
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.meal-food-db-item .inline-actions {
+  align-items: center;
+}
 .meal-food-db-toggle {
   width: 100%;
   border: 1px solid #dbe3f0;
