@@ -1709,7 +1709,54 @@ const getPreferredBlockedSet = (form, foods = []) => {
     blockedSet: new Set([...excludedIds, ...allergyIds]),
   }
 }
+const getPreferredFoodsByCategories = ({
+  foods = [],
+  preferredSet = new Set(),
+  blockedSet = new Set(),
+  categories = [],
+}) => {
+  return (Array.isArray(foods) ? foods : []).filter((food) => {
+    const category = String(food?.category_major || '').trim()
+    return categories.includes(category) && preferredSet.has(food.id) && !blockedSet.has(food.id)
+  })
+}
 
+const pickPreferredFoodFirst = ({
+  foods = [],
+  preferredSet = new Set(),
+  blockedSet = new Set(),
+  categories = [],
+  usedIds = new Set(),
+  recentUsedIds = [],
+  slotUsedNames = [],
+  goalType = 'diet',
+  dateString = '',
+  slot = '',
+  offset = 0,
+}) => {
+  const candidates = getPreferredFoodsByCategories({
+    foods,
+    preferredSet,
+    blockedSet,
+    categories,
+  }).filter((food) => !usedIds.has(food.id))
+
+  if (!candidates.length) return null
+
+  const sorted = sortFoodsForPick(
+    candidates,
+    preferredSet,
+    goalType,
+    dateString,
+    slot,
+    offset,
+    recentUsedIds,
+    slotUsedNames
+  )
+
+  return sorted[0] || null
+}
+  
 const getMealCategoryConfig = (slot, goalType, dayType) => {
   if (slot === '운동후') {
     return {
@@ -1931,55 +1978,118 @@ const buildSingleMealPlan = ({
   offset = 0,
   recentUsedIds = [],
   slotUsedNames = [],
+  preferredIncludedCount = 0,
 }) => {
   const config = getMealCategoryConfig(slot, goalType, dayType)
   const usedIds = new Set()
 
-  const carbFood = pickFood({
-    foods,
-    preferredSet,
-    blockedSet,
-    categories: config.carbCategories,
-    goalType,
-    dateString,
-    slot,
-    offset,
-    usedIds,
-    recentUsedIds,
-    slotUsedNames,
-  })
+  const shouldForcePreferred = preferredSet.size > 0 && preferredIncludedCount < 1
+
+  let carbFood = null
+  let proteinFood = null
+  let extraFood = null
+
+  if (shouldForcePreferred) {
+    proteinFood = pickPreferredFoodFirst({
+      foods,
+      preferredSet,
+      blockedSet,
+      categories: config.proteinCategories,
+      goalType,
+      dateString,
+      slot,
+      offset,
+      usedIds,
+      recentUsedIds,
+      slotUsedNames,
+    })
+
+    if (!proteinFood) {
+      carbFood = pickPreferredFoodFirst({
+        foods,
+        preferredSet,
+        blockedSet,
+        categories: config.carbCategories,
+        goalType,
+        dateString,
+        slot,
+        offset,
+        usedIds,
+        recentUsedIds,
+        slotUsedNames,
+      })
+    }
+
+    if (!proteinFood && !carbFood) {
+      extraFood = pickPreferredFoodFirst({
+        foods,
+        preferredSet,
+        blockedSet,
+        categories: config.extraCategories || [],
+        goalType,
+        dateString,
+        slot,
+        offset,
+        usedIds,
+        recentUsedIds,
+        slotUsedNames,
+      })
+    }
+  }
 
   if (carbFood) usedIds.add(carbFood.id)
-
-  const proteinFood = pickFood({
-    foods,
-    preferredSet,
-    blockedSet,
-    categories: config.proteinCategories,
-    goalType,
-    dateString,
-    slot,
-    offset: offset + 1,
-    usedIds,
-    recentUsedIds,
-    slotUsedNames,
-  })
-
   if (proteinFood) usedIds.add(proteinFood.id)
+  if (extraFood) usedIds.add(extraFood.id)
 
-  const extraFood = pickFood({
-    foods,
-    preferredSet,
-    blockedSet,
-    categories: config.extraCategories || [],
-    goalType,
-    dateString,
-    slot,
-    offset: offset + 2,
-    usedIds,
-    recentUsedIds,
-    slotUsedNames,
-  })
+  if (!carbFood) {
+    carbFood = pickFood({
+      foods,
+      preferredSet,
+      blockedSet,
+      categories: config.carbCategories,
+      goalType,
+      dateString,
+      slot,
+      offset,
+      usedIds,
+      recentUsedIds,
+      slotUsedNames,
+    })
+    if (carbFood) usedIds.add(carbFood.id)
+  }
+
+  if (!proteinFood) {
+    proteinFood = pickFood({
+      foods,
+      preferredSet,
+      blockedSet,
+      categories: config.proteinCategories,
+      goalType,
+      dateString,
+      slot,
+      offset: offset + 1,
+      usedIds,
+      recentUsedIds,
+      slotUsedNames,
+    })
+    if (proteinFood) usedIds.add(proteinFood.id)
+  }
+
+  if (!extraFood) {
+    extraFood = pickFood({
+      foods,
+      preferredSet,
+      blockedSet,
+      categories: config.extraCategories || [],
+      goalType,
+      dateString,
+      slot,
+      offset: offset + 2,
+      usedIds,
+      recentUsedIds,
+      slotUsedNames,
+    })
+  }
 
   const mealItems = []
 
@@ -2048,6 +2158,9 @@ const buildSingleMealPlan = ({
     ...mealItems.map((item) => item.name).filter(Boolean),
   ].slice(-8)
 
+  const hasPreferredInMeal = mealItems.some((item) => preferredSet.has(item.food_id))
+  const nextPreferredIncludedCount = preferredIncludedCount + (hasPreferredInMeal ? 1 : 0)
+
   return {
     items: mealItems,
     menu: formatMealMenu(mealItems),
@@ -2058,6 +2171,7 @@ const buildSingleMealPlan = ({
     sodium_mg: Math.round(summary.sodium_mg),
     nextUsedIds,
     nextSlotUsedNames,
+    nextPreferredIncludedCount,
   }
 }
 
@@ -2070,7 +2184,8 @@ const getRotatingMealExample = (
   foods = [],
   target = {},
   recentUsedIds = [],
-  slotUsedNames = []
+  slotUsedNames = [],
+  preferredIncludedCount = 0
 ) => {
   const preferredSet = preferences.preferredSet || new Set()
   const blockedSet = preferences.blockedSet || new Set()
@@ -2089,6 +2204,7 @@ const getRotatingMealExample = (
     offset: 0,
     recentUsedIds,
     slotUsedNames,
+    preferredIncludedCount,
   })
 }
 
@@ -2215,7 +2331,7 @@ const handleMealPlanMonthGenerate = async () => {
 
     let dayRecentUsedIds = []
 let daySlotUsedNames = []
-
+let dayPreferredIncludedCount = 0
 const mealsJson = mealSlots.map((slot) => {
   const slotTarget = {
     carbs_g: Math.round(totalCarbs / slotCount),
@@ -2233,11 +2349,13 @@ const mealsJson = mealSlots.map((slot) => {
     slotTarget,
     dayRecentUsedIds,
     daySlotUsedNames
+    dayPreferredIncludedCount
   )
 
   dayRecentUsedIds = Array.isArray(mealResult?.nextUsedIds) ? mealResult.nextUsedIds : dayRecentUsedIds
   daySlotUsedNames = Array.isArray(mealResult?.nextSlotUsedNames) ? mealResult.nextSlotUsedNames : daySlotUsedNames
-
+dayPreferredIncludedCount = Number(mealResult?.nextPreferredIncludedCount || dayPreferredIncludedCount)
+  
   const alternatives = getMealAlternatives(
     mealPlanForm.goal_type,
     slot,
