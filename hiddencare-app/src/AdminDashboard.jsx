@@ -848,6 +848,20 @@ const emptyMealPlanForm = {
   preferred_foods: '',
   allergies: '',
   notes: '',
+    diet_mode: 'balanced',
+  adaptation_strategy: 'gradual',
+  current_meal_pattern: 'mixed',
+  snack_frequency_per_week: 0,
+  bread_frequency_per_week: 0,
+  junk_food_frequency_per_week: 0,
+  delivery_food_frequency_per_week: 0,
+  late_night_meal_frequency_per_week: 0,
+  allowed_general_meals_per_week: 3,
+  allowed_free_meals_per_week: 1,
+  allowed_snacks_per_week: 2,
+  allowed_bread_per_week: 2,
+  allowed_dessert_per_week: 1,
+  meal_structure_mode: 'structured',
 }
 
 const [mealPlanForm, setMealPlanForm] = useState(emptyMealPlanForm)
@@ -1307,6 +1321,20 @@ const handleMealPlanGenerate = async () => {
       targetCarbs,
       sodiumLimitMg,
       saturatedFatLimitG,
+          diet_mode: mealPlanForm.diet_mode || 'balanced',
+    adaptation_strategy: mealPlanForm.adaptation_strategy || 'gradual',
+    current_meal_pattern: mealPlanForm.current_meal_pattern || 'mixed',
+    snack_frequency_per_week: Number(mealPlanForm.snack_frequency_per_week || 0),
+    bread_frequency_per_week: Number(mealPlanForm.bread_frequency_per_week || 0),
+    junk_food_frequency_per_week: Number(mealPlanForm.junk_food_frequency_per_week || 0),
+    delivery_food_frequency_per_week: Number(mealPlanForm.delivery_food_frequency_per_week || 0),
+    late_night_meal_frequency_per_week: Number(mealPlanForm.late_night_meal_frequency_per_week || 0),
+    allowed_general_meals_per_week: Number(mealPlanForm.allowed_general_meals_per_week || 0),
+    allowed_free_meals_per_week: Number(mealPlanForm.allowed_free_meals_per_week || 0),
+    allowed_snacks_per_week: Number(mealPlanForm.allowed_snacks_per_week || 0),
+    allowed_bread_per_week: Number(mealPlanForm.allowed_bread_per_week || 0),
+    allowed_dessert_per_week: Number(mealPlanForm.allowed_dessert_per_week || 0),
+    meal_structure_mode: mealPlanForm.meal_structure_mode || 'structured',
     },
   }
 
@@ -1355,6 +1383,20 @@ const handleMealPlanGenerate = async () => {
           notes: mealPlanForm.notes || '',
           calculation_version: 'v2_food_engine',
           recommendation_version: 'v2_food_engine',
+                    diet_mode: mealPlanForm.diet_mode || 'balanced',
+          adaptation_strategy: mealPlanForm.adaptation_strategy || 'gradual',
+          current_meal_pattern: mealPlanForm.current_meal_pattern || 'mixed',
+          snack_frequency_per_week: Number(mealPlanForm.snack_frequency_per_week || 0),
+          bread_frequency_per_week: Number(mealPlanForm.bread_frequency_per_week || 0),
+          junk_food_frequency_per_week: Number(mealPlanForm.junk_food_frequency_per_week || 0),
+          delivery_food_frequency_per_week: Number(mealPlanForm.delivery_food_frequency_per_week || 0),
+          late_night_meal_frequency_per_week: Number(mealPlanForm.late_night_meal_frequency_per_week || 0),
+          allowed_general_meals_per_week: Number(mealPlanForm.allowed_general_meals_per_week || 0),
+          allowed_free_meals_per_week: Number(mealPlanForm.allowed_free_meals_per_week || 0),
+          allowed_snacks_per_week: Number(mealPlanForm.allowed_snacks_per_week || 0),
+          allowed_bread_per_week: Number(mealPlanForm.allowed_bread_per_week || 0),
+          allowed_dessert_per_week: Number(mealPlanForm.allowed_dessert_per_week || 0),
+          meal_structure_mode: mealPlanForm.meal_structure_mode || 'structured',
           last_calculation_id: calculationId,
         },
         { onConflict: 'member_id' }
@@ -1405,6 +1447,20 @@ const handleMealPlanSave = async () => {
     notes: mealPlanForm.notes || '',
     calculation_version: 'v2_food_engine',
     recommendation_version: 'v2_food_engine',
+        diet_mode: mealPlanForm.diet_mode || 'balanced',
+    adaptation_strategy: mealPlanForm.adaptation_strategy || 'gradual',
+    current_meal_pattern: mealPlanForm.current_meal_pattern || 'mixed',
+    snack_frequency_per_week: Number(mealPlanForm.snack_frequency_per_week || 0),
+    bread_frequency_per_week: Number(mealPlanForm.bread_frequency_per_week || 0),
+    junk_food_frequency_per_week: Number(mealPlanForm.junk_food_frequency_per_week || 0),
+    delivery_food_frequency_per_week: Number(mealPlanForm.delivery_food_frequency_per_week || 0),
+    late_night_meal_frequency_per_week: Number(mealPlanForm.late_night_meal_frequency_per_week || 0),
+    allowed_general_meals_per_week: Number(mealPlanForm.allowed_general_meals_per_week || 0),
+    allowed_free_meals_per_week: Number(mealPlanForm.allowed_free_meals_per_week || 0),
+    allowed_snacks_per_week: Number(mealPlanForm.allowed_snacks_per_week || 0),
+    allowed_bread_per_week: Number(mealPlanForm.allowed_bread_per_week || 0),
+    allowed_dessert_per_week: Number(mealPlanForm.allowed_dessert_per_week || 0),
+    meal_structure_mode: mealPlanForm.meal_structure_mode || 'structured',
   }
 
   const { error } = await supabase
@@ -1621,6 +1677,20 @@ const loadMemberMealPlanProfile = async (memberId) => {
     preferred_foods: Array.isArray(data.preferred_foods) ? data.preferred_foods.join(', ') : '',
     allergies: Array.isArray(data.allergies) ? data.allergies.join(', ') : '',
     notes: data.notes || '',
+          diet_mode: data?.diet_mode || 'balanced',
+      adaptation_strategy: data?.adaptation_strategy || 'gradual',
+      current_meal_pattern: data?.current_meal_pattern || 'mixed',
+      snack_frequency_per_week: Number(data?.snack_frequency_per_week || 0),
+      bread_frequency_per_week: Number(data?.bread_frequency_per_week || 0),
+      junk_food_frequency_per_week: Number(data?.junk_food_frequency_per_week || 0),
+      delivery_food_frequency_per_week: Number(data?.delivery_food_frequency_per_week || 0),
+      late_night_meal_frequency_per_week: Number(data?.late_night_meal_frequency_per_week || 0),
+      allowed_general_meals_per_week: Number(data?.allowed_general_meals_per_week || 0),
+      allowed_free_meals_per_week: Number(data?.allowed_free_meals_per_week || 0),
+      allowed_snacks_per_week: Number(data?.allowed_snacks_per_week || 0),
+      allowed_bread_per_week: Number(data?.allowed_bread_per_week || 0),
+      allowed_dessert_per_week: Number(data?.allowed_dessert_per_week || 0),
+      meal_structure_mode: data?.meal_structure_mode || 'structured',
   })
 }
 const normalizeCommaTextToArray = (value) => {
@@ -13209,6 +13279,255 @@ const filteredExercisesAdvanced = exercises.filter((exercise) => {
               }
               placeholder="예: 저녁 늦게 먹는 패턴 / 주말 외식 많음 / 단백질 보충 필요"
             />
+            <div className="sub-card">
+  <div className="list-card-top">
+    <div>
+      <strong>식단 운영 강도 / 생활습관 설정</strong>
+      <p className="sub-text">
+        회원의 현재 식습관과 현실적인 허용 범위를 함께 설정해서 무리하지 않는 식단을 설계합니다.
+      </p>
+    </div>
+    <span className="status-pill">LIFESTYLE</span>
+  </div>
+
+  <div className="grid-3">
+    <label className="field">
+      <span>식단 강도</span>
+      <select
+        value={mealPlanForm.diet_mode}
+        onChange={(e) =>
+          setMealPlanForm((prev) => ({
+            ...prev,
+            diet_mode: e.target.value,
+          }))
+        }
+      >
+        <option value="light">light · 느슨한 관리</option>
+        <option value="balanced">balanced · 균형형</option>
+        <option value="strict">strict · 엄격한 관리</option>
+        <option value="contest">contest · 대회 준비형</option>
+      </select>
+    </label>
+
+    <label className="field">
+      <span>적응 전략</span>
+      <select
+        value={mealPlanForm.adaptation_strategy}
+        onChange={(e) =>
+          setMealPlanForm((prev) => ({
+            ...prev,
+            adaptation_strategy: e.target.value,
+          }))
+        }
+      >
+        <option value="gradual">gradual · 점진 전환</option>
+        <option value="fast_track">fast_track · 빠른 전환</option>
+        <option value="maintenance_focus">maintenance_focus · 유지 중심</option>
+        <option value="contest_prep">contest_prep · 대회 준비</option>
+      </select>
+    </label>
+
+    <label className="field">
+      <span>식사 구조</span>
+      <select
+        value={mealPlanForm.meal_structure_mode}
+        onChange={(e) =>
+          setMealPlanForm((prev) => ({
+            ...prev,
+            meal_structure_mode: e.target.value,
+          }))
+        }
+      >
+        <option value="structured">structured · 식단식 중심</option>
+        <option value="flexible">flexible · 일반식 혼합</option>
+        <option value="performance">performance · 운동 중심</option>
+      </select>
+    </label>
+  </div>
+
+  <div className="grid-3">
+    <label className="field">
+      <span>현재 식습관</span>
+      <select
+        value={mealPlanForm.current_meal_pattern}
+        onChange={(e) =>
+          setMealPlanForm((prev) => ({
+            ...prev,
+            current_meal_pattern: e.target.value,
+          }))
+        }
+      >
+        <option value="general_heavy">general_heavy · 일반식 위주</option>
+        <option value="mixed">mixed · 일반식+식단식 반반</option>
+        <option value="diet_ready">diet_ready · 이미 식단 적응</option>
+      </select>
+    </label>
+
+    <label className="field">
+      <span>주간 간식 빈도</span>
+      <input
+        type="number"
+        min="0"
+        max="14"
+        value={mealPlanForm.snack_frequency_per_week}
+        onChange={(e) =>
+          setMealPlanForm((prev) => ({
+            ...prev,
+            snack_frequency_per_week: e.target.value,
+          }))
+        }
+      />
+    </label>
+
+    <label className="field">
+      <span>주간 빵/밀가루 빈도</span>
+      <input
+        type="number"
+        min="0"
+        max="14"
+        value={mealPlanForm.bread_frequency_per_week}
+        onChange={(e) =>
+          setMealPlanForm((prev) => ({
+            ...prev,
+            bread_frequency_per_week: e.target.value,
+          }))
+        }
+      />
+    </label>
+  </div>
+
+  <div className="grid-3">
+    <label className="field">
+      <span>주간 과자/정크 빈도</span>
+      <input
+        type="number"
+        min="0"
+        max="14"
+        value={mealPlanForm.junk_food_frequency_per_week}
+        onChange={(e) =>
+          setMealPlanForm((prev) => ({
+            ...prev,
+            junk_food_frequency_per_week: e.target.value,
+          }))
+        }
+      />
+    </label>
+
+    <label className="field">
+      <span>주간 배달/외식 빈도</span>
+      <input
+        type="number"
+        min="0"
+        max="14"
+        value={mealPlanForm.delivery_food_frequency_per_week}
+        onChange={(e) =>
+          setMealPlanForm((prev) => ({
+            ...prev,
+            delivery_food_frequency_per_week: e.target.value,
+          }))
+        }
+      />
+    </label>
+
+    <label className="field">
+      <span>주간 야식 빈도</span>
+      <input
+        type="number"
+        min="0"
+        max="14"
+        value={mealPlanForm.late_night_meal_frequency_per_week}
+        onChange={(e) =>
+          setMealPlanForm((prev) => ({
+            ...prev,
+            late_night_meal_frequency_per_week: e.target.value,
+          }))
+        }
+      />
+    </label>
+  </div>
+
+  <div className="grid-5">
+    <label className="field">
+      <span>허용 일반식/주</span>
+      <input
+        type="number"
+        min="0"
+        max="14"
+        value={mealPlanForm.allowed_general_meals_per_week}
+        onChange={(e) =>
+          setMealPlanForm((prev) => ({
+            ...prev,
+            allowed_general_meals_per_week: e.target.value,
+          }))
+        }
+      />
+    </label>
+
+    <label className="field">
+      <span>허용 자유식/주</span>
+      <input
+        type="number"
+        min="0"
+        max="14"
+        value={mealPlanForm.allowed_free_meals_per_week}
+        onChange={(e) =>
+          setMealPlanForm((prev) => ({
+            ...prev,
+            allowed_free_meals_per_week: e.target.value,
+          }))
+        }
+      />
+    </label>
+
+    <label className="field">
+      <span>허용 간식/주</span>
+      <input
+        type="number"
+        min="0"
+        max="14"
+        value={mealPlanForm.allowed_snacks_per_week}
+        onChange={(e) =>
+          setMealPlanForm((prev) => ({
+            ...prev,
+            allowed_snacks_per_week: e.target.value,
+          }))
+        }
+      />
+    </label>
+
+    <label className="field">
+      <span>허용 빵/주</span>
+      <input
+        type="number"
+        min="0"
+        max="14"
+        value={mealPlanForm.allowed_bread_per_week}
+        onChange={(e) =>
+          setMealPlanForm((prev) => ({
+            ...prev,
+            allowed_bread_per_week: e.target.value,
+          }))
+        }
+      />
+    </label>
+
+    <label className="field">
+      <span>허용 디저트/주</span>
+      <input
+        type="number"
+        min="0"
+        max="14"
+        value={mealPlanForm.allowed_dessert_per_week}
+        onChange={(e) =>
+          setMealPlanForm((prev) => ({
+            ...prev,
+            allowed_dessert_per_week: e.target.value,
+          }))
+        }
+      />
+    </label>
+  </div>
+</div>
           </label>
 
           <div className="inline-actions wrap">
