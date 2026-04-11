@@ -832,6 +832,8 @@ const [mealPlanForm, setMealPlanForm] = useState(emptyMealPlanForm)
 const [mealPlanMonth, setMealPlanMonth] = useState(new Date().toISOString().slice(0, 7))
 const [memberNutritionProfiles, setMemberNutritionProfiles] = useState([])
 const [memberMealPlans, setMemberMealPlans] = useState([])
+  const [foodMaster, setFoodMaster] = useState([])
+const [foodMasterLoaded, setFoodMasterLoaded] = useState(false)
   const [mealComplianceMonth, setMealComplianceMonth] = useState(new Date().toISOString().slice(0, 7))
 const [memberMealCompliancePlans, setMemberMealCompliancePlans] = useState([])
   const [mealPlanViewMonth, setMealPlanViewMonth] = useState(new Date().toISOString().slice(0, 7))
@@ -1135,6 +1137,7 @@ const [editingManagerActionId, setEditingManagerActionId] = useState(null)
 
 const handleMealPlanGenerate = async () => {
   const member = members.find((m) => m.id === mealPlanForm.member_id)
+
   if (!member) {
     alert('회원 선택')
     return
@@ -1161,46 +1164,194 @@ const handleMealPlanGenerate = async () => {
     return
   }
 
+  const goalType = String(mealPlanForm.goal_type || 'diet')
   const weight = Number(health.weight_kg || 0)
+  const height = Number(health.height_cm || 0)
+  const age = Number(health.age || 0)
+  const sex = String(health.sex || '').toLowerCase()
+  const bodyFatPercent = Number(health.body_fat_percent || 0)
+  const skeletalMuscleMass = Number(health.skeletal_muscle_mass || 0)
 
   if (!weight) {
     alert('체중 데이터 없음')
     return
   }
 
-  let kcal = weight * 30
+  const defaultActivityFactor = getActivityFactorByLevel(mealPlanForm.activity_level)
+  const activityFactor =
+    Number(health.activity_factor || 0) > 0
+      ? Number(health.activity_factor)
+      : defaultActivityFactor
 
-  if (mealPlanForm.goal_type === 'diet') kcal -= 300
-  if (mealPlanForm.goal_type === 'bulk') kcal += 300
-  if (mealPlanForm.goal_type === 'muscle_gain') kcal += 150
-  if (mealPlanForm.goal_type === 'maintenance') kcal += 0
-  if (mealPlanForm.goal_type === 'recomposition') kcal -= 100
+  let bmr = Number(health.bmr || 0)
 
-  const protein = weight * 2
-  const fat = weight * 0.8
-  const carb = (kcal - protein * 4 - fat * 9) / 4
+  if (!bmr) {
+    if (weight > 0 && height > 0 && age > 0 && (sex === 'male' || sex === 'female')) {
+      const base = 10 * weight + 6.25 * height - 5 * age
+      bmr = Math.round(sex === 'male' ? base + 5 : base - 161)
+    } else {
+      bmr = Math.round(weight * 22)
+    }
+  }
+
+  const tdee = Math.round(bmr * activityFactor)
+
+  const goalAdjustmentMap = {
+    diet: -300,
+    recomposition: -150,
+    maintenance: 0,
+    muscle_gain: 150,
+    bulk: 300,
+  }
+
+  const proteinMultiplierMap = {
+    diet: 2.0,
+    recomposition: 2.0,
+    maintenance: 1.8,
+    muscle_gain: 2.0,
+    bulk: 1.8,
+  }
+
+  const fatMultiplierMap = {
+    diet: 0.7,
+    recomposition: 0.8,
+    maintenance: 0.8,
+    muscle_gain: 0.8,
+    bulk: 0.9,
+  }
+
+  const goalAdjustmentKcal = Number(goalAdjustmentMap[goalType] || 0)
+  const targetKcal = Math.max(1200, Math.round(tdee + goalAdjustmentKcal))
+  const targetProtein = Math.max(60, Math.round(weight * Number(proteinMultiplierMap[goalType] || 1.8)))
+  const targetFat = Math.max(30, Math.round(weight * Number(fatMultiplierMap[goalType] || 0.8)))
+  const targetCarbs = Math.max(
+    0,
+    Math.round((targetKcal - targetProtein * 4 - targetFat * 9) / 4)
+  )
 
   const mealsPerDay = Number(mealPlanForm.meals_per_day || 3)
+  const mealSlots = buildMealSlotsByCount(mealsPerDay)
 
-  const mealSlotsMap = {
-    2: ['점심', '저녁'],
-    3: ['아침', '점심', '저녁'],
-    4: ['아침', '점심', '간식', '저녁'],
-    5: ['아침', '오전간식', '점심', '운동후', '저녁'],
+  const sodiumLimitMg = 2000
+  const saturatedFatLimitG = Math.round((targetKcal * 0.1) / 9)
+
+  const calcPayload = {
+    member_id: mealPlanForm.member_id,
+    health_log_id: health.id || null,
+    admin_id: currentAdminId || null,
+    goal_type: goalType,
+    calculation_version: 'v2_food_engine',
+    sex: health.sex || null,
+    age: age || null,
+    height_cm: height || null,
+    weight_kg: weight || null,
+    body_fat_percent: bodyFatPercent || null,
+    skeletal_muscle_mass: skeletalMuscleMass || null,
+    bmr_used: bmr,
+    activity_factor_used: activityFactor,
+    tdee,
+    goal_adjustment_kcal: goalAdjustmentKcal,
+    target_kcal: targetKcal,
+    target_carbs_g: targetCarbs,
+    target_protein_g: targetProtein,
+    target_fat_g: targetFat,
+    protein_rule: `${goalType} 기준 체중 x ${proteinMultiplierMap[goalType] || 1.8}g`,
+    fat_rule: `${goalType} 기준 체중 x ${fatMultiplierMap[goalType] || 0.8}g`,
+    carb_rule: '총열량에서 단백질/지방 제외 후 탄수화물 배분',
+    sodium_limit_mg: sodiumLimitMg,
+    saturated_fat_limit_g: saturatedFatLimitG,
+    meals_per_day: mealsPerDay,
+    training_days_per_week: Number(mealPlanForm.training_days_per_week || 3),
+    training_time: mealPlanForm.training_time || 'evening',
+    activity_level: mealPlanForm.activity_level || 'light',
+    inputs_json: {
+      mealPlanForm,
+      latestHealth: health,
+    },
+    result_json: {
+      bmr,
+      activityFactor,
+      tdee,
+      targetKcal,
+      targetProtein,
+      targetFat,
+      targetCarbs,
+      sodiumLimitMg,
+      saturatedFatLimitG,
+    },
   }
+
+  const { data: calcInsert, error: calcError } = await supabase
+    .from('member_nutrition_calculations')
+    .insert(calcPayload)
+    .select('id')
+    .single()
+
+  if (calcError) {
+    console.error('member_nutrition_calculations 저장 실패:', calcError)
+  }
+
+  const calculationId = calcInsert?.id || null
 
   setMealPlanForm((prev) => ({
     ...prev,
-    meal_slots: mealSlotsMap[mealsPerDay] || ['아침', '점심', '저녁'],
-    target_kcal: Math.round(kcal),
-    target_protein_g: Math.round(protein),
-    target_fat_g: Math.round(fat),
-    target_carbs_g: Math.max(0, Math.round(carb)),
+    meal_slots: mealSlots,
+    target_kcal: targetKcal,
+    target_protein_g: targetProtein,
+    target_fat_g: targetFat,
+    target_carbs_g: targetCarbs,
   }))
-}
 
+  if (calculationId) {
+    const { error: profileUpdateError } = await supabase
+      .from('member_nutrition_profiles')
+      .upsert(
+        {
+          member_id: mealPlanForm.member_id,
+          admin_id: currentAdminId || null,
+          goal_type: goalType,
+          meals_per_day: mealsPerDay,
+          meal_slots: mealSlots,
+          activity_level: mealPlanForm.activity_level || 'light',
+          training_days_per_week: Number(mealPlanForm.training_days_per_week || 3),
+          training_time: mealPlanForm.training_time || 'evening',
+          use_training_rest_split: !!mealPlanForm.use_training_rest_split,
+          target_kcal: targetKcal,
+          target_carbs_g: targetCarbs,
+          target_protein_g: targetProtein,
+          target_fat_g: targetFat,
+          excluded_foods: normalizeCommaTextToArray(mealPlanForm.excluded_foods),
+          preferred_foods: normalizeCommaTextToArray(mealPlanForm.preferred_foods),
+          allergies: normalizeCommaTextToArray(mealPlanForm.allergies),
+          notes: mealPlanForm.notes || '',
+          calculation_version: 'v2_food_engine',
+          recommendation_version: 'v2_food_engine',
+          last_calculation_id: calculationId,
+        },
+        { onConflict: 'member_id' }
+      )
+
+    if (profileUpdateError) {
+      console.error('식단 프로필 동기화 실패:', profileUpdateError)
+    }
+  }
+
+  alert('자동 계산 완료')
+}
 const handleMealPlanSave = async () => {
-  if (!mealPlanForm.member_id) return alert('회원 선택')
+  if (!mealPlanForm.member_id) {
+    alert('회원 선택')
+    return
+  }
+
+  let foods = Array.isArray(foodMaster) ? foodMaster : []
+  if (!foods.length) {
+    foods = await loadFoodMaster()
+  }
+
+  const preferredFoodIds = resolveFoodIdsByText(mealPlanForm.preferred_foods, foods)
+  const excludedFoodIds = resolveFoodIdsByText(mealPlanForm.excluded_foods, foods)
+  const allergyFoodIds = resolveFoodIdsByText(mealPlanForm.allergies, foods)
 
   const payload = {
     member_id: mealPlanForm.member_id,
@@ -1216,16 +1367,15 @@ const handleMealPlanSave = async () => {
     target_carbs_g: Number(mealPlanForm.target_carbs_g || 0),
     target_protein_g: Number(mealPlanForm.target_protein_g || 0),
     target_fat_g: Number(mealPlanForm.target_fat_g || 0),
-    excluded_foods: mealPlanForm.excluded_foods
-      ? mealPlanForm.excluded_foods.split(',').map((v) => v.trim()).filter(Boolean)
-      : [],
-    preferred_foods: mealPlanForm.preferred_foods
-      ? mealPlanForm.preferred_foods.split(',').map((v) => v.trim()).filter(Boolean)
-      : [],
-    allergies: mealPlanForm.allergies
-  ? mealPlanForm.allergies.split(',').map((v) => v.trim()).filter(Boolean)
-  : [],
+    excluded_foods: normalizeCommaTextToArray(mealPlanForm.excluded_foods),
+    preferred_foods: normalizeCommaTextToArray(mealPlanForm.preferred_foods),
+    allergies: normalizeCommaTextToArray(mealPlanForm.allergies),
+    preferred_food_ids: preferredFoodIds,
+    excluded_food_ids: excludedFoodIds,
+    allergy_food_ids: allergyFoodIds,
     notes: mealPlanForm.notes || '',
+    calculation_version: 'v2_food_engine',
+    recommendation_version: 'v2_food_engine',
   }
 
   const { error } = await supabase
@@ -1236,6 +1386,49 @@ const handleMealPlanSave = async () => {
     console.error('식단 설정 저장 실패:', error)
     alert('식단 설정 저장 실패')
     return
+  }
+
+  const preferenceRows = [
+    ...preferredFoodIds.map((foodId) => ({
+      member_id: mealPlanForm.member_id,
+      food_id: foodId,
+      preference_type: 'preferred',
+      priority_score: 3,
+      admin_id: currentAdminId || null,
+    })),
+    ...excludedFoodIds.map((foodId) => ({
+      member_id: mealPlanForm.member_id,
+      food_id: foodId,
+      preference_type: 'excluded',
+      priority_score: 5,
+      admin_id: currentAdminId || null,
+    })),
+    ...allergyFoodIds.map((foodId) => ({
+      member_id: mealPlanForm.member_id,
+      food_id: foodId,
+      preference_type: 'allergy',
+      priority_score: 5,
+      admin_id: currentAdminId || null,
+    })),
+  ]
+
+  const { error: deletePreferenceError } = await supabase
+    .from('member_food_preferences')
+    .delete()
+    .eq('member_id', mealPlanForm.member_id)
+
+  if (deletePreferenceError) {
+    console.error('기존 member_food_preferences 삭제 실패:', deletePreferenceError)
+  }
+
+  if (preferenceRows.length > 0) {
+    const { error: insertPreferenceError } = await supabase
+      .from('member_food_preferences')
+      .insert(preferenceRows)
+
+    if (insertPreferenceError) {
+      console.error('member_food_preferences 저장 실패:', insertPreferenceError)
+    }
   }
 
   alert('식단 설정 저장 완료')
@@ -1250,7 +1443,25 @@ const buildMealSlotsByCount = (count) => {
 
   return mealSlotsMap[Number(count) || 3] || ['아침', '점심', '저녁']
 }
+const loadFoodMaster = async () => {
+  const { data, error } = await supabase
+    .from('food_master')
+    .select('*')
+    .eq('is_active', true)
+    .order('category_major', { ascending: true })
+    .order('name', { ascending: true })
 
+  if (error) {
+    console.error('food_master 불러오기 실패:', error)
+    setFoodMaster([])
+    setFoodMasterLoaded(false)
+    return []
+  }
+
+  setFoodMaster(data || [])
+  setFoodMasterLoaded(true)
+  return data || []
+}
 const loadMemberMealPlanProfile = async (memberId) => {
   if (!memberId) return
 
@@ -1292,116 +1503,55 @@ const loadMemberMealPlanProfile = async (memberId) => {
     notes: data.notes || '',
   })
 }
-const getMealPoolByGoalAndSlot = (goalType, slot, dayType) => {
-  const common = {
-    아침: [
-      '밥 200g · 계란 3개 · 닭가슴살 100g',
-      '오트밀 80g · 그릭요거트 1개 · 바나나 1개',
-      '고구마 200g · 계란 2개 · 닭가슴살 120g',
-      '현미밥 150g · 두부 200g · 김치',
-      '식빵 2장 · 땅콩버터 · 삶은계란 2개',
-      '밥 180g · 연어 120g · 계란 1개',
-    ],
-    점심: [
-      '현미밥 200g · 소고기 150g · 야채반찬',
-      '잡곡밥 180g · 닭다리살 150g · 나물반찬',
-      '밥 200g · 제육 150g · 상추',
-      '현미밥 180g · 연어 150g · 샐러드',
-      '고구마 250g · 닭가슴살 150g · 아보카도',
-      '밥 200g · 두부부침 · 계란말이 · 김치',
-    ],
-    저녁: [
-      '잡곡밥 180g · 연어 150g · 샐러드',
-      '현미밥 150g · 닭가슴살 150g · 야채볶음',
-      '고구마 200g · 계란 3개 · 샐러드',
-      '밥 180g · 소고기 120g · 나물반찬',
-      '두부 250g · 밥 120g · 김치',
-      '현미밥 150g · 오징어볶음 · 샐러드',
-    ],
-    간식: [
-      '프로틴 1회 · 바나나 1개',
-      '그릭요거트 1개 · 아몬드 소량',
-      '삶은계란 2개 · 방울토마토',
-      '고구마 100g · 프로틴 1회',
-      '우유 · 식빵 2장',
-      '사과 1개 · 프로틴바 1개',
-    ],
-    오전간식: [
-      '삶은계란 2개',
-      '그릭요거트 1개',
-      '바나나 1개 · 아몬드 소량',
-      '프로틴 음료 1개',
-    ],
-    운동후: [
-      '프로틴 1회 · 바나나 1개',
-      '초코우유 · 바나나 1개',
-      '프로틴 1회 · 식빵 2장',
-      '그릭요거트 · 꿀 소량',
-    ],
-  }
-
-  const dietRest = {
-    저녁: [
-      '두부 200g · 샐러드 · 계란 2개',
-      '닭가슴살 150g · 샐러드 · 고구마 100g',
-      '연어 120g · 샐러드 · 방울토마토',
-      '계란 3개 · 두부 150g · 나물반찬',
-      '닭안심 150g · 채소볶음',
-    ],
-    간식: [
-      '그릭요거트 1개',
-      '삶은계란 2개',
-      '방울토마토 · 치즈 1장',
-      '프로틴 1회',
-    ],
-  }
-
-  const bulkExtra = {
-    아침: [
-      '밥 250g · 계란 4개 · 닭가슴살 150g',
-      '오트밀 100g · 우유 · 바나나 2개 · 프로틴 1회',
-    ],
-    점심: [
-      '밥 250g · 소고기 180g · 야채반찬',
-      '현미밥 250g · 닭다리살 180g · 아보카도',
-    ],
-    저녁: [
-      '잡곡밥 220g · 연어 180g · 샐러드',
-      '밥 220g · 제육 180g · 김치',
-    ],
-    간식: [
-      '고구마 200g · 프로틴 1회',
-      '식빵 2장 · 땅콩버터 · 우유',
-    ],
-  }
-
-  let result = { ...common }
-
-  if (goalType === 'diet' || goalType === 'recomposition') {
-    if (dayType === 'rest') {
-      result = {
-        ...result,
-        저녁: dietRest.저녁,
-        간식: dietRest.간식,
-      }
-    }
-  }
-
-  if (goalType === 'muscle_gain' || goalType === 'bulk') {
-    result = {
-      ...result,
-      아침: [...bulkExtra.아침, ...result.아침],
-      점심: [...bulkExtra.점심, ...result.점심],
-      저녁: [...bulkExtra.저녁, ...result.저녁],
-      간식: [...bulkExtra.간식, ...result.간식],
-    }
-  }
-
-  return result[slot] || ['현미밥 · 단백질식품 · 채소']
+const normalizeCommaTextToArray = (value) => {
+  return String(value || '')
+    .split(',')
+    .map((item) => item.trim())
+    .filter(Boolean)
 }
 
-const getMealRotationIndex = (dateString, slot) => {
-  const dayNumber = Number(String(dateString || '').slice(-2)) || 1
+const getFoodSearchTokens = (food) => {
+  const aliases = Array.isArray(food?.aliases) ? food.aliases : []
+  return [food?.name, ...aliases]
+    .map((item) => String(item || '').trim().toLowerCase())
+    .filter(Boolean)
+}
+
+const resolveFoodIdsByText = (textValue, foods = []) => {
+  const keywords = normalizeCommaTextToArray(textValue).map((item) => item.toLowerCase())
+
+  if (!keywords.length || !Array.isArray(foods) || foods.length === 0) return []
+
+  const ids = foods
+    .filter((food) => {
+      const tokens = getFoodSearchTokens(food)
+      return keywords.some((keyword) =>
+        tokens.some((token) => token.includes(keyword) || keyword.includes(token))
+      )
+    })
+    .map((food) => food.id)
+
+  return [...new Set(ids)]
+}
+
+const getActivityFactorByLevel = (activityLevel = 'light') => {
+  const map = {
+    low: 1.2,
+    light: 1.375,
+    moderate: 1.55,
+    high: 1.725,
+    very_high: 1.9,
+  }
+
+  return Number(map[activityLevel] || 1.375)
+}
+
+const clampNumber = (value, min, max) => {
+  return Math.min(Math.max(Number(value || 0), min), max)
+}
+
+const getRotationSeed = (dateString, slot, offset = 0) => {
+  const day = Number(String(dateString || '').slice(-2)) || 1
 
   const slotOffsetMap = {
     아침: 0,
@@ -1412,72 +1562,385 @@ const getMealRotationIndex = (dateString, slot) => {
     저녁: 5,
   }
 
-  return dayNumber + Number(slotOffsetMap[slot] || 0)
+  return day + Number(slotOffsetMap[slot] || 0) + offset
 }
-const filterMealsByPreference = (pool, preferences = {}) => {
-  const liked = Array.isArray(preferences.liked)
-    ? preferences.liked.map((item) => String(item || '').trim().toLowerCase()).filter(Boolean)
-    : []
 
-  const disliked = Array.isArray(preferences.disliked)
-    ? preferences.disliked.map((item) => String(item || '').trim().toLowerCase()).filter(Boolean)
-    : []
+const getFoodTagScore = (food, goalType) => {
+  const tags = Array.isArray(food?.tags) ? food.tags.map((tag) => String(tag).toLowerCase()) : []
+  const goalTagMap = {
+    diet: ['diet', 'low_fat', 'high_protein'],
+    recomposition: ['diet', 'balanced', 'high_protein'],
+    maintenance: ['balanced', 'high_protein'],
+    muscle_gain: ['high_protein', 'post_workout'],
+    bulk: ['high_protein', 'balanced'],
+  }
 
-  const allergies = Array.isArray(preferences.allergies)
-    ? preferences.allergies.map((item) => String(item || '').trim().toLowerCase()).filter(Boolean)
-    : []
+  const targetTags = goalTagMap[goalType] || []
+  return tags.filter((tag) => targetTags.includes(tag)).length
+}
 
-  const blocked = [...new Set([...disliked, ...allergies])]
+const getPreferredBlockedSet = (form, foods = []) => {
+  const preferredIds = resolveFoodIdsByText(form.preferred_foods, foods)
+  const excludedIds = resolveFoodIdsByText(form.excluded_foods, foods)
+  const allergyIds = resolveFoodIdsByText(form.allergies, foods)
 
-  let filtered = pool.filter((meal) => {
-    const lower = String(meal || '').toLowerCase()
-    return !blocked.some((word) => lower.includes(word))
+  return {
+    preferredSet: new Set(preferredIds),
+    blockedSet: new Set([...excludedIds, ...allergyIds]),
+  }
+}
+
+const getMealCategoryConfig = (slot, goalType, dayType) => {
+  if (slot === '운동후') {
+    return {
+      carbCategories: ['carb', 'fruit'],
+      proteinCategories: ['protein', 'dairy'],
+      extraCategories: [],
+    }
+  }
+
+  if (slot === '오전간식') {
+    return {
+      carbCategories: ['fruit'],
+      proteinCategories: ['protein', 'dairy'],
+      extraCategories: ['fat'],
+    }
+  }
+
+  if (slot === '간식') {
+    return {
+      carbCategories: ['fruit', 'carb'],
+      proteinCategories: ['protein', 'dairy'],
+      extraCategories: ['fat'],
+    }
+  }
+
+  if (slot === '아침') {
+    return {
+      carbCategories: ['carb', 'fruit'],
+      proteinCategories: ['protein', 'dairy'],
+      extraCategories: ['fat'],
+    }
+  }
+
+  if (slot === '저녁' && (goalType === 'diet' || goalType === 'recomposition') && dayType === 'rest') {
+    return {
+      carbCategories: ['carb'],
+      proteinCategories: ['protein', 'dairy'],
+      extraCategories: ['vegetable'],
+      lightCarb: true,
+    }
+  }
+
+  return {
+    carbCategories: ['carb'],
+    proteinCategories: ['protein', 'dairy'],
+    extraCategories: ['vegetable'],
+  }
+}
+
+const getFoodsByCategories = (foods, categories = [], blockedSet = new Set()) => {
+  return (Array.isArray(foods) ? foods : []).filter((food) => {
+    const category = String(food?.category_major || '').trim()
+    return categories.includes(category) && !blockedSet.has(food.id)
+  })
+}
+
+const sortFoodsForPick = (foods, preferredSet, goalType, dateString, slot, offset = 0) => {
+  const seed = getRotationSeed(dateString, slot, offset)
+
+  return [...foods].sort((a, b) => {
+    const aPreferred = preferredSet.has(a.id) ? 5 : 0
+    const bPreferred = preferredSet.has(b.id) ? 5 : 0
+
+    const aGoal = getFoodTagScore(a, goalType)
+    const bGoal = getFoodTagScore(b, goalType)
+
+    const aScore = aPreferred + aGoal
+    const bScore = bPreferred + bGoal
+
+    if (aScore !== bScore) return bScore - aScore
+
+    const aSeed = (seed + String(a.name || '').length) % 7
+    const bSeed = (seed + String(b.name || '').length) % 7
+
+    if (aSeed !== bSeed) return bSeed - aSeed
+
+    return String(a.name || '').localeCompare(String(b.name || ''), 'ko-KR')
+  })
+}
+
+const pickFood = ({
+  foods = [],
+  preferredSet = new Set(),
+  blockedSet = new Set(),
+  categories = [],
+  goalType = 'diet',
+  dateString = '',
+  slot = '',
+  offset = 0,
+  usedIds = new Set(),
+}) => {
+  const candidates = getFoodsByCategories(foods, categories, blockedSet).filter(
+    (food) => !usedIds.has(food.id)
+  )
+
+  if (!candidates.length) return null
+
+  const sorted = sortFoodsForPick(candidates, preferredSet, goalType, dateString, slot, offset)
+  return sorted[0] || null
+}
+
+const calcPortionByMacro = ({
+  food,
+  macroKey,
+  targetGrams,
+  fallbackGrams = 100,
+  minGrams = 50,
+  maxGrams = 300,
+}) => {
+  const macroPer100g = Number(food?.[macroKey] || 0)
+
+  if (macroPer100g <= 0 || targetGrams <= 0) {
+    return clampNumber(food?.typical_portion_g || fallbackGrams, minGrams, maxGrams)
+  }
+
+  const calculated = (targetGrams / macroPer100g) * 100
+  return clampNumber(calculated, minGrams, maxGrams)
+}
+
+const buildMealFoodItem = (food, grams) => {
+  const safeGrams = Math.round(Number(grams || 0))
+
+  return {
+    food_id: food.id,
+    name: food.name,
+    grams: safeGrams,
+    kcal: Math.round((Number(food.kcal_per_100g || 0) * safeGrams) / 100),
+    carbs_g: Math.round((Number(food.carbs_per_100g || 0) * safeGrams) / 100),
+    protein_g: Math.round((Number(food.protein_per_100g || 0) * safeGrams) / 100),
+    fat_g: Math.round((Number(food.fat_per_100g || 0) * safeGrams) / 100),
+    sodium_mg: Math.round((Number(food.sodium_mg_per_100g || 0) * safeGrams) / 100),
+  }
+}
+
+const sumMealItems = (items = []) => {
+  return items.reduce(
+    (acc, item) => {
+      acc.kcal += Number(item.kcal || 0)
+      acc.carbs_g += Number(item.carbs_g || 0)
+      acc.protein_g += Number(item.protein_g || 0)
+      acc.fat_g += Number(item.fat_g || 0)
+      acc.sodium_mg += Number(item.sodium_mg || 0)
+      return acc
+    },
+    {
+      kcal: 0,
+      carbs_g: 0,
+      protein_g: 0,
+      fat_g: 0,
+      sodium_mg: 0,
+    }
+  )
+}
+
+const formatMealMenu = (items = []) => {
+  return items
+    .map((item) => `${item.name} ${item.grams}g`)
+    .join(' · ')
+}
+
+const buildSingleMealPlan = ({
+  foods,
+  goalType,
+  slot,
+  dayType,
+  dateString,
+  preferredSet,
+  blockedSet,
+  targetCarbs,
+  targetProtein,
+  targetFat,
+  offset = 0,
+}) => {
+  const config = getMealCategoryConfig(slot, goalType, dayType)
+  const usedIds = new Set()
+
+  const carbFood = pickFood({
+    foods,
+    preferredSet,
+    blockedSet,
+    categories: config.carbCategories,
+    goalType,
+    dateString,
+    slot,
+    offset,
+    usedIds,
   })
 
-  if (filtered.length === 0) {
-    filtered = pool
-  }
+  if (carbFood) usedIds.add(carbFood.id)
 
-  if (liked.length > 0) {
-    const likedFirst = filtered.filter((meal) => {
-      const lower = String(meal || '').toLowerCase()
-      return liked.some((word) => lower.includes(word))
+  const proteinFood = pickFood({
+    foods,
+    preferredSet,
+    blockedSet,
+    categories: config.proteinCategories,
+    goalType,
+    dateString,
+    slot,
+    offset: offset + 1,
+    usedIds,
+  })
+
+  if (proteinFood) usedIds.add(proteinFood.id)
+
+  const extraFood = pickFood({
+    foods,
+    preferredSet,
+    blockedSet,
+    categories: config.extraCategories || [],
+    goalType,
+    dateString,
+    slot,
+    offset: offset + 2,
+    usedIds,
+  })
+
+  const mealItems = []
+
+  if (carbFood) {
+    const carbTarget =
+      slot === '저녁' && config.lightCarb
+        ? Math.max(15, Math.round(targetCarbs * 0.6))
+        : targetCarbs
+
+    const grams = calcPortionByMacro({
+      food: carbFood,
+      macroKey: 'carbs_per_100g',
+      targetGrams: carbTarget,
+      fallbackGrams: carbFood.typical_portion_g || 120,
+      minGrams: 60,
+      maxGrams: 260,
     })
 
-    if (likedFirst.length > 0) {
-      return likedFirst
-    }
+    mealItems.push(buildMealFoodItem(carbFood, grams))
   }
 
-  return filtered
+  if (proteinFood) {
+    const grams = calcPortionByMacro({
+      food: proteinFood,
+      macroKey: 'protein_per_100g',
+      targetGrams: targetProtein,
+      fallbackGrams: proteinFood.typical_portion_g || 120,
+      minGrams: 70,
+      maxGrams: 220,
+    })
+
+    mealItems.push(buildMealFoodItem(proteinFood, grams))
+  }
+
+  if (extraFood) {
+    const category = String(extraFood.category_major || '').trim()
+    let grams = extraFood.typical_portion_g || 100
+
+    if (category === 'fat') {
+      grams = calcPortionByMacro({
+        food: extraFood,
+        macroKey: 'fat_per_100g',
+        targetGrams: Math.max(5, targetFat * 0.6),
+        fallbackGrams: extraFood.typical_portion_g || 15,
+        minGrams: 10,
+        maxGrams: 40,
+      })
+    }
+
+    if (category === 'vegetable') {
+      grams = 100
+    }
+
+    mealItems.push(buildMealFoodItem(extraFood, grams))
+  }
+
+  const summary = sumMealItems(mealItems)
+
+  return {
+    items: mealItems,
+    menu: formatMealMenu(mealItems),
+    kcal: Math.round(summary.kcal),
+    carbs_g: Math.round(summary.carbs_g),
+    protein_g: Math.round(summary.protein_g),
+    fat_g: Math.round(summary.fat_g),
+    sodium_mg: Math.round(summary.sodium_mg),
+  }
 }
-const getRotatingMealExample = (goalType, slot, dayType, dateString, preferences = {}) => {
-  const rawPool = getMealPoolByGoalAndSlot(goalType, slot, dayType)
-  const pool = filterMealsByPreference(rawPool, preferences)
 
-  const index = getMealRotationIndex(dateString, slot) % pool.length
-  return pool[index]
+const getRotatingMealExample = (
+  goalType,
+  slot,
+  dayType,
+  dateString,
+  preferences = {},
+  foods = [],
+  target = {}
+) => {
+  const preferredSet = preferences.preferredSet || new Set()
+  const blockedSet = preferences.blockedSet || new Set()
+
+  const result = buildSingleMealPlan({
+    foods,
+    goalType,
+    slot,
+    dayType,
+    dateString,
+    preferredSet,
+    blockedSet,
+    targetCarbs: Number(target.carbs_g || 0),
+    targetProtein: Number(target.protein_g || 0),
+    targetFat: Number(target.fat_g || 0),
+    offset: 0,
+  })
+
+  return result
 }
 
-const getMealAlternatives = (goalType, slot, dayType, dateString, count = 2, preferences = {}) => {
-  const rawPool = getMealPoolByGoalAndSlot(goalType, slot, dayType)
-  const pool = filterMealsByPreference(rawPool, preferences)
+const getMealAlternatives = (
+  goalType,
+  slot,
+  dayType,
+  dateString,
+  count = 2,
+  preferences = {},
+  foods = [],
+  target = {}
+) => {
+  const preferredSet = preferences.preferredSet || new Set()
+  const blockedSet = preferences.blockedSet || new Set()
 
-  if (pool.length <= 1) return []
-
-  const startIndex = getMealRotationIndex(dateString, slot) % pool.length
   const result = []
 
-  for (let i = 1; i < pool.length; i += 1) {
-    const nextItem = pool[(startIndex + i) % pool.length]
-    if (!result.includes(nextItem)) {
-      result.push(nextItem)
+  for (let i = 1; i <= count; i += 1) {
+    const alt = buildSingleMealPlan({
+      foods,
+      goalType,
+      slot,
+      dayType,
+      dateString,
+      preferredSet,
+      blockedSet,
+      targetCarbs: Number(target.carbs_g || 0),
+      targetProtein: Number(target.protein_g || 0),
+      targetFat: Number(target.fat_g || 0),
+      offset: i,
+    })
+
+    if (alt?.menu && !result.includes(alt.menu)) {
+      result.push(alt.menu)
     }
-    if (result.length >= count) break
   }
 
   return result
 }
+  
 const handleMealPlanMonthGenerate = async () => {
   if (!mealPlanForm.member_id) {
     alert('회원 선택')
@@ -1489,7 +1952,18 @@ const handleMealPlanMonthGenerate = async () => {
     return
   }
 
+  let foods = Array.isArray(foodMaster) ? foodMaster : []
+  if (!foods.length) {
+    foods = await loadFoodMaster()
+  }
+
+  if (!foods.length) {
+    alert('food_master 데이터가 없습니다.')
+    return
+  }
+
   const [year, month] = String(mealPlanMonth || '').split('-').map(Number)
+
   if (!year || !month) {
     alert('생성 월 확인')
     return
@@ -1498,62 +1972,115 @@ const handleMealPlanMonthGenerate = async () => {
   const daysInMonth = new Date(year, month, 0).getDate()
   const mealSlots = buildMealSlotsByCount(mealPlanForm.meals_per_day)
   const trainingDays = Number(mealPlanForm.training_days_per_week || 3)
-const preferences = {
-  liked: String(mealPlanForm.preferred_foods || '')
-    .split(',')
-    .map((item) => item.trim())
-    .filter(Boolean),
-  disliked: String(mealPlanForm.excluded_foods || '')
-    .split(',')
-    .map((item) => item.trim())
-    .filter(Boolean),
-  allergies: String(mealPlanForm.allergies || '')
-    .split(',')
-    .map((item) => item.trim())
-    .filter(Boolean),
-}
+
+  const { preferredSet, blockedSet } = getPreferredBlockedSet(mealPlanForm, foods)
+
+  let latestCalculationId = null
+  const { data: latestCalculation } = await supabase
+    .from('member_nutrition_calculations')
+    .select('id')
+    .eq('member_id', mealPlanForm.member_id)
+    .order('created_at', { ascending: false })
+    .limit(1)
+
+  if (Array.isArray(latestCalculation) && latestCalculation[0]?.id) {
+    latestCalculationId = latestCalculation[0].id
+  }
+
   const rows = []
 
   for (let day = 1; day <= daysInMonth; day += 1) {
     const date = `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`
 
     const dayIndex = new Date(date).getDay()
-    const isTrainingDay = trainingDays >= 5
-      ? ![0].includes(dayIndex)
-      : trainingDays >= 3
-      ? [1, 3, 5].includes(dayIndex)
-      : [2, 4].includes(dayIndex)
+
+    const isTrainingDay =
+      trainingDays >= 5
+        ? ![0].includes(dayIndex)
+        : trainingDays >= 3
+        ? [1, 3, 5].includes(dayIndex)
+        : [2, 4].includes(dayIndex)
 
     const dayType = mealPlanForm.use_training_rest_split
-      ? isTrainingDay ? 'training' : 'rest'
+      ? isTrainingDay
+        ? 'training'
+        : 'rest'
       : 'rest'
 
     const baseKcal = Number(mealPlanForm.target_kcal || 0)
-    const adjustedKcal =
-      mealPlanForm.use_training_rest_split
-        ? dayType === 'training'
-          ? baseKcal + 100
-          : baseKcal - 100
-        : baseKcal
+    const adjustedKcal = mealPlanForm.use_training_rest_split
+      ? dayType === 'training'
+        ? baseKcal + 100
+        : baseKcal - 100
+      : baseKcal
 
-    const carbs = Number(mealPlanForm.target_carbs_g || 0)
-    const protein = Number(mealPlanForm.target_protein_g || 0)
-    const fat = Number(mealPlanForm.target_fat_g || 0)
+    const totalCarbs = Number(mealPlanForm.target_carbs_g || 0)
+    const totalProtein = Number(mealPlanForm.target_protein_g || 0)
+    const totalFat = Number(mealPlanForm.target_fat_g || 0)
 
-    const mealsJson = mealSlots.map((slot, index) => ({
-      slot,
-      time:
-        slot === '아침' ? '08:00' :
-        slot === '오전간식' ? '10:30' :
-        slot === '점심' ? '12:30' :
-        slot === '운동후' ? '16:30' :
-        slot === '간식' ? '16:30' : '19:30',
-      menu: getRotatingMealExample(mealPlanForm.goal_type, slot, dayType, date, preferences),
-alternatives: getMealAlternatives(mealPlanForm.goal_type, slot, dayType, date, 2, preferences),
-  carbs_g: Math.round(carbs / mealSlots.length),
-  protein_g: Math.round(protein / mealSlots.length),
-  fat_g: Math.round(fat / mealSlots.length),
-  kcal: Math.round(adjustedKcal / mealSlots.length),
+    const slotCount = mealSlots.length || 1
+
+    const mealsJson = mealSlots.map((slot) => {
+      const slotTarget = {
+        carbs_g: Math.round(totalCarbs / slotCount),
+        protein_g: Math.round(totalProtein / slotCount),
+        fat_g: Math.round(totalFat / slotCount),
+      }
+
+      const mealResult = getRotatingMealExample(
+        mealPlanForm.goal_type,
+        slot,
+        dayType,
+        date,
+        { preferredSet, blockedSet },
+        foods,
+        slotTarget
+      )
+
+      const alternatives = getMealAlternatives(
+        mealPlanForm.goal_type,
+        slot,
+        dayType,
+        date,
+        2,
+        { preferredSet, blockedSet },
+        foods,
+        slotTarget
+      )
+
+      return {
+        slot,
+        time:
+          slot === '아침'
+            ? '08:00'
+            : slot === '오전간식'
+            ? '10:30'
+            : slot === '점심'
+            ? '12:30'
+            : slot === '운동후'
+            ? '16:30'
+            : slot === '간식'
+            ? '16:30'
+            : '19:30',
+        menu: mealResult.menu || '식단 생성 실패',
+        alternatives,
+        food_items: mealResult.items || [],
+        carbs_g: Number(mealResult.carbs_g || 0),
+        protein_g: Number(mealResult.protein_g || 0),
+        fat_g: Number(mealResult.fat_g || 0),
+        kcal: Number(mealResult.kcal || 0),
+        sodium_mg: Number(mealResult.sodium_mg || 0),
+      }
+    })
+
+    const mealsSummaryJson = mealsJson.map((meal) => ({
+      slot: meal.slot,
+      menu: meal.menu,
+      kcal: meal.kcal,
+      carbs_g: meal.carbs_g,
+      protein_g: meal.protein_g,
+      fat_g: meal.fat_g,
+      sodium_mg: meal.sodium_mg,
     }))
 
     rows.push({
@@ -1562,13 +2089,16 @@ alternatives: getMealAlternatives(mealPlanForm.goal_type, slot, dayType, date, 2
       plan_date: date,
       day_type: dayType,
       total_kcal: adjustedKcal,
-      total_carbs_g: carbs,
-      total_protein_g: protein,
-      total_fat_g: fat,
+      total_carbs_g: totalCarbs,
+      total_protein_g: totalProtein,
+      total_fat_g: totalFat,
       meals_json: mealsJson,
+      meals_summary_json: mealsSummaryJson,
       coach_memo: mealPlanForm.notes || '',
       checked_slots: [],
       is_checked: false,
+      calculation_id: latestCalculationId,
+      generation_version: 'v2_food_engine',
     })
   }
 
@@ -1580,6 +2110,17 @@ alternatives: getMealAlternatives(mealPlanForm.goal_type, slot, dayType, date, 2
     console.error('월간 식단 생성 실패:', error)
     alert('월간 식단 생성 실패')
     return
+  }
+
+  const { error: profileVersionError } = await supabase
+    .from('member_nutrition_profiles')
+    .update({
+      recommendation_version: 'v2_food_engine',
+    })
+    .eq('member_id', mealPlanForm.member_id)
+
+  if (profileVersionError) {
+    console.error('recommendation_version 업데이트 실패:', profileVersionError)
   }
 
   const { data: planData, error: loadError } = await supabase
@@ -1599,10 +2140,16 @@ alternatives: getMealAlternatives(mealPlanForm.goal_type, slot, dayType, date, 2
   setMemberMealPlans(planData || [])
   alert('월간 식단 생성 완료')
 }
+  
   useEffect(() => {
   if (!mealPlanForm.member_id) return
   loadMemberMealPlanProfile(mealPlanForm.member_id)
 }, [mealPlanForm.member_id])
+
+useEffect(() => {
+  loadFoodMaster()
+}, [])
+  
 useEffect(() => {
   if (!mealPlanForm.member_id || !mealPlanViewMonth) return
   loadMealPlansByMonth(mealPlanForm.member_id, mealPlanViewMonth)
