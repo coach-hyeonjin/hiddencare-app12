@@ -2767,151 +2767,6 @@ const loadMealComplianceByMonth = async (memberId, monthValue) => {
 
   setMemberMealCompliancePlans(data || [])
 }
-  const getMealDayTypeMeta = (dayType = '') => {
-  const type = String(dayType || '').toLowerCase()
-
-  if (type === 'general') {
-    return {
-      key: 'general',
-      label: '일반식 반영',
-      description: '오늘은 식단식 사이에 집밥 형태의 일반식 1끼가 포함된 날입니다.',
-    }
-  }
-
-  if (type === 'free') {
-    return {
-      key: 'free',
-      label: '자유식 반영',
-      description: '오늘은 한 끼를 비교적 자유롭게 먹을 수 있도록 반영한 날입니다.',
-    }
-  }
-
-  if (type === 'alcohol') {
-    return {
-      key: 'alcohol',
-      label: '음주 반영',
-      description: '오늘은 음주 상황을 고려해 식사 구성을 조정한 날입니다.',
-    }
-  }
-
-  if (type === 'refeed') {
-    return {
-      key: 'refeed',
-      label: '리피드 반영',
-      description: '오늘은 탄수화물 보충을 고려한 리피드 기준이 반영된 날입니다.',
-    }
-  }
-
-  if (type === 'training') {
-    return {
-      key: 'training',
-      label: '훈련일 식단',
-      description: '오늘은 운동하는 날 기준으로 생성된 식단입니다.',
-    }
-  }
-
-  if (type === 'rest') {
-    return {
-      key: 'rest',
-      label: '휴식일 식단',
-      description: '오늘은 쉬는 날 기준으로 생성된 식단입니다.',
-    }
-  }
-
-  return {
-    key: 'diet',
-    label: '식단식',
-    description: '오늘은 기본 식단식 기준으로 생성된 날입니다.',
-  }
-}
-
-const getGeneralMealSlotIndex = (meals = []) => {
-  const lunchIndex = meals.findIndex((meal) => String(meal?.slot || '').includes('점심'))
-  if (lunchIndex >= 0) return lunchIndex
-  return meals.length >= 2 ? 1 : 0
-}
-
-const getGeneralMealGuideByMenu = (menu = '') => {
-  const text = String(menu || '')
-
-  if (/국밥|탕|찌개|국수|라면|짬뽕|우동|칼국수/.test(text)) {
-    return [
-      '국물은 절반 이하만 드세요.',
-      '식사 전후로 물 1~2컵 더 드세요.',
-      '건더기와 단백질 위주로 드시고, 국물은 남기는 쪽으로 가세요.',
-    ]
-  }
-
-  if (/백반|정식|비빔밥|덮밥|제육|불고기|쌈밥|가정식/.test(text)) {
-    return [
-      '밥은 평소 양의 70~80% 정도로 조절하세요.',
-      '반찬에서 단백질과 채소를 먼저 드세요.',
-      '짠 반찬은 한 번에 많이 먹지 말고 나눠 드세요.',
-    ]
-  }
-
-  if (/김밥|샌드위치|토스트|주먹밥/.test(text)) {
-    return [
-      '한 끼 대용으로 괜찮지만, 단백질이 부족하면 삶은계란이나 우유를 같이 드세요.',
-      '소스가 많은 제품은 양을 조금 줄이세요.',
-      '단 음료 대신 물이나 무가당 음료로 드세요.',
-    ]
-  }
-
-  return [
-    '밥은 과하게 늘리지 말고 평소 양의 70~80% 정도로 드세요.',
-    '단백질 반찬과 채소를 먼저 드세요.',
-    '짠 국물이나 소스는 남기는 쪽으로 드세요.',
-  ]
-}
-
-const getFreeMealGuide = () => [
-  '한 끼는 자유롭게 먹어도 되지만 과식은 피해주세요.',
-  '탄산/단 음료보다는 물을 같이 드세요.',
-  '다음 끼니는 다시 기본 식단 흐름으로 돌아오면 됩니다.',
-]
-
-const getAlcoholMealGuide = () => [
-  '술 마시기 전 물 1~2컵 먼저 드세요.',
-  '안주는 단백질과 채소 위주로 고르세요.',
-  '국물 안주나 짠 안주는 가능한 줄여주세요.',
-]
-
-const getMealRowMeta = (plan, meal, index) => {
-  const meals = Array.isArray(plan?.meals_json) ? plan.meals_json : []
-  const dayType = String(plan?.day_type || '').toLowerCase()
-  const generalMealIndex = getGeneralMealSlotIndex(meals)
-
-  if (dayType === 'general' && index === generalMealIndex) {
-    return {
-      badge: '일반식',
-      description: '집밥 형태의 일반식 끼니입니다.',
-      guide: getGeneralMealGuideByMenu(meal?.menu),
-    }
-  }
-
-  if (dayType === 'free' && index === generalMealIndex) {
-    return {
-      badge: '자유식',
-      description: '오늘 한 끼는 자유식 기준으로 반영되었습니다.',
-      guide: getFreeMealGuide(),
-    }
-  }
-
-  if (dayType === 'alcohol' && index === generalMealIndex) {
-    return {
-      badge: '음주 고려',
-      description: '음주 상황을 고려한 끼니 가이드입니다.',
-      guide: getAlcoholMealGuide(),
-    }
-  }
-
-  return {
-    badge: '',
-    description: '',
-    guide: [],
-  }
-}
   useEffect(() => {
   if (!mealPlanForm.member_id || !mealComplianceMonth) return
   loadMealComplianceByMonth(mealPlanForm.member_id, mealComplianceMonth)
@@ -13949,140 +13804,89 @@ const filteredExercisesAdvanced = exercises.filter((exercise) => {
             </div>
 
             {memberMealPlans.length === 0 ? (
-  <div className="workout-list-empty">해당 월 식단 기록이 없습니다.</div>
-) : (
-  <>
-    {memberMealPlans.map((plan) => {
-      const dayTypeMeta = getMealDayTypeMeta(plan.day_type)
-      const progress = getAdminMealPlanProgress(plan)
+              <div className="workout-list-empty">해당 월 식단 기록이 없습니다.</div>
+            ) : (
+              memberMealPlans.map((plan) => (
+                <div key={plan.id} className="list-card">
+                  <div className="list-card-top">
+                    <strong>{plan.plan_date}</strong>
+                    <div className="inline-actions wrap">
+                      <span className="pill">{plan.day_type}</span>
 
-      return (
-        <div key={plan.id} className="list-card meal-plan-record-card">
-          <div className="list-card-top meal-plan-record-top">
-            <div className="meal-plan-record-head">
-              <strong>{plan.plan_date}</strong>
-              <div className="compact-text meal-plan-record-description">
-                {dayTypeMeta.description}
-              </div>
-            </div>
+                      <button
+                        type="button"
+                        className="secondary-btn"
+                        onClick={() => handleMealPlanEditStart(plan)}
+                      >
+                        수정
+                      </button>
 
-            <div className="inline-actions wrap">
-              <span className={`pill meal-day-pill meal-day-pill-${dayTypeMeta.key}`}>
-                {dayTypeMeta.label}
-              </span>
-
-              <button
-                type="button"
-                className="secondary-btn"
-                onClick={() => handleMealPlanEditStart(plan)}
-              >
-                수정
-              </button>
-
-              <button
-                type="button"
-                className="danger-btn"
-                onClick={() => handleMealPlanDelete(plan.id)}
-              >
-                삭제
-              </button>
-            </div>
-          </div>
-
-          <div className="meal-plan-record-meta">
-            <div className="compact-text">
-              총 {plan.total_kcal || 0} kcal / 탄 {plan.total_carbs_g || 0} / 단 {plan.total_protein_g || 0} / 지 {plan.total_fat_g || 0}
-            </div>
-
-            <div className="compact-text">
-              식사 수: {Array.isArray(plan.meals_json) ? plan.meals_json.length : 0}끼
-            </div>
-
-            <div className="compact-text">
-              수행률: {progress.percent}% ({progress.doneCount}/{progress.total})
-            </div>
-          </div>
-
-          {editingMealPlanId === plan.id ? (
-            <div className="detail-box meal-plan-edit-box">
-              {(editingMealPlanMeals || []).map((meal, index) => (
-                <label key={index} className="field" style={{ marginBottom: '10px' }}>
-                  <span>{meal.slot || `식사 ${index + 1}`}</span>
-                  <textarea
-                    rows="2"
-                    value={meal.menu || ''}
-                    onChange={(e) => updateMealPlanEditMeal(index, e.target.value)}
-                  />
-                </label>
-              ))}
-
-              <div className="inline-actions wrap" style={{ marginTop: '10px' }}>
-                <button
-                  type="button"
-                  className="primary-btn"
-                  onClick={() => handleMealPlanUpdate(plan)}
-                >
-                  수정 저장
-                </button>
-
-                <button
-                  type="button"
-                  className="secondary-btn"
-                  onClick={handleMealPlanEditCancel}
-                >
-                  취소
-                </button>
-              </div>
-            </div>
-          ) : Array.isArray(plan.meals_json) && plan.meals_json.length > 0 ? (
-            <div className="detail-box meal-plan-record-detail">
-              {plan.meals_json.map((meal, index) => {
-                const mealMeta = getMealRowMeta(plan, meal, index)
-
-                return (
-                  <div key={index} className="meal-plan-menu-row">
-                    <div className="meal-plan-menu-head">
-                      <strong>{meal.slot || `식사 ${index + 1}`}</strong>
-
-                      {mealMeta.badge ? (
-                        <span className="meal-slot-badge meal-slot-badge-highlight">
-                          {mealMeta.badge}
-                        </span>
-                      ) : null}
+                      <button
+                        type="button"
+                        className="danger-btn"
+                        onClick={() => handleMealPlanDelete(plan.id)}
+                      >
+                        삭제
+                      </button>
                     </div>
-
-                    <div className="compact-text meal-plan-menu-text">
-                      {meal.menu || '-'}
-                    </div>
-
-                    {mealMeta.description && (
-                      <div className="compact-text meal-plan-menu-description">
-                        {mealMeta.description}
-                      </div>
-                    )}
-
-                    {Array.isArray(mealMeta.guide) && mealMeta.guide.length > 0 && (
-                      <div className="meal-guide-box">
-                        <strong>섭취 가이드</strong>
-                        {mealMeta.guide.map((guideText, guideIndex) => (
-                          <div key={guideIndex} className="compact-text">
-                            - {guideText}
-                          </div>
-                        ))}
-                      </div>
-                    )}
                   </div>
-                )
-              })}
-            </div>
-          ) : (
-            <div className="compact-text">식단 내용이 없습니다.</div>
-          )}
-        </div>
-      )
-    })}
-  </>
-)}
+
+                  <div className="compact-text" style={{ marginBottom: '8px' }}>
+                    총 {plan.total_kcal || 0} kcal / 탄 {plan.total_carbs_g || 0} / 단 {plan.total_protein_g || 0} / 지 {plan.total_fat_g || 0}
+                  </div>
+
+                  <div className="compact-text" style={{ marginBottom: '10px' }}>
+                    식사 수: {Array.isArray(plan.meals_json) ? plan.meals_json.length : 0}끼
+                  </div>
+
+                  {editingMealPlanId === plan.id ? (
+                    <div className="detail-box">
+                      {mealPlanEditMeals.map((meal, index) => (
+                        <label key={index} className="field" style={{ marginBottom: '10px' }}>
+                          <span>{meal.slot || `식사 ${index + 1}`}</span>
+                          <textarea
+                            rows="2"
+                            value={meal.menu || ''}
+                            onChange={(e) => updateMealPlanEditMeal(index, e.target.value)}
+                          />
+                        </label>
+                      ))}
+
+                      <div className="inline-actions wrap" style={{ marginTop: '10px' }}>
+                        <button
+                          type="button"
+                          className="primary-btn"
+                          onClick={() => handleMealPlanUpdate(plan)}
+                        >
+                          수정 저장
+                        </button>
+
+                        <button
+                          type="button"
+                          className="secondary-btn"
+                          onClick={handleMealPlanEditCancel}
+                        >
+                          취소
+                        </button>
+                      </div>
+                    </div>
+                  ) : Array.isArray(plan.meals_json) && plan.meals_json.length > 0 ? (
+                    <div className="detail-box">
+                      {plan.meals_json.map((meal, index) => (
+                        <div key={index} className="compact-text" style={{ marginBottom: '6px' }}>
+                          <strong>{meal.slot || `식사 ${index + 1}`}</strong>: {meal.menu || '-'}
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="compact-text">식단 내용이 없습니다.</div>
+                  )}
+                </div>
+              ))
+            )}
+          </>
+        )}
+      </div>
 
       <div className="list-stack" style={{ marginTop: '20px' }}>
         <div className="meal-planner-admin-toggle-wrap">
@@ -14165,8 +13969,9 @@ const filteredExercisesAdvanced = exercises.filter((exercise) => {
             )}
           </>
         )}
-         </div>
+      </div>
     </div>
+  </div>
 )}
       {activeTab === '통계' && (
   <div className="stats-page-modern">
