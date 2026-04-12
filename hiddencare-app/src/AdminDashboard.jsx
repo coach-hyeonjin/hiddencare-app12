@@ -1365,165 +1365,221 @@ const handleMealPlanGenerate = async () => {
   }))
 
   if (calculationId) {
-    const { error: profileUpdateError } = await supabase
-      .from('member_nutrition_profiles')
-      .upsert(
-        {
-          member_id: mealPlanForm.member_id,
-          admin_id: currentAdminId || null,
-          goal_type: goalType,
-          meals_per_day: mealsPerDay,
-          meal_slots: mealSlots,
-          activity_level: mealPlanForm.activity_level || 'light',
-          training_days_per_week: Number(mealPlanForm.training_days_per_week || 3),
-          training_time: mealPlanForm.training_time || 'evening',
-          use_training_rest_split: !!mealPlanForm.use_training_rest_split,
-          target_kcal: targetKcal,
-          target_carbs_g: targetCarbs,
-          target_protein_g: targetProtein,
-          target_fat_g: targetFat,
-          excluded_foods: normalizeCommaTextToArray(mealPlanForm.excluded_foods),
-          preferred_foods: normalizeCommaTextToArray(mealPlanForm.preferred_foods),
-          allergies: normalizeCommaTextToArray(mealPlanForm.allergies),
-          notes: mealPlanForm.notes || '',
-          calculation_version: 'v2_food_engine',
-          recommendation_version: 'v2_food_engine',
-                    diet_mode: mealPlanForm.diet_mode || 'balanced',
-          adaptation_strategy: mealPlanForm.adaptation_strategy || 'gradual',
-          current_meal_pattern: mealPlanForm.current_meal_pattern || 'mixed',
-          snack_frequency_per_week: Number(mealPlanForm.snack_frequency_per_week || 0),
-          bread_frequency_per_week: Number(mealPlanForm.bread_frequency_per_week || 0),
-          junk_food_frequency_per_week: Number(mealPlanForm.junk_food_frequency_per_week || 0),
-          delivery_food_frequency_per_week: Number(mealPlanForm.delivery_food_frequency_per_week || 0),
-          late_night_meal_frequency_per_week: Number(mealPlanForm.late_night_meal_frequency_per_week || 0),
-          allowed_general_meals_per_week: Number(mealPlanForm.allowed_general_meals_per_week || 0),
-          allowed_free_meals_per_week: Number(mealPlanForm.allowed_free_meals_per_week || 0),
-          allowed_snacks_per_week: Number(mealPlanForm.allowed_snacks_per_week || 0),
-          allowed_bread_per_week: Number(mealPlanForm.allowed_bread_per_week || 0),
-          allowed_dessert_per_week: Number(mealPlanForm.allowed_dessert_per_week || 0),
-          meal_structure_mode: mealPlanForm.meal_structure_mode || 'structured',
-          alcohol_frequency_per_week: Number(mealPlanForm.alcohol_frequency_per_week || 0),
-  allowed_alcohol_per_week: Number(mealPlanForm.allowed_alcohol_per_week || 0),
-          last_calculation_id: calculationId,
-        
-                },
-        { onConflict: 'member_id' }
-      )
+  const { error: profileUpdateError } = await supabase
+    .from('member_nutrition_profiles')
+    .upsert(
+      {
+        member_id: mealPlanForm.member_id,
+        admin_id: currentAdminId || null,
+        goal_type: goalType,
+        meals_per_day: mealsPerDay,
+        meal_slots: mealSlots,
+        activity_level: mealPlanForm.activity_level || 'light',
+        training_days_per_week: Number(mealPlanForm.training_days_per_week || 3),
+        training_time: mealPlanForm.training_time || 'evening',
+        use_training_rest_split: !!mealPlanForm.use_training_rest_split,
+        target_kcal: targetKcal,
+        target_carbs_g: targetCarbs,
+        target_protein_g: targetProtein,
+        target_fat_g: targetFat,
+        excluded_foods: normalizeCommaTextToArray(mealPlanForm.excluded_foods),
+        preferred_foods: normalizeCommaTextToArray(mealPlanForm.preferred_foods),
+        allergies: normalizeCommaTextToArray(mealPlanForm.allergies),
+        notes: mealPlanForm.notes || '',
+        calculation_version: 'v2_food_engine',
+        recommendation_version: 'v2_food_engine',
+        diet_mode: mealPlanForm.diet_mode || 'balanced',
+        adaptation_strategy: mealPlanForm.adaptation_strategy || 'gradual',
+        current_meal_pattern: mealPlanForm.current_meal_pattern || 'mixed',
+        snack_frequency_per_week: Number(mealPlanForm.snack_frequency_per_week || 0),
+        bread_frequency_per_week: Number(mealPlanForm.bread_frequency_per_week || 0),
+        junk_food_frequency_per_week: Number(mealPlanForm.junk_food_frequency_per_week || 0),
+        delivery_food_frequency_per_week: Number(mealPlanForm.delivery_food_frequency_per_week || 0),
+        late_night_meal_frequency_per_week: Number(mealPlanForm.late_night_meal_frequency_per_week || 0),
+        allowed_general_meals_per_week: Number(mealPlanForm.allowed_general_meals_per_week || 0),
+        allowed_free_meals_per_week: Number(mealPlanForm.allowed_free_meals_per_week || 0),
+        allowed_snacks_per_week: Number(mealPlanForm.allowed_snacks_per_week || 0),
+        allowed_bread_per_week: Number(mealPlanForm.allowed_bread_per_week || 0),
+        allowed_dessert_per_week: Number(mealPlanForm.allowed_dessert_per_week || 0),
+        meal_structure_mode: mealPlanForm.meal_structure_mode || 'structured',
+        alcohol_frequency_per_week: Number(mealPlanForm.alcohol_frequency_per_week || 0),
+        allowed_alcohol_per_week: Number(mealPlanForm.allowed_alcohol_per_week || 0),
+        last_calculation_id: calculationId,
+      },
+      { onConflict: 'member_id' }
+    )
 
-    if (profileUpdateError) {
-      console.error('식단 프로필 동기화 실패:', profileUpdateError)
-    }
+  if (profileUpdateError) {
+    console.error('식단 프로필 동기화 실패:', profileUpdateError)
+  }
 
-    // 🔥 자동 계산 완료
-    alert('자동 계산 완료')
+  alert('자동 계산 완료')
 
-    // 🔥 월간 식단 생성 로직 시작
-    let foods = Array.isArray(foodMaster) ? foodMaster : []
-    if (!foods.length) {
-      foods = await loadFoodMaster()
-    }
+  let foods = Array.isArray(foodMaster) ? foodMaster : []
+  if (!foods.length) {
+    foods = await loadFoodMaster()
+  }
 
-    const { preferredSet, blockedSet } = getPreferredBlockedSet(mealPlanForm, foods)
+  const { preferredSet, blockedSet } = getPreferredBlockedSet(mealPlanForm, foods)
 
-    const daysInMonth = 30
+  const selectedMonth = String(mealPlanViewMonth || new Date().toISOString().slice(0, 7))
+  const [selectedYear, selectedMonthNumber] = selectedMonth.split('-').map(Number)
+  const daysInMonth = new Date(selectedYear, selectedMonthNumber, 0).getDate()
 
-    const framework = buildMonthlyDietFramework({
-      daysInMonth,
-      trainingDaysPerWeek: mealPlanForm.training_days_per_week,
-      allowedGeneralMeals: mealPlanForm.allowed_general_meals_per_week,
-      allowedFreeMeals: mealPlanForm.allowed_free_meals_per_week,
+  const framework = buildMonthlyDietFramework({
+    daysInMonth,
+    trainingDaysPerWeek: Number(mealPlanForm.training_days_per_week || 3),
+    allowedGeneralMeals: Number(mealPlanForm.allowed_general_meals_per_week || 0),
+    allowedFreeMeals: Number(mealPlanForm.allowed_free_meals_per_week || 0),
+  })
+
+  const mealPlans = []
+
+  for (let i = 0; i < daysInMonth; i += 1) {
+    const dayInfo = framework[i]
+    const dateString = `${selectedMonth}-${String(i + 1).padStart(2, '0')}`
+
+    const adjusted = getLifestyleAdjustedDayPlan({
+      mealPlanForm,
+      isTrainingDay: dayInfo.dayType === 'training',
+      dayType: dayInfo.dayType,
+      baseKcal: targetKcal,
+      totalCarbs: targetCarbs,
+      totalProtein: targetProtein,
+      totalFat: targetFat,
     })
 
-    const mealPlans = []
+    const slotCount = Math.max(1, mealSlots.length)
 
-    for (let i = 0; i < daysInMonth; i++) {
-      const dayInfo = framework[i]
+    const carbBase = Math.floor(Number(adjusted.carbs || 0) / slotCount)
+    const proteinBase = Math.floor(Number(adjusted.protein || 0) / slotCount)
+    const fatBase = Math.floor(Number(adjusted.fat || 0) / slotCount)
 
-      const dateString = `2026-04-${String(i + 1).padStart(2, '0')}`
+    let carbRemainder = Number(adjusted.carbs || 0) - carbBase * slotCount
+    let proteinRemainder = Number(adjusted.protein || 0) - proteinBase * slotCount
+    let fatRemainder = Number(adjusted.fat || 0) - fatBase * slotCount
 
-      const dayMeals = []
+    const dayMeals = []
+    let recentUsedIds = []
+    let slotUsedNames = []
+    let preferredIncludedCount = 0
 
-      for (let slot of mealSlots) {
-        window.currentMealType = dayInfo.mealType
+    for (let slotIndex = 0; slotIndex < mealSlots.length; slotIndex += 1) {
+      const slot = mealSlots[slotIndex]
 
-        c// 🔥 생활습관 반영된 값 생성
-const adjusted = getLifestyleAdjustedDayPlan({
-  mealPlanForm,
-  isTrainingDay: dayInfo.dayType === 'training',
-  dayType: dayInfo.mealType,
-  baseKcal: targetKcal,
-  totalCarbs: targetCarbs,
-  totalProtein: targetProtein,
-  totalFat: targetFat,
-})
+      const perMealCarbs = carbBase + (carbRemainder > 0 ? 1 : 0)
+      const perMealProtein = proteinBase + (proteinRemainder > 0 ? 1 : 0)
+      const perMealFat = fatBase + (fatRemainder > 0 ? 1 : 0)
 
-// 🔥 끼니별로 나누기
-const perMealCarbs = Math.round(adjusted.carbs / mealsPerDay)
-const perMealProtein = Math.round(adjusted.protein / mealsPerDay)
-const perMealFat = Math.round(adjusted.fat / mealsPerDay)
+      if (carbRemainder > 0) carbRemainder -= 1
+      if (proteinRemainder > 0) proteinRemainder -= 1
+      if (fatRemainder > 0) fatRemainder -= 1
 
-// 🔥 기존 대신 이걸 넣어라
-const meal = buildSingleMealPlan({
-  foods,
-  goalType,
-  slot,
-  dayType: dayInfo.dayType,
-  dateString,
-  preferredSet,
-  blockedSet,
-  targetCarbs: perMealCarbs,
-  targetProtein: perMealProtein,
-  targetFat: perMealFat,
-})
-
-        dayMeals.push({
-          slot,
-          ...meal,
-        })
-      }
-
-      mealPlans.push({
-        date: dateString,
+      const meal = buildSingleMealPlan({
+        foods,
+        goalType,
+        slot,
         dayType: dayInfo.dayType,
-        mealType: dayInfo.mealType,
-        meals: dayMeals,
+        dateString,
+        preferredSet,
+        blockedSet,
+        targetCarbs: perMealCarbs,
+        targetProtein: perMealProtein,
+        targetFat: perMealFat,
+        offset: slotIndex,
+        recentUsedIds,
+        slotUsedNames,
+        preferredIncludedCount,
+      })
+
+      recentUsedIds = Array.isArray(meal?.nextUsedIds) ? meal.nextUsedIds : recentUsedIds
+      slotUsedNames = Array.isArray(meal?.nextSlotUsedNames) ? meal.nextSlotUsedNames : slotUsedNames
+      preferredIncludedCount = Number(meal?.nextPreferredIncludedCount || preferredIncludedCount)
+
+      dayMeals.push({
+        slot,
+        items: Array.isArray(meal?.items) ? meal.items : [],
+        menu: meal?.menu || '',
+        kcal: Number(meal?.kcal || 0),
+        carbs_g: Number(meal?.carbs_g || 0),
+        protein_g: Number(meal?.protein_g || 0),
+        fat_g: Number(meal?.fat_g || 0),
+        sodium_mg: Number(meal?.sodium_mg || 0),
+        target_kcal: Math.round(Number(adjusted.kcal || 0) / slotCount),
+        target_carbs_g: perMealCarbs,
+        target_protein_g: perMealProtein,
+        target_fat_g: perMealFat,
       })
     }
 
-    console.log('🔥 생성된 월간 식단:', mealPlans)
+    const totalKcal = dayMeals.reduce((sum, meal) => sum + Number(meal.kcal || 0), 0)
+    const totalCarbs = dayMeals.reduce((sum, meal) => sum + Number(meal.carbs_g || 0), 0)
+    const totalProtein = dayMeals.reduce((sum, meal) => sum + Number(meal.protein_g || 0), 0)
+    const totalFat = dayMeals.reduce((sum, meal) => sum + Number(meal.fat_g || 0), 0)
+    const totalSodium = dayMeals.reduce((sum, meal) => sum + Number(meal.sodium_mg || 0), 0)
 
-    // 🔥 DB 저장
-    const rows = mealPlans.map((plan) => ({
-      member_id: mealPlanForm.member_id,
-      admin_id: currentAdminId,
-      plan_date: plan.date,
-      day_type: plan.mealType,
-      meals_json: plan.meals,
-      total_kcal: plan.meals.reduce((sum, m) => {
-        const kcal = Array.isArray(m.items)
-          ? m.items.reduce((s, item) => s + (item.kcal || 0), 0)
-          : 0
-        return sum + kcal
-      }, 0),
-      total_carbs_g: 0,
-      total_protein_g: 0,
-      total_fat_g: 0,
-      generation_version: 'v3_auto_system',
-    }))
-
-    const { error: insertError } = await supabase
-      .from('member_meal_plans')
-      .insert(rows)
-
-    if (insertError) {
-      console.error('식단 저장 실패:', insertError)
-      alert('식단 저장 실패')
-      return
-    }
-
-    // 🔥 최종 완료
-    alert('월간 식단 생성 + 저장 완료')
+    mealPlans.push({
+      date: dateString,
+      dayType: dayInfo.dayType,
+      mealType: dayInfo.mealType,
+      meals: dayMeals,
+      target_kcal: Number(adjusted.kcal || 0),
+      target_carbs_g: Number(adjusted.carbs || 0),
+      target_protein_g: Number(adjusted.protein || 0),
+      target_fat_g: Number(adjusted.fat || 0),
+      total_kcal: totalKcal,
+      total_carbs_g: totalCarbs,
+      total_protein_g: totalProtein,
+      total_fat_g: totalFat,
+      total_sodium_mg: totalSodium,
+      kcal_gap: totalKcal - Number(adjusted.kcal || 0),
+      carbs_gap: totalCarbs - Number(adjusted.carbs || 0),
+      protein_gap: totalProtein - Number(adjusted.protein || 0),
+      fat_gap: totalFat - Number(adjusted.fat || 0),
+    })
   }
+
+  const monthStart = `${selectedMonth}-01`
+  const monthEnd = `${selectedMonth}-${String(daysInMonth).padStart(2, '0')}`
+
+  const { error: deleteExistingError } = await supabase
+    .from('member_meal_plans')
+    .delete()
+    .eq('member_id', mealPlanForm.member_id)
+    .gte('plan_date', monthStart)
+    .lte('plan_date', monthEnd)
+
+  if (deleteExistingError) {
+    console.error('기존 월간 식단 삭제 실패:', deleteExistingError)
+    alert('기존 월간 식단 삭제 실패')
+    return
+  }
+
+  const rows = mealPlans.map((plan) => ({
+    member_id: mealPlanForm.member_id,
+    admin_id: currentAdminId || null,
+    plan_date: plan.date,
+    day_type: plan.mealType,
+    meals_json: plan.meals,
+    total_kcal: plan.total_kcal,
+    total_carbs_g: plan.total_carbs_g,
+    total_protein_g: plan.total_protein_g,
+    total_fat_g: plan.total_fat_g,
+    generation_version: 'v4_target_based_system',
+  }))
+
+  const { error: insertError } = await supabase
+    .from('member_meal_plans')
+    .insert(rows)
+
+  if (insertError) {
+    console.error('식단 저장 실패:', insertError)
+    alert('식단 저장 실패')
+    return
+  }
+
+  console.log('✅ 월간 식단 생성 완료:', mealPlans)
+  alert('월간 식단 생성 + 저장 완료')
 }
   
 const handleMealPlanSave = async () => {
