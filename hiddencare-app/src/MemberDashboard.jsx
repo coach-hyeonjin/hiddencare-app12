@@ -5217,7 +5217,7 @@ return { ok: true, xp: xpValue }
       <p className="sub-text">
         오늘 날짜 기준 식단과 끼니별 구성, 진행 상태를 바로 확인할 수 있습니다.
       </p>
-      <div className="detail-box">
+     <div className="detail-box">
   <strong>
     {todayMealPlan?.meal_type === 'free'
       ? '오늘은 자유식입니다.'
