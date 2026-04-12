@@ -2483,33 +2483,67 @@ if (mealType === 'general') {
     mealItems.push(buildMealFoodItem(extraFood, grams))
   }
 
-  const summary = sumMealItems(mealItems)
+  let adjustedMealItems = [...mealItems]
+let summary = sumMealItems(adjustedMealItems)
 
-  const nextUsedIds = [
-    ...recentUsedIds,
-    ...mealItems.map((item) => item.food_id).filter(Boolean),
-  ].slice(-8)
+if (Number(targetKcal || 0) > 0 && adjustedMealItems.length > 0) {
+  const lowerBound = Number(targetKcal) * 0.92
+  const upperBound = Number(targetKcal) * 1.08
 
-  const nextSlotUsedNames = [
-    ...slotUsedNames,
-    ...mealItems.map((item) => item.name).filter(Boolean),
-  ].slice(-8)
+  let guard = 0
 
-  const hasPreferredInMeal = mealItems.some((item) => preferredSet.has(item.food_id))
-  const nextPreferredIncludedCount = preferredIncludedCount + (hasPreferredInMeal ? 1 : 0)
+  while ((summary.kcal < lowerBound || summary.kcal > upperBound) && guard < 12) {
+    guard += 1
 
-  return {
-    items: mealItems,
-    menu: formatMealMenu(mealItems),
-    kcal: Math.round(summary.kcal),
-    carbs_g: Math.round(summary.carbs_g),
-    protein_g: Math.round(summary.protein_g),
-    fat_g: Math.round(summary.fat_g),
-    sodium_mg: Math.round(summary.sodium_mg),
-    nextUsedIds,
-    nextSlotUsedNames,
-    nextPreferredIncludedCount,
+    const ratio = Number(targetKcal) / Math.max(1, Number(summary.kcal || 0))
+
+    adjustedMealItems = adjustedMealItems.map((item) => {
+      const nextGrams = clampNumber(
+        Math.round(Number(item.grams || 0) * ratio),
+        40,
+        260
+      )
+
+      return {
+        ...item,
+        grams: nextGrams,
+        kcal: Math.round((Number(item.kcal || 0) / Math.max(1, Number(item.grams || 1))) * nextGrams),
+        carbs_g: Math.round((Number(item.carbs_g || 0) / Math.max(1, Number(item.grams || 1))) * nextGrams),
+        protein_g: Math.round((Number(item.protein_g || 0) / Math.max(1, Number(item.grams || 1))) * nextGrams),
+        fat_g: Math.round((Number(item.fat_g || 0) / Math.max(1, Number(item.grams || 1))) * nextGrams),
+        sodium_mg: Math.round((Number(item.sodium_mg || 0) / Math.max(1, Number(item.grams || 1))) * nextGrams),
+      }
+    })
+
+    summary = sumMealItems(adjustedMealItems)
   }
+}
+
+const nextUsedIds = [
+  ...recentUsedIds,
+  ...adjustedMealItems.map((item) => item.food_id).filter(Boolean),
+].slice(-8)
+
+const nextSlotUsedNames = [
+  ...slotUsedNames,
+  ...adjustedMealItems.map((item) => item.name).filter(Boolean),
+].slice(-8)
+
+const hasPreferredInMeal = adjustedMealItems.some((item) => preferredSet.has(item.food_id))
+const nextPreferredIncludedCount = preferredIncludedCount + (hasPreferredInMeal ? 1 : 0)
+
+return {
+  items: adjustedMealItems,
+  menu: formatMealMenu(adjustedMealItems),
+  kcal: Math.round(summary.kcal),
+  carbs_g: Math.round(summary.carbs_g),
+  protein_g: Math.round(summary.protein_g),
+  fat_g: Math.round(summary.fat_g),
+  sodium_mg: Math.round(summary.sodium_mg),
+  nextUsedIds,
+  nextSlotUsedNames,
+  nextPreferredIncludedCount,
+}
 }
 
 const getRotatingMealExample = (
