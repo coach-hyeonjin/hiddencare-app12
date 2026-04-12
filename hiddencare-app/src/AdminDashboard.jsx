@@ -1481,6 +1481,7 @@ const handleMealPlanGenerate = async () => {
         slot,
         dayType: dayInfo.dayType,
         mealType: dayInfo.mealType,
+        mealPlanForm,
         dateString,
         preferredSet,
         blockedSet,
@@ -1503,6 +1504,7 @@ const handleMealPlanGenerate = async () => {
         slot,
         items: Array.isArray(meal?.items) ? meal.items : [],
         menu: meal?.menu || '',
+        guide_text: meal?.guide_text || '',
         kcal: Number(meal?.kcal || 0),
         carbs_g: Number(meal?.carbs_g || 0),
         protein_g: Number(meal?.protein_g || 0),
@@ -2281,12 +2283,210 @@ const buildMonthlyDietFramework = ({
 
   return framework
 }
+  const GENERAL_MEAL_GUIDE_MAP = {
+  balanced: {
+    label: '일반식 · 균형형',
+    description: '밥, 단백질 반찬, 채소를 균형 있게 구성하는 일반식입니다.',
+    guide: [
+      '밥 1공기 기준으로 구성',
+      '단백질 반찬 1~2개 포함',
+      '채소반찬 2가지 이상 함께 먹기',
+    ],
+    examples: [
+      '백미밥 + 소고기우둔/닭가슴살 + 나물반찬',
+      '생선구이 정식',
+      '비빔밥(고기 포함, 소스는 과하지 않게)',
+    ],
+    caution: [
+      '튀김, 디저트, 음료는 추가하지 않기',
+      '국물류는 반 정도만 섭취',
+    ],
+  },
+  diet: {
+    label: '일반식 · 다이어트형',
+    description: '열량을 조금 더 안정적으로 관리하는 감량용 일반식입니다.',
+    guide: [
+      '밥은 0.5~0.7공기 정도',
+      '단백질 반찬 중심으로 선택',
+      '채소 섭취량 늘리기',
+    ],
+    examples: [
+      '닭가슴살 샐러드 + 고구마',
+      '회덮밥(밥 적게)',
+      '순두부/두부 반찬 포함 한식',
+    ],
+    caution: [
+      '면, 빵, 튀김은 한 끼에 같이 먹지 않기',
+      '소스와 드레싱은 적게',
+    ],
+  },
+  eating_out: {
+    label: '일반식 · 외식형',
+    description: '밖에서 먹을 때 선택 기준을 잡아주는 현실형 일반식입니다.',
+    guide: [
+      '정식류, 덮밥류, 구이류 위주로 선택',
+      '밥이 들어간 식사는 가능',
+      '단백질 반찬이 있는 메뉴 우선',
+    ],
+    examples: [
+      '제육볶음 정식',
+      '생선구이 정식',
+      '국밥류(밥은 조절)',
+    ],
+    caution: [
+      '라면, 파스타, 피자만 단독으로 먹지 않기',
+      '튀김은 곁들이는 정도만',
+      '음료 대신 물 선택',
+    ],
+  },
+  simple: {
+    label: '일반식 · 간편형',
+    description: '시간이 없을 때 빠르게 해결하는 간편 일반식입니다.',
+    guide: [
+      '탄수화물 + 단백질 조합 만들기',
+      '편의점/간편식도 단백질 포함 우선',
+      '한 끼를 너무 가볍게 끝내지 않기',
+    ],
+    examples: [
+      '삼각김밥 + 닭가슴살',
+      '샌드위치 + 삶은계란',
+      '프로틴 + 바나나 + 구운계란',
+    ],
+    caution: [
+      '빵만 먹고 끝내지 않기',
+      '디저트류를 식사 대용으로 쓰지 않기',
+    ],
+  },
+  social: {
+    label: '일반식 · 회식형',
+    description: '회식이나 술자리에서도 기준을 잡아주는 일반식입니다.',
+    guide: [
+      '고기 + 채소 위주로 먹기',
+      '술과 탄수화물은 동시에 과하게 먹지 않기',
+      '안주는 단백질 위주로 고르기',
+    ],
+    examples: [
+      '삼겹살 + 상추 + 밥 소량',
+      '소고기 + 채소류',
+      '구이류 안주 중심 식사',
+    ],
+    caution: [
+      '술 + 튀김 + 면 조합 피하기',
+      '다음 끼니는 원래 식단으로 복귀',
+    ],
+  },
+}
+
+const getGeneralMealDetailType = ({
+  mealPlanForm,
+  slot,
+  dateString,
+}) => {
+  const currentMealPattern = String(mealPlanForm?.current_meal_pattern || 'mixed')
+  const mealStructureMode = String(mealPlanForm?.meal_structure_mode || 'structured')
+  const alcoholFrequency = Number(mealPlanForm?.alcohol_frequency_per_week || 0)
+  const deliveryFrequency = Number(mealPlanForm?.delivery_food_frequency_per_week || 0)
+  const snackFrequency = Number(mealPlanForm?.snack_frequency_per_week || 0)
+  const goalType = String(mealPlanForm?.goal_type || 'diet')
+
+  if (alcoholFrequency >= 1 && (slot === '저녁' || slot === '야식')) {
+    return 'social'
+  }
+
+  if (mealStructureMode === 'performance') {
+    return 'balanced'
+  }
+
+  if (currentMealPattern === 'general_heavy') {
+    return 'eating_out'
+  }
+
+  if (deliveryFrequency >= 3 || snackFrequency >= 5) {
+    return 'simple'
+  }
+
+  if (goalType === 'diet' || goalType === 'recomposition') {
+    return 'diet'
+  }
+
+  const day = Number(String(dateString || '').slice(-2)) || 1
+  return day % 2 === 0 ? 'balanced' : 'eating_out'
+}
+
+const buildGeneralMealGuideText = ({
+  mealPlanForm,
+  slot,
+  dateString,
+  targetKcal = 0,
+  targetCarbs = 0,
+  targetProtein = 0,
+  targetFat = 0,
+}) => {
+  const detailType = getGeneralMealDetailType({
+    mealPlanForm,
+    slot,
+    dateString,
+  })
+
+  const detail = GENERAL_MEAL_GUIDE_MAP[detailType] || GENERAL_MEAL_GUIDE_MAP.balanced
+
+  const text = [
+    `${detail.label}`,
+    '',
+    `${detail.description}`,
+    '',
+    `권장 목표`,
+    `- 약 ${Math.round(Number(targetKcal || 0))} kcal 내외`,
+    `- 탄수 ${Math.round(Number(targetCarbs || 0))}g / 단백질 ${Math.round(Number(targetProtein || 0))}g / 지방 ${Math.round(Number(targetFat || 0))}g`,
+    '',
+    `구성 가이드`,
+    ...detail.guide.map((item) => `- ${item}`),
+    '',
+    `예시 메뉴`,
+    ...detail.examples.map((item) => `- ${item}`),
+    '',
+    `주의사항`,
+    ...detail.caution.map((item) => `- ${item}`),
+  ].join('\n')
+
+  return {
+    detailType,
+    label: detail.label,
+    text,
+  }
+}
+
+const buildFreeMealGuideText = ({
+  targetKcal = 0,
+}) => {
+  const text = [
+    '자유식 · 유연형',
+    '',
+    '먹고 싶은 음식을 선택할 수 있는 끼니입니다.',
+    '',
+    '권장 기준',
+    `- 약 ${Math.round(Number(targetKcal || 0))} kcal 내외에서 마무리`,
+    '- 과식하지 않기',
+    '- 다음 끼니는 원래 식단으로 바로 복귀',
+    '',
+    '주의사항',
+    '- 자유식이라고 폭식까지 허용하는 것은 아님',
+    '- 디저트, 음료, 튀김을 한 끼에 모두 겹치지 않기',
+  ].join('\n')
+
+  return {
+    label: '자유식 · 유연형',
+    text,
+  }
+}
+  
 const buildSingleMealPlan = ({
   foods,
   goalType,
   slot,
   dayType,
   mealType,
+  mealPlanForm,
   dateString,
   preferredSet,
   blockedSet,
@@ -2305,15 +2505,21 @@ const currentMealType = mealType || 'normal'
 
 // 자유식이면 그대로 반환
 if (currentMealType === 'free') {
+  const freeGuide = buildFreeMealGuideText({
+    targetKcal,
+  })
+
   return {
     items: [],
-    menu: '자유식 (자율 선택)',
+    menu: freeGuide.label,
+    guide_text: freeGuide.text,
     kcal: Number(targetKcal || 0),
     carbs_g: Number(targetCarbs || 0),
     protein_g: Number(targetProtein || 0),
     fat_g: Number(targetFat || 0),
     sodium_mg: 0,
     isFreeMeal: true,
+    meal_detail_type: 'free',
     nextUsedIds: recentUsedIds,
     nextSlotUsedNames: slotUsedNames,
     nextPreferredIncludedCount: preferredIncludedCount,
@@ -2321,15 +2527,27 @@ if (currentMealType === 'free') {
 }
 
 if (currentMealType === 'general') {
+  const generalGuide = buildGeneralMealGuideText({
+    mealPlanForm,
+    slot,
+    dateString,
+    targetKcal,
+    targetCarbs,
+    targetProtein,
+    targetFat,
+  })
+
   return {
     items: [],
-    menu: '일반식 (한식/외식 자유 선택)',
+    menu: generalGuide.label,
+    guide_text: generalGuide.text,
     kcal: Number(targetKcal || 0),
     carbs_g: Number(targetCarbs || 0),
     protein_g: Number(targetProtein || 0),
     fat_g: Number(targetFat || 0),
     sodium_mg: 0,
     isGeneralMeal: true,
+    meal_detail_type: generalGuide.detailType,
     nextUsedIds: recentUsedIds,
     nextSlotUsedNames: slotUsedNames,
     nextPreferredIncludedCount: preferredIncludedCount,
@@ -2553,6 +2771,7 @@ const nextPreferredIncludedCount = preferredIncludedCount + (hasPreferredInMeal 
 return {
   items: adjustedMealItems,
   menu: formatMealMenu(adjustedMealItems),
+  guide_text: '',
   kcal: Math.round(summary.kcal),
   carbs_g: Math.round(summary.carbs_g),
   protein_g: Math.round(summary.protein_g),
@@ -2935,6 +3154,7 @@ dayPreferredIncludedCount = Number(mealResult?.nextPreferredIncludedCount || day
     const mealsSummaryJson = mealsJson.map((meal) => ({
       slot: meal.slot,
       menu: meal.menu,
+      guide_text: meal.guide_text || '',
       kcal: meal.kcal,
       carbs_g: meal.carbs_g,
       protein_g: meal.protein_g,
