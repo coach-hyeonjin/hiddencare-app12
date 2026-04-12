@@ -867,6 +867,8 @@ const emptyMealPlanForm = {
 }
 
 const [mealPlanForm, setMealPlanForm] = useState(emptyMealPlanForm)
+  const [mealPlanRecommendation, setMealPlanRecommendation] = useState(null)
+const [selectedPlanStyle, setSelectedPlanStyle] = useState('')
 const [mealPlanMonth, setMealPlanMonth] = useState(new Date().toISOString().slice(0, 7))
 const [memberNutritionProfiles, setMemberNutritionProfiles] = useState([])
 const [memberMealPlans, setMemberMealPlans] = useState([])
@@ -1363,7 +1365,20 @@ const handleMealPlanGenerate = async () => {
     target_fat_g: targetFat,
     target_carbs_g: targetCarbs,
   }))
+  const recommendation = buildPlanStyleRecommendation({
+    mealPlanForm: {
+      ...mealPlanForm,
+      target_kcal: targetKcal,
+      target_carbs_g: targetCarbs,
+      target_protein_g: targetProtein,
+      target_fat_g: targetFat,
+    },
+    targetKcal,
+    goalType,
+  })
 
+  setMealPlanRecommendation(recommendation)
+  setSelectedPlanStyle(recommendation.recommended_key || '')
   if (calculationId) {
   const { error: profileUpdateError } = await supabase
     .from('member_nutrition_profiles')
@@ -2973,6 +2988,109 @@ const getLifestyleAdjustedDayPlan = ({
     carbs,
     protein,
     fat,
+  }
+}
+
+  const PLAN_STYLE_META = {
+  adaptive: {
+    key: 'adaptive',
+    label: '적응형 · 일반식 + 식단식',
+    summary: '식단 초보자나 적응이 필요한 회원에게 맞는 방식입니다.',
+  },
+  mixed: {
+    key: 'mixed',
+    label: '혼합형 · 일반식 + 식단식 + 외식',
+    summary: '현실적인 지속 가능성을 우선하는 기본 추천 방식입니다.',
+  },
+  maintenance: {
+    key: 'maintenance',
+    label: '유지형 · 일반식 + 외식',
+    summary: '체중 유지와 건강 관리를 중심으로 하는 방식입니다.',
+  },
+  strict: {
+    key: 'strict',
+    label: '집중형 · 식단식 중심',
+    summary: '감량 집중, 바디프로필, 대회 준비에 가까운 방식입니다.',
+  },
+  bulk: {
+    key: 'bulk',
+    label: '벌크업형 · 근성장 집중',
+    summary: '충분한 열량과 탄수화물을 확보하는 근성장 방식입니다.',
+  },
+}
+
+const buildPlanStyleRecommendation = ({
+  mealPlanForm,
+  targetKcal = 0,
+  goalType = 'diet',
+}) => {
+  const currentMealPattern = String(mealPlanForm?.current_meal_pattern || 'mixed')
+  const mealStructureMode = String(mealPlanForm?.meal_structure_mode || 'structured')
+  const adaptationStrategy = String(mealPlanForm?.adaptation_strategy || 'gradual')
+
+  const snackFrequency = Number(mealPlanForm?.snack_frequency_per_week || 0)
+  const breadFrequency = Number(mealPlanForm?.bread_frequency_per_week || 0)
+  const junkFrequency = Number(mealPlanForm?.junk_food_frequency_per_week || 0)
+  const deliveryFrequency = Number(mealPlanForm?.delivery_food_frequency_per_week || 0)
+  const lateNightFrequency = Number(mealPlanForm?.late_night_meal_frequency_per_week || 0)
+  const alcoholFrequency = Number(mealPlanForm?.alcohol_frequency_per_week || 0)
+
+  const allowedGeneralMeals = Number(mealPlanForm?.allowed_general_meals_per_week || 0)
+  const allowedFreeMeals = Number(mealPlanForm?.allowed_free_meals_per_week || 0)
+
+  const reasons = []
+  let recommendedKey = 'mixed'
+
+  if (goalType === 'bulk' || goalType === 'muscle_gain' || Number(targetKcal || 0) >= 2800) {
+    recommendedKey = 'bulk'
+    reasons.push('목표 열량이 높고 근성장 목적 비중이 큽니다.')
+  } else if (
+    adaptationStrategy === 'contest_prep' ||
+    (mealStructureMode === 'structured' &&
+      currentMealPattern === 'diet_ready' &&
+      allowedGeneralMeals <= 1 &&
+      allowedFreeMeals <= 1)
+  ) {
+    recommendedKey = 'strict'
+    reasons.push('식단 통제 강도가 높고 식단 적응도가 이미 높은 편입니다.')
+  } else if (
+    goalType === 'maintenance' &&
+    (currentMealPattern === 'general_heavy' || deliveryFrequency >= 3 || alcoholFrequency >= 1)
+  ) {
+    recommendedKey = 'maintenance'
+    reasons.push('체중 유지 목표이며 일반식과 외식 중심 패턴이 뚜렷합니다.')
+  } else if (
+    currentMealPattern === 'general_heavy' ||
+    snackFrequency >= 4 ||
+    breadFrequency >= 3 ||
+    junkFrequency >= 3 ||
+    deliveryFrequency >= 3 ||
+    lateNightFrequency >= 3 ||
+    alcoholFrequency >= 1
+  ) {
+    recommendedKey = 'mixed'
+    reasons.push('현재 식습관상 일반식과 외식을 완전히 배제하기 어렵습니다.')
+  } else {
+    recommendedKey = 'adaptive'
+    reasons.push('식단 적응을 시작하는 단계로 보는 것이 가장 자연스럽습니다.')
+  }
+
+  if (mealStructureMode === 'performance') {
+    reasons.push('운동 수행을 고려해 너무 빡빡한 식단보다 지속 가능한 구성이 유리합니다.')
+  }
+
+  if (goalType === 'diet' || goalType === 'recomposition') {
+    reasons.push('감량/체형개선 목표라 하더라도 생활패턴을 함께 반영해야 유지율이 올라갑니다.')
+  }
+
+  const recommendedMeta = PLAN_STYLE_META[recommendedKey] || PLAN_STYLE_META.mixed
+
+  return {
+    recommended_key: recommendedMeta.key,
+    recommended_label: recommendedMeta.label,
+    summary: recommendedMeta.summary,
+    reasons,
+    alternatives: Object.values(PLAN_STYLE_META),
   }
 }
   
@@ -14279,6 +14397,59 @@ const filteredExercisesAdvanced = exercises.filter((exercise) => {
               <p>지방: {mealPlanForm.target_fat_g || 0} g</p>
               <p>식사 슬롯: {(mealPlanForm.meal_slots || []).join(' / ')}</p>
             </div>
+            {mealPlanRecommendation ? (
+            <div className="detail-box" style={{ marginTop: '12px' }}>
+              <p><strong>추천 식단 운영 방식</strong></p>
+              <p>{mealPlanRecommendation.recommended_label}</p>
+              <p className="compact-text">{mealPlanRecommendation.summary}</p>
+
+              <div className="compact-text" style={{ marginTop: '8px', marginBottom: '10px' }}>
+                {Array.isArray(mealPlanRecommendation.reasons) &&
+                mealPlanRecommendation.reasons.length > 0
+                  ? mealPlanRecommendation.reasons.map((reason, index) => (
+                      <div key={`plan-reason-${index}`}>- {reason}</div>
+                    ))
+                  : null}
+              </div>
+
+              <label className="field" style={{ marginBottom: '10px' }}>
+                <span>추천 식단 방식</span>
+                <select
+                  value={selectedPlanStyle || ''}
+                  onChange={(e) => setSelectedPlanStyle(e.target.value)}
+                >
+                  <option value="">선택</option>
+                  {Array.isArray(mealPlanRecommendation.alternatives)
+                    ? mealPlanRecommendation.alternatives.map((item) => (
+                        <option key={item.key} value={item.key}>
+                          {item.label}
+                        </option>
+                      ))
+                    : null}
+                </select>
+              </label>
+
+              <div className="inline-actions wrap">
+                <button
+                  type="button"
+                  className="primary-btn"
+                  onClick={() =>
+                    setMealPlanForm((prev) => ({
+                      ...prev,
+                      recommended_plan_style:
+                        selectedPlanStyle || mealPlanRecommendation.recommended_key,
+                    }))
+                  }
+                >
+                  추천 방식 적용
+                </button>
+
+                <div className="compact-text">
+                  추천 방식을 적용한 뒤 월간 식단 생성을 진행하면 됩니다.
+                </div>
+              </div>
+            </div>
+        
           ) : null}
         </>
       )}
