@@ -5217,21 +5217,21 @@ return { ok: true, xp: xpValue }
       <p className="sub-text">
         오늘 날짜 기준 식단과 끼니별 구성, 진행 상태를 바로 확인할 수 있습니다.
       </p>
-     <div className="detail-box">
+    <div className="detail-box">
   <strong>
     {todayMealPlan?.meal_type === 'free'
-      ? '오늘은 자유식입니다.'
+      ? '오늘은 자유식으로 운영하는 날입니다.'
       : todayMealPlan?.meal_type === 'general'
-      ? '오늘은 일반식 허용 식단입니다.'
-      : '오늘은 정밀 식단입니다.'}
+      ? '오늘은 일반식을 허용하는 날입니다.'
+      : '오늘은 식단 기준을 맞추는 날입니다.'}
   </strong>
 
   <p>
     {todayMealPlan?.meal_type === 'free'
-      ? '먹고 싶은 음식을 자유롭게 먹되, 과식은 피하세요.'
+      ? '먹고 싶은 음식을 드셔도 괜찮지만, 과식하지 않도록 양을 조절해주세요.'
       : todayMealPlan?.meal_type === 'general'
-      ? '일반식 가능하지만, 단백질 중심으로 선택해주세요.'
-      : '설계된 식단 기준을 최대한 맞춰주세요.'}
+      ? '일반식을 드셔도 되지만, 단백질이 포함된 식사를 우선으로 선택해주세요.'
+      : '오늘은 안내된 식단 구성과 순서를 최대한 맞춰서 드시는 것을 목표로 해주세요.'}
   </p>
 </div>
     </div>
