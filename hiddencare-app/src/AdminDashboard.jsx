@@ -1486,6 +1486,7 @@ const handleMealPlanGenerate = async () => {
         targetCarbs: perMealCarbs,
         targetProtein: perMealProtein,
         targetFat: perMealFat,
+        targetKcal: Math.round(Number(adjusted.kcal || 0) / slotCount),
         offset: slotIndex,
         recentUsedIds,
         slotUsedNames,
@@ -1573,10 +1574,16 @@ const handleMealPlanGenerate = async () => {
     .insert(rows)
 
   if (insertError) {
-    console.error('식단 저장 실패:', insertError)
-    alert('식단 저장 실패')
-    return
-  }
+  console.error('식단 저장 실패 상세:', {
+    message: insertError.message,
+    details: insertError.details,
+    hint: insertError.hint,
+    code: insertError.code,
+    rows,
+  })
+  alert(`식단 저장 실패: ${insertError.message || '알 수 없는 오류'}`)
+  return
+}
 
   console.log('✅ 월간 식단 생성 완료:', mealPlans)
   alert('월간 식단 생성 + 저장 완료')
@@ -2268,6 +2275,7 @@ const buildSingleMealPlan = ({
   targetCarbs,
   targetProtein,
   targetFat,
+  targetKcal,
   offset = 0,
   recentUsedIds = [],
   slotUsedNames = [],
