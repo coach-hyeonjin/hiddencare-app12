@@ -14333,12 +14333,24 @@ const filteredExercisesAdvanced = exercises.filter((exercise) => {
             {memberMealPlans.length === 0 ? (
               <div className="workout-list-empty">해당 월 식단 기록이 없습니다.</div>
             ) : (
-              memberMealPlans.map((plan) => (
+              memberMealPlans.map((plan) => {
+  const meals = Array.isArray(plan.meals_json) ? plan.meals_json : []
+  const hasGeneralMeal = meals.some((meal) => String(meal.menu || '').includes('일반식'))
+  const hasFreeMeal = meals.some((meal) => String(meal.menu || '').includes('자유식'))
+
+  const specialMealLabel = hasFreeMeal
+    ? '자유식 포함'
+    : hasGeneralMeal
+    ? '일반식 포함'
+    : ''
+
+  return (
                 <div key={plan.id} className="list-card">
                   <div className="list-card-top">
                     <strong>{plan.plan_date}</strong>
-                    <div className="inline-actions wrap">
-                      <span className="pill">{plan.day_type}</span>
+                   <div className="inline-actions wrap">
+  <span className="pill">{plan.day_type}</span>
+  {specialMealLabel ? <span className="pill soft">{specialMealLabel}</span> : null}
 
                       <button
                         type="button"
@@ -14366,18 +14378,56 @@ const filteredExercisesAdvanced = exercises.filter((exercise) => {
                     식사 수: {Array.isArray(plan.meals_json) ? plan.meals_json.length : 0}끼
                   </div>
 
-                  {editingMealPlanId === plan.id ? (
-                    <div className="detail-box">
-                      {mealPlanEditMeals.map((meal, index) => (
-                        <label key={index} className="field" style={{ marginBottom: '10px' }}>
-                          <span>{meal.slot || `식사 ${index + 1}`}</span>
-                          <textarea
-                            rows="2"
-                            value={meal.menu || ''}
-                            onChange={(e) => updateMealPlanEditMeal(index, e.target.value)}
-                          />
-                        </label>
-                      ))}
+                  {mealPlanEditMeals.map((meal, index) => {
+  const isSpecialMeal = !!meal.guide_text
+  const mealDetailTypeLabelMap = {
+    balanced: '균형형',
+    diet: '다이어트형',
+    eating_out: '외식형',
+    simple: '간편형',
+    social: '회식형',
+    free: '자유식형',
+  }
+
+  const detailLabel =
+    mealDetailTypeLabelMap[String(meal.meal_detail_type || '').trim()] || ''
+
+  return (
+    <div key={index} className="detail-box" style={{ marginBottom: '12px' }}>
+      <div className="list-card-top" style={{ marginBottom: '8px' }}>
+        <strong>{meal.slot || `식사 ${index + 1}`}</strong>
+        <div className="inline-actions wrap">
+          {meal.menu ? <span className="pill">{meal.menu}</span> : null}
+          {detailLabel ? <span className="pill soft">{detailLabel}</span> : null}
+        </div>
+      </div>
+
+      <label className="field" style={{ marginBottom: '8px' }}>
+        <span>표시 문구</span>
+        <textarea
+          rows="2"
+          value={meal.menu || ''}
+          onChange={(e) => updateMealPlanEditMeal(index, e.target.value)}
+        />
+      </label>
+
+      {meal.guide_text ? (
+        <div
+          className="compact-text"
+          style={{
+            whiteSpace: 'pre-line',
+            lineHeight: 1.6,
+            padding: '10px',
+            borderRadius: '12px',
+            background: 'rgba(255,255,255,0.04)',
+          }}
+        >
+          {meal.guide_text}
+        </div>
+      ) : null}
+    </div>
+  )
+})}
 
                       <div className="inline-actions wrap" style={{ marginTop: '10px' }}>
                         <button
@@ -14398,14 +14448,57 @@ const filteredExercisesAdvanced = exercises.filter((exercise) => {
                       </div>
                     </div>
                   ) : Array.isArray(plan.meals_json) && plan.meals_json.length > 0 ? (
-                    <div className="detail-box">
-                      {plan.meals_json.map((meal, index) => (
-                        <div key={index} className="compact-text" style={{ marginBottom: '6px' }}>
-                          <strong>{meal.slot || `식사 ${index + 1}`}</strong>: {meal.menu || '-'}
-                        </div>
-                      ))}
-                    </div>
-                  ) : (
+  <div className="detail-box">
+    {plan.meals_json.map((meal, index) => {
+      const isSpecialMeal = !!meal.guide_text
+      const mealDetailTypeLabelMap = {
+        balanced: '균형형',
+        diet: '다이어트형',
+        eating_out: '외식형',
+        simple: '간편형',
+        social: '회식형',
+        free: '자유식형',
+      }
+
+      const detailLabel =
+        mealDetailTypeLabelMap[String(meal.meal_detail_type || '').trim()] || ''
+
+      return (
+        <div
+          key={index}
+          className="detail-box"
+          style={{ marginBottom: '10px', padding: '12px' }}
+        >
+          <div
+            className="list-card-top"
+            style={{ marginBottom: meal.guide_text ? '10px' : '6px' }}
+          >
+            <strong>{meal.slot || `식사 ${index + 1}`}</strong>
+
+            <div className="inline-actions wrap">
+              {meal.menu ? <span className="pill">{meal.menu}</span> : null}
+              {detailLabel ? <span className="pill soft">{detailLabel}</span> : null}
+            </div>
+          </div>
+
+          {!isSpecialMeal ? (
+            <div className="compact-text">
+              {meal.menu || '-'}
+            </div>
+          ) : (
+            <div className="compact-text" style={{ whiteSpace: 'pre-line', lineHeight: 1.6 }}>
+              {meal.guide_text}
+            </div>
+          )}
+
+          <div className="compact-text" style={{ marginTop: '8px' }}>
+            약 {meal.kcal || 0} kcal / 탄 {meal.carbs_g || 0} / 단 {meal.protein_g || 0} / 지 {meal.fat_g || 0}
+          </div>
+        </div>
+      )
+    })}
+  </div>
+) : (
                     <div className="compact-text">식단 내용이 없습니다.</div>
                   )}
                 </div>
