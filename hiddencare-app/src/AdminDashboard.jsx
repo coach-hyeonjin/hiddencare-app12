@@ -1528,71 +1528,7 @@ const handleMealPlanSave = async () => {
 
   alert('식단 설정 저장 완료')
 }
-  const generateDayType = (index, trainingDays) => {
-  return index < trainingDays ? 'training' : 'rest'
-}
-
-const distributeSpecialMeals = (totalDays, count) => {
-  const result = new Set()
-  if (count <= 0) return result
-
-  const gap = Math.floor(totalDays / count)
-
-  for (let i = 0; i < count; i++) {
-    result.add(i * gap)
-  }
-
-  return result
-}
-
-const buildMonthlyDietFramework = ({
-  daysInMonth,
-  trainingDaysPerWeek,
-  allowedGeneralMeals,
-  allowedFreeMeals,
-}) => {
-  const trainingDays = Math.round((trainingDaysPerWeek / 7) * daysInMonth)
-
-  const generalMealDays = distributeSpecialMeals(daysInMonth, allowedGeneralMeals)
-  const freeMealDays = distributeSpecialMeals(daysInMonth, allowedFreeMeals)
-
-  const framework = []
-
-  for (let i = 0; i < daysInMonth; i++) {
-    let type = 'normal'
-
-    if (freeMealDays.has(i)) type = 'free'
-    else if (generalMealDays.has(i)) type = 'general'
-
-    framework.push({
-      dayIndex: i,
-      dayType: generateDayType(i, trainingDays),
-      mealType: type,
-    })
-  }
-
-  return framework
-}
-
-const handleGenerateMonthlyMealPlan = async () => {
-  if (!mealPlanForm.member_id) {
-    alert('회원 선택')
-    return
-  }
-
-  const daysInMonth = 30
-
-  const framework = buildMonthlyDietFramework({
-    daysInMonth,
-    trainingDaysPerWeek: mealPlanForm.training_days_per_week,
-    allowedGeneralMeals: mealPlanForm.allowed_general_meals_per_week,
-    allowedFreeMeals: mealPlanForm.allowed_free_meals_per_week,
-  })
-
-  console.log('월간 구조:', framework)
-
-  alert('월간 식단 구조 생성 완료 (콘솔 확인)')
-}
+  
 const buildMealSlotsByCount = (count) => {
   const mealSlotsMap = {
     2: ['점심', '저녁'],
