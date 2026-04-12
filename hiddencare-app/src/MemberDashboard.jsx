@@ -742,7 +742,43 @@ const getMealCheckStatusText = (status) => {
   return '미체크'
 }
 const getMealFoodItems = (meal) => {
-  return Array.isArray(meal?.food_items) ? meal.food_items : []
+  if (Array.isArray(meal?.food_items) && meal.food_items.length > 0) {
+    return meal.food_items
+  }
+
+  if (Array.isArray(meal?.items) && meal.items.length > 0) {
+    return meal.items
+  }
+
+  return []
+}
+
+const getMealFoodItemName = (item) => {
+  if (typeof item === 'string') return item
+
+  return (
+    item?.food_name ||
+    item?.name ||
+    item?.display_name ||
+    item?.label ||
+    item?.food ||
+    item?.title ||
+    '음식'
+  )
+}
+
+const getMealFoodItemAmount = (item) => {
+  if (typeof item === 'string') return ''
+
+  return (
+    item?.grams ??
+    item?.amount_g ??
+    item?.amount ??
+    item?.serving_g ??
+    item?.weight_g ??
+    item?.quantity ??
+    ''
+  )
 }
 
 const getMealDisplaySummary = (meal) => {
@@ -750,7 +786,12 @@ const getMealDisplaySummary = (meal) => {
 
   if (foodItems.length > 0) {
     return foodItems
-      .map((item) => `${item.name} ${Number(item.grams || 0)}g`)
+      .map((item) => {
+        const name = getMealFoodItemName(item)
+        const amount = getMealFoodItemAmount(item)
+
+        return amount ? `${name} ${Number(amount)}g` : name
+      })
       .join(' · ')
   }
 
@@ -5399,8 +5440,10 @@ return { ok: true, xp: xpValue }
                         key={`${item.name || 'food'}-${itemIndex}`}
                         className="member-meal-food-item"
                       >
-                        <strong>{item.name}</strong>
-                        <span>{Number(item.grams || 0)}g</span>
+                        <strong>{getMealFoodItemName(item)}</strong>
+<span>
+  {getMealFoodItemAmount(item) !== '' ? `${Number(getMealFoodItemAmount(item))}g` : '-'}
+</span>
                       </div>
                     ))}
                   </div>
@@ -5679,8 +5722,10 @@ return { ok: true, xp: xpValue }
         key={`${item.name || 'food'}-${itemIndex}`}
         className="member-meal-food-item"
       >
-        <strong>{item.name}</strong>
-        <span>{Number(item.grams || 0)}g</span>
+       <strong>{getMealFoodItemName(item)}</strong>
+<span>
+  {getMealFoodItemAmount(item) !== '' ? `${Number(getMealFoodItemAmount(item))}g` : '-'}
+</span>
       </div>
     ))}
   </div>
