@@ -1962,53 +1962,7 @@ const loadMemberMealPlanProfile = async (memberId) => {
       allowed_alcohol_per_week: Number(data?.allowed_alcohol_per_week || 0),
   })
 }
-  const getMealItemDisplayName = (item) => {
-  if (typeof item === 'string') return item
-
-  return (
-    item?.food_name ||
-    item?.name ||
-    item?.display_name ||
-    item?.label ||
-    item?.food ||
-    item?.title ||
-    ''
-  )
-}
-
-const buildMealMenuLabel = (items = [], slot = '') => {
-  const names = Array.isArray(items)
-    ? items.map((item) => getMealItemDisplayName(item)).filter(Boolean)
-    : []
-
-  const joined = names.join(' ')
-
-  if (!joined) {
-    return slot ? `${slot} 식단` : '식단'
-  }
-
-  if (/파스타/.test(joined) && /닭/.test(joined)) return '닭가슴살 파스타'
-  if (/또띠아/.test(joined) && /소고기/.test(joined)) return '소고기 또띠아 랩'
-  if (/고구마/.test(joined) && /닭/.test(joined)) return '고구마 닭안심 플레이트'
-  if (/고구마/.test(joined) && /소고기/.test(joined)) return '소고기 고구마 플레이트'
-  if (/떡/.test(joined) && /참치/.test(joined)) return '참치 떡 플레이트'
-  if (/블루베리/.test(joined) && /닭/.test(joined)) return '닭다리살 베리 플레이트'
-  if (/국수/.test(joined) && /참치/.test(joined)) return '참치 국수 플레이트'
-  if (/또띠아/.test(joined) && /닭/.test(joined)) return '닭가슴살 또띠아 랩'
-  if (/샐러드|시금치|파프리카|방울토마토|토마토/.test(joined) && /닭|소고기|참치/.test(joined)) {
-    return '단백질 샐러드 플레이트'
-  }
-
-  const mainNames = names.slice(0, 2)
-  if (mainNames.length >= 2) {
-    return `${mainNames[0]} ${mainNames[1]} 플레이트`
-  }
-  if (mainNames.length === 1) {
-    return mainNames[0]
-  }
-
-  return slot ? `${slot} 식단` : '식단'
-}
+  
 const normalizeCommaTextToArray = (value) => {
   return String(value || '')
     .split(',')
