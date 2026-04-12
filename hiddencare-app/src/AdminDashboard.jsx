@@ -14577,13 +14577,17 @@ const filteredExercisesAdvanced = exercises.filter((exercise) => {
                 <button
                   type="button"
                   className="primary-btn"
-                  onClick={() =>
-                    setMealPlanForm((prev) => ({
-                      ...prev,
-                      recommended_plan_style:
-                        selectedPlanStyle || mealPlanRecommendation.recommended_key,
-                    }))
-                  }
+                  onClick={() => {
+  const nextPlanStyle =
+    selectedPlanStyle || mealPlanRecommendation?.recommended_key || ''
+
+  setMealPlanForm((prev) => ({
+    ...prev,
+    recommended_plan_style: nextPlanStyle,
+  }))
+
+  alert('추천 식단 방식이 적용되었습니다.')
+}}
                 >
                   추천 방식 적용
                 </button>
@@ -14591,6 +14595,15 @@ const filteredExercisesAdvanced = exercises.filter((exercise) => {
                 <div className="compact-text">
                   추천 방식을 적용한 뒤 월간 식단 생성을 진행하면 됩니다.
                 </div>
+                {mealPlanForm.recommended_plan_style ? (
+  <div className="compact-text" style={{ marginTop: '8px' }}>
+    현재 적용 방식:{' '}
+    <strong>
+      {PLAN_STYLE_META[mealPlanForm.recommended_plan_style]?.label ||
+        mealPlanForm.recommended_plan_style}
+    </strong>
+  </div>
+) : null}
               </div>
             </div>
         
