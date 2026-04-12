@@ -14374,11 +14374,11 @@ const filteredExercisesAdvanced = exercises.filter((exercise) => {
                     총 {plan.total_kcal || 0} kcal / 탄 {plan.total_carbs_g || 0} / 단 {plan.total_protein_g || 0} / 지 {plan.total_fat_g || 0}
                   </div>
 
-                  <div className="compact-text" style={{ marginBottom: '10px' }}>
+                                    <div className="compact-text" style={{ marginBottom: '10px' }}>
                     식사 수: {Array.isArray(plan.meals_json) ? plan.meals_json.length : 0}끼
                   </div>
 
-                                    {editingMealPlanId === plan.id ? (
+                  {editingMealPlanId === plan.id ? (
                     <div className="detail-box">
                       {mealPlanEditMeals.map((meal, index) => {
                         const mealDetailTypeLabelMap = {
@@ -14503,11 +14503,10 @@ const filteredExercisesAdvanced = exercises.filter((exercise) => {
                   ) : (
                     <div className="compact-text">식단 내용이 없습니다.</div>
                   )}
-                   </div>
+                </div>
               )
-            })}
-          </div>
-      )}
+            })
+          )}
     
 
       <div className="list-stack" style={{ marginTop: '20px' }}>
