@@ -14386,10 +14386,11 @@ const filteredExercisesAdvanced = exercises.filter((exercise) => {
 </div>
           
                     {(mealPlanForm.target_kcal ||
-            mealPlanForm.target_carbs_g ||
-            mealPlanForm.target_protein_g ||
-            mealPlanForm.target_fat_g) ? (
-            <div className="detail-box">
+  mealPlanForm.target_carbs_g ||
+  mealPlanForm.target_protein_g ||
+  mealPlanForm.target_fat_g) ? (
+  <>
+    <div className="detail-box">
               <p><strong>자동 계산 결과</strong></p>
               <p>하루 목표 열량: {mealPlanForm.target_kcal || 0} kcal</p>
               <p>탄수화물: {mealPlanForm.target_carbs_g || 0} g</p>
@@ -14450,8 +14451,9 @@ const filteredExercisesAdvanced = exercises.filter((exercise) => {
               </div>
             </div>
         
-          ) : null}
+         ) : null}
         </>
+      ) : null}
       )}
 
       <div className="list-stack">
