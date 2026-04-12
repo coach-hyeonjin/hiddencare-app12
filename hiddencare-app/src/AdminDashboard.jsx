@@ -14454,7 +14454,8 @@ const filteredExercisesAdvanced = exercises.filter((exercise) => {
          ) : null}
         </>
       ) : null}
-     
+    </>
+  )}
 
       <div className="list-stack">
         <div className="meal-planner-admin-toggle-wrap">
