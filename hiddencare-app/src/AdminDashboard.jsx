@@ -1560,7 +1560,7 @@ const handleMealPlanGenerate = async () => {
     member_id: mealPlanForm.member_id,
     admin_id: currentAdminId || null,
     plan_date: plan.date,
-    day_type: plan.mealType,
+   day_type: plan.dayType,
     meals_json: plan.meals,
     total_kcal: plan.total_kcal,
     total_carbs_g: plan.total_carbs_g,
