@@ -14843,14 +14843,15 @@ const filteredExercisesAdvanced = exercises.filter((exercise) => {
                             style={{ marginBottom: '10px', padding: '12px' }}
                           >
                             <div
-                              className="list-card-top"
-                              style={{ marginBottom: meal.guide_text ? '10px' : '6px' }}
-                            >
-                              <strong>{meal.slot || `식사 ${index + 1}`}</strong>
+  className="list-card-top"
+  style={{ marginBottom: meal.guide_text ? '10px' : '6px' }}
+>
+  <strong>{meal.slot || `식사 ${index + 1}`}</strong>
 
-                              <div className="inline-actions wrap">
-  {meal.menu ? <span className="pill">{meal.menu}</span> : null}
-  {detailLabel ? <span className="pill soft">{detailLabel}</span> : null}
+  <div className="inline-actions wrap">
+    {meal.menu ? <span className="pill">{meal.menu}</span> : null}
+    {detailLabel ? <span className="pill soft">{detailLabel}</span> : null}
+  </div>
 </div>
 
 {!isSpecialMeal && (
@@ -14888,9 +14889,9 @@ const filteredExercisesAdvanced = exercises.filter((exercise) => {
   </div>
 )}
 
-                            <div className="compact-text" style={{ marginTop: '8px' }}>
-                              약 {meal.kcal || 0} kcal / 탄 {meal.carbs_g || 0} / 단 {meal.protein_g || 0} / 지 {meal.fat_g || 0}
-                            </div>
+<div className="compact-text" style={{ marginTop: '8px' }}>
+  약 {meal.kcal || 0} kcal / 탄 {meal.carbs_g || 0} / 단 {meal.protein_g || 0} / 지 {meal.fat_g || 0}
+</div>
                           </div>
                         )
                       })}
