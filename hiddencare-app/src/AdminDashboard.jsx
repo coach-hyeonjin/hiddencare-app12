@@ -1182,6 +1182,48 @@ const [selectedXpMemberId, setSelectedXpMemberId] = useState('')
   })
 const [editingManagerActionId, setEditingManagerActionId] = useState(null)
 
+const getMealItemDisplayName = (item) => {
+  return (
+    item?.food_name ||
+    item?.name ||
+    item?.display_name ||
+    item?.label ||
+    ''
+  )
+}
+
+const buildMealMenuLabel = (items = [], slot = '') => {
+  const names = Array.isArray(items)
+    ? items
+        .map((item) => getMealItemDisplayName(item))
+        .filter(Boolean)
+    : []
+
+  const joined = names.join(' ')
+
+  if (!joined) {
+    return slot ? `${slot} 식단` : '식단'
+  }
+
+  if (/파스타/.test(joined)) return '닭가슴살 파스타'
+  if (/또띠아|랩/.test(joined)) return '또띠아 랩'
+  if (/고구마/.test(joined) && /닭/.test(joined)) return '고구마 닭안심 플레이트'
+  if (/떡/.test(joined) && /참치/.test(joined)) return '참치 떡 플레이트'
+  if (/블루베리/.test(joined) && /닭/.test(joined)) return '닭다리살 베리 플레이트'
+  if (/소고기/.test(joined) && /또띠아/.test(joined)) return '소고기 또띠아 랩'
+  if (/쌀밥|현미밥|밥/.test(joined) && /계란/.test(joined)) return '밥 + 계란 식사'
+  if (/요거트/.test(joined) && /과일|블루베리|바나나/.test(joined)) return '요거트 과일볼'
+  if (/샐러드|채소|시금치|파프리카|토마토/.test(joined) && /닭|소고기|참치/.test(joined)) {
+    return '단백질 샐러드 플레이트'
+  }
+
+  const mainNames = names.slice(0, 2)
+  if (mainNames.length === 1) return mainNames[0]
+  if (mainNames.length >= 2) return `${mainNames[0]} + ${mainNames[1]}`
+
+  return slot ? `${slot} 식단` : '식단'
+}
+  
 const handleMealPlanGenerate = async () => {
   const member = members.find((m) => m.id === mealPlanForm.member_id)
 
@@ -3401,7 +3443,7 @@ dayPreferredIncludedCount = Number(mealResult?.nextPreferredIncludedCount || day
         : slot === '간식'
         ? '16:30'
         : '19:30',
-    menu: mealResult.menu || '식단 생성 실패',
+    menu: buildMealMenuLabel(mealResult.items || [], slot),
     alternatives,
     food_items: mealResult.items || [],
     carbs_g: Number(mealResult.carbs_g || 0),
@@ -14807,21 +14849,41 @@ const filteredExercisesAdvanced = exercises.filter((exercise) => {
                               <strong>{meal.slot || `식사 ${index + 1}`}</strong>
 
                               <div className="inline-actions wrap">
-                                {meal.menu ? <span className="pill">{meal.menu}</span> : null}
-                                {detailLabel ? <span className="pill soft">{detailLabel}</span> : null}
-                              </div>
-                            </div>
+  {meal.menu ? <span className="pill">{meal.menu}</span> : null}
+  {detailLabel ? <span className="pill soft">{detailLabel}</span> : null}
+</div>
 
-                            {!isSpecialMeal ? (
-                              <div className="compact-text">{meal.menu || '-'}</div>
-                            ) : (
-                              <div
-                                className="compact-text"
-                                style={{ whiteSpace: 'pre-line', lineHeight: 1.6 }}
-                              >
-                                {meal.guide_text}
-                              </div>
-                            )}
+{!isSpecialMeal ? (
+  <div className="compact-text">
+    {Array.isArray(meal.food_items) && meal.food_items.length > 0
+      ? meal.food_items
+          .map((item) => {
+            const name =
+              item.food_name ||
+              item.name ||
+              item.display_name ||
+              item.label ||
+              '음식'
+            const amount =
+              item.grams ??
+              item.amount_g ??
+              item.amount ??
+              item.serving_g ??
+              ''
+
+            return amount ? `${name} ${amount}g` : name
+          })
+          .join(' · ')
+      : '-'}
+  </div>
+) : (
+  <div
+    className="compact-text"
+    style={{ whiteSpace: 'pre-line', lineHeight: 1.6 }}
+  >
+    {meal.guide_text}
+  </div>
+)}
 
                             <div className="compact-text" style={{ marginTop: '8px' }}>
                               약 {meal.kcal || 0} kcal / 탄 {meal.carbs_g || 0} / 단 {meal.protein_g || 0} / 지 {meal.fat_g || 0}
