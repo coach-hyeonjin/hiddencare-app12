@@ -1406,77 +1406,107 @@ const handleMealPlanGenerate = async () => {
   allowed_alcohol_per_week: Number(mealPlanForm.allowed_alcohol_per_week || 0),
           last_calculation_id: calculationId,
         
-        },
+                },
         { onConflict: 'member_id' }
       )
 
     if (profileUpdateError) {
       console.error('식단 프로필 동기화 실패:', profileUpdateError)
     }
+
+    // 🔥 자동 계산 완료
+    alert('자동 계산 완료')
+
     // 🔥 월간 식단 생성 로직 시작
+    let foods = Array.isArray(foodMaster) ? foodMaster : []
+    if (!foods.length) {
+      foods = await loadFoodMaster()
+    }
 
-let foods = Array.isArray(foodMaster) ? foodMaster : []
-if (!foods.length) {
-  foods = await loadFoodMaster()
-}
+    const { preferredSet, blockedSet } = getPreferredBlockedSet(mealPlanForm, foods)
 
-const { preferredSet, blockedSet } = getPreferredBlockedSet(mealPlanForm, foods)
+    const daysInMonth = 30
 
-const daysInMonth = 30
-
-const framework = buildMonthlyDietFramework({
-  daysInMonth,
-  trainingDaysPerWeek: mealPlanForm.training_days_per_week,
-  allowedGeneralMeals: mealPlanForm.allowed_general_meals_per_week,
-  allowedFreeMeals: mealPlanForm.allowed_free_meals_per_week,
-})
-
-const mealPlans = []
-
-for (let i = 0; i < daysInMonth; i++) {
-  const dayInfo = framework[i]
-
-  const dateString = `2026-04-${String(i + 1).padStart(2, '0')}`
-
-  const dayMeals = []
-
-  for (let slot of mealSlots) {
-    // 🔥 핵심: 식단 타입 전달
-    window.currentMealType = dayInfo.mealType
-
-    const meal = buildSingleMealPlan({
-      foods,
-      goalType,
-      slot,
-      dayType: dayInfo.dayType,
-      dateString,
-      preferredSet,
-      blockedSet,
-      targetCarbs: Math.round(targetCarbs / mealsPerDay),
-      targetProtein: Math.round(targetProtein / mealsPerDay),
-      targetFat: Math.round(targetFat / mealsPerDay),
+    const framework = buildMonthlyDietFramework({
+      daysInMonth,
+      trainingDaysPerWeek: mealPlanForm.training_days_per_week,
+      allowedGeneralMeals: mealPlanForm.allowed_general_meals_per_week,
+      allowedFreeMeals: mealPlanForm.allowed_free_meals_per_week,
     })
 
-    dayMeals.push({
-      slot,
-      ...meal,
-    })
+    const mealPlans = []
+
+    for (let i = 0; i < daysInMonth; i++) {
+      const dayInfo = framework[i]
+
+      const dateString = `2026-04-${String(i + 1).padStart(2, '0')}`
+
+      const dayMeals = []
+
+      for (let slot of mealSlots) {
+        window.currentMealType = dayInfo.mealType
+
+        const meal = buildSingleMealPlan({
+          foods,
+          goalType,
+          slot,
+          dayType: dayInfo.dayType,
+          dateString,
+          preferredSet,
+          blockedSet,
+          targetCarbs: Math.round(targetCarbs / mealsPerDay),
+          targetProtein: Math.round(targetProtein / mealsPerDay),
+          targetFat: Math.round(targetFat / mealsPerDay),
+        })
+
+        dayMeals.push({
+          slot,
+          ...meal,
+        })
+      }
+
+      mealPlans.push({
+        date: dateString,
+        dayType: dayInfo.dayType,
+        mealType: dayInfo.mealType,
+        meals: dayMeals,
+      })
+    }
+
+    console.log('🔥 생성된 월간 식단:', mealPlans)
+
+    // 🔥 DB 저장
+    const rows = mealPlans.map((plan) => ({
+      member_id: mealPlanForm.member_id,
+      admin_id: currentAdminId,
+      plan_date: plan.date,
+      day_type: plan.mealType,
+      meals_json: plan.meals,
+      total_kcal: plan.meals.reduce((sum, m) => {
+        const kcal = Array.isArray(m.items)
+          ? m.items.reduce((s, item) => s + (item.kcal || 0), 0)
+          : 0
+        return sum + kcal
+      }, 0),
+      total_carbs_g: 0,
+      total_protein_g: 0,
+      total_fat_g: 0,
+      generation_version: 'v3_auto_system',
+    }))
+
+    const { error: insertError } = await supabase
+      .from('member_meal_plans')
+      .insert(rows)
+
+    if (insertError) {
+      console.error('식단 저장 실패:', insertError)
+      alert('식단 저장 실패')
+      return
+    }
+
+    // 🔥 최종 완료
+    alert('월간 식단 생성 + 저장 완료')
   }
-
-  mealPlans.push({
-    date: dateString,
-    dayType: dayInfo.dayType,
-    mealType: dayInfo.mealType,
-    meals: dayMeals,
-  })
-}
-
-console.log('🔥 생성된 월간 식단:', mealPlans)
-  }
-
-  alert('자동 계산 완료')
-  
-}
 
   
 const handleMealPlanSave = async () => {
