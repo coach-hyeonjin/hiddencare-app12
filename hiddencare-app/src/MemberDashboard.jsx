@@ -782,6 +782,8 @@ const getMealFoodItemAmount = (item) => {
 }
 
 const getMealDisplaySummary = (meal) => {
+  return meal?.menu || '-'
+}
   const foodItems = getMealFoodItems(meal)
 
   if (foodItems.length > 0) {
@@ -5424,7 +5426,9 @@ return { ok: true, xp: xpValue }
                     {getMealCheckStatusText(checkEntry?.status)}
                   </span>
                 </div>
-
+<div className="compact-text" style={{ marginBottom: '8px' }}>
+  {meal.menu || '-'}
+</div>
                 <div className="compact-text">
                   시간: {meal.time || '-'}
                 </div>
