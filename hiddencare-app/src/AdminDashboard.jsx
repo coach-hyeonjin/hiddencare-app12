@@ -1585,7 +1585,22 @@ const handleMealPlanGenerate = async () => {
   return
 }
 
-  console.log('✅ 월간 식단 생성 완료:', mealPlans)
+    const { data: planData, error: loadError } = await supabase
+    .from('member_meal_plans')
+    .select('*')
+    .eq('member_id', mealPlanForm.member_id)
+    .gte('plan_date', monthStart)
+    .lte('plan_date', monthEnd)
+    .order('plan_date', { ascending: true })
+
+  if (loadError) {
+    console.error('생성 후 식단 목록 불러오기 실패:', loadError)
+    alert('생성은 되었지만 목록 불러오기 실패')
+    return
+  }
+
+  setMemberMealPlans(planData || [])
+  console.log('✅ 월간 식단 생성 완료:', planData)
   alert('월간 식단 생성 + 저장 완료')
 }
 }
