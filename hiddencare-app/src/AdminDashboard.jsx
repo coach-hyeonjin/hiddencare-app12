@@ -2107,6 +2107,27 @@ const buildSingleMealPlan = ({
   slotUsedNames = [],
   preferredIncludedCount = 0,
 }) => {
+
+  // 🔥 식단 타입 분기 (핵심)
+const mealType = window.currentMealType || 'normal'
+
+// 자유식이면 그대로 반환
+if (mealType === 'free') {
+  return {
+    items: [],
+    summary: '자유식 (자율 선택)',
+    isFreeMeal: true,
+  }
+}
+
+// 일반식이면 간단 구성
+if (mealType === 'general') {
+  return {
+    items: [],
+    summary: '일반식 (한식/외식 자유 선택)',
+    isGeneralMeal: true,
+  }
+}
   const config = getMealCategoryConfig(slot, goalType, dayType)
   const usedIds = new Set()
 
