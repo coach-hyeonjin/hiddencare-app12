@@ -1275,7 +1275,7 @@ const handleMealPlanGenerate = async () => {
   )
 
   const mealsPerDay = Number(mealPlanForm.meals_per_day || 3)
-  const mealSlots = buildMealSlotsByCount(mealsPerDay)
+ const mealSlots = getLifestyleMealSlots(mealPlanForm)
 
   const sodiumLimitMg = 2000
   const saturatedFatLimitG = Math.round((targetKcal * 0.1) / 9)
@@ -1446,18 +1446,35 @@ const handleMealPlanGenerate = async () => {
       for (let slot of mealSlots) {
         window.currentMealType = dayInfo.mealType
 
-        const meal = buildSingleMealPlan({
-          foods,
-          goalType,
-          slot,
-          dayType: dayInfo.dayType,
-          dateString,
-          preferredSet,
-          blockedSet,
-          targetCarbs: Math.round(targetCarbs / mealsPerDay),
-          targetProtein: Math.round(targetProtein / mealsPerDay),
-          targetFat: Math.round(targetFat / mealsPerDay),
-        })
+        c// 🔥 생활습관 반영된 값 생성
+const adjusted = getLifestyleAdjustedDayPlan({
+  mealPlanForm,
+  isTrainingDay: dayInfo.dayType === 'training',
+  dayType: dayInfo.mealType,
+  baseKcal: targetKcal,
+  totalCarbs: targetCarbs,
+  totalProtein: targetProtein,
+  totalFat: targetFat,
+})
+
+// 🔥 끼니별로 나누기
+const perMealCarbs = Math.round(adjusted.carbs / mealsPerDay)
+const perMealProtein = Math.round(adjusted.protein / mealsPerDay)
+const perMealFat = Math.round(adjusted.fat / mealsPerDay)
+
+// 🔥 기존 대신 이걸 넣어라
+const meal = buildSingleMealPlan({
+  foods,
+  goalType,
+  slot,
+  dayType: dayInfo.dayType,
+  dateString,
+  preferredSet,
+  blockedSet,
+  targetCarbs: perMealCarbs,
+  targetProtein: perMealProtein,
+  targetFat: perMealFat,
+})
 
         dayMeals.push({
           slot,
