@@ -2508,6 +2508,7 @@ const buildSingleMealPlan = ({
   slot,
   dayType,
   mealType,
+  mealStyleType,
   mealPlanForm,
   dateString,
   preferredSet,
@@ -2610,6 +2611,7 @@ if (currentMealType === 'general') {
   return true
 })
   const config = getMealCategoryConfig(slot, goalType, dayType)
+
   const usedIds = new Set()
 
   const shouldForcePreferred = preferredSet.size > 0 && preferredIncludedCount < 1
@@ -2672,52 +2674,52 @@ blockedSet,
 
   if (!carbFood) {
     carbFood = pickFood({
-      foods,
-      preferredSet,
-      blockedSet,
-      categories: config.carbCategories,
-      goalType,
-      dateString,
-      slot,
-      offset,
-      usedIds,
-      recentUsedIds,
-      slotUsedNames,
-    })
+  foods: styleFilteredFoods,
+  preferredSet,
+  blockedSet,
+  categories: config.carbCategories,
+  goalType,
+  dateString,
+  slot,
+  offset,
+  usedIds,
+  recentUsedIds,
+  slotUsedNames,
+})
     if (carbFood) usedIds.add(carbFood.id)
   }
 
   if (!proteinFood) {
     proteinFood = pickFood({
-      foods,
-      preferredSet,
-      blockedSet,
-      categories: config.proteinCategories,
-      goalType,
-      dateString,
-      slot,
-      offset: offset + 1,
-      usedIds,
-      recentUsedIds,
-      slotUsedNames,
-    })
+  foods: styleFilteredFoods,
+  preferredSet,
+  blockedSet,
+  categories: config.proteinCategories,
+  goalType,
+  dateString,
+  slot,
+  offset: offset + 1,
+  usedIds,
+  recentUsedIds,
+  slotUsedNames,
+})
     if (proteinFood) usedIds.add(proteinFood.id)
   }
 
   if (!extraFood) {
     extraFood = pickFood({
-      foods,
-      preferredSet,
-      blockedSet,
-      categories: config.extraCategories || [],
-      goalType,
-      dateString,
-      slot,
-      offset: offset + 2,
-      usedIds,
-      recentUsedIds,
-      slotUsedNames,
-    })
+  foods: styleFilteredFoods,
+  preferredSet,
+  blockedSet,
+  categories: config.extraCategories || [],
+  goalType,
+  dateString,
+  slot,
+  offset: offset + 2,
+  usedIds,
+  recentUsedIds,
+  slotUsedNames,
+})
   }
 
   const mealItems = []
