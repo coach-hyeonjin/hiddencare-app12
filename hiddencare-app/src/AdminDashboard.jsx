@@ -1436,7 +1436,14 @@ const handleMealPlanGenerate = async () => {
   }
 
   const { preferredSet, blockedSet } = getPreferredBlockedSet(mealPlanForm, foods)
+  const planStyleKey =
+    selectedPlanStyle ||
+    mealPlanForm.recommended_plan_style ||
+    recommendation?.recommended_key ||
+    'mixed'
 
+  const planStyleEngine = getPlanStyleEngine(planStyleKey)
+  const adjustedTargetKcal = getAdjustedTargetKcalByPlanStyle(targetKcal, planStyleKey)
   const selectedMonth = String(mealPlanViewMonth || new Date().toISOString().slice(0, 7))
   const [selectedYear, selectedMonthNumber] = selectedMonth.split('-').map(Number)
   const daysInMonth = new Date(selectedYear, selectedMonthNumber, 0).getDate()
@@ -3105,6 +3112,82 @@ const getRandomDays = (totalDays, count) => {
 
   return result
 }  
+  const PLAN_STYLE_ENGINE = {
+  adaptive: {
+    mealRatio: {
+      diet: 0.55,
+      general: 0.35,
+      eating_out: 0.1,
+    },
+    kcalOffset: 0,
+    label: '적응형 · 일반식 + 식단식',
+  },
+  mixed: {
+    mealRatio: {
+      diet: 0.45,
+      general: 0.35,
+      eating_out: 0.2,
+    },
+    kcalOffset: 0,
+    label: '혼합형 · 일반식 + 식단식 + 외식',
+  },
+  maintenance: {
+    mealRatio: {
+      diet: 0.2,
+      general: 0.5,
+      eating_out: 0.3,
+    },
+    kcalOffset: 0,
+    label: '유지형 · 일반식 + 외식',
+  },
+  strict: {
+    mealRatio: {
+      diet: 0.85,
+      general: 0.1,
+      eating_out: 0.05,
+    },
+    kcalOffset: -0.03,
+    label: '집중형 · 식단식 중심',
+  },
+  bulk: {
+    mealRatio: {
+      diet: 0.6,
+      general: 0.25,
+      eating_out: 0.15,
+    },
+    kcalOffset: 0.08,
+    label: '벌크업형 · 근성장 집중',
+  },
+}
+
+const pickMealStyleType = (ratioConfig = {}) => {
+  const dietWeight = Number(ratioConfig.diet || 0)
+  const generalWeight = Number(ratioConfig.general || 0)
+  const eatingOutWeight = Number(ratioConfig.eating_out || 0)
+
+  const total = dietWeight + generalWeight + eatingOutWeight
+
+  if (total <= 0) return 'diet'
+
+  const randomPoint = Math.random() * total
+
+  if (randomPoint < dietWeight) return 'diet'
+  if (randomPoint < dietWeight + generalWeight) return 'general'
+
+  return 'eating_out'
+}
+
+const getPlanStyleEngine = (planStyleKey = 'mixed') => {
+  return PLAN_STYLE_ENGINE[planStyleKey] || PLAN_STYLE_ENGINE.mixed
+}
+
+const getAdjustedTargetKcalByPlanStyle = (baseKcal = 0, planStyleKey = 'mixed') => {
+  const engine = getPlanStyleEngine(planStyleKey)
+  const offset = Number(engine?.kcalOffset || 0)
+
+  return Math.round(Number(baseKcal || 0) * (1 + offset))
+}
+  
 const handleMealPlanMonthGenerate = async () => {
   if (!mealPlanForm.member_id) {
     alert('회원 선택')
@@ -3141,7 +3224,17 @@ const alcoholDays = getRandomDays(daysInMonth, Number(mealPlanForm.allowed_alcoh
   
   const mealSlots = buildMealSlotsByCount(mealPlanForm.meals_per_day)
   const trainingDays = Number(mealPlanForm.training_days_per_week || 3)
+  const planStyleKey =
+    selectedPlanStyle ||
+    mealPlanForm.recommended_plan_style ||
+    mealPlanRecommendation?.recommended_key ||
+    'mixed'
 
+  const planStyleEngine = getPlanStyleEngine(planStyleKey)
+  const adjustedTargetKcal = getAdjustedTargetKcalByPlanStyle(
+    Number(mealPlanForm.target_kcal || 0),
+    planStyleKey
+  )
   const { preferredSet, blockedSet } = getPreferredBlockedSet(mealPlanForm, foods)
 
   let latestCalculationId = null
@@ -3196,11 +3289,18 @@ if (snackDays.includes(day - 1)) {
 if (alcoholDays.includes(day - 1)) {
   dayType = 'free'
 }
+    
+        const mealStyleType = pickMealStyleType(planStyleEngine.mealRatio)
+
+    const effectiveTargetKcal =
+      dayType === 'training'
+        ? adjustedTargetKcal
+        : Math.round(adjustedTargetKcal * 0.95)
 const adjustedDayPlan = getLifestyleAdjustedDayPlan({
   mealPlanForm,
   isTrainingDay,
   dayType,
-  baseKcal,
+  baseKcal: effectiveTargetKcal,
   totalCarbs: baseCarbs,
   totalProtein: baseProtein,
   totalFat: baseFat,
@@ -3218,6 +3318,7 @@ const mealsJson = generationMealSlots.map((slot) => {
     mealPlanForm.goal_type,
     slot,
     dayType,
+   mealStyleType, 
     date,
     { preferredSet, blockedSet },
     foods,
@@ -3235,6 +3336,7 @@ dayPreferredIncludedCount = Number(mealResult?.nextPreferredIncludedCount || day
     mealPlanForm.goal_type,
     slot,
     dayType,
+    mealStyleType,
     date,
     2,
     { preferredSet, blockedSet },
@@ -3246,6 +3348,7 @@ dayPreferredIncludedCount = Number(mealResult?.nextPreferredIncludedCount || day
 
   return {
     slot,
+     meal_style_type: mealStyleType,
     time:
       slot === '아침'
         ? '08:00'
