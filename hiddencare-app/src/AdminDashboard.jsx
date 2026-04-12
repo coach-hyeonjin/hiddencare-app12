@@ -1413,10 +1413,72 @@ const handleMealPlanGenerate = async () => {
     if (profileUpdateError) {
       console.error('식단 프로필 동기화 실패:', profileUpdateError)
     }
+    // 🔥 월간 식단 생성 로직 시작
+
+let foods = Array.isArray(foodMaster) ? foodMaster : []
+if (!foods.length) {
+  foods = await loadFoodMaster()
+}
+
+const { preferredSet, blockedSet } = getPreferredBlockedSet(mealPlanForm, foods)
+
+const daysInMonth = 30
+
+const framework = buildMonthlyDietFramework({
+  daysInMonth,
+  trainingDaysPerWeek: mealPlanForm.training_days_per_week,
+  allowedGeneralMeals: mealPlanForm.allowed_general_meals_per_week,
+  allowedFreeMeals: mealPlanForm.allowed_free_meals_per_week,
+})
+
+const mealPlans = []
+
+for (let i = 0; i < daysInMonth; i++) {
+  const dayInfo = framework[i]
+
+  const dateString = `2026-04-${String(i + 1).padStart(2, '0')}`
+
+  const dayMeals = []
+
+  for (let slot of mealSlots) {
+    // 🔥 핵심: 식단 타입 전달
+    window.currentMealType = dayInfo.mealType
+
+    const meal = buildSingleMealPlan({
+      foods,
+      goalType,
+      slot,
+      dayType: dayInfo.dayType,
+      dateString,
+      preferredSet,
+      blockedSet,
+      targetCarbs: Math.round(targetCarbs / mealsPerDay),
+      targetProtein: Math.round(targetProtein / mealsPerDay),
+      targetFat: Math.round(targetFat / mealsPerDay),
+    })
+
+    dayMeals.push({
+      slot,
+      ...meal,
+    })
+  }
+
+  mealPlans.push({
+    date: dateString,
+    dayType: dayInfo.dayType,
+    mealType: dayInfo.mealType,
+    meals: dayMeals,
+  })
+}
+
+console.log('🔥 생성된 월간 식단:', mealPlans)
   }
 
   alert('자동 계산 완료')
+  
 }
+
+  
 const handleMealPlanSave = async () => {
   if (!mealPlanForm.member_id) {
     alert('회원 선택')
