@@ -1638,8 +1638,8 @@ const handleMealPlanGenerate = async () => {
   }))
 
   const { error: insertError } = await supabase
-    .from('member_meal_plans')
-    .insert(rows)
+  .from('member_meal_plans')
+  .upsert(rows, { onConflict: 'member_id,plan_date' })
 
   if (insertError) {
   console.error('식단 저장 실패 상세:', {
