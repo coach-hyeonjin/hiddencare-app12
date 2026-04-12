@@ -13617,7 +13617,7 @@ const filteredExercisesAdvanced = exercises.filter((exercise) => {
   />
 </label>
 
-<div className="sub-card">
+<div className="meal-section-card">
   <div className="list-card-top">
     <div>
       <strong>식단 운영 강도 / 생활습관 설정</strong>
@@ -13901,7 +13901,7 @@ const filteredExercisesAdvanced = exercises.filter((exercise) => {
 </div>
 </div>
 
-<div className="inline-actions wrap">
+<div className="meal-action-bar">
   <button className="primary-btn" type="button" onClick={handleMealPlanGenerate}>
     자동 계산
   </button>
@@ -13953,7 +13953,7 @@ const filteredExercisesAdvanced = exercises.filter((exercise) => {
         </div>
 
         {mealPlannerAdminSections.monthlyRecords && (
-          <>
+  <div className="meal-section-card">
             <div className="inline-actions wrap" style={{ marginBottom: '16px' }}>
               <input
                 type="month"
@@ -14059,9 +14059,9 @@ const filteredExercisesAdvanced = exercises.filter((exercise) => {
                 </div>
               ))
             )}
-          </>
-        )}
-      </div>
+          </div>
+      )}
+    
 
       <div className="list-stack" style={{ marginTop: '20px' }}>
         <div className="meal-planner-admin-toggle-wrap">
