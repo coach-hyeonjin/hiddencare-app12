@@ -14768,7 +14768,6 @@ const filteredExercisesAdvanced = exercises.filter((exercise) => {
       </div>
     </div>
   </div>
-</div>
 )}
       {activeTab === '통계' && (
   <div className="stats-page-modern">
