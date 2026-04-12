@@ -5217,6 +5217,23 @@ return { ok: true, xp: xpValue }
       <p className="sub-text">
         오늘 날짜 기준 식단과 끼니별 구성, 진행 상태를 바로 확인할 수 있습니다.
       </p>
+      <div className="detail-box">
+  <strong>
+    {todayMealPlan?.meal_type === 'free'
+      ? '오늘은 자유식입니다.'
+      : todayMealPlan?.meal_type === 'general'
+      ? '오늘은 일반식 허용 식단입니다.'
+      : '오늘은 정밀 식단입니다.'}
+  </strong>
+
+  <p>
+    {todayMealPlan?.meal_type === 'free'
+      ? '먹고 싶은 음식을 자유롭게 먹되, 과식은 피하세요.'
+      : todayMealPlan?.meal_type === 'general'
+      ? '일반식 가능하지만, 단백질 중심으로 선택해주세요.'
+      : '설계된 식단 기준을 최대한 맞춰주세요.'}
+  </p>
+</div>
     </div>
 
     <div className="inline-actions wrap">
@@ -5224,8 +5241,16 @@ return { ok: true, xp: xpValue }
         {todayMealPlan?.plan_date || '-'}
       </span>
       <span className="status-pill">
-        {todayMealPlan?.day_type || '-'}
-      </span>
+  {todayMealPlan?.day_type || '-'}
+</span>
+
+<span className="status-pill">
+  {todayMealPlan?.meal_type === 'free'
+    ? '자유식'
+    : todayMealPlan?.meal_type === 'general'
+    ? '일반식'
+    : '정밀식'}
+</span>
     </div>
   </div>
 
