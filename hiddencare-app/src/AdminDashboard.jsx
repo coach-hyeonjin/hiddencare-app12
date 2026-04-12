@@ -14501,9 +14501,9 @@ const filteredExercisesAdvanced = exercises.filter((exercise) => {
 ) : (
                     <div className="compact-text">식단 내용이 없습니다.</div>
                   )}
-                </div>
-              ))
-            )}
+                   </div>
+              )
+            })}
           </div>
       )}
     
