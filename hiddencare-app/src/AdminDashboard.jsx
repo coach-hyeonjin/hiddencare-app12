@@ -1581,6 +1581,7 @@ const handleMealPlanGenerate = async () => {
   console.log('✅ 월간 식단 생성 완료:', mealPlans)
   alert('월간 식단 생성 + 저장 완료')
 }
+}
   
 const handleMealPlanSave = async () => {
   if (!mealPlanForm.member_id) {
