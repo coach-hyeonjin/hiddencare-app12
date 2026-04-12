@@ -2524,7 +2524,17 @@ const buildSingleMealPlan = ({
 
   // 🔥 식단 타입 분기 (핵심)
 const currentMealType = mealType || 'normal'
+const normalizedMealStyleType = String(mealStyleType || '').trim() || (
+  currentMealType === 'free'
+    ? 'eating_out'
+    : currentMealType === 'general'
+    ? 'general'
+    : 'diet'
+)
 
+const isDietStyle = normalizedMealStyleType === 'diet'
+const isGeneralStyle = normalizedMealStyleType === 'general'
+const isEatingOutStyle = normalizedMealStyleType === 'eating_out'
 // 자유식이면 그대로 반환
 if (currentMealType === 'free') {
   const freeGuide = buildFreeMealGuideText({
@@ -2575,6 +2585,30 @@ if (currentMealType === 'general') {
     nextPreferredIncludedCount: preferredIncludedCount,
   }
 }
+  const styleFilteredFoods = (Array.isArray(foods) ? foods : []).filter((food) => {
+  const major = String(food?.category_major || '').trim()
+  const sourceType = String(food?.source_type || '').trim()
+  const kcalPer100g = Number(food?.kcal_per_100g || 0)
+
+  if (blockedSet.has(food.id)) return false
+
+  if (isDietStyle) {
+    return (
+      ['carb', 'protein', 'vegetable', 'fruit', 'dairy', 'fat'].includes(major) &&
+      kcalPer100g <= 400
+    )
+  }
+
+  if (isGeneralStyle) {
+    return ['carb', 'protein', 'vegetable', 'fruit', 'dairy', 'fat', 'mixed'].includes(major)
+  }
+
+  if (isEatingOutStyle) {
+    return sourceType === 'mixed' || major === 'mixed' || ['carb', 'protein'].includes(major)
+  }
+
+  return true
+})
   const config = getMealCategoryConfig(slot, goalType, dayType)
   const usedIds = new Set()
 
@@ -2586,9 +2620,9 @@ if (currentMealType === 'general') {
 
   if (shouldForcePreferred) {
     proteinFood = pickPreferredFoodFirst({
-      foods,
-      preferredSet,
-      blockedSet,
+     foods: styleFilteredFoods,
+preferredSet,
+blockedSet,
       categories: config.proteinCategories,
       goalType,
       dateString,
@@ -2601,9 +2635,9 @@ if (currentMealType === 'general') {
 
     if (!proteinFood) {
       carbFood = pickPreferredFoodFirst({
-        foods,
-        preferredSet,
-        blockedSet,
+       foods: styleFilteredFoods,
+preferredSet,
+blockedSet,
         categories: config.carbCategories,
         goalType,
         dateString,
@@ -2617,9 +2651,9 @@ if (currentMealType === 'general') {
 
     if (!proteinFood && !carbFood) {
       extraFood = pickPreferredFoodFirst({
-        foods,
-        preferredSet,
-        blockedSet,
+       foods: styleFilteredFoods,
+preferredSet,
+blockedSet,
         categories: config.extraCategories || [],
         goalType,
         dateString,
@@ -2809,6 +2843,7 @@ const getRotatingMealExample = (
   goalType,
   slot,
   dayType,
+  mealStyleType,
   dateString,
   preferences = {},
   foods = [],
@@ -2825,6 +2860,7 @@ const getRotatingMealExample = (
     goalType,
     slot,
     dayType,
+     mealStyleType,
     dateString,
     preferredSet,
     blockedSet,
@@ -2842,6 +2878,7 @@ const getMealAlternatives = (
   goalType,
   slot,
   dayType,
+  mealStyleType,
   dateString,
   count = 2,
   preferences = {},
@@ -2857,11 +2894,12 @@ const getMealAlternatives = (
 
   for (let i = 1; i <= count; i += 1) {
     const alt = buildSingleMealPlan({
-      foods,
-      goalType,
-      slot,
-      dayType,
-      dateString,
+  foods,
+  goalType,
+  slot,
+  dayType,
+  mealStyleType,
+  dateString,
       preferredSet,
       blockedSet,
       targetCarbs: Number(target.carbs_g || 0),
