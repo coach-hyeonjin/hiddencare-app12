@@ -756,6 +756,75 @@ const getMealDisplaySummary = (meal) => {
 
   return meal?.menu || '-'
 }
+
+ const getTodayMealCoachComment = (plan, profile) => {
+  const mealType = String(plan?.meal_type || 'normal')
+  const currentMealPattern = String(profile?.current_meal_pattern || 'mixed')
+  const adaptationStrategy = String(profile?.adaptation_strategy || 'gradual')
+  const dietMode = String(profile?.diet_mode || 'balanced')
+  const lateNightFrequency = Number(profile?.late_night_meal_frequency_per_week || 0)
+  const deliveryFrequency = Number(profile?.delivery_food_frequency_per_week || 0)
+  const snackFrequency = Number(profile?.snack_frequency_per_week || 0)
+
+  let title = '오늘 식단 안내'
+  let mainText = '오늘은 안내된 식단 흐름에 맞춰 식사를 진행해주세요.'
+  const tips = []
+
+  if (mealType === 'free') {
+    title = '오늘은 자유식 운영일입니다.'
+    mainText = '먹고 싶은 음식을 드셔도 괜찮지만, 과식하지 않도록 양과 속도를 조절해주세요.'
+    tips.push('배가 부르기 전 80% 정도에서 마무리해주세요.')
+    tips.push('단백질이 들어간 메뉴를 먼저 선택하면 흐름이 덜 무너집니다.')
+  } else if (mealType === 'general') {
+    title = '오늘은 일반식 허용일입니다.'
+    mainText = '일반식을 드셔도 되지만, 단백질이 포함된 식사를 우선으로 골라주세요.'
+    tips.push('밥·면만 먹기보다 고기, 계란, 생선, 두부가 함께 있는 구성을 선택해주세요.')
+    tips.push('튀김·빵·디저트는 한 번에 겹치지 않게 조절해주세요.')
+  } else {
+    title = '오늘은 식단 기준을 맞추는 날입니다.'
+    mainText = '오늘은 설계된 식단 구성과 순서를 최대한 맞추는 데 집중해주세요.'
+    tips.push('끼니를 건너뛰지 말고 정해진 흐름대로 드시는 것이 중요합니다.')
+    tips.push('대체 음식이 필요하면 비슷한 탄수화물·단백질 구성으로 바꿔주세요.')
+  }
+
+  if (currentMealPattern === 'outside_often') {
+    tips.push('외식이 잦은 편이라 메뉴 선택만 잘해도 식단 유지가 훨씬 쉬워집니다.')
+  } else if (currentMealPattern === 'late_heavy') {
+    tips.push('저녁 늦게 많이 먹는 습관이 있다면 밤에는 양보다 소화 부담을 먼저 줄여주세요.')
+  } else if (currentMealPattern === 'mixed') {
+    tips.push('현재 식습관이 일정하지 않을 수 있어, 완벽함보다 지속 가능성을 우선으로 진행합니다.')
+  }
+
+  if (adaptationStrategy === 'gradual') {
+    tips.push('지금은 한 번에 확 바꾸기보다, 지킬 수 있는 수준으로 천천히 맞춰가는 단계입니다.')
+  } else if (adaptationStrategy === 'fast') {
+    tips.push('초반 적응 속도를 높이는 단계라 식사 흐름을 놓치지 않는 것이 중요합니다.')
+  }
+
+  if (dietMode === 'aggressive') {
+    tips.push('현재는 비교적 강도 있는 감량 흐름이라 군것질과 추가 간식을 특히 조심해주세요.')
+  } else if (dietMode === 'relaxed') {
+    tips.push('현재는 무리하지 않는 식단 흐름이므로, 대신 꾸준히 지키는 것이 가장 중요합니다.')
+  }
+
+  if (lateNightFrequency >= 3) {
+    tips.push('야식 빈도가 있는 편이라 저녁 이후에는 가볍고 단순한 선택이 더 유리합니다.')
+  }
+
+  if (deliveryFrequency >= 3) {
+    tips.push('배달 음식 빈도가 있다면 소스·사이드 추가를 줄이는 것만으로도 흐름이 좋아집니다.')
+  }
+
+  if (snackFrequency >= 4) {
+    tips.push('간식이 잦다면 배고픔 때문에 먹는지, 습관 때문에 먹는지 먼저 구분해보세요.')
+  }
+
+  return {
+    title,
+    mainText,
+    tips: tips.slice(0, 4),
+  }
+} 
 const updateMealCheckDraft = (planId, slot, value) => {
   const key = `${planId}-${slot}`
   setMealCheckDrafts((prev) => ({
@@ -5217,23 +5286,28 @@ return { ok: true, xp: xpValue }
       <p className="sub-text">
         오늘 날짜 기준 식단과 끼니별 구성, 진행 상태를 바로 확인할 수 있습니다.
       </p>
-    <div className="detail-box">
-  <strong>
-    {todayMealPlan?.meal_type === 'free'
-      ? '오늘은 자유식으로 운영하는 날입니다.'
-      : todayMealPlan?.meal_type === 'general'
-      ? '오늘은 일반식을 허용하는 날입니다.'
-      : '오늘은 식단 기준을 맞추는 날입니다.'}
-  </strong>
+    {todayMealPlan ? (
+  <div className="detail-box">
+    {(() => {
+      const coachComment = getTodayMealCoachComment(todayMealPlan, mealPlanProfile)
 
-  <p>
-    {todayMealPlan?.meal_type === 'free'
-      ? '먹고 싶은 음식을 드셔도 괜찮지만, 과식하지 않도록 양을 조절해주세요.'
-      : todayMealPlan?.meal_type === 'general'
-      ? '일반식을 드셔도 되지만, 단백질이 포함된 식사를 우선으로 선택해주세요.'
-      : '오늘은 안내된 식단 구성과 순서를 최대한 맞춰서 드시는 것을 목표로 해주세요.'}
-  </p>
-</div>
+      return (
+        <>
+          <strong>{coachComment.title}</strong>
+          <p style={{ marginTop: '6px' }}>{coachComment.mainText}</p>
+
+          <div className="stack-gap" style={{ marginTop: '10px' }}>
+            {coachComment.tips.map((tip, index) => (
+              <div key={index} className="compact-text">
+                - {tip}
+              </div>
+            ))}
+          </div>
+        </>
+      )
+    })()}
+  </div>
+) : null}
     </div>
 
     <div className="inline-actions wrap">
