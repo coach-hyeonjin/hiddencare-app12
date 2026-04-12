@@ -14506,8 +14506,10 @@ const filteredExercisesAdvanced = exercises.filter((exercise) => {
                 </div>
               )
             })
+     )}
+     </div>
           )}
-    
+   
 
       <div className="list-stack" style={{ marginTop: '20px' }}>
         <div className="meal-planner-admin-toggle-wrap">
