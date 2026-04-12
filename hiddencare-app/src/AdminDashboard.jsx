@@ -14859,24 +14859,33 @@ const filteredExercisesAdvanced = exercises.filter((exercise) => {
     {Array.isArray(meal.food_items) && meal.food_items.length > 0
       ? meal.food_items
           .map((item) => {
+            if (typeof item === 'string') return item
+
             const name =
               item.food_name ||
               item.name ||
               item.display_name ||
               item.label ||
-              '음식'
+              item.food ||
+              item.title ||
+              ''
 
             const amount =
               item.grams ??
               item.amount_g ??
               item.amount ??
               item.serving_g ??
+              item.weight_g ??
+              item.quantity ??
               ''
 
-            return amount ? `${name} ${amount}g` : name
+            if (name && amount) return `${name} ${amount}g`
+            if (name) return name
+
+            return JSON.stringify(item)
           })
           .join(' · ')
-      : '-'}
+      : meal.menu || '-'}
   </div>
 )}
 
