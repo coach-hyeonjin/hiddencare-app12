@@ -14853,7 +14853,7 @@ const filteredExercisesAdvanced = exercises.filter((exercise) => {
   {detailLabel ? <span className="pill soft">{detailLabel}</span> : null}
 </div>
 
-{!isSpecialMeal ? (
+{!isSpecialMeal && (
   <div className="compact-text">
     {Array.isArray(meal.food_items) && meal.food_items.length > 0
       ? meal.food_items
@@ -14864,6 +14864,7 @@ const filteredExercisesAdvanced = exercises.filter((exercise) => {
               item.display_name ||
               item.label ||
               '음식'
+
             const amount =
               item.grams ??
               item.amount_g ??
@@ -14876,7 +14877,9 @@ const filteredExercisesAdvanced = exercises.filter((exercise) => {
           .join(' · ')
       : '-'}
   </div>
-) : (
+)}
+
+{isSpecialMeal && (
   <div
     className="compact-text"
     style={{ whiteSpace: 'pre-line', lineHeight: 1.6 }}
