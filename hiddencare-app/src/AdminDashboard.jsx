@@ -1480,6 +1480,7 @@ const handleMealPlanGenerate = async () => {
         goalType,
         slot,
         dayType: dayInfo.dayType,
+        mealType: dayInfo.mealType,
         dateString,
         preferredSet,
         blockedSet,
@@ -1491,6 +1492,7 @@ const handleMealPlanGenerate = async () => {
         recentUsedIds,
         slotUsedNames,
         preferredIncludedCount,
+      
       })
 
       recentUsedIds = Array.isArray(meal?.nextUsedIds) ? meal.nextUsedIds : recentUsedIds
@@ -2284,6 +2286,7 @@ const buildSingleMealPlan = ({
   goalType,
   slot,
   dayType,
+  mealType,
   dateString,
   preferredSet,
   blockedSet,
@@ -2298,23 +2301,38 @@ const buildSingleMealPlan = ({
 }) => {
 
   // 🔥 식단 타입 분기 (핵심)
-const mealType = window.currentMealType || 'normal'
+const currentMealType = mealType || 'normal'
 
 // 자유식이면 그대로 반환
-if (mealType === 'free') {
+if (currentMealType === 'free') {
   return {
     items: [],
-    summary: '자유식 (자율 선택)',
+    menu: '자유식 (자율 선택)',
+    kcal: Number(targetKcal || 0),
+    carbs_g: Number(targetCarbs || 0),
+    protein_g: Number(targetProtein || 0),
+    fat_g: Number(targetFat || 0),
+    sodium_mg: 0,
     isFreeMeal: true,
+    nextUsedIds: recentUsedIds,
+    nextSlotUsedNames: slotUsedNames,
+    nextPreferredIncludedCount: preferredIncludedCount,
   }
 }
 
-// 일반식이면 간단 구성
-if (mealType === 'general') {
+if (currentMealType === 'general') {
   return {
     items: [],
-    summary: '일반식 (한식/외식 자유 선택)',
+    menu: '일반식 (한식/외식 자유 선택)',
+    kcal: Number(targetKcal || 0),
+    carbs_g: Number(targetCarbs || 0),
+    protein_g: Number(targetProtein || 0),
+    fat_g: Number(targetFat || 0),
+    sodium_mg: 0,
     isGeneralMeal: true,
+    nextUsedIds: recentUsedIds,
+    nextSlotUsedNames: slotUsedNames,
+    nextPreferredIncludedCount: preferredIncludedCount,
   }
 }
   const config = getMealCategoryConfig(slot, goalType, dayType)
