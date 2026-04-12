@@ -13910,9 +13910,9 @@ const filteredExercisesAdvanced = exercises.filter((exercise) => {
     식단 설정 저장
   </button>
 
-  <button className="primary-btn" type="button" onClick={handleGenerateMonthlyMealPlan}>
-    월간 식단 생성
-  </button>
+  <button className="primary-btn" type="button" onClick={handleMealPlanGenerate}>
+  월간 식단 생성
+</button>
 </div>
           
                     {(mealPlanForm.target_kcal ||
