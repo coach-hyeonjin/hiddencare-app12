@@ -784,21 +784,7 @@ const getMealFoodItemAmount = (item) => {
 const getMealDisplaySummary = (meal) => {
   return meal?.menu || '-'
 }
-  const foodItems = getMealFoodItems(meal)
-
-  if (foodItems.length > 0) {
-    return foodItems
-      .map((item) => {
-        const name = getMealFoodItemName(item)
-        const amount = getMealFoodItemAmount(item)
-
-        return amount ? `${name} ${Number(amount)}g` : name
-      })
-      .join(' · ')
-  }
-
-  return meal?.menu || '-'
-}
+  
 
  const getTodayMealCoachComment = (plan, profile) => {
   const mealType = String(plan?.meal_type || 'normal')
