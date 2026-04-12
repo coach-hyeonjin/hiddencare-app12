@@ -20885,3 +20885,93 @@ textarea:focus {
     grid-template-columns: 1fr;
   }
 }
+/* ===== 식단설정 전용 리디자인 ===== */
+
+.meal-planner-admin-page {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+/* 히어로 카드 */
+.meal-planner-admin-hero {
+  display: grid;
+  grid-template-columns: 1.5fr 1fr;
+  gap: 16px;
+  padding: 24px;
+  border-radius: 20px;
+  background: linear-gradient(135deg, #6366f1, #8b5cf6);
+  color: #fff;
+}
+
+.meal-planner-admin-hero h2 {
+  color: #fff;
+}
+
+.meal-planner-admin-hero-text {
+  color: rgba(255,255,255,0.8);
+}
+
+/* 오른쪽 요약 카드 */
+.meal-planner-admin-mini {
+  background: rgba(255,255,255,0.15);
+  padding: 14px;
+  border-radius: 14px;
+  backdrop-filter: blur(6px);
+}
+
+.meal-planner-admin-mini strong {
+  font-size: 16px;
+}
+
+/* 섹션 카드 */
+.meal-section-card {
+  background: #ffffff;
+  border-radius: 18px;
+  padding: 20px;
+  box-shadow: 0 6px 20px rgba(0,0,0,0.04);
+  border: 1px solid #e5e7eb;
+}
+
+/* 입력 그룹 묶기 */
+.meal-group {
+  padding: 16px;
+  border-radius: 14px;
+  background: #f8fafc;
+  border: 1px solid #e5e7eb;
+}
+
+/* detail-box 개선 */
+.detail-box {
+  background: #ffffff !important;
+  border: 1px solid #e5e7eb !important;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.03);
+}
+
+/* 버튼 영역 강조 */
+.meal-action-bar {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  padding-top: 10px;
+  border-top: 1px solid #e5e7eb;
+}
+
+/* 음식 DB 영역 */
+.meal-food-db-card {
+  background: #f9fafb;
+  border-radius: 16px;
+}
+
+/* 입력 grid 간격 확대 */
+.grid-2,
+.grid-3,
+.grid-4,
+.grid-5 {
+  gap: 16px;
+}
+
+/* 전체 여백 증가 */
+.stack-gap {
+  gap: 20px;
+}
