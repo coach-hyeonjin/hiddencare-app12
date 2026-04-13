@@ -3825,54 +3825,172 @@ const buildSingleMealPlan = ({
   const isEatingOutStyle = normalizedMealStyleType === 'eating_out'
 
   if (currentMealType === 'free') {
-    const freeGuide = buildFreeMealGuideText({
-      targetKcal,
-    })
+  const freeTemplate = pickMealTemplate({
+    slot,
+    foods: Array.isArray(foods) ? foods : [],
+    blockedSet,
+    dateString,
+    goalType,
+  })
 
-    return {
-      items: [],
-      menu: freeGuide.label,
-      guide_text: freeGuide.text,
-      kcal: Number(targetKcal || 0),
-      carbs_g: Number(targetCarbs || 0),
-      protein_g: Number(targetProtein || 0),
-      fat_g: Number(targetFat || 0),
-      sodium_mg: 0,
-      isFreeMeal: true,
-      meal_detail_type: 'free',
-      nextUsedIds: recentUsedIds,
-      nextSlotUsedNames: slotUsedNames,
-      nextPreferredIncludedCount: preferredIncludedCount,
-    }
-  }
-
-  if (currentMealType === 'general') {
-    const generalGuide = buildGeneralMealGuideText({
-      mealPlanForm,
-      slot,
-      dateString,
-      targetKcal,
+  if (freeTemplate) {
+    const templateMeal = buildMealPlanFromTemplate({
+      template: freeTemplate,
+      foods: Array.isArray(foods) ? foods : [],
       targetCarbs,
       targetProtein,
       targetFat,
+      targetKcal,
     })
 
-    return {
-      items: [],
-      menu: generalGuide.label,
-      guide_text: generalGuide.text,
-      kcal: Number(targetKcal || 0),
-      carbs_g: Number(targetCarbs || 0),
-      protein_g: Number(targetProtein || 0),
-      fat_g: Number(targetFat || 0),
-      sodium_mg: 0,
-      isGeneralMeal: true,
-      meal_detail_type: generalGuide.detailType,
-      nextUsedIds: recentUsedIds,
-      nextSlotUsedNames: slotUsedNames,
-      nextPreferredIncludedCount: preferredIncludedCount,
+    if (templateMeal) {
+      const nextUsedIds = [
+        ...recentUsedIds,
+        ...(templateMeal.items || []).map((item) => item.food_id).filter(Boolean),
+      ].slice(-8)
+
+      const nextSlotUsedNames = [
+        ...slotUsedNames,
+        ...(templateMeal.items || []).map((item) => item.name).filter(Boolean),
+      ].slice(-8)
+
+      const hasPreferredInMeal = (templateMeal.items || []).some((item) =>
+        preferredSet.has(item.food_id)
+      )
+
+      const nextPreferredIncludedCount =
+        preferredIncludedCount + (hasPreferredInMeal ? 1 : 0)
+
+      return {
+        items: templateMeal.items || [],
+        menu: templateMeal.menu || formatMealMenu(templateMeal.items || []),
+        guide_text: '자유식 허용 끼니입니다. 과식하지 않고 다음 끼니는 원래 흐름으로 복귀하면 됩니다.',
+        kcal: Number(templateMeal.kcal || 0),
+        carbs_g: Number(templateMeal.carbs_g || 0),
+        protein_g: Number(templateMeal.protein_g || 0),
+        fat_g: Number(templateMeal.fat_g || 0),
+        sodium_mg: Number(templateMeal.sodium_mg || 0),
+        isFreeMeal: true,
+        meal_detail_type: 'free',
+        nextUsedIds,
+        nextSlotUsedNames,
+        nextPreferredIncludedCount,
+      }
     }
   }
+
+  const freeGuide = buildFreeMealGuideText({
+    targetKcal,
+  })
+
+  return {
+    items: [],
+    menu: freeGuide.label,
+    guide_text: freeGuide.text,
+    kcal: Number(targetKcal || 0),
+    carbs_g: Number(targetCarbs || 0),
+    protein_g: Number(targetProtein || 0),
+    fat_g: Number(targetFat || 0),
+    sodium_mg: 0,
+    isFreeMeal: true,
+    meal_detail_type: 'free',
+    nextUsedIds: recentUsedIds,
+    nextSlotUsedNames: slotUsedNames,
+    nextPreferredIncludedCount: preferredIncludedCount,
+  }
+}
+
+  if (currentMealType === 'general') {
+  const generalTemplate = pickMealTemplate({
+    slot,
+    foods: Array.isArray(foods) ? foods : [],
+    blockedSet,
+    dateString,
+    goalType,
+  })
+
+  if (generalTemplate) {
+    const templateMeal = buildMealPlanFromTemplate({
+      template: generalTemplate,
+      foods: Array.isArray(foods) ? foods : [],
+      targetCarbs,
+      targetProtein,
+      targetFat,
+      targetKcal,
+    })
+
+    if (templateMeal) {
+      const nextUsedIds = [
+        ...recentUsedIds,
+        ...(templateMeal.items || []).map((item) => item.food_id).filter(Boolean),
+      ].slice(-8)
+
+      const nextSlotUsedNames = [
+        ...slotUsedNames,
+        ...(templateMeal.items || []).map((item) => item.name).filter(Boolean),
+      ].slice(-8)
+
+      const hasPreferredInMeal = (templateMeal.items || []).some((item) =>
+        preferredSet.has(item.food_id)
+      )
+
+      const nextPreferredIncludedCount =
+        preferredIncludedCount + (hasPreferredInMeal ? 1 : 0)
+
+      const generalGuide = buildGeneralMealGuideText({
+        mealPlanForm,
+        slot,
+        dateString,
+        targetKcal,
+        targetCarbs,
+        targetProtein,
+        targetFat,
+      })
+
+      return {
+        items: templateMeal.items || [],
+        menu: templateMeal.menu || formatMealMenu(templateMeal.items || []),
+        guide_text: generalGuide.text,
+        kcal: Number(templateMeal.kcal || 0),
+        carbs_g: Number(templateMeal.carbs_g || 0),
+        protein_g: Number(templateMeal.protein_g || 0),
+        fat_g: Number(templateMeal.fat_g || 0),
+        sodium_mg: Number(templateMeal.sodium_mg || 0),
+        isGeneralMeal: true,
+        meal_detail_type: generalGuide.detailType,
+        nextUsedIds,
+        nextSlotUsedNames,
+        nextPreferredIncludedCount,
+      }
+    }
+  }
+
+  const generalGuide = buildGeneralMealGuideText({
+    mealPlanForm,
+    slot,
+    dateString,
+    targetKcal,
+    targetCarbs,
+    targetProtein,
+    targetFat,
+  })
+
+  return {
+    items: [],
+    menu: generalGuide.label,
+    guide_text: generalGuide.text,
+    kcal: Number(targetKcal || 0),
+    carbs_g: Number(targetCarbs || 0),
+    protein_g: Number(targetProtein || 0),
+    fat_g: Number(targetFat || 0),
+    sodium_mg: 0,
+    isGeneralMeal: true,
+    meal_detail_type: generalGuide.detailType,
+    nextUsedIds: recentUsedIds,
+    nextSlotUsedNames: slotUsedNames,
+    nextPreferredIncludedCount: preferredIncludedCount,
+  }
+}
 
   const styleFilteredFoods = (Array.isArray(foods) ? foods : []).filter((food) => {
     const major = String(food?.category_major || '').trim()
