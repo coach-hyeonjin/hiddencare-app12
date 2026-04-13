@@ -2571,12 +2571,104 @@ const findFoodByTemplateName = (foods = [], rawName = '') => {
 const getTemplateCandidatesBySlot = (slot = '') => {
   return Array.isArray(MEAL_TEMPLATE_LIBRARY?.[slot]) ? MEAL_TEMPLATE_LIBRARY[slot] : []
 }
+const getTemplateGoalScore = ({
+  template,
+  foods = [],
+  goalType = 'diet',
+  slot = '',
+}) => {
+  const templateFoods = Array.isArray(template?.foods) ? template.foods : []
 
+  const matchedFoods = templateFoods
+    .map((foodName) => findFoodByTemplateName(foods, foodName))
+    .filter(Boolean)
+
+  if (!matchedFoods.length) return 0
+
+  const names = matchedFoods.map((food) =>
+    String(food?.name || '').trim().toLowerCase()
+  )
+
+  const categoryCounts = matchedFoods.reduce(
+    (acc, food) => {
+      const major = String(food?.category_major || '').trim()
+      acc[major] = (acc[major] || 0) + 1
+      return acc
+    },
+    {}
+  )
+
+  let score = 0
+
+  const carbCount = Number(categoryCounts.carb || 0)
+  const proteinCount = Number(categoryCounts.protein || 0)
+  const dairyCount = Number(categoryCounts.dairy || 0)
+  const fruitCount = Number(categoryCounts.fruit || 0)
+  const vegetableCount = Number(categoryCounts.vegetable || 0)
+
+  const hasRice = names.some((name) => name.includes('밥'))
+  const hasSweetPotato = names.some((name) => name.includes('고구마'))
+  const hasOatmeal = names.some((name) => name.includes('오트밀'))
+  const hasChicken = names.some((name) => name.includes('닭'))
+  const hasBeef = names.some((name) => name.includes('소고기'))
+  const hasSalmon = names.some((name) => name.includes('연어'))
+  const hasEgg = names.some((name) => name.includes('계란'))
+  const hasYogurt = names.some((name) => name.includes('요거트'))
+  const hasPowder = names.some((name) => name.includes('프로틴')) || names.some((name) => name.includes('파우더'))
+  const hasVegetable = vegetableCount > 0
+  const hasFruit = fruitCount > 0
+
+  if (goalType === 'bulk' || goalType === 'muscle_gain') {
+    score += carbCount * 3
+    score += proteinCount * 3
+    score += dairyCount
+    if (hasRice) score += 3
+    if (hasSweetPotato) score += 2
+    if (hasOatmeal) score += 2
+    if (hasChicken || hasBeef || hasSalmon) score += 3
+    if (slot === '운동후' && hasPowder) score += 3
+    if (slot === '야식' && hasPowder) score -= 2
+    if (hasFruit && slot !== '운동후') score += 1
+  } else if (goalType === 'diet' || goalType === 'recomposition') {
+    score += proteinCount * 3
+    score += vegetableCount * 2
+    score += fruitCount
+    if (hasChicken || hasSalmon || hasEgg || hasYogurt) score += 3
+    if (hasRice) score -= slot === '저녁' || slot === '야식' ? 2 : 0
+    if (hasSweetPotato || hasOatmeal) score += 2
+    if (hasPowder && ['아침', '점심', '저녁'].includes(slot)) score -= 4
+    if (slot === '야식' && hasYogurt) score += 2
+    if (slot === '야식' && hasFruit) score += 1
+  } else if (goalType === 'maintenance') {
+    score += proteinCount * 2
+    score += carbCount * 2
+    if (hasRice || hasSweetPotato || hasOatmeal) score += 2
+    if (hasChicken || hasSalmon || hasEgg) score += 2
+    if (hasVegetable) score += 1
+  } else {
+    score += proteinCount * 2
+    score += carbCount * 2
+  }
+
+  if (slot === '운동후') {
+    if (hasPowder) score += 2
+    if (hasFruit) score += 1
+  }
+
+  if (slot === '야식') {
+    if (hasRice) score -= 2
+    if (hasYogurt || hasEgg || hasFruit) score += 2
+  }
+
+  return score
+}
+  
 const pickMealTemplate = ({
   slot = '',
   foods = [],
   blockedSet = new Set(),
   dateString = '',
+  goalType = 'diet',
 }) => {
   const templates = getTemplateCandidatesBySlot(slot)
 
@@ -2595,8 +2687,26 @@ const pickMealTemplate = ({
 
   if (!availableTemplates.length) return null
 
-  const seed = (Number(String(dateString || '').slice(-2)) || 1) % availableTemplates.length
-  return availableTemplates[seed] || availableTemplates[0] || null
+  const scoredTemplates = availableTemplates
+    .map((template, index) => ({
+      template,
+      index,
+      score: getTemplateGoalScore({
+        template,
+        foods,
+        goalType,
+        slot,
+      }),
+    }))
+    .sort((a, b) => {
+      if (a.score !== b.score) return b.score - a.score
+      return a.index - b.index
+    })
+
+  const topTemplates = scoredTemplates.slice(0, Math.min(3, scoredTemplates.length))
+  const seed = (Number(String(dateString || '').slice(-2)) || 1) % topTemplates.length
+
+  return topTemplates[seed]?.template || topTemplates[0]?.template || null
 }
 
 const buildMealPlanFromTemplate = ({
@@ -2924,6 +3034,7 @@ const buildSingleMealPlan = ({
     foods: styleFilteredFoods,
     blockedSet,
     dateString,
+     goalType,
   })
 
   if (selectedTemplate) {
