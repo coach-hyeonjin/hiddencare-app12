@@ -1302,18 +1302,23 @@ const handleMealPlanGenerate = async () => {
   }
 
   const fatMultiplierMap = {
-    diet: 0.7,
-    recomposition: 0.8,
-    maintenance: 0.8,
-    muscle_gain: 0.8,
-    bulk: 0.9,
-  }
+  diet: 0.7,
+  recomposition: 0.75,
+  maintenance: 0.8,
+  muscle_gain: 0.85,
+  bulk: 0.85,
+}
 
   const goalAdjustmentPercent = Number(goalAdjustmentPercentMap[goalType] || 0)
 const goalAdjustmentKcal = Math.round(tdee * goalAdjustmentPercent)
 const targetKcal = Math.max(1200, Math.round(tdee * (1 + goalAdjustmentPercent)))
   const targetProtein = Math.max(60, Math.round(weight * Number(proteinMultiplierMap[goalType] || 1.8)))
-  const targetFat = Math.max(30, Math.round(weight * Number(fatMultiplierMap[goalType] || 0.8)))
+  const baseTargetFat = Math.round(weight * Number(fatMultiplierMap[goalType] || 0.8))
+
+const targetFat =
+  goalType === 'muscle_gain' || goalType === 'bulk'
+    ? Math.max(60, baseTargetFat)
+    : Math.max(30, baseTargetFat)
   const targetCarbs = Math.max(
     0,
     Math.round((targetKcal - targetProtein * 4 - targetFat * 9) / 4)
