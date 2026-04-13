@@ -2354,17 +2354,19 @@ const buildMonthlyDietFramework = ({
   const MEAL_TEMPLATE_LIBRARY = {
   아침: [
     {
-      name: '오트밀 요거트 아침식사',
-      foods: ['오트밀', '그릭요거트', '바나나'],
-    },
+  name: '오트밀 요거트 아침식사',
+  foods: ['오트밀', '그릭요거트', '바나나'],
+  goalTypes: ['diet', 'recomposition', 'maintenance'],
+},
     {
       name: '한식 계란 아침식사',
       foods: ['백미밥', '계란', '김치'],
     },
     {
-      name: '닭가슴살 아침식사',
-      foods: ['백미밥', '닭가슴살', '김치'],
-    },
+  name: '닭가슴살 아침식사',
+  foods: ['백미밥', '닭가슴살', '김치'],
+  goalTypes: ['diet', 'recomposition', 'maintenance', 'muscle_gain'],
+},
     {
       name: '고구마 계란 아침식사',
       foods: ['고구마', '계란', '방울토마토'],
@@ -2388,18 +2390,21 @@ const buildMonthlyDietFramework = ({
   ],
 
   점심: [
+   {
+  name: '닭가슴살 점심정식',
+  foods: ['백미밥', '닭가슴살', '브로콜리'],
+  goalTypes: ['diet', 'recomposition', 'maintenance', 'muscle_gain'],
+},
+   {
+  name: '소고기 점심정식',
+  foods: ['백미밥', '소고기', '나물반찬'],
+  goalTypes: ['maintenance', 'muscle_gain', 'bulk'],
+},
     {
-      name: '닭가슴살 점심정식',
-      foods: ['백미밥', '닭가슴살', '브로콜리'],
-    },
-    {
-      name: '소고기 점심정식',
-      foods: ['백미밥', '소고기', '나물반찬'],
-    },
-    {
-      name: '연어 점심정식',
-      foods: ['백미밥', '연어', '방울토마토'],
-    },
+  name: '연어 점심정식',
+  foods: ['백미밥', '연어', '방울토마토'],
+  goalTypes: ['diet', 'recomposition', 'maintenance'],
+},
     {
       name: '닭다리살 점심식사',
       foods: ['백미밥', '닭다리살', '파프리카'],
@@ -2444,9 +2449,10 @@ const buildMonthlyDietFramework = ({
       foods: ['고구마', '연어', '브로콜리'],
     },
     {
-      name: '소고기 저녁식사',
-      foods: ['고구마', '소고기', '아스파라거스'],
-    },
+  name: '소고기 저녁식사',
+  foods: ['고구마', '소고기', '아스파라거스'],
+  goalTypes: ['maintenance', 'muscle_gain', 'bulk'],
+},
     {
       name: '현미밥 저녁정식',
       foods: ['현미밥', '닭가슴살', '김치'],
@@ -2516,14 +2522,16 @@ const buildMonthlyDietFramework = ({
   ],
 
   운동후: [
-    {
-      name: '운동후 프로틴 바나나',
-      foods: ['프로틴파우더', '바나나'],
-    },
-    {
-      name: '운동후 밥 닭가슴살',
-      foods: ['백미밥', '닭가슴살'],
-    },
+   {
+  name: '운동후 프로틴 바나나',
+  foods: ['프로틴파우더', '바나나'],
+  goalTypes: ['diet', 'recomposition', 'maintenance', 'muscle_gain', 'bulk'],
+},
+   {
+  name: '운동후 밥 닭가슴살',
+  foods: ['백미밥', '닭가슴살'],
+  goalTypes: ['maintenance', 'muscle_gain', 'bulk'],
+},
     {
       name: '운동후 고구마 닭가슴살',
       foods: ['고구마', '닭가슴살'],
@@ -2536,17 +2544,19 @@ const buildMonthlyDietFramework = ({
 
   야식: [
     {
-      name: '가벼운 요거트 야식',
-      foods: ['그릭요거트', '바나나'],
-    },
+  name: '가벼운 요거트 야식',
+  foods: ['그릭요거트', '바나나'],
+  goalTypes: ['diet', 'recomposition', 'maintenance'],
+},
     {
       name: '고구마 계란 야식',
       foods: ['고구마', '계란'],
     },
-    {
-      name: '프로틴 바나나 야식',
-      foods: ['프로틴파우더', '바나나'],
-    },
+   {
+  name: '프로틴 바나나 야식',
+  foods: ['프로틴파우더', '바나나'],
+  goalTypes: ['muscle_gain', 'bulk'],
+},
     {
       name: '사과 요거트 야식',
       foods: ['사과', '그릭요거트'],
@@ -2571,6 +2581,15 @@ const findFoodByTemplateName = (foods = [], rawName = '') => {
 const getTemplateCandidatesBySlot = (slot = '') => {
   return Array.isArray(MEAL_TEMPLATE_LIBRARY?.[slot]) ? MEAL_TEMPLATE_LIBRARY[slot] : []
 }
+
+const isTemplateAllowedForGoal = (template, goalType = 'diet') => {
+  const goalTypes = Array.isArray(template?.goalTypes) ? template.goalTypes : []
+
+  if (!goalTypes.length) return true
+
+  return goalTypes.includes(goalType)
+}
+  
 const getTemplateGoalScore = ({
   template,
   foods = [],
@@ -2675,6 +2694,10 @@ const pickMealTemplate = ({
   if (!templates.length) return null
 
   const availableTemplates = templates.filter((template) => {
+    if (!isTemplateAllowedForGoal(template, goalType)) {
+      return false
+    }
+
     const templateFoods = Array.isArray(template?.foods) ? template.foods : []
 
     if (!templateFoods.length) return false
