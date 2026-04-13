@@ -2805,9 +2805,9 @@ if (currentMealType === 'general') {
 
   return true
 })
-    const selectedTemplate = pickMealTemplate({
+      const selectedTemplate = pickMealTemplate({
     slot,
-   foods: filteredFoodsForSlot,
+    foods: filteredFoodsForSlot,
     blockedSet,
     dateString,
   })
@@ -2856,7 +2856,7 @@ if (currentMealType === 'general') {
       }
     }
   }
-    const isLateNightSlot = slot === '야식'
+      const isLateNightSlot = slot === '야식'
   const isMainMealSlot = ['아침', '점심', '저녁'].includes(slot)
 
   const filteredFoodsForSlot = styleFilteredFoods.filter((food) => {
