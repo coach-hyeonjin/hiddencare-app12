@@ -4727,7 +4727,7 @@ const getLifestyleAdjustedDayPlan = ({
   strict: {
     key: 'strict',
     label: '집중형 · 식단식 중심',
-    summary: '감량 집중, 바디프로필, 대회 준비 직전처럼 통제 강도가 높은 방식입니다.',
+    summary: '감량 집중, 바디프로필, 통제 강도가 높은 방식입니다.',
   },
   bulk: {
     key: 'bulk',
@@ -4750,7 +4750,7 @@ const getLifestyleAdjustedDayPlan = ({
     summary: '식단 통제 강도와 반복성을 최대로 높이는 대회 준비용 방식입니다.',
   },
 }
-
+  
 const buildPlanStyleRecommendation = ({
   mealPlanForm,
   targetKcal = 0,
