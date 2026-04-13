@@ -3330,6 +3330,11 @@ const generalMealDays = getRandomDays(daysInMonth, Number(mealPlanForm.allowed_g
 const freeMealDays = getRandomDays(daysInMonth, Number(mealPlanForm.allowed_free_meals_per_week || 0))
 const snackDays = getRandomDays(daysInMonth, Number(mealPlanForm.allowed_snacks_per_week || 0))
 const alcoholDays = getRandomDays(daysInMonth, Number(mealPlanForm.allowed_alcohol_per_week || 0))
+
+  const snackDaySet = new Set(snackDays)
+const alcoholDaySet = new Set(alcoholDays)
+const generalMealDaySet = new Set(generalMealDays)
+const freeMealDaySet = new Set(freeMealDays)
   
   const mealSlots = buildMealSlotsByCount(mealPlanForm.meals_per_day)
   const trainingDays = Number(mealPlanForm.training_days_per_week || 3)
@@ -3382,29 +3387,27 @@ const slotCount = generationMealSlots.length || 1
    let dayRecentUsedIds = []
 let daySlotUsedNames = []
 let dayType = 'diet'
+const currentDayIndex = day - 1
 
-if (generalMealDays.includes(day - 1)) {
+if (generalMealDaySet.has(currentDayIndex)) {
   dayType = 'general'
 }
 
-if (freeMealDays.includes(day - 1)) {
+if (freeMealDaySet.has(currentDayIndex)) {
   dayType = 'free'
 }
 
-if (snackDays.includes(day - 1)) {
-  dayType = 'general'
-}
-
-if (alcoholDays.includes(day - 1)) {
-  dayType = 'free'
+if (alcoholDaySet.has(currentDayIndex)) {
+  dayType = 'alcohol'
 }
     
         const mealStyleType = pickMealStyleType(planStyleEngine.mealRatio)
 
-    const effectiveTargetKcal =
-      dayType === 'training'
-        ? adjustedTargetKcal
-        : Math.round(adjustedTargetKcal * 0.95)
+    const effectiveTargetKcal = isTrainingDay
+  ? adjustedTargetKcal
+  : Math.round(adjustedTargetKcal * 0.95)
+
+    
 const adjustedDayPlan = getLifestyleAdjustedDayPlan({
   mealPlanForm,
   isTrainingDay,
