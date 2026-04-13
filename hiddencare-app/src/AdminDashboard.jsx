@@ -2351,98 +2351,247 @@ const buildMonthlyDietFramework = ({
 
   return framework
 }
-  const GENERAL_MEAL_GUIDE_MAP = {
-  balanced: {
-    label: '일반식 · 균형형',
-    description: '밥, 단백질 반찬, 채소를 균형 있게 구성하는 일반식입니다.',
-    guide: [
-      '밥 1공기 기준으로 구성',
-      '단백질 반찬 1~2개 포함',
-      '채소반찬 2가지 이상 함께 먹기',
-    ],
-    examples: [
-      '백미밥 + 소고기우둔/닭가슴살 + 나물반찬',
-      '생선구이 정식',
-      '비빔밥(고기 포함, 소스는 과하지 않게)',
-    ],
-    caution: [
-      '튀김, 디저트, 음료는 추가하지 않기',
-      '국물류는 반 정도만 섭취',
-    ],
-  },
-  diet: {
-    label: '일반식 · 다이어트형',
-    description: '열량을 조금 더 안정적으로 관리하는 감량용 일반식입니다.',
-    guide: [
-      '밥은 0.5~0.7공기 정도',
-      '단백질 반찬 중심으로 선택',
-      '채소 섭취량 늘리기',
-    ],
-    examples: [
-      '닭가슴살 샐러드 + 고구마',
-      '회덮밥(밥 적게)',
-      '순두부/두부 반찬 포함 한식',
-    ],
-    caution: [
-      '면, 빵, 튀김은 한 끼에 같이 먹지 않기',
-      '소스와 드레싱은 적게',
-    ],
-  },
-  eating_out: {
-    label: '일반식 · 외식형',
-    description: '밖에서 먹을 때 선택 기준을 잡아주는 현실형 일반식입니다.',
-    guide: [
-      '정식류, 덮밥류, 구이류 위주로 선택',
-      '밥이 들어간 식사는 가능',
-      '단백질 반찬이 있는 메뉴 우선',
-    ],
-    examples: [
-      '제육볶음 정식',
-      '생선구이 정식',
-      '국밥류(밥은 조절)',
-    ],
-    caution: [
-      '라면, 파스타, 피자만 단독으로 먹지 않기',
-      '튀김은 곁들이는 정도만',
-      '음료 대신 물 선택',
-    ],
-  },
-  simple: {
-    label: '일반식 · 간편형',
-    description: '시간이 없을 때 빠르게 해결하는 간편 일반식입니다.',
-    guide: [
-      '탄수화물 + 단백질 조합 만들기',
-      '편의점/간편식도 단백질 포함 우선',
-      '한 끼를 너무 가볍게 끝내지 않기',
-    ],
-    examples: [
-      '삼각김밥 + 닭가슴살',
-      '샌드위치 + 삶은계란',
-      '프로틴 + 바나나 + 구운계란',
-    ],
-    caution: [
-      '빵만 먹고 끝내지 않기',
-      '디저트류를 식사 대용으로 쓰지 않기',
-    ],
-  },
-  social: {
-    label: '일반식 · 회식형',
-    description: '회식이나 술자리에서도 기준을 잡아주는 일반식입니다.',
-    guide: [
-      '고기 + 채소 위주로 먹기',
-      '술과 탄수화물은 동시에 과하게 먹지 않기',
-      '안주는 단백질 위주로 고르기',
-    ],
-    examples: [
-      '삼겹살 + 상추 + 밥 소량',
-      '소고기 + 채소류',
-      '구이류 안주 중심 식사',
-    ],
-    caution: [
-      '술 + 튀김 + 면 조합 피하기',
-      '다음 끼니는 원래 식단으로 복귀',
-    ],
-  },
+  const MEAL_TEMPLATE_LIBRARY = {
+  아침: [
+    {
+      name: '한식 아침식사',
+      foods: ['백미밥', '닭가슴살', '김치'],
+    },
+    {
+      name: '계란 아침식사',
+      foods: ['백미밥', '계란', '김치'],
+    },
+    {
+      name: '오트밀 아침식사',
+      foods: ['오트밀', '그릭요거트', '바나나'],
+    },
+  ],
+  점심: [
+    {
+      name: '닭가슴살 정식',
+      foods: ['백미밥', '닭가슴살', '브로콜리'],
+    },
+    {
+      name: '소고기 정식',
+      foods: ['백미밥', '소고기', '나물반찬'],
+    },
+    {
+      name: '연어 정식',
+      foods: ['백미밥', '연어', '방울토마토'],
+    },
+  ],
+  저녁: [
+    {
+      name: '저녁 한식식사',
+      foods: ['백미밥', '닭다리살', '파프리카'],
+    },
+    {
+      name: '생선 저녁식사',
+      foods: ['고구마', '연어', '브로콜리'],
+    },
+    {
+      name: '소고기 저녁식사',
+      foods: ['고구마', '소고기', '아스파라거스'],
+    },
+  ],
+  간식: [
+    {
+      name: '요거트 간식',
+      foods: ['그릭요거트', '바나나'],
+    },
+    {
+      name: '고구마 간식',
+      foods: ['고구마', '계란'],
+    },
+  ],
+  오전간식: [
+    {
+      name: '가벼운 오전간식',
+      foods: ['그릭요거트', '바나나'],
+    },
+    {
+      name: '과일 단백질 간식',
+      foods: ['사과', '계란'],
+    },
+  ],
+  운동후: [
+    {
+      name: '운동후 보충',
+      foods: ['프로틴파우더', '바나나'],
+    },
+    {
+      name: '운동후 식사',
+      foods: ['백미밥', '닭가슴살'],
+    },
+  ],
+  야식: [
+    {
+      name: '가벼운 야식',
+      foods: ['그릭요거트', '바나나'],
+    },
+    {
+      name: '야식 대체식',
+      foods: ['프로틴파우더', '바나나'],
+    },
+    {
+      name: '소량 야식',
+      foods: ['고구마', '계란'],
+    },
+  ],
+}
+
+const findFoodByTemplateName = (foods = [], rawName = '') => {
+  const target = String(rawName || '').trim().toLowerCase()
+  if (!target) return null
+
+  return (Array.isArray(foods) ? foods : []).find((food) => {
+    const name = String(food?.name || '').trim().toLowerCase()
+    const aliases = Array.isArray(food?.aliases)
+      ? food.aliases.map((item) => String(item || '').trim().toLowerCase())
+      : []
+
+    return name === target || aliases.includes(target)
+  }) || null
+}
+
+const getTemplateCandidatesBySlot = (slot = '') => {
+  return Array.isArray(MEAL_TEMPLATE_LIBRARY?.[slot]) ? MEAL_TEMPLATE_LIBRARY[slot] : []
+}
+
+const pickMealTemplate = ({
+  slot = '',
+  foods = [],
+  blockedSet = new Set(),
+  dateString = '',
+}) => {
+  const templates = getTemplateCandidatesBySlot(slot)
+
+  if (!templates.length) return null
+
+  const availableTemplates = templates.filter((template) => {
+    const templateFoods = Array.isArray(template?.foods) ? template.foods : []
+
+    if (!templateFoods.length) return false
+
+    return templateFoods.every((foodName) => {
+      const matchedFood = findFoodByTemplateName(foods, foodName)
+      return matchedFood && !blockedSet.has(matchedFood.id)
+    })
+  })
+
+  if (!availableTemplates.length) return null
+
+  const seed = (Number(String(dateString || '').slice(-2)) || 1) % availableTemplates.length
+  return availableTemplates[seed] || availableTemplates[0] || null
+}
+
+const buildMealPlanFromTemplate = ({
+  template,
+  foods = [],
+  targetCarbs = 0,
+  targetProtein = 0,
+  targetFat = 0,
+  targetKcal = 0,
+}) => {
+  if (!template || !Array.isArray(template.foods) || template.foods.length === 0) {
+    return null
+  }
+
+  const matchedFoods = template.foods
+    .map((foodName) => findFoodByTemplateName(foods, foodName))
+    .filter(Boolean)
+
+  if (!matchedFoods.length) return null
+
+  const foodItems = matchedFoods.map((food, index) => {
+    const category = String(food?.category_major || '').trim()
+    let grams = Number(food?.typical_portion_g || 100)
+
+    if (category === 'carb') {
+      grams = calcPortionByMacro({
+        food,
+        macroKey: 'carbs_per_100g',
+        targetGrams: Math.max(12, Math.round(Number(targetCarbs || 0) / Math.max(matchedFoods.length, 1)) * 1.4),
+        fallbackGrams: food?.typical_portion_g || 120,
+        minGrams: 60,
+        maxGrams: 260,
+      })
+    } else if (category === 'protein' || category === 'dairy') {
+      grams = calcPortionByMacro({
+        food,
+        macroKey: 'protein_per_100g',
+        targetGrams: Math.max(10, Math.round(Number(targetProtein || 0) / Math.max(matchedFoods.length, 1)) * 1.4),
+        fallbackGrams: food?.typical_portion_g || 120,
+        minGrams: category === 'dairy' ? 80 : 70,
+        maxGrams: category === 'dairy' ? 220 : 240,
+      })
+    } else if (category === 'fat') {
+      grams = calcPortionByMacro({
+        food,
+        macroKey: 'fat_per_100g',
+        targetGrams: Math.max(5, Math.round(Number(targetFat || 0) / Math.max(matchedFoods.length, 1)) * 1.2),
+        fallbackGrams: food?.typical_portion_g || 20,
+        minGrams: 10,
+        maxGrams: 40,
+      })
+    } else if (category === 'fruit') {
+      grams = clampNumber(food?.typical_portion_g || 100, 60, 180)
+    } else if (category === 'vegetable') {
+      grams = clampNumber(food?.typical_portion_g || 80, 50, 150)
+    } else {
+      grams = clampNumber(food?.typical_portion_g || 100, 60, 220)
+    }
+
+    return buildMealFoodItem(food, grams)
+  })
+
+  let adjustedFoodItems = [...foodItems]
+  let summary = sumMealItems(adjustedFoodItems)
+
+  if (Number(targetKcal || 0) > 0 && adjustedFoodItems.length > 0) {
+    const lowerBound = Number(targetKcal) * 0.9
+    const upperBound = Number(targetKcal) * 1.1
+
+    let guard = 0
+
+    while ((summary.kcal < lowerBound || summary.kcal > upperBound) && guard < 10) {
+      guard += 1
+
+      const ratio = Number(targetKcal) / Math.max(1, Number(summary.kcal || 0))
+
+      adjustedFoodItems = adjustedFoodItems.map((item) => {
+        const nextGrams = clampNumber(
+          Math.round(Number(item.grams || 0) * ratio),
+          40,
+          260
+        )
+
+        return {
+          ...item,
+          grams: nextGrams,
+          kcal: Math.round((Number(item.kcal || 0) / Math.max(1, Number(item.grams || 1))) * nextGrams),
+          carbs_g: Math.round((Number(item.carbs_g || 0) / Math.max(1, Number(item.grams || 1))) * nextGrams),
+          protein_g: Math.round((Number(item.protein_g || 0) / Math.max(1, Number(item.grams || 1))) * nextGrams),
+          fat_g: Math.round((Number(item.fat_g || 0) / Math.max(1, Number(item.grams || 1))) * nextGrams),
+          sodium_mg: Math.round((Number(item.sodium_mg || 0) / Math.max(1, Number(item.grams || 1))) * nextGrams),
+        }
+      })
+
+      summary = sumMealItems(adjustedFoodItems)
+    }
+  }
+
+  return {
+    items: adjustedFoodItems,
+    menu: template.name || formatMealMenu(adjustedFoodItems),
+    guide_text: '',
+    meal_detail_type: 'template',
+    kcal: Math.round(summary.kcal),
+    carbs_g: Math.round(summary.carbs_g),
+    protein_g: Math.round(summary.protein_g),
+    fat_g: Math.round(summary.fat_g),
+    sodium_mg: Math.round(summary.sodium_mg),
+  }
 }
 
 const getGeneralMealDetailType = ({
@@ -2656,6 +2805,84 @@ if (currentMealType === 'general') {
 
   return true
 })
+    const selectedTemplate = pickMealTemplate({
+    slot,
+   foods: filteredFoodsForSlot,
+    blockedSet,
+    dateString,
+  })
+
+  if (selectedTemplate) {
+    const templateMeal = buildMealPlanFromTemplate({
+      template: selectedTemplate,
+      foods: filteredFoodsForSlot,
+      targetCarbs,
+      targetProtein,
+      targetFat,
+      targetKcal,
+    })
+
+    if (templateMeal) {
+      const nextUsedIds = [
+        ...recentUsedIds,
+        ...(templateMeal.items || []).map((item) => item.food_id).filter(Boolean),
+      ].slice(-8)
+
+      const nextSlotUsedNames = [
+        ...slotUsedNames,
+        ...(templateMeal.items || []).map((item) => item.name).filter(Boolean),
+      ].slice(-8)
+
+      const hasPreferredInMeal = (templateMeal.items || []).some((item) =>
+        preferredSet.has(item.food_id)
+      )
+
+      const nextPreferredIncludedCount =
+        preferredIncludedCount + (hasPreferredInMeal ? 1 : 0)
+
+      return {
+        items: templateMeal.items || [],
+        menu: templateMeal.menu || formatMealMenu(templateMeal.items || []),
+        guide_text: templateMeal.guide_text || '',
+        meal_detail_type: templateMeal.meal_detail_type || 'template',
+        kcal: Number(templateMeal.kcal || 0),
+        carbs_g: Number(templateMeal.carbs_g || 0),
+        protein_g: Number(templateMeal.protein_g || 0),
+        fat_g: Number(templateMeal.fat_g || 0),
+        sodium_mg: Number(templateMeal.sodium_mg || 0),
+        nextUsedIds,
+        nextSlotUsedNames,
+        nextPreferredIncludedCount,
+      }
+    }
+  }
+    const isLateNightSlot = slot === '야식'
+  const isMainMealSlot = ['아침', '점심', '저녁'].includes(slot)
+
+  const filteredFoodsForSlot = styleFilteredFoods.filter((food) => {
+    const name = String(food?.name || '').trim().toLowerCase()
+    const aliases = Array.isArray(food?.aliases)
+      ? food.aliases.map((item) => String(item || '').trim().toLowerCase())
+      : []
+    const tokens = [name, ...aliases]
+
+    const isProteinPowderLike =
+      tokens.some((token) => token.includes('프로틴')) ||
+      tokens.some((token) => token.includes('protein')) ||
+      tokens.some((token) => token.includes('파우더')) ||
+      tokens.some((token) => token.includes('쉐이크')) ||
+      tokens.some((token) => token.includes('shake'))
+
+    if (isMainMealSlot && isProteinPowderLike) {
+      return false
+    }
+
+    if (isLateNightSlot && String(food?.category_major || '').trim() === 'vegetable') {
+      return false
+    }
+
+    return true
+  })
   const config = getMealCategoryConfig(slot, goalType, dayType)
 
   const usedIds = new Set()
@@ -2668,7 +2895,7 @@ if (currentMealType === 'general') {
 
   if (shouldForcePreferred) {
     proteinFood = pickPreferredFoodFirst({
-     foods: styleFilteredFoods,
+    foods: filteredFoodsForSlot,
 preferredSet,
 blockedSet,
       categories: config.proteinCategories,
@@ -2683,7 +2910,7 @@ blockedSet,
 
     if (!proteinFood) {
       carbFood = pickPreferredFoodFirst({
-       foods: styleFilteredFoods,
+       foods: filteredFoodsForSlot,
 preferredSet,
 blockedSet,
         categories: config.carbCategories,
@@ -2699,7 +2926,7 @@ blockedSet,
 
     if (!proteinFood && !carbFood) {
       extraFood = pickPreferredFoodFirst({
-       foods: styleFilteredFoods,
+      foods: filteredFoodsForSlot,
 preferredSet,
 blockedSet,
         categories: config.extraCategories || [],
@@ -2720,7 +2947,7 @@ blockedSet,
 
   if (!carbFood) {
     carbFood = pickFood({
-  foods: styleFilteredFoods,
+ foods: filteredFoodsForSlot,
   preferredSet,
   blockedSet,
   categories: config.carbCategories,
@@ -2737,7 +2964,7 @@ blockedSet,
 
   if (!proteinFood) {
     proteinFood = pickFood({
-  foods: styleFilteredFoods,
+  foods: filteredFoodsForSlot,
   preferredSet,
   blockedSet,
   categories: config.proteinCategories,
@@ -2754,7 +2981,7 @@ blockedSet,
 
   if (!extraFood) {
     extraFood = pickFood({
-  foods: styleFilteredFoods,
+  foods: filteredFoodsForSlot,
   preferredSet,
   blockedSet,
   categories: config.extraCategories || [],
