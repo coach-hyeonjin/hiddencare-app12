@@ -4244,6 +4244,8 @@ const loadMealComplianceByMonth = async (memberId, monthValue) => {
   if (!mealPlanForm.member_id || !mealComplianceMonth) return
   loadMealComplianceByMonth(mealPlanForm.member_id, mealComplianceMonth)
 }, [mealPlanForm.member_id, mealComplianceMonth])
+
+  
   const getAdminMealPlanProgress = (plan) => {
   const meals = Array.isArray(plan?.meals_json) ? plan.meals_json : []
   const checks = Array.isArray(plan?.checked_slots) ? plan.checked_slots : []
@@ -4262,6 +4264,21 @@ const loadMealComplianceByMonth = async (memberId, monthValue) => {
     percent,
   }
 }
+const getMealDayTypeLabel = (dayType = '') => {
+  const value = String(dayType || '').trim()
+
+  const labelMap = {
+    diet: '기본 식단일',
+    general: '일반식 허용일',
+    free: '자유식 허용일',
+    alcohol: '음주 허용일',
+    training: '훈련일',
+    rest: '휴식일',
+  }
+
+  return labelMap[value] || value || '-'
+}
+  
 const handleMealPlanDelete = async (planId) => {
   if (!window.confirm('이 날짜 식단을 삭제할까요?')) return
 
@@ -15364,7 +15381,7 @@ const filteredExercisesAdvanced = exercises.filter((exercise) => {
                   <div className="list-card-top">
                     <strong>{plan.plan_date}</strong>
                    <div className="inline-actions wrap">
-  <span className="pill">{plan.day_type}</span>
+ <span className="pill">{getMealDayTypeLabel(plan.day_type)}</span>
   {specialMealLabel ? <span className="pill soft">{specialMealLabel}</span> : null}
 
                       <button
@@ -15631,7 +15648,7 @@ const filteredExercisesAdvanced = exercises.filter((exercise) => {
                         </div>
 
                         <div className="compact-text">
-                          유형: {plan.day_type || '-'} / 총 {plan.total_kcal || 0} kcal
+                         유형: {getMealDayTypeLabel(plan.day_type)} / 총 {plan.total_kcal || 0} kcal
                         </div>
                       </div>
                     )
