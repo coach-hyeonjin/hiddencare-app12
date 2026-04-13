@@ -3991,7 +3991,79 @@ const buildSingleMealPlan = ({
     nextPreferredIncludedCount: preferredIncludedCount,
   }
 }
+if (currentMealType === 'alcohol') {
+  const alcoholTemplate = pickMealTemplate({
+    slot,
+    foods: Array.isArray(foods) ? foods : [],
+    blockedSet,
+    dateString,
+    goalType,
+  })
 
+  if (alcoholTemplate) {
+    const templateMeal = buildMealPlanFromTemplate({
+      template: alcoholTemplate,
+      foods: Array.isArray(foods) ? foods : [],
+      targetCarbs,
+      targetProtein,
+      targetFat,
+      targetKcal,
+    })
+
+    if (templateMeal) {
+      const nextUsedIds = [
+        ...recentUsedIds,
+        ...(templateMeal.items || []).map((item) => item.food_id).filter(Boolean),
+      ].slice(-8)
+
+      const nextSlotUsedNames = [
+        ...slotUsedNames,
+        ...(templateMeal.items || []).map((item) => item.name).filter(Boolean),
+      ].slice(-8)
+
+      const hasPreferredInMeal = (templateMeal.items || []).some((item) =>
+        preferredSet.has(item.food_id)
+      )
+
+      const nextPreferredIncludedCount =
+        preferredIncludedCount + (hasPreferredInMeal ? 1 : 0)
+
+      return {
+        items: templateMeal.items || [],
+        menu: templateMeal.menu || formatMealMenu(templateMeal.items || []),
+        guide_text:
+          '음주 예정일입니다. 단백질 위주 안주 선택 + 탄수화물 과다 섭취 주의. 다음날 수분 섭취 충분히.',
+        kcal: Number(templateMeal.kcal || 0),
+        carbs_g: Number(templateMeal.carbs_g || 0),
+        protein_g: Number(templateMeal.protein_g || 0),
+        fat_g: Number(templateMeal.fat_g || 0),
+        sodium_mg: Number(templateMeal.sodium_mg || 0),
+        isAlcoholMeal: true,
+        meal_detail_type: 'alcohol',
+        nextUsedIds,
+        nextSlotUsedNames,
+        nextPreferredIncludedCount,
+      }
+    }
+  }
+
+  return {
+    items: [],
+    menu: '음주 예정',
+    guide_text:
+      '음주 시 안주는 단백질 위주(육류/생선) 선택, 튀김/탄수화물 과다 섭취 주의. 다음날 식단 복귀.',
+    kcal: Number(targetKcal || 0),
+    carbs_g: Number(targetCarbs || 0),
+    protein_g: Number(targetProtein || 0),
+    fat_g: Number(targetFat || 0),
+    sodium_mg: 0,
+    isAlcoholMeal: true,
+    meal_detail_type: 'alcohol',
+    nextUsedIds: recentUsedIds,
+    nextSlotUsedNames: slotUsedNames,
+    nextPreferredIncludedCount: preferredIncludedCount,
+  }
+}
   const styleFilteredFoods = (Array.isArray(foods) ? foods : []).filter((food) => {
     const major = String(food?.category_major || '').trim()
     const sourceType = String(food?.source_type || '').trim()
