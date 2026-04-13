@@ -20975,3 +20975,133 @@ textarea:focus {
 .stack-gap {
   gap: 20px;
 }
+.meal-quick-guide-card {
+  margin-bottom: 18px;
+  padding: 18px;
+  border: 1px solid #dbe2f0;
+  border-radius: 20px;
+  background: #f8fbff;
+}
+
+.meal-quick-guide-card h3 {
+  margin: 8px 0 14px;
+  font-size: 22px;
+  font-weight: 800;
+  color: #172033;
+}
+
+.meal-quick-guide-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 7px 12px;
+  border-radius: 999px;
+  background: rgba(98, 89, 255, 0.08);
+  color: #6259ff;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+}
+
+.meal-quick-guide-steps {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.meal-quick-guide-step {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  padding: 14px;
+  border-radius: 16px;
+  background: white;
+  border: 1px solid #e4eaf5;
+}
+
+.meal-quick-guide-step strong {
+  width: 30px;
+  height: 30px;
+  min-width: 30px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #6259ff;
+  color: white;
+  font-size: 14px;
+  font-weight: 800;
+}
+
+.meal-quick-guide-step p {
+  margin: 0 0 4px;
+  font-size: 15px;
+  font-weight: 800;
+  color: #172033;
+}
+
+.meal-quick-guide-step span {
+  display: block;
+  color: #6c7894;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.meal-quick-guide-tip {
+  margin-top: 14px;
+  padding: 12px 14px;
+  border-radius: 14px;
+  background: rgba(98, 89, 255, 0.06);
+  color: #4d5875;
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+.meal-form-section-title {
+  margin: 22px 0 12px;
+}
+
+.meal-form-section-title strong {
+  display: block;
+  margin-bottom: 4px;
+  font-size: 18px;
+  font-weight: 800;
+  color: #172033;
+}
+
+.meal-form-section-title p {
+  margin: 0;
+  color: #7a869f;
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+@media (max-width: 768px) {
+  .meal-quick-guide-card {
+    padding: 16px;
+    border-radius: 18px;
+  }
+
+  .meal-quick-guide-card h3 {
+    font-size: 19px;
+  }
+
+  .meal-quick-guide-steps {
+    grid-template-columns: 1fr;
+  }
+
+  .meal-quick-guide-step {
+    padding: 13px;
+  }
+
+  .meal-form-section-title {
+    margin: 18px 0 10px;
+  }
+
+  .meal-form-section-title strong {
+    font-size: 16px;
+  }
+
+  .meal-form-section-title p {
+    font-size: 13px;
+  }
+}
