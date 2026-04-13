@@ -1931,7 +1931,10 @@ const loadMemberMealPlanProfile = async (memberId) => {
     member_id: data.member_id || '',
     goal_type: data.goal_type || 'diet',
     meals_per_day: Number(data.meals_per_day || 3),
-    meal_slots: Array.isArray(data.meal_slots) ? data.meal_slots : buildMealSlotsByCount(data.meals_per_day),
+   meal_slots: getLifestyleMealSlots({
+  ...data,
+  meals_per_day: Number(data.meals_per_day || 3),
+}),
     activity_level: data.activity_level || 'light',
     training_days_per_week: Number(data.training_days_per_week || 3),
     training_time: data.training_time || 'evening',
@@ -3560,12 +3563,17 @@ useEffect(() => {
   if (!mealPlanForm.member_id || !mealPlanViewMonth) return
   loadMealPlansByMonth(mealPlanForm.member_id, mealPlanViewMonth)
 }, [mealPlanForm.member_id, mealPlanViewMonth])
+  
 useEffect(() => {
   setMealPlanForm((prev) => ({
     ...prev,
-    meal_slots: buildMealSlotsByCount(prev.meals_per_day),
+    meal_slots: getLifestyleMealSlots({
+      ...prev,
+      meals_per_day: Number(prev.meals_per_day || 3),
+    }),
   }))
 }, [mealPlanForm.meals_per_day])
+  
   const loadMealPlansByMonth = async (memberId, monthValue) => {
   if (!memberId || !monthValue) {
     setMemberMealPlans([])
