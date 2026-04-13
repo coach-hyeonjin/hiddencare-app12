@@ -1687,13 +1687,13 @@ const handleMealPlanSave = async () => {
   const preferredFoodIds = resolveFoodIdsByText(mealPlanForm.preferred_foods, foods)
   const excludedFoodIds = resolveFoodIdsByText(mealPlanForm.excluded_foods, foods)
   const allergyFoodIds = resolveFoodIdsByText(mealPlanForm.allergies, foods)
-
+  const finalMealSlots = getLifestyleMealSlots(mealPlanForm)
   const payload = {
     member_id: mealPlanForm.member_id,
     admin_id: currentAdminId || null,
     goal_type: mealPlanForm.goal_type,
     meals_per_day: Number(mealPlanForm.meals_per_day || 3),
-    meal_slots: mealPlanForm.meal_slots || ['아침', '점심', '저녁'],
+   meal_slots: finalMealSlots,
     activity_level: mealPlanForm.activity_level || 'light',
     training_days_per_week: Number(mealPlanForm.training_days_per_week || 3),
     training_time: mealPlanForm.training_time || 'evening',
@@ -2963,23 +2963,46 @@ const getMealAlternatives = (
   return result
 }
 const getLifestyleMealSlots = (form) => {
-  const baseSlots = Array.isArray(form?.meal_slots) && form.meal_slots.length
-    ? [...form.meal_slots]
-    : ['아침', '점심', '저녁']
+  const mealsPerDay = Number(form?.meals_per_day || 3)
+  const baseSlots = buildMealSlotsByCount(mealsPerDay)
 
-  const structuredMode = String(form?.meal_structure_mode || 'structured')
+  const mealStructureMode = String(form?.meal_structure_mode || 'structured')
   const snackFrequency = Number(form?.snack_frequency_per_week || 0)
   const lateNightFrequency = Number(form?.late_night_meal_frequency_per_week || 0)
 
   let nextSlots = [...baseSlots]
 
-  if (structuredMode !== 'structured' && snackFrequency >= 3 && !nextSlots.includes('간식')) {
-    nextSlots.splice(Math.min(2, nextSlots.length), 0, '간식')
+  // 4끼 기본 슬롯(아침/점심/간식/저녁)처럼 이미 간식이 포함된 경우는 유지
+  const hasBaseSnackSlot = baseSlots.includes('간식')
+
+  // structured가 아니고, 간식 빈도가 충분할 때만 간식 추가
+  if (!hasBaseSnackSlot) {
+    if (mealStructureMode !== 'structured' && snackFrequency >= 3) {
+      if (!nextSlots.includes('간식')) {
+        const dinnerIndex = nextSlots.indexOf('저녁')
+
+        if (dinnerIndex >= 0) {
+          nextSlots.splice(dinnerIndex, 0, '간식')
+        } else {
+          nextSlots.push('간식')
+        }
+      }
+    } else {
+      nextSlots = nextSlots.filter((slot) => slot !== '간식')
+    }
   }
 
-  if (lateNightFrequency >= 3 && !nextSlots.includes('야식')) {
-    nextSlots.push('야식')
+  // 야식은 조건 만족 시에만 추가, 아니면 제거
+  if (lateNightFrequency >= 3) {
+    if (!nextSlots.includes('야식')) {
+      nextSlots.push('야식')
+    }
+  } else {
+    nextSlots = nextSlots.filter((slot) => slot !== '야식')
   }
+
+  // 중복 제거
+  nextSlots = [...new Set(nextSlots)]
 
   return nextSlots
 }
@@ -14566,7 +14589,7 @@ const filteredExercisesAdvanced = exercises.filter((exercise) => {
     식단 설정 저장
   </button>
 
-  <button className="primary-btn" type="button" onClick={handleMealPlanGenerate}>
+  <button className="primary-btn" type="button" onClick={handleMealPlanMonthGenerate}>
   월간 식단 생성
 </button>
 </div>
