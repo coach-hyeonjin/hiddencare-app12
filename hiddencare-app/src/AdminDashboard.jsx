@@ -2717,97 +2717,97 @@ const buildSingleMealPlan = ({
   slotUsedNames = [],
   preferredIncludedCount = 0,
 }) => {
+  const currentMealType = mealType || 'normal'
+  const normalizedMealStyleType = String(mealStyleType || '').trim() || (
+    currentMealType === 'free'
+      ? 'eating_out'
+      : currentMealType === 'general'
+      ? 'general'
+      : 'diet'
+  )
 
-  // 🔥 식단 타입 분기 (핵심)
-const currentMealType = mealType || 'normal'
-const normalizedMealStyleType = String(mealStyleType || '').trim() || (
-  currentMealType === 'free'
-    ? 'eating_out'
-    : currentMealType === 'general'
-    ? 'general'
-    : 'diet'
-)
+  const isDietStyle = normalizedMealStyleType === 'diet'
+  const isGeneralStyle = normalizedMealStyleType === 'general'
+  const isEatingOutStyle = normalizedMealStyleType === 'eating_out'
 
-const isDietStyle = normalizedMealStyleType === 'diet'
-const isGeneralStyle = normalizedMealStyleType === 'general'
-const isEatingOutStyle = normalizedMealStyleType === 'eating_out'
-// 자유식이면 그대로 반환
-if (currentMealType === 'free') {
-  const freeGuide = buildFreeMealGuideText({
-    targetKcal,
-  })
+  if (currentMealType === 'free') {
+    const freeGuide = buildFreeMealGuideText({
+      targetKcal,
+    })
 
-  return {
-    items: [],
-    menu: freeGuide.label,
-    guide_text: freeGuide.text,
-    kcal: Number(targetKcal || 0),
-    carbs_g: Number(targetCarbs || 0),
-    protein_g: Number(targetProtein || 0),
-    fat_g: Number(targetFat || 0),
-    sodium_mg: 0,
-    isFreeMeal: true,
-    meal_detail_type: 'free',
-    nextUsedIds: recentUsedIds,
-    nextSlotUsedNames: slotUsedNames,
-    nextPreferredIncludedCount: preferredIncludedCount,
+    return {
+      items: [],
+      menu: freeGuide.label,
+      guide_text: freeGuide.text,
+      kcal: Number(targetKcal || 0),
+      carbs_g: Number(targetCarbs || 0),
+      protein_g: Number(targetProtein || 0),
+      fat_g: Number(targetFat || 0),
+      sodium_mg: 0,
+      isFreeMeal: true,
+      meal_detail_type: 'free',
+      nextUsedIds: recentUsedIds,
+      nextSlotUsedNames: slotUsedNames,
+      nextPreferredIncludedCount: preferredIncludedCount,
+    }
   }
-}
 
-if (currentMealType === 'general') {
-  const generalGuide = buildGeneralMealGuideText({
-    mealPlanForm,
-    slot,
-    dateString,
-    targetKcal,
-    targetCarbs,
-    targetProtein,
-    targetFat,
-  })
+  if (currentMealType === 'general') {
+    const generalGuide = buildGeneralMealGuideText({
+      mealPlanForm,
+      slot,
+      dateString,
+      targetKcal,
+      targetCarbs,
+      targetProtein,
+      targetFat,
+    })
 
-  return {
-    items: [],
-    menu: generalGuide.label,
-    guide_text: generalGuide.text,
-    kcal: Number(targetKcal || 0),
-    carbs_g: Number(targetCarbs || 0),
-    protein_g: Number(targetProtein || 0),
-    fat_g: Number(targetFat || 0),
-    sodium_mg: 0,
-    isGeneralMeal: true,
-    meal_detail_type: generalGuide.detailType,
-    nextUsedIds: recentUsedIds,
-    nextSlotUsedNames: slotUsedNames,
-    nextPreferredIncludedCount: preferredIncludedCount,
+    return {
+      items: [],
+      menu: generalGuide.label,
+      guide_text: generalGuide.text,
+      kcal: Number(targetKcal || 0),
+      carbs_g: Number(targetCarbs || 0),
+      protein_g: Number(targetProtein || 0),
+      fat_g: Number(targetFat || 0),
+      sodium_mg: 0,
+      isGeneralMeal: true,
+      meal_detail_type: generalGuide.detailType,
+      nextUsedIds: recentUsedIds,
+      nextSlotUsedNames: slotUsedNames,
+      nextPreferredIncludedCount: preferredIncludedCount,
+    }
   }
-}
+
   const styleFilteredFoods = (Array.isArray(foods) ? foods : []).filter((food) => {
-  const major = String(food?.category_major || '').trim()
-  const sourceType = String(food?.source_type || '').trim()
-  const kcalPer100g = Number(food?.kcal_per_100g || 0)
+    const major = String(food?.category_major || '').trim()
+    const sourceType = String(food?.source_type || '').trim()
+    const kcalPer100g = Number(food?.kcal_per_100g || 0)
 
-  if (blockedSet.has(food.id)) return false
+    if (blockedSet.has(food.id)) return false
 
-  if (isDietStyle) {
-    return (
-      ['carb', 'protein', 'vegetable', 'fruit', 'dairy', 'fat'].includes(major) &&
-      kcalPer100g <= 400
-    )
-  }
+    if (isDietStyle) {
+      return (
+        ['carb', 'protein', 'vegetable', 'fruit', 'dairy', 'fat'].includes(major) &&
+        kcalPer100g <= 400
+      )
+    }
 
-  if (isGeneralStyle) {
-    return ['carb', 'protein', 'vegetable', 'fruit', 'dairy', 'fat', 'mixed'].includes(major)
-  }
+    if (isGeneralStyle) {
+      return ['carb', 'protein', 'vegetable', 'fruit', 'dairy', 'fat', 'mixed'].includes(major)
+    }
 
-  if (isEatingOutStyle) {
-    return sourceType === 'mixed' || major === 'mixed' || ['carb', 'protein'].includes(major)
-  }
+    if (isEatingOutStyle) {
+      return sourceType === 'mixed' || major === 'mixed' || ['carb', 'protein'].includes(major)
+    }
 
-  return true
-})
-      const selectedTemplate = pickMealTemplate({
+    return true
+  })
+
+  const selectedTemplate = pickMealTemplate({
     slot,
-    foods: filteredFoodsForSlot,
+    foods: styleFilteredFoods,
     blockedSet,
     dateString,
   })
@@ -2815,7 +2815,7 @@ if (currentMealType === 'general') {
   if (selectedTemplate) {
     const templateMeal = buildMealPlanFromTemplate({
       template: selectedTemplate,
-      foods: filteredFoodsForSlot,
+      foods: styleFilteredFoods,
       targetCarbs,
       targetProtein,
       targetFat,
@@ -2856,7 +2856,8 @@ if (currentMealType === 'general') {
       }
     }
   }
-      const isLateNightSlot = slot === '야식'
+
+  const isLateNightSlot = slot === '야식'
   const isMainMealSlot = ['아침', '점심', '저녁'].includes(slot)
 
   const filteredFoodsForSlot = styleFilteredFoods.filter((food) => {
@@ -2883,10 +2884,10 @@ if (currentMealType === 'general') {
 
     return true
   })
+
   const config = getMealCategoryConfig(slot, goalType, dayType)
 
   const usedIds = new Set()
-
   const shouldForcePreferred = preferredSet.size > 0 && preferredIncludedCount < 1
 
   let carbFood = null
@@ -2895,9 +2896,9 @@ if (currentMealType === 'general') {
 
   if (shouldForcePreferred) {
     proteinFood = pickPreferredFoodFirst({
-    foods: filteredFoodsForSlot,
-preferredSet,
-blockedSet,
+      foods: filteredFoodsForSlot,
+      preferredSet,
+      blockedSet,
       categories: config.proteinCategories,
       goalType,
       dateString,
@@ -2910,9 +2911,9 @@ blockedSet,
 
     if (!proteinFood) {
       carbFood = pickPreferredFoodFirst({
-       foods: filteredFoodsForSlot,
-preferredSet,
-blockedSet,
+        foods: filteredFoodsForSlot,
+        preferredSet,
+        blockedSet,
         categories: config.carbCategories,
         goalType,
         dateString,
@@ -2926,9 +2927,9 @@ blockedSet,
 
     if (!proteinFood && !carbFood) {
       extraFood = pickPreferredFoodFirst({
-      foods: filteredFoodsForSlot,
-preferredSet,
-blockedSet,
+        foods: filteredFoodsForSlot,
+        preferredSet,
+        blockedSet,
         categories: config.extraCategories || [],
         goalType,
         dateString,
@@ -2947,52 +2948,52 @@ blockedSet,
 
   if (!carbFood) {
     carbFood = pickFood({
- foods: filteredFoodsForSlot,
-  preferredSet,
-  blockedSet,
-  categories: config.carbCategories,
-  goalType,
-  dateString,
-  slot,
-  offset,
-  usedIds,
-  recentUsedIds,
-  slotUsedNames,
-})
+      foods: filteredFoodsForSlot,
+      preferredSet,
+      blockedSet,
+      categories: config.carbCategories,
+      goalType,
+      dateString,
+      slot,
+      offset,
+      usedIds,
+      recentUsedIds,
+      slotUsedNames,
+    })
     if (carbFood) usedIds.add(carbFood.id)
   }
 
   if (!proteinFood) {
     proteinFood = pickFood({
-  foods: filteredFoodsForSlot,
-  preferredSet,
-  blockedSet,
-  categories: config.proteinCategories,
-  goalType,
-  dateString,
-  slot,
-  offset: offset + 1,
-  usedIds,
-  recentUsedIds,
-  slotUsedNames,
-})
+      foods: filteredFoodsForSlot,
+      preferredSet,
+      blockedSet,
+      categories: config.proteinCategories,
+      goalType,
+      dateString,
+      slot,
+      offset: offset + 1,
+      usedIds,
+      recentUsedIds,
+      slotUsedNames,
+    })
     if (proteinFood) usedIds.add(proteinFood.id)
   }
 
   if (!extraFood) {
     extraFood = pickFood({
-  foods: filteredFoodsForSlot,
-  preferredSet,
-  blockedSet,
-  categories: config.extraCategories || [],
-  goalType,
-  dateString,
-  slot,
-  offset: offset + 2,
-  usedIds,
-  recentUsedIds,
-  slotUsedNames,
-})
+      foods: filteredFoodsForSlot,
+      preferredSet,
+      blockedSet,
+      categories: config.extraCategories || [],
+      goalType,
+      dateString,
+      slot,
+      offset: offset + 2,
+      usedIds,
+      recentUsedIds,
+      slotUsedNames,
+    })
   }
 
   const mealItems = []
@@ -3051,67 +3052,67 @@ blockedSet,
   }
 
   let adjustedMealItems = [...mealItems]
-let summary = sumMealItems(adjustedMealItems)
+  let summary = sumMealItems(adjustedMealItems)
 
-if (Number(targetKcal || 0) > 0 && adjustedMealItems.length > 0) {
-  const lowerBound = Number(targetKcal) * 0.92
-  const upperBound = Number(targetKcal) * 1.08
+  if (Number(targetKcal || 0) > 0 && adjustedMealItems.length > 0) {
+    const lowerBound = Number(targetKcal) * 0.92
+    const upperBound = Number(targetKcal) * 1.08
 
-  let guard = 0
+    let guard = 0
 
-  while ((summary.kcal < lowerBound || summary.kcal > upperBound) && guard < 12) {
-    guard += 1
+    while ((summary.kcal < lowerBound || summary.kcal > upperBound) && guard < 12) {
+      guard += 1
 
-    const ratio = Number(targetKcal) / Math.max(1, Number(summary.kcal || 0))
+      const ratio = Number(targetKcal) / Math.max(1, Number(summary.kcal || 0))
 
-    adjustedMealItems = adjustedMealItems.map((item) => {
-      const nextGrams = clampNumber(
-        Math.round(Number(item.grams || 0) * ratio),
-        40,
-        260
-      )
+      adjustedMealItems = adjustedMealItems.map((item) => {
+        const nextGrams = clampNumber(
+          Math.round(Number(item.grams || 0) * ratio),
+          40,
+          260
+        )
 
-      return {
-        ...item,
-        grams: nextGrams,
-        kcal: Math.round((Number(item.kcal || 0) / Math.max(1, Number(item.grams || 1))) * nextGrams),
-        carbs_g: Math.round((Number(item.carbs_g || 0) / Math.max(1, Number(item.grams || 1))) * nextGrams),
-        protein_g: Math.round((Number(item.protein_g || 0) / Math.max(1, Number(item.grams || 1))) * nextGrams),
-        fat_g: Math.round((Number(item.fat_g || 0) / Math.max(1, Number(item.grams || 1))) * nextGrams),
-        sodium_mg: Math.round((Number(item.sodium_mg || 0) / Math.max(1, Number(item.grams || 1))) * nextGrams),
-      }
-    })
+        return {
+          ...item,
+          grams: nextGrams,
+          kcal: Math.round((Number(item.kcal || 0) / Math.max(1, Number(item.grams || 1))) * nextGrams),
+          carbs_g: Math.round((Number(item.carbs_g || 0) / Math.max(1, Number(item.grams || 1))) * nextGrams),
+          protein_g: Math.round((Number(item.protein_g || 0) / Math.max(1, Number(item.grams || 1))) * nextGrams),
+          fat_g: Math.round((Number(item.fat_g || 0) / Math.max(1, Number(item.grams || 1))) * nextGrams),
+          sodium_mg: Math.round((Number(item.sodium_mg || 0) / Math.max(1, Number(item.grams || 1))) * nextGrams),
+        }
+      })
 
-    summary = sumMealItems(adjustedMealItems)
+      summary = sumMealItems(adjustedMealItems)
+    }
   }
-}
 
-const nextUsedIds = [
-  ...recentUsedIds,
-  ...adjustedMealItems.map((item) => item.food_id).filter(Boolean),
-].slice(-8)
+  const nextUsedIds = [
+    ...recentUsedIds,
+    ...adjustedMealItems.map((item) => item.food_id).filter(Boolean),
+  ].slice(-8)
 
-const nextSlotUsedNames = [
-  ...slotUsedNames,
-  ...adjustedMealItems.map((item) => item.name).filter(Boolean),
-].slice(-8)
+  const nextSlotUsedNames = [
+    ...slotUsedNames,
+    ...adjustedMealItems.map((item) => item.name).filter(Boolean),
+  ].slice(-8)
 
-const hasPreferredInMeal = adjustedMealItems.some((item) => preferredSet.has(item.food_id))
-const nextPreferredIncludedCount = preferredIncludedCount + (hasPreferredInMeal ? 1 : 0)
+  const hasPreferredInMeal = adjustedMealItems.some((item) => preferredSet.has(item.food_id))
+  const nextPreferredIncludedCount = preferredIncludedCount + (hasPreferredInMeal ? 1 : 0)
 
-return {
-  items: adjustedMealItems,
-  menu: formatMealMenu(adjustedMealItems),
-  guide_text: '',
-  kcal: Math.round(summary.kcal),
-  carbs_g: Math.round(summary.carbs_g),
-  protein_g: Math.round(summary.protein_g),
-  fat_g: Math.round(summary.fat_g),
-  sodium_mg: Math.round(summary.sodium_mg),
-  nextUsedIds,
-  nextSlotUsedNames,
-  nextPreferredIncludedCount,
-}
+  return {
+    items: adjustedMealItems,
+    menu: formatMealMenu(adjustedMealItems),
+    guide_text: '',
+    kcal: Math.round(summary.kcal),
+    carbs_g: Math.round(summary.carbs_g),
+    protein_g: Math.round(summary.protein_g),
+    fat_g: Math.round(summary.fat_g),
+    sodium_mg: Math.round(summary.sodium_mg),
+    nextUsedIds,
+    nextSlotUsedNames,
+    nextPreferredIncludedCount,
+  }
 }
 
 const getRotatingMealExample = (
