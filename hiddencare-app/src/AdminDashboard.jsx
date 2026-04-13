@@ -5043,7 +5043,7 @@ const buildPlanStyleRecommendation = ({
   const currentMealPattern = String(mealPlanForm?.current_meal_pattern || 'mixed')
   const mealStructureMode = String(mealPlanForm?.meal_structure_mode || 'structured')
   const adaptationStrategy = String(mealPlanForm?.adaptation_strategy || 'gradual')
-
+ const dietMode = String(mealPlanForm?.diet_mode || 'balanced')
   const snackFrequency = Number(mealPlanForm?.snack_frequency_per_week || 0)
   const breadFrequency = Number(mealPlanForm?.bread_frequency_per_week || 0)
   const junkFrequency = Number(mealPlanForm?.junk_food_frequency_per_week || 0)
