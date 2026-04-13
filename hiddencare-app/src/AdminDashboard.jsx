@@ -4727,12 +4727,27 @@ const getLifestyleAdjustedDayPlan = ({
   strict: {
     key: 'strict',
     label: '집중형 · 식단식 중심',
-    summary: '감량 집중, 바디프로필, 대회 준비에 가까운 방식입니다.',
+    summary: '감량 집중, 바디프로필, 대회 준비 직전처럼 통제 강도가 높은 방식입니다.',
   },
   bulk: {
     key: 'bulk',
     label: '벌크업형 · 근성장 집중',
-    summary: '충분한 열량과 탄수화물을 확보하는 근성장 방식입니다.',
+    summary: '충분한 열량과 탄수화물을 확보하는 기본 벌크업 방식입니다.',
+  },
+  clean_bulk: {
+    key: 'clean_bulk',
+    label: '클린 벌크형 · 깔끔한 증량',
+    summary: '지방 증가를 너무 크게 가져가지 않으면서 깔끔하게 증량하는 방식입니다.',
+  },
+  bodybuilding: {
+    key: 'bodybuilding',
+    label: '보디빌딩형 · 반복 식단 중심',
+    summary: '메뉴 다양성보다 반복 가능성과 챙겨먹기 편한 구성에 집중하는 방식입니다.',
+  },
+  contest_prep: {
+    key: 'contest_prep',
+    label: '대회준비형 · 초정밀 식단',
+    summary: '식단 통제 강도와 반복성을 최대로 높이는 대회 준비용 방식입니다.',
   },
 }
 
@@ -4758,39 +4773,58 @@ const buildPlanStyleRecommendation = ({
   const reasons = []
   let recommendedKey = 'mixed'
 
-  if (goalType === 'bulk' || goalType === 'muscle_gain' || Number(targetKcal || 0) >= 2800) {
-    recommendedKey = 'bulk'
-    reasons.push('목표 열량이 높고 근성장 목적 비중이 큽니다.')
-  } else if (
-    adaptationStrategy === 'contest_prep' ||
-    (mealStructureMode === 'structured' &&
-      currentMealPattern === 'diet_ready' &&
-      allowedGeneralMeals <= 1 &&
-      allowedFreeMeals <= 1)
-  ) {
-    recommendedKey = 'strict'
-    reasons.push('식단 통제 강도가 높고 식단 적응도가 이미 높은 편입니다.')
-  } else if (
-    goalType === 'maintenance' &&
-    (currentMealPattern === 'general_heavy' || deliveryFrequency >= 3 || alcoholFrequency >= 1)
-  ) {
-    recommendedKey = 'maintenance'
-    reasons.push('체중 유지 목표이며 일반식과 외식 중심 패턴이 뚜렷합니다.')
-  } else if (
-    currentMealPattern === 'general_heavy' ||
-    snackFrequency >= 4 ||
-    breadFrequency >= 3 ||
-    junkFrequency >= 3 ||
-    deliveryFrequency >= 3 ||
-    lateNightFrequency >= 3 ||
-    alcoholFrequency >= 1
-  ) {
-    recommendedKey = 'mixed'
-    reasons.push('현재 식습관상 일반식과 외식을 완전히 배제하기 어렵습니다.')
-  } else {
-    recommendedKey = 'adaptive'
-    reasons.push('식단 적응을 시작하는 단계로 보는 것이 가장 자연스럽습니다.')
-  }
+if (
+  adaptationStrategy === 'contest_prep' ||
+  dietMode === 'contest' ||
+  (
+    mealStructureMode === 'structured' &&
+    currentMealPattern === 'diet_ready' &&
+    allowedGeneralMeals <= 1 &&
+    allowedFreeMeals <= 1
+  )
+) {
+  recommendedKey = 'contest_prep'
+  reasons.push('대회 준비처럼 식단 통제 강도와 반복성이 매우 높은 상태입니다.')
+} else if (
+  goalType === 'bulk' &&
+  mealStructureMode === 'structured' &&
+  currentMealPattern === 'diet_ready'
+) {
+  recommendedKey = 'bodybuilding'
+  reasons.push('벌크업이지만 반복 가능하고 챙겨먹기 쉬운 보디빌딩식 흐름이 더 적합합니다.')
+} else if (
+  (goalType === 'bulk' || goalType === 'muscle_gain') &&
+  Number(targetKcal || 0) >= 2800
+) {
+  recommendedKey = 'bulk'
+  reasons.push('목표 열량이 높고 근성장 목적 비중이 큽니다.')
+} else if (
+  (goalType === 'bulk' || goalType === 'muscle_gain') &&
+  currentMealPattern !== 'general_heavy'
+) {
+  recommendedKey = 'clean_bulk'
+  reasons.push('증량 목표이지만 너무 무거운 외식형보다 깔끔한 증량 흐름이 더 적합합니다.')
+} else if (
+  goalType === 'maintenance' &&
+  (currentMealPattern === 'general_heavy' || deliveryFrequency >= 3 || alcoholFrequency >= 1)
+) {
+  recommendedKey = 'maintenance'
+  reasons.push('체중 유지 목표이며 일반식과 외식 중심 패턴이 뚜렷합니다.')
+} else if (
+  currentMealPattern === 'general_heavy' ||
+  snackFrequency >= 4 ||
+  breadFrequency >= 3 ||
+  junkFrequency >= 3 ||
+  deliveryFrequency >= 3 ||
+  lateNightFrequency >= 3 ||
+  alcoholFrequency >= 1
+) {
+  recommendedKey = 'mixed'
+  reasons.push('현재 식습관상 일반식과 외식을 완전히 배제하기 어렵습니다.')
+} else {
+  recommendedKey = 'adaptive'
+  reasons.push('식단 적응을 시작하는 단계로 보는 것이 가장 자연스럽습니다.')
+}
 
   if (mealStructureMode === 'performance') {
     reasons.push('운동 수행을 고려해 너무 빡빡한 식단보다 지속 가능한 구성이 유리합니다.')
@@ -4868,8 +4902,34 @@ const getRandomDays = (totalDays, count) => {
     kcalOffset: 0.08,
     label: '벌크업형 · 근성장 집중',
   },
+  clean_bulk: {
+    mealRatio: {
+      diet: 0.72,
+      general: 0.2,
+      eating_out: 0.08,
+    },
+    kcalOffset: 0.06,
+    label: '클린 벌크형 · 깔끔한 증량',
+  },
+  bodybuilding: {
+    mealRatio: {
+      diet: 0.88,
+      general: 0.08,
+      eating_out: 0.04,
+    },
+    kcalOffset: 0.08,
+    label: '보디빌딩형 · 반복 식단 중심',
+  },
+  contest_prep: {
+    mealRatio: {
+      diet: 0.95,
+      general: 0.04,
+      eating_out: 0.01,
+    },
+    kcalOffset: -0.08,
+    label: '대회준비형 · 초정밀 식단',
+  },
 }
-
 const pickMealStyleType = (ratioConfig = {}) => {
   const dietWeight = Number(ratioConfig.diet || 0)
   const generalWeight = Number(ratioConfig.general || 0)
