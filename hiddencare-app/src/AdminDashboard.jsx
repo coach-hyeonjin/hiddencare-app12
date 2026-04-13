@@ -1796,6 +1796,162 @@ const buildMealSlotsByCount = (count) => {
 
   return mealSlotsMap[Number(count) || 3] || ['아침', '점심', '저녁']
 }
+
+const FOOD_MASTER_STARTER_ITEMS = [
+  {
+    name: '현미밥',
+    aliases: ['현미', '현미쌀밥'],
+    category_major: 'carb',
+    category_minor: 'rice',
+    source_type: 'plant',
+    kcal_per_100g: 149,
+    carbs_per_100g: 31,
+    protein_per_100g: 3,
+    fat_per_100g: 1,
+    saturated_fat_per_100g: 0,
+    unsaturated_fat_per_100g: 1,
+    sugar_per_100g: 0,
+    fiber_per_100g: 2,
+    sodium_mg_per_100g: 3,
+    typical_portion_g: 210,
+    tags: ['balanced', 'carb'],
+    note: '기본 탄수화물 소스',
+  },
+  {
+    name: '샐러드채소',
+    aliases: ['샐러드', '믹스샐러드', '야채샐러드'],
+    category_major: 'vegetable',
+    category_minor: 'salad',
+    source_type: 'plant',
+    kcal_per_100g: 20,
+    carbs_per_100g: 3,
+    protein_per_100g: 1,
+    fat_per_100g: 0,
+    saturated_fat_per_100g: 0,
+    unsaturated_fat_per_100g: 0,
+    sugar_per_100g: 1,
+    fiber_per_100g: 2,
+    sodium_mg_per_100g: 20,
+    typical_portion_g: 100,
+    tags: ['diet', 'vegetable'],
+    note: '샐러드용 채소 묶음 대표명',
+  },
+  {
+    name: '아몬드',
+    aliases: ['구운아몬드', '생아몬드'],
+    category_major: 'fat',
+    category_minor: 'nut',
+    source_type: 'plant',
+    kcal_per_100g: 579,
+    carbs_per_100g: 22,
+    protein_per_100g: 21,
+    fat_per_100g: 50,
+    saturated_fat_per_100g: 4,
+    unsaturated_fat_per_100g: 44,
+    sugar_per_100g: 4,
+    fiber_per_100g: 12,
+    sodium_mg_per_100g: 1,
+    typical_portion_g: 20,
+    tags: ['fat', 'snack'],
+    note: '간식/지방 보완용',
+  },
+  {
+    name: '블루베리',
+    aliases: ['냉동블루베리'],
+    category_major: 'fruit',
+    category_minor: 'berry',
+    source_type: 'plant',
+    kcal_per_100g: 57,
+    carbs_per_100g: 14,
+    protein_per_100g: 1,
+    fat_per_100g: 0,
+    saturated_fat_per_100g: 0,
+    unsaturated_fat_per_100g: 0,
+    sugar_per_100g: 10,
+    fiber_per_100g: 2,
+    sodium_mg_per_100g: 1,
+    typical_portion_g: 80,
+    tags: ['fruit', 'diet'],
+    note: '요거트/간식 조합용',
+  },
+  {
+    name: '우유',
+    aliases: ['흰우유', '일반우유'],
+    category_major: 'dairy',
+    category_minor: 'milk',
+    source_type: 'animal',
+    kcal_per_100g: 61,
+    carbs_per_100g: 5,
+    protein_per_100g: 3,
+    fat_per_100g: 3,
+    saturated_fat_per_100g: 2,
+    unsaturated_fat_per_100g: 1,
+    sugar_per_100g: 5,
+    fiber_per_100g: 0,
+    sodium_mg_per_100g: 43,
+    typical_portion_g: 200,
+    tags: ['dairy', 'balanced'],
+    note: '간식/야식/운동후 조합용',
+  },
+  {
+    name: '참치',
+    aliases: ['참치캔', '물참치'],
+    category_major: 'protein',
+    category_minor: 'fish_protein',
+    source_type: 'animal',
+    kcal_per_100g: 132,
+    carbs_per_100g: 0,
+    protein_per_100g: 29,
+    fat_per_100g: 1,
+    saturated_fat_per_100g: 0,
+    unsaturated_fat_per_100g: 1,
+    sugar_per_100g: 0,
+    fiber_per_100g: 0,
+    sodium_mg_per_100g: 300,
+    typical_portion_g: 100,
+    tags: ['high_protein', 'diet'],
+    note: '물참치 기준 시작값',
+  },
+  {
+    name: '현미떡',
+    aliases: ['현미가래떡', '현미떡국떡'],
+    category_major: 'carb',
+    category_minor: 'rice_cake',
+    source_type: 'plant',
+    kcal_per_100g: 227,
+    carbs_per_100g: 50,
+    protein_per_100g: 4,
+    fat_per_100g: 1,
+    saturated_fat_per_100g: 0,
+    unsaturated_fat_per_100g: 1,
+    sugar_per_100g: 0,
+    fiber_per_100g: 1,
+    sodium_mg_per_100g: 5,
+    typical_portion_g: 100,
+    tags: ['carb', 'snack'],
+    note: '간식/운동후 탄수화물용',
+  },
+  {
+    name: '아스파라거스',
+    aliases: ['아스파라거스구이'],
+    category_major: 'vegetable',
+    category_minor: 'green_vegetable',
+    source_type: 'plant',
+    kcal_per_100g: 20,
+    carbs_per_100g: 4,
+    protein_per_100g: 2,
+    fat_per_100g: 0,
+    saturated_fat_per_100g: 0,
+    unsaturated_fat_per_100g: 0,
+    sugar_per_100g: 2,
+    fiber_per_100g: 2,
+    sodium_mg_per_100g: 2,
+    typical_portion_g: 80,
+    tags: ['vegetable', 'diet'],
+    note: '저녁/점심 채소용',
+  },
+]
+  
 const loadFoodMaster = async () => {
   const { data, error } = await supabase
     .from('food_master')
@@ -1882,6 +2038,54 @@ const handleFoodMasterSave = async () => {
   handleFoodMasterCancelEdit()
   alert(editingFoodMasterId ? '음식 수정 완료' : '음식 등록 완료')
 }
+
+ const handleFoodMasterSeedInsert = async () => {
+  const confirmed = window.confirm(
+    'food_master에 기본 음식 1차 리스트를 등록할까요? 이미 있는 이름은 업데이트됩니다.'
+  )
+
+  if (!confirmed) return
+
+  setSavingFoodMaster(true)
+
+  const payload = FOOD_MASTER_STARTER_ITEMS.map((item) => ({
+    name: item.name,
+    category_major: String(item.category_major || '').trim(),
+    category_minor: String(item.category_minor || '').trim() || null,
+    source_type: String(item.source_type || '').trim() || null,
+    kcal_per_100g: Number(item.kcal_per_100g || 0),
+    carbs_per_100g: Number(item.carbs_per_100g || 0),
+    protein_per_100g: Number(item.protein_per_100g || 0),
+    fat_per_100g: Number(item.fat_per_100g || 0),
+    saturated_fat_per_100g: Number(item.saturated_fat_per_100g || 0),
+    unsaturated_fat_per_100g: Number(item.unsaturated_fat_per_100g || 0),
+    sugar_per_100g: Number(item.sugar_per_100g || 0),
+    fiber_per_100g: Number(item.fiber_per_100g || 0),
+    sodium_mg_per_100g: Number(item.sodium_mg_per_100g || 0),
+    typical_portion_g: Number(item.typical_portion_g || 0),
+    tags: Array.isArray(item.tags) ? item.tags : [],
+    aliases: Array.isArray(item.aliases) ? item.aliases : [],
+    note: String(item.note || '').trim(),
+    is_active: true,
+    is_common: true,
+  }))
+
+  const { error } = await supabase
+    .from('food_master')
+    .upsert(payload, { onConflict: 'name_normalized' })
+
+  setSavingFoodMaster(false)
+
+  if (error) {
+    console.error('food_master 기본 음식 등록 실패:', error)
+    alert(`food_master 기본 음식 등록 실패: ${error.message}`)
+    return
+  }
+
+  await loadFoodMaster()
+  alert('food_master 기본 음식 1차 등록 완료')
+} 
+  
   const handleFoodMasterDeactivate = async (food) => {
   if (!food?.id) return
 
@@ -15028,6 +15232,15 @@ const filteredExercisesAdvanced = exercises.filter((exercise) => {
       : '음식 등록'}
   </button>
 
+<button
+  type="button"
+  className="secondary-btn"
+  onClick={handleFoodMasterSeedInsert}
+  disabled={savingFoodMaster}
+>
+  기본 음식 1차 등록
+</button>
+          
   {editingFoodMasterId ? (
     <button
       type="button"
