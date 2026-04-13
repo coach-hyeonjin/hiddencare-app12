@@ -1322,19 +1322,36 @@ const handleMealPlanGenerate = async () => {
     .select('id')
     .single()
 
-  if (calcError) {
-    console.error('member_nutrition_calculations 저장 실패:', calcError)
+   if (calcError) {
+    console.error('member_nutrition_calculations 저장 실패 상세:', {
+      message: calcError.message,
+      details: calcError.details,
+      hint: calcError.hint,
+      code: calcError.code,
+      calcPayload,
+    })
   }
 
   const calculationId = calcInsert?.id || null
 
-  setMealPlanForm((prev) => ({
+   setMealPlanForm((prev) => ({
     ...prev,
     meal_slots: mealSlots,
     target_kcal: targetKcal,
     target_protein_g: targetProtein,
     target_fat_g: targetFat,
     target_carbs_g: targetCarbs,
+    calculated_bmr: bmr,
+    calculated_tdee: tdee,
+    calculated_activity_factor: activityFactor,
+    calculated_goal_adjustment_kcal: goalAdjustmentKcal,
+    calculated_bmr_source: bmrSource || '',
+    calculated_sex: health.sex || '',
+    calculated_age: age || '',
+    calculated_height_cm: height || '',
+    calculated_weight_kg: weight || '',
+    calculated_body_fat_percent: bodyFatPercent || '',
+    calculated_skeletal_muscle_mass: skeletalMuscleMass || '',
   }))
   const recommendation = buildPlanStyleRecommendation({
     mealPlanForm: {
@@ -16711,12 +16728,30 @@ const filteredExercisesAdvanced = exercises.filter((exercise) => {
   <>
     <div className="detail-box">
               <p><strong>자동 계산 결과</strong></p>
-              <p>하루 목표 열량: {mealPlanForm.target_kcal || 0} kcal</p>
-              <p>탄수화물: {mealPlanForm.target_carbs_g || 0} g</p>
-              <p>단백질: {mealPlanForm.target_protein_g || 0} g</p>
-              <p>지방: {mealPlanForm.target_fat_g || 0} g</p>
-              <p>식사 슬롯: {(mealPlanForm.meal_slots || []).join(' / ')}</p>
-            </div>
+<p>하루 목표 열량: {mealPlanForm.target_kcal || 0} kcal</p>
+<p>탄수화물: {mealPlanForm.target_carbs_g || 0} g</p>
+<p>단백질: {mealPlanForm.target_protein_g || 0} g</p>
+<p>지방: {mealPlanForm.target_fat_g || 0} g</p>
+<p>식사 슬롯: {(mealPlanForm.meal_slots || []).join(' / ')}</p>
+
+<div className="compact-text" style={{ marginTop: '10px' }}>
+  성별: {mealPlanForm.calculated_sex === 'female' ? '여성' : mealPlanForm.calculated_sex === 'male' ? '남성' : '-'}
+</div>
+<div className="compact-text">
+  나이: {mealPlanForm.calculated_age || '-'} / 키: {mealPlanForm.calculated_height_cm || '-'}cm / 체중: {mealPlanForm.calculated_weight_kg || '-'}kg
+</div>
+<div className="compact-text">
+  체지방률: {mealPlanForm.calculated_body_fat_percent || '-'} / 골격근량: {mealPlanForm.calculated_skeletal_muscle_mass || '-'}
+</div>
+<div className="compact-text">
+  BMR: {mealPlanForm.calculated_bmr || 0} kcal / 활동계수: {mealPlanForm.calculated_activity_factor || 0}
+</div>
+<div className="compact-text">
+  TDEE: {mealPlanForm.calculated_tdee || 0} kcal / 목표보정: {mealPlanForm.calculated_goal_adjustment_kcal || 0} kcal
+</div>
+<div className="compact-text">
+  BMR 계산 기준: {mealPlanForm.calculated_bmr_source || '-'}
+</div>
             {mealPlanRecommendation ? (
             <div className="detail-box" style={{ marginTop: '12px' }}>
               <p><strong>추천 식단 운영 방식</strong></p>
