@@ -3441,7 +3441,6 @@ const getTemplateGoalScore = ({
     score += carbCount * 2
   }
 
-  // 🔥 아침 역할: 너무 무겁지 않고 시작하기 쉬운 식사 우대
   if (slot === '아침') {
     if (hasOatmeal || hasYogurt || hasEgg || hasFruit) score += 3
     if (hasBeef) score -= 1
@@ -3449,7 +3448,6 @@ const getTemplateGoalScore = ({
     if (hasPowder) score -= goalType === 'bulk' || goalType === 'muscle_gain' ? 0 : 2
   }
 
-  // 🔥 점심 역할: 가장 일반적인 메인 식사 우대
   if (slot === '점심') {
     if (hasRice || hasMixedMeal) score += 3
     if (hasChicken || hasBeef || hasSalmon) score += 2
@@ -3458,7 +3456,6 @@ const getTemplateGoalScore = ({
     if (hasPowder) score -= 3
   }
 
-  // 🔥 저녁 역할: diet면 가볍게, bulk면 충분히
   if (slot === '저녁') {
     if (goalType === 'diet' || goalType === 'recomposition') {
       if (hasSweetPotato || hasVegetable || hasChicken || hasSalmon) score += 3
@@ -3473,21 +3470,18 @@ const getTemplateGoalScore = ({
     if (hasPowder) score -= 4
   }
 
-  // 🔥 간식 / 오전간식: 작고 간단한 조합 우대
   if (slot === '간식' || slot === '오전간식') {
     if (hasYogurt || hasFruit || hasEgg || hasMilk) score += 3
     if (hasRice || hasMixedMeal) score -= 4
     if (hasBeef) score -= 2
   }
 
-  // 🔥 운동후: 탄수 + 단백질 조합 최우선
   if (slot === '운동후') {
     if (hasPowder) score += 2
     if (hasRice || hasSweetPotato || hasBread || hasFruit) score += 3
     if (hasChicken || hasBeef || hasSalmon || hasMilk) score += 2
   }
 
-  // 🔥 야식: 가볍고 소화 쉬운 것만 우대
   if (slot === '야식') {
     if (hasRice) score -= 3
     if (hasBeef) score -= 3
@@ -3496,7 +3490,6 @@ const getTemplateGoalScore = ({
     if (hasSweetPotato) score += 1
   }
 
-  // 🔥 일반식 / 자유식 이름 보정
   const templateName = String(template?.name || '')
   if (templateName.includes('점심') && slot === '점심') score += 1
   if (templateName.includes('저녁') && slot === '저녁') score += 1
