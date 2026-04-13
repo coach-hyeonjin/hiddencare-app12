@@ -2840,7 +2840,90 @@ const buildMealPlanFromTemplate = ({
     sodium_mg: Math.round(summary.sodium_mg),
   }
 }
+const GENERAL_MEAL_GUIDE_MAP = {
+  balanced: {
+    label: '균형 식사',
+    description: '탄수화물, 단백질, 지방을 균형 있게 구성한 일반 식사입니다.',
+    guide: [
+      '탄수화물: 밥/고구마/빵 중 1',
+      '단백질: 고기/생선/계란 중 1',
+      '채소 1~2종 포함',
+    ],
+    examples: [
+      '백미밥 + 닭가슴살 + 브로콜리',
+      '고구마 + 계란 + 샐러드',
+    ],
+    caution: [
+      '튀김류 과다 섭취 주의',
+      '소스 과다 사용 주의',
+    ],
+  },
 
+  eating_out: {
+    label: '외식형 식사',
+    description: '외식 환경에서도 지킬 수 있는 식사 가이드입니다.',
+    guide: [
+      '단백질 위주 선택',
+      '밥/면은 70~80%만 섭취',
+    ],
+    examples: [
+      '제육볶음 + 밥 반공기',
+      '회덮밥 (밥 절반)',
+    ],
+    caution: [
+      '국물 섭취 최소화',
+      '튀김류는 주 1~2회 제한',
+    ],
+  },
+
+  simple: {
+    label: '간편식',
+    description: '빠르게 먹을 수 있는 간단한 식사입니다.',
+    guide: [
+      '단백질 포함 필수',
+      '당류 과다 주의',
+    ],
+    examples: [
+      '프로틴쉐이크 + 바나나',
+      '그릭요거트 + 과일',
+    ],
+    caution: [
+      '간편식만 반복 금지',
+    ],
+  },
+
+  diet: {
+    label: '다이어트 식단',
+    description: '체지방 감량 중심 식단입니다.',
+    guide: [
+      '고단백 유지',
+      '저지방 구성',
+    ],
+    examples: [
+      '닭가슴살 + 샐러드',
+      '연어 + 채소',
+    ],
+    caution: [
+      '탄수 너무 낮추지 말 것',
+    ],
+  },
+
+  social: {
+    label: '회식/술자리',
+    description: '사회적 식사 상황 대응 가이드입니다.',
+    guide: [
+      '단백질 먼저 섭취',
+      '술은 천천히',
+    ],
+    examples: [
+      '삼겹살 + 채소 위주',
+      '회 + 소주 소량',
+    ],
+    caution: [
+      '안주 폭식 주의',
+    ],
+  },
+}
 const getGeneralMealDetailType = ({
   mealPlanForm,
   slot,
