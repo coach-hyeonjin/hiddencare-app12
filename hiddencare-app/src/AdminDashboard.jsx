@@ -3296,6 +3296,181 @@ const getAdjustedTargetKcalByPlanStyle = (baseKcal = 0, planStyleKey = 'mixed') 
 
   return Math.round(Number(baseKcal || 0) * (1 + offset))
 }
+
+const buildMealPlanDayRow = ({
+  date,
+  dayNumber,
+  mealPlanForm,
+  foods,
+  preferredSet,
+  blockedSet,
+  generationMealSlots,
+  trainingDays,
+  planStyleEngine,
+  adjustedTargetKcal,
+  generalMealDaySet,
+  freeMealDaySet,
+  alcoholDaySet,
+  latestCalculationId,
+  currentAdminId,
+}) => {
+  const dayIndex = new Date(date).getDay()
+
+  const isTrainingDay =
+    trainingDays >= 5
+      ? ![0].includes(dayIndex)
+      : trainingDays >= 3
+      ? [1, 3, 5].includes(dayIndex)
+      : [2, 4].includes(dayIndex)
+
+  let dayType = 'diet'
+  const currentDayIndex = dayNumber - 1
+
+  if (generalMealDaySet.has(currentDayIndex)) {
+    dayType = 'general'
+  }
+
+  if (freeMealDaySet.has(currentDayIndex)) {
+    dayType = 'free'
+  }
+
+  if (alcoholDaySet.has(currentDayIndex)) {
+    dayType = 'alcohol'
+  }
+
+  const baseCarbs = Number(mealPlanForm.target_carbs_g || 0)
+  const baseProtein = Number(mealPlanForm.target_protein_g || 0)
+  const baseFat = Number(mealPlanForm.target_fat_g || 0)
+
+  const slotCount = Math.max(generationMealSlots.length, 1)
+
+  let dayRecentUsedIds = []
+  let daySlotUsedNames = []
+  let dayPreferredIncludedCount = 0
+
+  const mealStyleType = pickMealStyleType(planStyleEngine.mealRatio)
+
+  const effectiveTargetKcal = isTrainingDay
+    ? adjustedTargetKcal
+    : Math.round(adjustedTargetKcal * 0.95)
+
+  const adjustedDayPlan = getLifestyleAdjustedDayPlan({
+    mealPlanForm,
+    isTrainingDay,
+    dayType,
+    baseKcal: effectiveTargetKcal,
+    totalCarbs: baseCarbs,
+    totalProtein: baseProtein,
+    totalFat: baseFat,
+  })
+
+  const mealsJson = generationMealSlots.map((slot) => {
+    const slotTarget = {
+      carbs_g: Math.round(adjustedDayPlan.carbs / slotCount),
+      protein_g: Math.round(adjustedDayPlan.protein / slotCount),
+      fat_g: Math.round(adjustedDayPlan.fat / slotCount),
+    }
+
+    const mealResult = getRotatingMealExample(
+      mealPlanForm.goal_type,
+      slot,
+      dayType,
+      mealStyleType,
+      date,
+      { preferredSet, blockedSet },
+      foods,
+      slotTarget,
+      dayRecentUsedIds,
+      daySlotUsedNames,
+      dayPreferredIncludedCount
+    )
+
+    dayRecentUsedIds = Array.isArray(mealResult?.nextUsedIds)
+      ? mealResult.nextUsedIds
+      : dayRecentUsedIds
+
+    daySlotUsedNames = Array.isArray(mealResult?.nextSlotUsedNames)
+      ? mealResult.nextSlotUsedNames
+      : daySlotUsedNames
+
+    dayPreferredIncludedCount = Number(
+      mealResult?.nextPreferredIncludedCount || dayPreferredIncludedCount
+    )
+
+    const alternatives = getMealAlternatives(
+      mealPlanForm.goal_type,
+      slot,
+      dayType,
+      mealStyleType,
+      date,
+      2,
+      { preferredSet, blockedSet },
+      foods,
+      slotTarget,
+      dayRecentUsedIds,
+      daySlotUsedNames
+    )
+
+    return {
+      slot,
+      meal_style_type: mealStyleType,
+      meal_detail_type: mealResult?.meal_detail_type || '',
+      guide_text: mealResult?.guide_text || '',
+      time:
+        slot === '아침'
+          ? '08:00'
+          : slot === '오전간식'
+          ? '10:30'
+          : slot === '점심'
+          ? '12:30'
+          : slot === '운동후'
+          ? '16:30'
+          : slot === '간식'
+          ? '16:30'
+          : slot === '야식'
+          ? '21:30'
+          : '19:30',
+      menu: buildMealMenuLabel(mealResult.items || [], slot),
+      alternatives,
+      food_items: mealResult.items || [],
+      carbs_g: Number(mealResult.carbs_g || 0),
+      protein_g: Number(mealResult.protein_g || 0),
+      fat_g: Number(mealResult.fat_g || 0),
+      kcal: Number(mealResult.kcal || 0),
+      sodium_mg: Number(mealResult.sodium_mg || 0),
+    }
+  })
+
+  const mealsSummaryJson = mealsJson.map((meal) => ({
+    slot: meal.slot,
+    menu: meal.menu,
+    guide_text: meal.guide_text || '',
+    meal_detail_type: meal.meal_detail_type || '',
+    kcal: meal.kcal,
+    carbs_g: meal.carbs_g,
+    protein_g: meal.protein_g,
+    fat_g: meal.fat_g,
+    sodium_mg: meal.sodium_mg,
+  }))
+
+  return {
+    member_id: mealPlanForm.member_id,
+    admin_id: currentAdminId || null,
+    plan_date: date,
+    day_type: dayType,
+    total_kcal: adjustedDayPlan.kcal,
+    total_carbs_g: adjustedDayPlan.carbs,
+    total_protein_g: adjustedDayPlan.protein,
+    total_fat_g: adjustedDayPlan.fat,
+    meals_json: mealsJson,
+    meals_summary_json: mealsSummaryJson,
+    coach_memo: mealPlanForm.notes || '',
+    checked_slots: [],
+    is_checked: false,
+    calculation_id: latestCalculationId,
+    generation_version: 'v2_food_engine',
+  }
+}
   
 const handleMealPlanMonthGenerate = async () => {
   if (!mealPlanForm.member_id) {
@@ -3331,8 +3506,7 @@ const freeMealDays = getRandomDays(daysInMonth, Number(mealPlanForm.allowed_free
 const snackDays = getRandomDays(daysInMonth, Number(mealPlanForm.allowed_snacks_per_week || 0))
 const alcoholDays = getRandomDays(daysInMonth, Number(mealPlanForm.allowed_alcohol_per_week || 0))
 
-  const snackDaySet = new Set(snackDays)
-const alcoholDaySet = new Set(alcoholDays)
+ const alcoholDaySet = new Set(alcoholDays)
 const generalMealDaySet = new Set(generalMealDays)
 const freeMealDaySet = new Set(freeMealDays)
   
@@ -3366,153 +3540,28 @@ const freeMealDaySet = new Set(freeMealDays)
   const rows = []
 const generationMealSlots = getLifestyleMealSlots(mealPlanForm)
   for (let day = 1; day <= daysInMonth; day += 1) {
-    const date = `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`
+  const date = `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`
 
-    const dayIndex = new Date(date).getDay()
-
-    const isTrainingDay =
-      trainingDays >= 5
-        ? ![0].includes(dayIndex)
-        : trainingDays >= 3
-        ? [1, 3, 5].includes(dayIndex)
-        : [2, 4].includes(dayIndex)
-
-   const baseKcal = Number(mealPlanForm.target_kcal || 0)
-const baseCarbs = Number(mealPlanForm.target_carbs_g || 0)
-const baseProtein = Number(mealPlanForm.target_protein_g || 0)
-const baseFat = Number(mealPlanForm.target_fat_g || 0)
-
-const slotCount = generationMealSlots.length || 1
-
-   let dayRecentUsedIds = []
-let daySlotUsedNames = []
-let dayType = 'diet'
-const currentDayIndex = day - 1
-
-if (generalMealDaySet.has(currentDayIndex)) {
-  dayType = 'general'
-}
-
-if (freeMealDaySet.has(currentDayIndex)) {
-  dayType = 'free'
-}
-
-if (alcoholDaySet.has(currentDayIndex)) {
-  dayType = 'alcohol'
-}
-    
-        const mealStyleType = pickMealStyleType(planStyleEngine.mealRatio)
-
-    const effectiveTargetKcal = isTrainingDay
-  ? adjustedTargetKcal
-  : Math.round(adjustedTargetKcal * 0.95)
-
-    
-const adjustedDayPlan = getLifestyleAdjustedDayPlan({
-  mealPlanForm,
-  isTrainingDay,
-  dayType,
-  baseKcal: effectiveTargetKcal,
-  totalCarbs: baseCarbs,
-  totalProtein: baseProtein,
-  totalFat: baseFat,
-})
-
-let dayPreferredIncludedCount = 0
-const mealsJson = generationMealSlots.map((slot) => {
-  const slotTarget = {
-  carbs_g: Math.round(adjustedDayPlan.carbs / slotCount),
-  protein_g: Math.round(adjustedDayPlan.protein / slotCount),
-  fat_g: Math.round(adjustedDayPlan.fat / slotCount),
-}
-
-  const mealResult = getRotatingMealExample(
-    mealPlanForm.goal_type,
-    slot,
-    dayType,
-   mealStyleType, 
+  const row = buildMealPlanDayRow({
     date,
-    { preferredSet, blockedSet },
+    dayNumber: day,
+    mealPlanForm,
     foods,
-    slotTarget,
-    dayRecentUsedIds,
-    daySlotUsedNames,
-    dayPreferredIncludedCount
-  )
+    preferredSet,
+    blockedSet,
+    generationMealSlots,
+    trainingDays,
+    planStyleEngine,
+    adjustedTargetKcal,
+    generalMealDaySet,
+    freeMealDaySet,
+    alcoholDaySet,
+    latestCalculationId,
+    currentAdminId,
+  })
 
-  dayRecentUsedIds = Array.isArray(mealResult?.nextUsedIds) ? mealResult.nextUsedIds : dayRecentUsedIds
-  daySlotUsedNames = Array.isArray(mealResult?.nextSlotUsedNames) ? mealResult.nextSlotUsedNames : daySlotUsedNames
-dayPreferredIncludedCount = Number(mealResult?.nextPreferredIncludedCount || dayPreferredIncludedCount)
-  
-  const alternatives = getMealAlternatives(
-    mealPlanForm.goal_type,
-    slot,
-    dayType,
-    mealStyleType,
-    date,
-    2,
-    { preferredSet, blockedSet },
-    foods,
-    slotTarget,
-    dayRecentUsedIds,
-    daySlotUsedNames
-  )
-
-  return {
-    slot,
-     meal_style_type: mealStyleType,
-    time:
-      slot === '아침'
-        ? '08:00'
-        : slot === '오전간식'
-        ? '10:30'
-        : slot === '점심'
-        ? '12:30'
-        : slot === '운동후'
-        ? '16:30'
-        : slot === '간식'
-        ? '16:30'
-        : '19:30',
-    menu: buildMealMenuLabel(mealResult.items || [], slot),
-    alternatives,
-    food_items: mealResult.items || [],
-    carbs_g: Number(mealResult.carbs_g || 0),
-    protein_g: Number(mealResult.protein_g || 0),
-    fat_g: Number(mealResult.fat_g || 0),
-    kcal: Number(mealResult.kcal || 0),
-    sodium_mg: Number(mealResult.sodium_mg || 0),
-  }
-})
-
-    const mealsSummaryJson = mealsJson.map((meal) => ({
-      slot: meal.slot,
-      menu: meal.menu,
-      guide_text: meal.guide_text || '',
-      kcal: meal.kcal,
-      carbs_g: meal.carbs_g,
-      protein_g: meal.protein_g,
-      fat_g: meal.fat_g,
-      sodium_mg: meal.sodium_mg,
-    }))
-
-    rows.push({
-      member_id: mealPlanForm.member_id,
-      admin_id: currentAdminId || null,
-      plan_date: date,
-      day_type: dayType,
-      total_kcal: adjustedDayPlan.kcal,
-total_carbs_g: adjustedDayPlan.carbs,
-total_protein_g: adjustedDayPlan.protein,
-total_fat_g: adjustedDayPlan.fat,
-      meals_json: mealsJson,
-      meals_summary_json: mealsSummaryJson,
-      coach_memo: mealPlanForm.notes || '',
-      checked_slots: [],
-      is_checked: false,
-      calculation_id: latestCalculationId,
-      generation_version: 'v2_food_engine',
-    })
-  }
+  rows.push(row)
+}
 
   const { error } = await supabase
     .from('member_meal_plans')
