@@ -3466,10 +3466,39 @@ const pickMealTemplate = ({
 
     if (!templateFoods.length) return false
 
-    return templateFoods.every((foodName) => {
+    const isValid = templateFoods.every((foodName) => {
       const matchedFood = findFoodByTemplateName(foods, foodName)
       return matchedFood && !blockedSet.has(matchedFood.id)
     })
+
+    if (!isValid) return false
+
+    const templateName = String(template?.name || '').toLowerCase()
+
+    if (goalType === 'diet') {
+      return !(
+        templateName.includes('버거') ||
+        templateName.includes('피자') ||
+        templateName.includes('파스타') ||
+        templateName.includes('튀김')
+      )
+    }
+
+    if (goalType === 'bulk' || goalType === 'muscle_gain') {
+      return (
+        templateName.includes('밥') ||
+        templateName.includes('파스타') ||
+        templateName.includes('베이글') ||
+        templateName.includes('식빵') ||
+        templateName.includes('덮밥')
+      )
+    }
+
+    if (goalType === 'maintenance') {
+      return true
+    }
+
+    return true
   })
 
   if (!availableTemplates.length) return null
