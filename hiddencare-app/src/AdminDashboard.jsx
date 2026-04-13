@@ -1285,13 +1285,13 @@ const handleMealPlanGenerate = async () => {
 
   const tdee = Math.round(bmr * activityFactor)
 
-  const goalAdjustmentMap = {
-    diet: -300,
-    recomposition: -150,
-    maintenance: 0,
-    muscle_gain: 150,
-    bulk: 300,
-  }
+ const goalAdjustmentPercentMap = {
+  diet: -0.15,
+  recomposition: -0.08,
+  maintenance: 0,
+  muscle_gain: 0.1,
+  bulk: 0.15,
+}
 
   const proteinMultiplierMap = {
     diet: 2.0,
@@ -1309,8 +1309,9 @@ const handleMealPlanGenerate = async () => {
     bulk: 0.9,
   }
 
-  const goalAdjustmentKcal = Number(goalAdjustmentMap[goalType] || 0)
-  const targetKcal = Math.max(1200, Math.round(tdee + goalAdjustmentKcal))
+  const goalAdjustmentPercent = Number(goalAdjustmentPercentMap[goalType] || 0)
+const goalAdjustmentKcal = Math.round(tdee * goalAdjustmentPercent)
+const targetKcal = Math.max(1200, Math.round(tdee * (1 + goalAdjustmentPercent)))
   const targetProtein = Math.max(60, Math.round(weight * Number(proteinMultiplierMap[goalType] || 1.8)))
   const targetFat = Math.max(30, Math.round(weight * Number(fatMultiplierMap[goalType] || 0.8)))
   const targetCarbs = Math.max(
