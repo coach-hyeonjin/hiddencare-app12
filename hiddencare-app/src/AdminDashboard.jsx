@@ -3393,7 +3393,6 @@ const getTemplateGoalScore = ({
   const dairyCount = Number(categoryCounts.dairy || 0)
   const fruitCount = Number(categoryCounts.fruit || 0)
   const vegetableCount = Number(categoryCounts.vegetable || 0)
-  const fatCount = Number(categoryCounts.fat || 0)
   const mixedCount = Number(categoryCounts.mixed || 0)
 
   const hasRice = names.some((name) => name.includes('밥'))
