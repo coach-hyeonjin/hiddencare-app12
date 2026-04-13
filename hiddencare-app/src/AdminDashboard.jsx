@@ -3602,7 +3602,19 @@ const buildMealPlanFromTemplate = ({
 
   if (!matchedFoods.length) return null
 
-  const foodItems = matchedFoods.map((food, index) => {
+  const isHighCalorieTarget = Number(targetKcal || 0) >= 700
+
+  const getCategoryMaxGrams = (category) => {
+    if (category === 'carb') return isHighCalorieTarget ? 420 : 300
+    if (category === 'protein') return isHighCalorieTarget ? 280 : 220
+    if (category === 'dairy') return isHighCalorieTarget ? 300 : 240
+    if (category === 'fat') return 50
+    if (category === 'fruit') return isHighCalorieTarget ? 250 : 180
+    if (category === 'vegetable') return 180
+    return isHighCalorieTarget ? 280 : 220
+  }
+
+  const draftItems = matchedFoods.map((food) => {
     const category = String(food?.category_major || '').trim()
     let grams = Number(food?.typical_portion_g || 100)
 
@@ -3610,73 +3622,129 @@ const buildMealPlanFromTemplate = ({
       grams = calcPortionByMacro({
         food,
         macroKey: 'carbs_per_100g',
-        targetGrams: Math.max(12, Math.round(Number(targetCarbs || 0) / Math.max(matchedFoods.length, 1)) * 1.4),
-        fallbackGrams: food?.typical_portion_g || 120,
-        minGrams: 60,
-        maxGrams: 260,
+        targetGrams: Math.max(
+          15,
+          Math.round(Number(targetCarbs || 0) / Math.max(matchedFoods.length, 1)) *
+            (isHighCalorieTarget ? 1.8 : 1.4)
+        ),
+        fallbackGrams: food?.typical_portion_g || 150,
+        minGrams: isHighCalorieTarget ? 100 : 60,
+        maxGrams: getCategoryMaxGrams(category),
       })
     } else if (category === 'protein' || category === 'dairy') {
       grams = calcPortionByMacro({
         food,
         macroKey: 'protein_per_100g',
-        targetGrams: Math.max(10, Math.round(Number(targetProtein || 0) / Math.max(matchedFoods.length, 1)) * 1.4),
-        fallbackGrams: food?.typical_portion_g || 120,
-        minGrams: category === 'dairy' ? 80 : 70,
-        maxGrams: category === 'dairy' ? 220 : 240,
+        targetGrams: Math.max(
+          12,
+          Math.round(Number(targetProtein || 0) / Math.max(matchedFoods.length, 1)) *
+            (isHighCalorieTarget ? 1.55 : 1.35)
+        ),
+        fallbackGrams: food?.typical_portion_g || 140,
+        minGrams: category === 'dairy' ? 100 : 90,
+        maxGrams: getCategoryMaxGrams(category),
       })
     } else if (category === 'fat') {
       grams = calcPortionByMacro({
         food,
         macroKey: 'fat_per_100g',
-        targetGrams: Math.max(5, Math.round(Number(targetFat || 0) / Math.max(matchedFoods.length, 1)) * 1.2),
+        targetGrams: Math.max(
+          5,
+          Math.round(Number(targetFat || 0) / Math.max(matchedFoods.length, 1)) * 1.25
+        ),
         fallbackGrams: food?.typical_portion_g || 20,
         minGrams: 10,
-        maxGrams: 40,
+        maxGrams: getCategoryMaxGrams(category),
       })
     } else if (category === 'fruit') {
-      grams = clampNumber(food?.typical_portion_g || 100, 60, 180)
+      grams = clampNumber(food?.typical_portion_g || 120, 80, getCategoryMaxGrams(category))
     } else if (category === 'vegetable') {
-      grams = clampNumber(food?.typical_portion_g || 80, 50, 150)
+      grams = clampNumber(food?.typical_portion_g || 100, 70, getCategoryMaxGrams(category))
     } else {
-      grams = clampNumber(food?.typical_portion_g || 100, 60, 220)
+      grams = clampNumber(food?.typical_portion_g || 120, 80, getCategoryMaxGrams(category))
     }
 
-    return buildMealFoodItem(food, grams)
+    return {
+      food,
+      category,
+      grams: Math.round(grams),
+    }
   })
 
-  let adjustedFoodItems = [...foodItems]
+  const materializeItems = (items) =>
+    items.map(({ food, grams, category }) => ({
+      ...buildMealFoodItem(food, grams),
+      category_major: category,
+    }))
+
+  let workingDraftItems = [...draftItems]
+  let adjustedFoodItems = materializeItems(workingDraftItems)
   let summary = sumMealItems(adjustedFoodItems)
 
   if (Number(targetKcal || 0) > 0 && adjustedFoodItems.length > 0) {
-    const lowerBound = Number(targetKcal) * 0.9
-    const upperBound = Number(targetKcal) * 1.1
+    const lowerBound = Number(targetKcal) * 0.92
+    const upperBound = Number(targetKcal) * 1.08
 
     let guard = 0
 
-    while ((summary.kcal < lowerBound || summary.kcal > upperBound) && guard < 10) {
+    while ((summary.kcal < lowerBound || summary.kcal > upperBound) && guard < 12) {
       guard += 1
-
       const ratio = Number(targetKcal) / Math.max(1, Number(summary.kcal || 0))
 
-      adjustedFoodItems = adjustedFoodItems.map((item) => {
+      workingDraftItems = workingDraftItems.map((draft) => {
         const nextGrams = clampNumber(
-          Math.round(Number(item.grams || 0) * ratio),
-          40,
-          260
+          Math.round(Number(draft.grams || 0) * ratio),
+          draft.category === 'fat' ? 10 : 60,
+          getCategoryMaxGrams(draft.category)
         )
 
         return {
-          ...item,
+          ...draft,
           grams: nextGrams,
-          kcal: Math.round((Number(item.kcal || 0) / Math.max(1, Number(item.grams || 1))) * nextGrams),
-          carbs_g: Math.round((Number(item.carbs_g || 0) / Math.max(1, Number(item.grams || 1))) * nextGrams),
-          protein_g: Math.round((Number(item.protein_g || 0) / Math.max(1, Number(item.grams || 1))) * nextGrams),
-          fat_g: Math.round((Number(item.fat_g || 0) / Math.max(1, Number(item.grams || 1))) * nextGrams),
-          sodium_mg: Math.round((Number(item.sodium_mg || 0) / Math.max(1, Number(item.grams || 1))) * nextGrams),
         }
       })
 
+      adjustedFoodItems = materializeItems(workingDraftItems)
       summary = sumMealItems(adjustedFoodItems)
+    }
+
+    if (summary.kcal < lowerBound) {
+      let fillGuard = 0
+
+      while (summary.kcal < lowerBound && fillGuard < 20) {
+        fillGuard += 1
+
+        workingDraftItems = workingDraftItems.map((draft) => {
+          const maxGrams = getCategoryMaxGrams(draft.category)
+          let addGrams = 0
+
+          if (draft.category === 'carb') {
+            addGrams = isHighCalorieTarget ? 35 : 20
+          } else if (draft.category === 'protein') {
+            addGrams = isHighCalorieTarget ? 25 : 15
+          } else if (draft.category === 'dairy') {
+            addGrams = isHighCalorieTarget ? 30 : 20
+          } else if (draft.category === 'fat') {
+            addGrams = 5
+          } else if (draft.category === 'fruit') {
+            addGrams = 20
+          }
+
+          if (addGrams <= 0) return draft
+
+          return {
+            ...draft,
+            grams: clampNumber(
+              Number(draft.grams || 0) + addGrams,
+              draft.category === 'fat' ? 10 : 60,
+              maxGrams
+            ),
+          }
+        })
+
+        adjustedFoodItems = materializeItems(workingDraftItems)
+        summary = sumMealItems(adjustedFoodItems)
+      }
     }
   }
 
