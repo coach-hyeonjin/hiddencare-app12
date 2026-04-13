@@ -5113,16 +5113,32 @@ const buildMealPlanDayRow = ({
     fat_g: meal.fat_g,
     sodium_mg: meal.sodium_mg,
   }))
-
+const actualDayTotals = mealsJson.reduce(
+  (acc, meal) => {
+    acc.kcal += Number(meal.kcal || 0)
+    acc.carbs_g += Number(meal.carbs_g || 0)
+    acc.protein_g += Number(meal.protein_g || 0)
+    acc.fat_g += Number(meal.fat_g || 0)
+    acc.sodium_mg += Number(meal.sodium_mg || 0)
+    return acc
+  },
+  {
+    kcal: 0,
+    carbs_g: 0,
+    protein_g: 0,
+    fat_g: 0,
+    sodium_mg: 0,
+  }
+)
   return {
     member_id: mealPlanForm.member_id,
     admin_id: currentAdminId || null,
     plan_date: date,
     day_type: dayType,
-    total_kcal: adjustedDayPlan.kcal,
-    total_carbs_g: adjustedDayPlan.carbs,
-    total_protein_g: adjustedDayPlan.protein,
-    total_fat_g: adjustedDayPlan.fat,
+    total_kcal: Math.round(actualDayTotals.kcal),
+total_carbs_g: Math.round(actualDayTotals.carbs_g),
+total_protein_g: Math.round(actualDayTotals.protein_g),
+total_fat_g: Math.round(actualDayTotals.fat_g),
     meals_json: mealsJson,
     meals_summary_json: mealsSummaryJson,
     coach_memo: mealPlanForm.notes || '',
