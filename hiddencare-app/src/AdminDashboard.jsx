@@ -1266,63 +1266,25 @@ const handleMealPlanGenerate = async () => {
     return
   }
 
-  const defaultActivityFactor = getActivityFactorByLevel(mealPlanForm.activity_level)
-  const activityFactor =
-    Number(health.activity_factor || 0) > 0
-      ? Number(health.activity_factor)
-      : defaultActivityFactor
+    const calculatedTargets = calculateMealTargetsFromHealth({
+    goalType,
+    health,
+    mealPlanForm,
+  })
 
-  let bmr = Number(health.bmr || 0)
+  const activityFactor = calculatedTargets.activityFactor
+  const bmr = calculatedTargets.bmr
+  const tdee = calculatedTargets.tdee
+  const goalAdjustmentKcal = calculatedTargets.goalAdjustmentKcal
+  const targetKcal = calculatedTargets.targetKcal
+  const targetProtein = calculatedTargets.targetProtein
+  const targetFat = calculatedTargets.targetFat
+  const targetCarbs = calculatedTargets.targetCarbs
 
-  if (!bmr) {
-    if (weight > 0 && height > 0 && age > 0 && (sex === 'male' || sex === 'female')) {
-      const base = 10 * weight + 6.25 * height - 5 * age
-      bmr = Math.round(sex === 'male' ? base + 5 : base - 161)
-    } else {
-      bmr = Math.round(weight * 22)
-    }
-  }
-
-  const tdee = Math.round(bmr * activityFactor)
-
- const goalAdjustmentPercentMap = {
-  diet: -0.15,
-  recomposition: -0.08,
-  maintenance: 0,
-  muscle_gain: 0.1,
-  bulk: 0.15,
-}
-
-  const proteinMultiplierMap = {
-    diet: 2.0,
-    recomposition: 2.0,
-    maintenance: 1.8,
-    muscle_gain: 2.0,
-    bulk: 1.8,
-  }
-
-  const fatMultiplierMap = {
-  diet: 0.7,
-  recomposition: 0.75,
-  maintenance: 0.8,
-  muscle_gain: 0.85,
-  bulk: 0.85,
-}
-
-  const goalAdjustmentPercent = Number(goalAdjustmentPercentMap[goalType] || 0)
-const goalAdjustmentKcal = Math.round(tdee * goalAdjustmentPercent)
-const targetKcal = Math.max(1200, Math.round(tdee * (1 + goalAdjustmentPercent)))
-  const targetProtein = Math.max(60, Math.round(weight * Number(proteinMultiplierMap[goalType] || 1.8)))
-  const baseTargetFat = Math.round(weight * Number(fatMultiplierMap[goalType] || 0.8))
-
-const targetFat =
-  goalType === 'muscle_gain' || goalType === 'bulk'
-    ? Math.max(60, baseTargetFat)
-    : Math.max(30, baseTargetFat)
-  const targetCarbs = Math.max(
-    0,
-    Math.round((targetKcal - targetProtein * 4 - targetFat * 9) / 4)
-  )
+  const proteinRule = calculatedTargets.proteinRule
+  const fatRule = calculatedTargets.fatRule
+  const carbRule = calculatedTargets.carbRule
+  const bmrSource = calculatedTargets.bmr_source
 
   const mealsPerDay = Number(mealPlanForm.meals_per_day || 3)
  const mealSlots = getLifestyleMealSlots(mealPlanForm)
@@ -1350,9 +1312,10 @@ const targetFat =
     target_carbs_g: targetCarbs,
     target_protein_g: targetProtein,
     target_fat_g: targetFat,
-    protein_rule: `${goalType} 기준 체중 x ${proteinMultiplierMap[goalType] || 1.8}g`,
-    fat_rule: `${goalType} 기준 체중 x ${fatMultiplierMap[goalType] || 0.8}g`,
-    carb_rule: '총열량에서 단백질/지방 제외 후 탄수화물 배분',
+     bmr_source: bmrSource,
+    protein_rule: proteinRule,
+    fat_rule: fatRule,
+    carb_rule: carbRule,
     sodium_limit_mg: sodiumLimitMg,
     saturated_fat_limit_g: saturatedFatLimitG,
     meals_per_day: mealsPerDay,
@@ -1573,7 +1536,7 @@ const targetFat =
       dayMeals.push({
         slot,
        food_items: Array.isArray(meal?.items) ? meal.items : [],
-menu: buildMealMenuLabel(meal?.items || [], slot),
+menu: meal?.menu || buildMealMenuLabel(meal?.items || [], slot),
         guide_text: meal?.guide_text || '',
         kcal: Number(meal?.kcal || 0),
         carbs_g: Number(meal?.carbs_g || 0),
@@ -1678,7 +1641,274 @@ menu: buildMealMenuLabel(meal?.items || [], slot),
   alert('월간 식단 생성 + 저장 완료')
 }
 }
-  
+  const roundToNearest = (value, unit = 5) => {
+  const numeric = Number(value || 0)
+  if (!numeric) return 0
+  return Math.round(numeric / unit) * unit
+}
+
+const getSafeNumber = (value) => {
+  const numeric = Number(value || 0)
+  return Number.isFinite(numeric) ? numeric : 0
+}
+
+const calculateBmrFromHealth = ({ weight, height, age, sex, bodyFatPercent, skeletalMuscleMass, healthBmr }) => {
+  const directBmr = Math.round(getSafeNumber(healthBmr))
+  if (directBmr > 0) {
+    return {
+      bmr: directBmr,
+      bmr_source: 'health_log_bmr',
+    }
+  }
+
+  const normalizedSex = String(sex || '').toLowerCase()
+  const safeWeight = getSafeNumber(weight)
+  const safeHeight = getSafeNumber(height)
+  const safeAge = getSafeNumber(age)
+  const safeBodyFatPercent = getSafeNumber(bodyFatPercent)
+  const safeSkeletalMuscleMass = getSafeNumber(skeletalMuscleMass)
+
+  if (safeWeight > 0 && safeBodyFatPercent > 0 && safeBodyFatPercent < 60) {
+    const leanMass = safeWeight * (1 - safeBodyFatPercent / 100)
+    const bmr = Math.round(370 + 21.6 * leanMass)
+
+    return {
+      bmr,
+      bmr_source: 'katch_mcardle_body_fat',
+    }
+  }
+
+  if (safeWeight > 0 && safeHeight > 0 && safeAge > 0 && (normalizedSex === 'male' || normalizedSex === 'female')) {
+    const base = 10 * safeWeight + 6.25 * safeHeight - 5 * safeAge
+    const bmr = Math.round(normalizedSex === 'male' ? base + 5 : base - 161)
+
+    return {
+      bmr,
+      bmr_source: 'mifflin_st_jeor',
+    }
+  }
+
+  if (safeWeight > 0 && safeSkeletalMuscleMass > 0) {
+    const bmr = Math.round(370 + safeSkeletalMuscleMass * 21.6)
+
+    return {
+      bmr,
+      bmr_source: 'skeletal_muscle_estimate',
+    }
+  }
+
+  return {
+    bmr: Math.round(safeWeight * 24),
+    bmr_source: 'weight_fallback',
+  }
+}
+
+const calculateMealTargetsFromHealth = ({
+  goalType,
+  health,
+  mealPlanForm,
+}) => {
+  const weight = getSafeNumber(health?.weight_kg)
+  const height = getSafeNumber(health?.height_cm)
+  const age = getSafeNumber(health?.age)
+  const sex = String(health?.sex || '').toLowerCase()
+  const bodyFatPercent = getSafeNumber(health?.body_fat_percent)
+  const skeletalMuscleMass = getSafeNumber(health?.skeletal_muscle_mass)
+
+  const defaultActivityFactor = getActivityFactorByLevel(mealPlanForm?.activity_level)
+  const activityFactor =
+    getSafeNumber(health?.activity_factor) > 0
+      ? getSafeNumber(health?.activity_factor)
+      : defaultActivityFactor
+
+  const { bmr, bmr_source } = calculateBmrFromHealth({
+    weight,
+    height,
+    age,
+    sex,
+    bodyFatPercent,
+    skeletalMuscleMass,
+    healthBmr: health?.bmr,
+  })
+
+  const tdee = Math.round(bmr * activityFactor)
+
+  const goalAdjustmentPercentMap = {
+    diet: -0.15,
+    recomposition: -0.08,
+    maintenance: 0,
+    muscle_gain: 0.1,
+    bulk: 0.15,
+  }
+
+  const proteinMultiplierMap = {
+    diet: bodyFatPercent >= 30 ? 1.8 : 2.0,
+    recomposition: 2.0,
+    maintenance: 1.7,
+    muscle_gain: 1.9,
+    bulk: 1.8,
+  }
+
+  const fatMultiplierMap = {
+    diet: 0.7,
+    recomposition: 0.75,
+    maintenance: 0.8,
+    muscle_gain: 0.85,
+    bulk: 0.9,
+  }
+
+  const goalAdjustmentPercent = Number(goalAdjustmentPercentMap[goalType] || 0)
+  const goalAdjustmentKcal = Math.round(tdee * goalAdjustmentPercent)
+  const targetKcal = Math.max(1200, Math.round(tdee * (1 + goalAdjustmentPercent)))
+
+  const targetProtein = Math.max(
+    60,
+    roundToNearest(weight * Number(proteinMultiplierMap[goalType] || 1.8), 5)
+  )
+
+  const baseTargetFat = roundToNearest(weight * Number(fatMultiplierMap[goalType] || 0.8), 5)
+
+  const targetFat =
+    goalType === 'muscle_gain' || goalType === 'bulk'
+      ? Math.max(60, baseTargetFat)
+      : Math.max(35, baseTargetFat)
+
+  const targetCarbs = Math.max(
+    0,
+    roundToNearest((targetKcal - targetProtein * 4 - targetFat * 9) / 4, 5)
+  )
+
+  return {
+    weight,
+    height,
+    age,
+    sex,
+    bodyFatPercent,
+    skeletalMuscleMass,
+    activityFactor,
+    bmr,
+    bmr_source,
+    tdee,
+    goalAdjustmentPercent,
+    goalAdjustmentKcal,
+    targetKcal,
+    targetProtein,
+    targetFat,
+    targetCarbs,
+    proteinRule: `${goalType} 기준 체중 x ${proteinMultiplierMap[goalType] || 1.8}g`,
+    fatRule: `${goalType} 기준 체중 x ${fatMultiplierMap[goalType] || 0.8}g`,
+    carbRule: '총열량에서 단백질/지방 제외 후 탄수화물 배분',
+  }
+}
+
+const getMealPrimaryItems = (items = []) => {
+  const rows = Array.isArray(items) ? items : []
+  return rows
+    .filter((item) => Number(item?.grams || 0) > 0)
+    .sort((a, b) => Number(b?.grams || 0) - Number(a?.grams || 0))
+}
+
+const getMealItemDisplayName = (item = {}) => {
+  return String(
+    item?.display_name ||
+    item?.name ||
+    item?.food_name ||
+    item?.exercise_name_snapshot ||
+    ''
+  ).trim()
+}
+
+const buildMealCompositionText = (items = []) => {
+  const primaryItems = getMealPrimaryItems(items).slice(0, 4)
+
+  if (!primaryItems.length) return ''
+
+  return primaryItems
+    .map((item) => {
+      const name = getMealItemDisplayName(item)
+      const grams = roundToNearest(item?.grams || 0, 5)
+      return grams > 0 ? `${name} ${grams}g` : name
+    })
+    .filter(Boolean)
+    .join(' + ')
+}
+
+const getMealMenuTitleByItems = (items = [], slot = '') => {
+  const rows = getMealPrimaryItems(items)
+
+  if (!rows.length) {
+    return slot === '간식' || slot === '오전간식' || slot === '야식'
+      ? '간식 구성'
+      : '맞춤 식사 구성'
+  }
+
+  const carbItem = rows.find((item) => String(item?.category_major || '').trim() === 'carb')
+  const proteinItem = rows.find((item) => String(item?.category_major || '').trim() === 'protein')
+  const dairyItem = rows.find((item) => String(item?.category_major || '').trim() === 'dairy')
+  const fruitItem = rows.find((item) => String(item?.category_major || '').trim() === 'fruit')
+  const vegetableItem = rows.find((item) => String(item?.category_major || '').trim() === 'vegetable')
+
+  const carbName = getMealItemDisplayName(carbItem)
+  const proteinName = getMealItemDisplayName(proteinItem)
+  const dairyName = getMealItemDisplayName(dairyItem)
+  const fruitName = getMealItemDisplayName(fruitItem)
+
+  const isSnackSlot = ['간식', '오전간식', '운동후', '야식'].includes(slot)
+
+  if (isSnackSlot) {
+    if (dairyName && fruitName) return `${dairyName} + ${fruitName} 간식`
+    if (proteinName && fruitName) return `${proteinName} + ${fruitName} 간식`
+    if (proteinName) return `${proteinName} 간식`
+    if (dairyName) return `${dairyName} 간식`
+  }
+
+  if (proteinName && carbName) {
+    if (vegetableItem) return `${proteinName} + ${carbName} + 채소식`
+    return `${proteinName} + ${carbName} 식사`
+  }
+
+  if (proteinName) return `${proteinName} 단백질 식사`
+  if (carbName) return `${carbName} 탄수화물 식사`
+
+  const firstName = getMealItemDisplayName(rows[0])
+  return firstName ? `${firstName} 구성` : '맞춤 식사 구성'
+}
+
+const buildMealMenuLabel = (items = [], slot = '') => {
+  const title = getMealMenuTitleByItems(items, slot)
+  const composition = buildMealCompositionText(items)
+
+  if (!composition) return title
+  return `${title} (${composition})`
+}
+
+const buildMealGuideTextFromItems = ({ items = [], slot = '', mealType = 'normal', targetKcal = 0 }) => {
+  const composition = buildMealCompositionText(items)
+
+  if (mealType === 'free') {
+    return '자유식 허용 끼니입니다. 단백질 먼저 먹고, 과식하지 말고 다음 끼니에서 바로 복귀하세요.'
+  }
+
+  if (mealType === 'general') {
+    return composition
+      ? `일반식 허용 끼니입니다. 기준 구성은 ${composition} 입니다. 외식 시에도 단백질과 탄수화물 중심으로 비슷하게 맞추세요.`
+      : '일반식 허용 끼니입니다. 밥/단백질 위주로 맞추고 튀김·디저트는 줄여주세요.'
+  }
+
+  if (mealType === 'alcohol') {
+    return '음주 예정일입니다. 안주는 단백질 위주로, 튀김과 면·밥 추가는 최소화하세요.'
+  }
+
+  if (slot === '야식') {
+    return composition
+      ? `야식은 ${composition} 기준으로 가볍게 맞추고, 탄수화물은 과하지 않게 조절하세요.`
+      : '야식은 단백질 위주로 가볍게 마무리하세요.'
+  }
+
+  return composition
+    ? `권장 구성은 ${composition} 입니다. 이 범위 안에서 비슷한 일반식으로 바꿔도 됩니다.`
+    : `목표 열량 ${Math.round(Number(targetKcal || 0))}kcal 기준 맞춤 식사입니다.`
+}
 const handleMealPlanSave = async () => {
   if (!mealPlanForm.member_id) {
     alert('회원 선택')
@@ -4019,8 +4249,13 @@ const buildSingleMealPlan = ({
 
       return {
         items: templateMeal.items || [],
-        menu: templateMeal.menu || formatMealMenu(templateMeal.items || []),
-        guide_text: '자유식 허용 끼니입니다. 과식하지 않고 다음 끼니는 원래 흐름으로 복귀하면 됩니다.',
+          menu: buildMealMenuLabel(templateMeal.items || [], slot),
+        guide_text: buildMealGuideTextFromItems({
+          items: templateMeal.items || [],
+          slot,
+          mealType: 'free',
+          targetKcal,
+        }),
         kcal: Number(templateMeal.kcal || 0),
         carbs_g: Number(templateMeal.carbs_g || 0),
         protein_g: Number(templateMeal.protein_g || 0),
@@ -4105,8 +4340,13 @@ const buildSingleMealPlan = ({
 
       return {
         items: templateMeal.items || [],
-        menu: templateMeal.menu || formatMealMenu(templateMeal.items || []),
-        guide_text: generalGuide.text,
+       menu: buildMealMenuLabel(templateMeal.items || [], slot),
+        guide_text: buildMealGuideTextFromItems({
+          items: templateMeal.items || [],
+          slot,
+          mealType: 'general',
+          targetKcal,
+        }),
         kcal: Number(templateMeal.kcal || 0),
         carbs_g: Number(templateMeal.carbs_g || 0),
         protein_g: Number(templateMeal.protein_g || 0),
@@ -4186,9 +4426,13 @@ if (currentMealType === 'alcohol') {
 
       return {
         items: templateMeal.items || [],
-        menu: templateMeal.menu || formatMealMenu(templateMeal.items || []),
-        guide_text:
-          '음주 예정일입니다. 단백질 위주 안주 선택 + 탄수화물 과다 섭취 주의. 다음날 수분 섭취 충분히.',
+        menu: buildMealMenuLabel(templateMeal.items || [], slot),
+        guide_text: buildMealGuideTextFromItems({
+          items: templateMeal.items || [],
+          slot,
+          mealType: 'alcohol',
+          targetKcal,
+        }),
         kcal: Number(templateMeal.kcal || 0),
         carbs_g: Number(templateMeal.carbs_g || 0),
         protein_g: Number(templateMeal.protein_g || 0),
@@ -4283,8 +4527,15 @@ if (currentMealType === 'alcohol') {
 
       return {
         items: templateMeal.items || [],
-        menu: templateMeal.menu || formatMealMenu(templateMeal.items || []),
-        guide_text: templateMeal.guide_text || '',
+        menu: buildMealMenuLabel(templateMeal.items || [], slot),
+        guide_text:
+          templateMeal.guide_text ||
+          buildMealGuideTextFromItems({
+            items: templateMeal.items || [],
+            slot,
+            mealType: currentMealType,
+            targetKcal,
+          }),
         meal_detail_type: templateMeal.meal_detail_type || 'template',
         kcal: Number(templateMeal.kcal || 0),
         carbs_g: Number(templateMeal.carbs_g || 0),
@@ -4543,8 +4794,13 @@ if (currentMealType === 'alcohol') {
 
   return {
     items: adjustedMealItems,
-    menu: formatMealMenu(adjustedMealItems),
-    guide_text: '',
+    menu: buildMealMenuLabel(adjustedMealItems, slot),
+    guide_text: buildMealGuideTextFromItems({
+      items: adjustedMealItems,
+      slot,
+      mealType: currentMealType,
+      targetKcal,
+    }),
     kcal: Math.round(summary.kcal),
     carbs_g: Math.round(summary.carbs_g),
     protein_g: Math.round(summary.protein_g),
@@ -5159,7 +5415,7 @@ const buildMealPlanDayRow = ({
           : slot === '야식'
           ? '21:30'
           : '19:30',
-      menu: buildMealMenuLabel(mealResult.items || [], slot),
+     menu: mealResult?.menu || buildMealMenuLabel(mealResult.items || [], slot),
       alternatives,
       food_items: mealResult.items || [],
       carbs_g: Number(mealResult.carbs_g || 0),
