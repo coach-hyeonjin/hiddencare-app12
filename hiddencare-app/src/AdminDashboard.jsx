@@ -3388,18 +3388,25 @@ const getTemplateGoalScore = ({
   const dairyCount = Number(categoryCounts.dairy || 0)
   const fruitCount = Number(categoryCounts.fruit || 0)
   const vegetableCount = Number(categoryCounts.vegetable || 0)
+  const fatCount = Number(categoryCounts.fat || 0)
+  const mixedCount = Number(categoryCounts.mixed || 0)
 
   const hasRice = names.some((name) => name.includes('밥'))
   const hasSweetPotato = names.some((name) => name.includes('고구마'))
   const hasOatmeal = names.some((name) => name.includes('오트밀'))
+  const hasBread = names.some((name) => name.includes('식빵') || name.includes('베이글'))
   const hasChicken = names.some((name) => name.includes('닭'))
   const hasBeef = names.some((name) => name.includes('소고기'))
   const hasSalmon = names.some((name) => name.includes('연어'))
   const hasEgg = names.some((name) => name.includes('계란'))
   const hasYogurt = names.some((name) => name.includes('요거트'))
-  const hasPowder = names.some((name) => name.includes('프로틴')) || names.some((name) => name.includes('파우더'))
+  const hasMilk = names.some((name) => name.includes('우유'))
+  const hasPowder =
+    names.some((name) => name.includes('프로틴')) ||
+    names.some((name) => name.includes('파우더'))
   const hasVegetable = vegetableCount > 0
   const hasFruit = fruitCount > 0
+  const hasMixedMeal = mixedCount > 0
 
   if (goalType === 'bulk' || goalType === 'muscle_gain') {
     score += carbCount * 3
@@ -3408,6 +3415,7 @@ const getTemplateGoalScore = ({
     if (hasRice) score += 3
     if (hasSweetPotato) score += 2
     if (hasOatmeal) score += 2
+    if (hasBread) score += 2
     if (hasChicken || hasBeef || hasSalmon) score += 3
     if (slot === '운동후' && hasPowder) score += 3
     if (slot === '야식' && hasPowder) score -= 2
@@ -3425,7 +3433,7 @@ const getTemplateGoalScore = ({
   } else if (goalType === 'maintenance') {
     score += proteinCount * 2
     score += carbCount * 2
-    if (hasRice || hasSweetPotato || hasOatmeal) score += 2
+    if (hasRice || hasSweetPotato || hasOatmeal || hasBread) score += 2
     if (hasChicken || hasSalmon || hasEgg) score += 2
     if (hasVegetable) score += 1
   } else {
@@ -3433,15 +3441,69 @@ const getTemplateGoalScore = ({
     score += carbCount * 2
   }
 
-  if (slot === '운동후') {
-    if (hasPowder) score += 2
-    if (hasFruit) score += 1
+  // 🔥 아침 역할: 너무 무겁지 않고 시작하기 쉬운 식사 우대
+  if (slot === '아침') {
+    if (hasOatmeal || hasYogurt || hasEgg || hasFruit) score += 3
+    if (hasBeef) score -= 1
+    if (hasMixedMeal) score -= 1
+    if (hasPowder) score -= goalType === 'bulk' || goalType === 'muscle_gain' ? 0 : 2
   }
 
-  if (slot === '야식') {
-    if (hasRice) score -= 2
-    if (hasYogurt || hasEgg || hasFruit) score += 2
+  // 🔥 점심 역할: 가장 일반적인 메인 식사 우대
+  if (slot === '점심') {
+    if (hasRice || hasMixedMeal) score += 3
+    if (hasChicken || hasBeef || hasSalmon) score += 2
+    if (hasVegetable) score += 1
+    if (hasYogurt && !hasRice && !hasMixedMeal) score -= 2
+    if (hasPowder) score -= 3
   }
+
+  // 🔥 저녁 역할: diet면 가볍게, bulk면 충분히
+  if (slot === '저녁') {
+    if (goalType === 'diet' || goalType === 'recomposition') {
+      if (hasSweetPotato || hasVegetable || hasChicken || hasSalmon) score += 3
+      if (hasRice) score -= 1
+      if (hasBread) score -= 2
+      if (hasMixedMeal) score -= 2
+    } else {
+      if (hasRice || hasSweetPotato) score += 2
+      if (hasChicken || hasBeef || hasSalmon) score += 2
+    }
+
+    if (hasPowder) score -= 4
+  }
+
+  // 🔥 간식 / 오전간식: 작고 간단한 조합 우대
+  if (slot === '간식' || slot === '오전간식') {
+    if (hasYogurt || hasFruit || hasEgg || hasMilk) score += 3
+    if (hasRice || hasMixedMeal) score -= 4
+    if (hasBeef) score -= 2
+  }
+
+  // 🔥 운동후: 탄수 + 단백질 조합 최우선
+  if (slot === '운동후') {
+    if (hasPowder) score += 2
+    if (hasRice || hasSweetPotato || hasBread || hasFruit) score += 3
+    if (hasChicken || hasBeef || hasSalmon || hasMilk) score += 2
+  }
+
+  // 🔥 야식: 가볍고 소화 쉬운 것만 우대
+  if (slot === '야식') {
+    if (hasRice) score -= 3
+    if (hasBeef) score -= 3
+    if (hasMixedMeal) score -= 4
+    if (hasYogurt || hasEgg || hasFruit || hasMilk) score += 3
+    if (hasSweetPotato) score += 1
+  }
+
+  // 🔥 일반식 / 자유식 이름 보정
+  const templateName = String(template?.name || '')
+  if (templateName.includes('점심') && slot === '점심') score += 1
+  if (templateName.includes('저녁') && slot === '저녁') score += 1
+  if (templateName.includes('아침') && slot === '아침') score += 1
+  if (templateName.includes('간식') && (slot === '간식' || slot === '오전간식')) score += 1
+  if (templateName.includes('운동후') && slot === '운동후') score += 2
+  if (templateName.includes('야식') && slot === '야식') score += 2
 
   return score
 }
