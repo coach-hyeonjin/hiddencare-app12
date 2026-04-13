@@ -2355,128 +2355,200 @@ const buildMonthlyDietFramework = ({
   const MEAL_TEMPLATE_LIBRARY = {
   아침: [
     {
-  name: '오트밀 요거트 아침식사',
-  foods: ['오트밀', '그릭요거트', '바나나'],
-  goalTypes: ['diet', 'recomposition', 'maintenance'],
-},
+      name: '오트밀 요거트 바나나 아침',
+      foods: ['오트밀', '그릭요거트', '바나나'],
+      goalTypes: ['diet', 'recomposition', 'maintenance'],
+    },
     {
-      name: '한식 계란 아침식사',
+      name: '현미밥 닭가슴살 김치 아침',
+      foods: ['현미밥', '닭가슴살', '김치'],
+      goalTypes: ['diet', 'recomposition', 'maintenance', 'muscle_gain'],
+    },
+    {
+      name: '백미밥 계란 김치 아침',
       foods: ['백미밥', '계란', '김치'],
+      goalTypes: ['diet', 'recomposition', 'maintenance'],
     },
     {
-  name: '닭가슴살 아침식사',
-  foods: ['백미밥', '닭가슴살', '김치'],
-  goalTypes: ['diet', 'recomposition', 'maintenance', 'muscle_gain'],
-},
-    {
-      name: '고구마 계란 아침식사',
+      name: '고구마 계란 방울토마토 아침',
       foods: ['고구마', '계란', '방울토마토'],
+      goalTypes: ['diet', 'recomposition', 'maintenance'],
     },
     {
-      name: '연어 아침식사',
-      foods: ['백미밥', '연어', '김치'],
+      name: '현미밥 연어 김치 아침',
+      foods: ['현미밥', '연어', '김치'],
+      goalTypes: ['diet', 'recomposition', 'maintenance'],
     },
     {
-      name: '요거트 과일볼',
-      foods: ['그릭요거트', '바나나', '사과'],
+      name: '그릭요거트 사과 견과 아침',
+      foods: ['그릭요거트', '사과', '아몬드'],
+      goalTypes: ['diet', 'recomposition', 'maintenance'],
     },
     {
-      name: '닭다리살 아침식사',
+      name: '백미밥 닭다리살 김치 아침',
       foods: ['백미밥', '닭다리살', '김치'],
+      goalTypes: ['maintenance', 'muscle_gain', 'bulk'],
     },
     {
-      name: '현미밥 계란 아침식사',
-      foods: ['현미밥', '계란', '김치'],
+      name: '오트밀 프로틴 바나나 아침',
+      foods: ['오트밀', '프로틴파우더', '바나나'],
+      goalTypes: ['maintenance', 'muscle_gain', 'bulk'],
+    },
+    {
+      name: '백미밥 소고기 김치 아침',
+      foods: ['백미밥', '소고기', '김치'],
+      goalTypes: ['maintenance', 'muscle_gain', 'bulk'],
+    },
+    {
+      name: '고구마 그릭요거트 블루베리 아침',
+      foods: ['고구마', '그릭요거트', '블루베리'],
+      goalTypes: ['diet', 'recomposition', 'maintenance'],
+    },
+    {
+      name: '현미밥 계란 나물반찬 아침',
+      foods: ['현미밥', '계란', '나물반찬'],
+      goalTypes: ['diet', 'recomposition', 'maintenance'],
+    },
+    {
+      name: '백미밥 참치 김치 아침',
+      foods: ['백미밥', '참치', '김치'],
+      goalTypes: ['maintenance', 'muscle_gain'],
     },
   ],
 
   점심: [
-   {
-  name: '닭가슴살 점심정식',
-  foods: ['백미밥', '닭가슴살', '브로콜리'],
-  goalTypes: ['diet', 'recomposition', 'maintenance', 'muscle_gain'],
-},
-   {
-  name: '소고기 점심정식',
-  foods: ['백미밥', '소고기', '나물반찬'],
-  goalTypes: ['maintenance', 'muscle_gain', 'bulk'],
-},
     {
-  name: '연어 점심정식',
-  foods: ['백미밥', '연어', '방울토마토'],
-  goalTypes: ['diet', 'recomposition', 'maintenance'],
-},
-    {
-      name: '닭다리살 점심식사',
-      foods: ['백미밥', '닭다리살', '파프리카'],
+      name: '현미밥 닭가슴살 브로콜리 점심',
+      foods: ['현미밥', '닭가슴살', '브로콜리'],
+      goalTypes: ['diet', 'recomposition', 'maintenance'],
     },
     {
-      name: '현미밥 소고기 점심식사',
-      foods: ['현미밥', '소고기', '브로콜리'],
+      name: '백미밥 소고기 나물반찬 점심',
+      foods: ['백미밥', '소고기', '나물반찬'],
+      goalTypes: ['maintenance', 'muscle_gain', 'bulk'],
     },
     {
-      name: '고구마 닭가슴살 점심식사',
+      name: '현미밥 연어 방울토마토 점심',
+      foods: ['현미밥', '연어', '방울토마토'],
+      goalTypes: ['diet', 'recomposition', 'maintenance'],
+    },
+    {
+      name: '고구마 닭가슴살 브로콜리 점심',
       foods: ['고구마', '닭가슴살', '브로콜리'],
+      goalTypes: ['diet', 'recomposition'],
     },
     {
-      name: '연어 고구마 점심식사',
-      foods: ['고구마', '연어', '아스파라거스'],
+      name: '백미밥 닭다리살 파프리카 점심',
+      foods: ['백미밥', '닭다리살', '파프리카'],
+      goalTypes: ['maintenance', 'muscle_gain', 'bulk'],
     },
     {
-      name: '한식 일반 점심식사',
-      foods: ['백미밥', '계란', '나물반찬'],
+      name: '현미밥 계란 나물반찬 점심',
+      foods: ['현미밥', '계란', '나물반찬'],
+      goalTypes: ['diet', 'recomposition', 'maintenance'],
     },
     {
-      name: '현미밥 닭다리살 점심식사',
-      foods: ['현미밥', '닭다리살', '파프리카'],
+      name: '백미밥 연어 아스파라거스 점심',
+      foods: ['백미밥', '연어', '아스파라거스'],
+      goalTypes: ['diet', 'recomposition', 'maintenance'],
     },
     {
-      name: '소고기 고구마 점심식사',
-      foods: ['고구마', '소고기', '방울토마토'],
+      name: '백미밥 소불고기 김치 점심',
+      foods: ['백미밥', '소고기', '김치'],
+      goalTypes: ['maintenance', 'muscle_gain', 'bulk'],
+    },
+    {
+      name: '고구마 참치 브로콜리 점심',
+      foods: ['고구마', '참치', '브로콜리'],
+      goalTypes: ['diet', 'recomposition', 'maintenance'],
+    },
+    {
+      name: '현미밥 닭가슴살 김치 점심',
+      foods: ['현미밥', '닭가슴살', '김치'],
+      goalTypes: ['diet', 'recomposition', 'maintenance'],
+    },
+    {
+      name: '백미밥 계란 브로콜리 점심',
+      foods: ['백미밥', '계란', '브로콜리'],
+      goalTypes: ['maintenance'],
+    },
+    {
+      name: '백미밥 닭가슴살 나물반찬 점심',
+      foods: ['백미밥', '닭가슴살', '나물반찬'],
+      goalTypes: ['diet', 'recomposition', 'maintenance', 'muscle_gain'],
+    },
+    {
+      name: '현미밥 소고기 브로콜리 점심',
+      foods: ['현미밥', '소고기', '브로콜리'],
+      goalTypes: ['maintenance', 'muscle_gain', 'bulk'],
+    },
+    {
+      name: '백미밥 연어 김치 점심',
+      foods: ['백미밥', '연어', '김치'],
+      goalTypes: ['maintenance'],
     },
   ],
 
   저녁: [
     {
-      name: '닭가슴살 저녁식사',
-      foods: ['백미밥', '닭가슴살', '브로콜리'],
+      name: '현미밥 닭가슴살 샐러드 저녁',
+      foods: ['현미밥', '닭가슴살', '샐러드채소'],
+      goalTypes: ['diet', 'recomposition'],
     },
     {
-      name: '닭다리살 저녁식사',
-      foods: ['백미밥', '닭다리살', '파프리카'],
-    },
-    {
-      name: '연어 저녁식사',
+      name: '고구마 연어 브로콜리 저녁',
       foods: ['고구마', '연어', '브로콜리'],
+      goalTypes: ['diet', 'recomposition', 'maintenance'],
     },
     {
-  name: '소고기 저녁식사',
-  foods: ['고구마', '소고기', '아스파라거스'],
-  goalTypes: ['maintenance', 'muscle_gain', 'bulk'],
-},
-    {
-      name: '현미밥 저녁정식',
-      foods: ['현미밥', '닭가슴살', '김치'],
+      name: '현미밥 소고기 아스파라거스 저녁',
+      foods: ['현미밥', '소고기', '아스파라거스'],
+      goalTypes: ['maintenance', 'muscle_gain', 'bulk'],
     },
     {
-      name: '계란 저녁식사',
+      name: '백미밥 닭다리살 파프리카 저녁',
+      foods: ['백미밥', '닭다리살', '파프리카'],
+      goalTypes: ['maintenance', 'muscle_gain', 'bulk'],
+    },
+    {
+      name: '고구마 계란 방울토마토 저녁',
       foods: ['고구마', '계란', '방울토마토'],
+      goalTypes: ['diet', 'recomposition', 'maintenance'],
     },
     {
-      name: '연어 현미 저녁식사',
-      foods: ['현미밥', '연어', '아스파라거스'],
+      name: '현미밥 연어 샐러드 저녁',
+      foods: ['현미밥', '연어', '샐러드채소'],
+      goalTypes: ['diet', 'recomposition', 'maintenance'],
     },
     {
-      name: '닭다리살 현미 저녁식사',
-      foods: ['현미밥', '닭다리살', '브로콜리'],
+      name: '백미밥 닭가슴살 김치 저녁',
+      foods: ['백미밥', '닭가슴살', '김치'],
+      goalTypes: ['maintenance', 'muscle_gain'],
     },
     {
-      name: '한식 저녁식사',
-      foods: ['백미밥', '계란', '김치'],
+      name: '현미밥 계란 브로콜리 저녁',
+      foods: ['현미밥', '계란', '브로콜리'],
+      goalTypes: ['diet', 'recomposition', 'maintenance'],
     },
     {
-      name: '소고기 현미 저녁식사',
-      foods: ['현미밥', '소고기', '파프리카'],
+      name: '백미밥 소고기 김치 저녁',
+      foods: ['백미밥', '소고기', '김치'],
+      goalTypes: ['maintenance', 'muscle_gain', 'bulk'],
+    },
+    {
+      name: '고구마 닭가슴살 파프리카 저녁',
+      foods: ['고구마', '닭가슴살', '파프리카'],
+      goalTypes: ['diet', 'recomposition'],
+    },
+    {
+      name: '현미밥 참치 샐러드 저녁',
+      foods: ['현미밥', '참치', '샐러드채소'],
+      goalTypes: ['diet', 'recomposition', 'maintenance'],
+    },
+    {
+      name: '백미밥 연어 브로콜리 저녁',
+      foods: ['백미밥', '연어', '브로콜리'],
+      goalTypes: ['maintenance', 'muscle_gain'],
     },
   ],
 
@@ -2484,83 +2556,171 @@ const buildMonthlyDietFramework = ({
     {
       name: '그릭요거트 바나나 간식',
       foods: ['그릭요거트', '바나나'],
+      goalTypes: ['diet', 'recomposition', 'maintenance'],
     },
     {
       name: '고구마 계란 간식',
       foods: ['고구마', '계란'],
+      goalTypes: ['diet', 'recomposition', 'maintenance'],
     },
     {
       name: '사과 계란 간식',
       foods: ['사과', '계란'],
+      goalTypes: ['diet', 'recomposition', 'maintenance'],
     },
     {
-      name: '요거트 사과 간식',
-      foods: ['그릭요거트', '사과'],
+      name: '그릭요거트 블루베리 간식',
+      foods: ['그릭요거트', '블루베리'],
+      goalTypes: ['diet', 'recomposition', 'maintenance'],
     },
     {
-      name: '고구마 요거트 간식',
+      name: '프로틴 바나나 간식',
+      foods: ['프로틴파우더', '바나나'],
+      goalTypes: ['maintenance', 'muscle_gain', 'bulk'],
+    },
+    {
+      name: '현미떡 계란 간식',
+      foods: ['현미떡', '계란'],
+      goalTypes: ['maintenance', 'muscle_gain'],
+    },
+    {
+      name: '아몬드 사과 간식',
+      foods: ['아몬드', '사과'],
+      goalTypes: ['diet', 'recomposition', 'maintenance'],
+    },
+    {
+      name: '고구마 그릭요거트 간식',
       foods: ['고구마', '그릭요거트'],
+      goalTypes: ['diet', 'recomposition', 'maintenance'],
+    },
+    {
+      name: '바나나 우유 간식',
+      foods: ['바나나', '우유'],
+      goalTypes: ['maintenance', 'muscle_gain', 'bulk'],
+    },
+    {
+      name: '프로틴 우유 간식',
+      foods: ['프로틴파우더', '우유'],
+      goalTypes: ['muscle_gain', 'bulk'],
     },
   ],
 
   오전간식: [
     {
-      name: '가벼운 오전 요거트',
+      name: '요거트 바나나 오전간식',
       foods: ['그릭요거트', '바나나'],
+      goalTypes: ['diet', 'recomposition', 'maintenance'],
     },
     {
-      name: '과일 계란 오전간식',
+      name: '사과 계란 오전간식',
       foods: ['사과', '계란'],
+      goalTypes: ['diet', 'recomposition', 'maintenance'],
     },
     {
-      name: '고구마 오전간식',
+      name: '고구마 계란 오전간식',
       foods: ['고구마', '계란'],
+      goalTypes: ['diet', 'recomposition', 'maintenance'],
     },
     {
-      name: '바나나 요거트 오전간식',
-      foods: ['바나나', '그릭요거트'],
+      name: '블루베리 요거트 오전간식',
+      foods: ['블루베리', '그릭요거트'],
+      goalTypes: ['diet', 'recomposition', 'maintenance'],
+    },
+    {
+      name: '프로틴 바나나 오전간식',
+      foods: ['프로틴파우더', '바나나'],
+      goalTypes: ['maintenance', 'muscle_gain', 'bulk'],
+    },
+    {
+      name: '아몬드 사과 오전간식',
+      foods: ['아몬드', '사과'],
+      goalTypes: ['diet', 'recomposition', 'maintenance'],
     },
   ],
 
   운동후: [
-   {
-  name: '운동후 프로틴 바나나',
-  foods: ['프로틴파우더', '바나나'],
-  goalTypes: ['diet', 'recomposition', 'maintenance', 'muscle_gain', 'bulk'],
-},
-   {
-  name: '운동후 밥 닭가슴살',
-  foods: ['백미밥', '닭가슴살'],
-  goalTypes: ['maintenance', 'muscle_gain', 'bulk'],
-},
     {
-      name: '운동후 고구마 닭가슴살',
-      foods: ['고구마', '닭가슴살'],
+      name: '프로틴 바나나 운동후',
+      foods: ['프로틴파우더', '바나나'],
+      goalTypes: ['diet', 'recomposition', 'maintenance', 'muscle_gain', 'bulk'],
     },
     {
-      name: '운동후 현미 연어',
-      foods: ['현미밥', '연어'],
+      name: '백미밥 닭가슴살 운동후',
+      foods: ['백미밥', '닭가슴살'],
+      goalTypes: ['maintenance', 'muscle_gain', 'bulk'],
+    },
+    {
+      name: '고구마 닭가슴살 운동후',
+      foods: ['고구마', '닭가슴살'],
+      goalTypes: ['diet', 'recomposition', 'maintenance', 'muscle_gain'],
+    },
+    {
+      name: '백미밥 연어 운동후',
+      foods: ['백미밥', '연어'],
+      goalTypes: ['maintenance', 'muscle_gain', 'bulk'],
+    },
+    {
+      name: '현미밥 소고기 운동후',
+      foods: ['현미밥', '소고기'],
+      goalTypes: ['maintenance', 'muscle_gain', 'bulk'],
+    },
+    {
+      name: '프로틴 우유 바나나 운동후',
+      foods: ['프로틴파우더', '우유', '바나나'],
+      goalTypes: ['muscle_gain', 'bulk'],
+    },
+    {
+      name: '현미밥 닭다리살 운동후',
+      foods: ['현미밥', '닭다리살'],
+      goalTypes: ['maintenance', 'muscle_gain', 'bulk'],
+    },
+    {
+      name: '고구마 계란 운동후',
+      foods: ['고구마', '계란'],
+      goalTypes: ['diet', 'recomposition', 'maintenance'],
     },
   ],
 
   야식: [
     {
-  name: '가벼운 요거트 야식',
-  foods: ['그릭요거트', '바나나'],
-  goalTypes: ['diet', 'recomposition', 'maintenance'],
-},
+      name: '그릭요거트 바나나 야식',
+      foods: ['그릭요거트', '바나나'],
+      goalTypes: ['diet', 'recomposition', 'maintenance'],
+    },
+    {
+      name: '사과 그릭요거트 야식',
+      foods: ['사과', '그릭요거트'],
+      goalTypes: ['diet', 'recomposition', 'maintenance'],
+    },
     {
       name: '고구마 계란 야식',
       foods: ['고구마', '계란'],
+      goalTypes: ['diet', 'recomposition', 'maintenance'],
     },
-   {
-  name: '프로틴 바나나 야식',
-  foods: ['프로틴파우더', '바나나'],
-  goalTypes: ['muscle_gain', 'bulk'],
-},
     {
-      name: '사과 요거트 야식',
-      foods: ['사과', '그릭요거트'],
+      name: '프로틴 바나나 야식',
+      foods: ['프로틴파우더', '바나나'],
+      goalTypes: ['muscle_gain', 'bulk'],
+    },
+    {
+      name: '우유 바나나 야식',
+      foods: ['우유', '바나나'],
+      goalTypes: ['maintenance', 'muscle_gain', 'bulk'],
+    },
+    {
+      name: '그릭요거트 블루베리 야식',
+      foods: ['그릭요거트', '블루베리'],
+      goalTypes: ['diet', 'recomposition', 'maintenance'],
+    },
+    {
+      name: '계란 방울토마토 야식',
+      foods: ['계란', '방울토마토'],
+      goalTypes: ['diet', 'recomposition', 'maintenance'],
+    },
+    {
+      name: '프로틴 우유 야식',
+      foods: ['프로틴파우더', '우유'],
+      goalTypes: ['muscle_gain', 'bulk'],
     },
   ],
 }
