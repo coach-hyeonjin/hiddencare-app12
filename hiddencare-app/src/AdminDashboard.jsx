@@ -14321,6 +14321,54 @@ const filteredExercisesAdvanced = exercises.filter((exercise) => {
 
       {mealPlannerAdminSections.generator && (
         <>
+<div className="meal-quick-guide-card">
+  <div className="meal-quick-guide-badge">빠른 시작</div>
+  <h3>처음이면 이 순서대로만 하세요</h3>
+
+  <div className="meal-quick-guide-steps">
+    <div className="meal-quick-guide-step">
+      <strong>1</strong>
+      <div>
+        <p>회원 선택</p>
+        <span>누구 식단을 만들지 먼저 고릅니다.</span>
+      </div>
+    </div>
+
+    <div className="meal-quick-guide-step">
+      <strong>2</strong>
+      <div>
+        <p>목표 / 식사 횟수 / 활동량</p>
+        <span>자동 계산에 필요한 기본값입니다.</span>
+      </div>
+    </div>
+
+    <div className="meal-quick-guide-step">
+      <strong>3</strong>
+      <div>
+        <p>못 먹는 음식 / 선호 음식</p>
+        <span>현실적인 식단을 만드는 핵심 정보입니다.</span>
+      </div>
+    </div>
+
+    <div className="meal-quick-guide-step">
+      <strong>4</strong>
+      <div>
+        <p>자동 계산 → 저장 → 월간 식단 생성</p>
+        <span>이 순서대로 누르면 식단이 만들어집니다.</span>
+      </div>
+    </div>
+  </div>
+
+  <div className="meal-quick-guide-tip">
+    처음에는 아래 <strong>필수 입력</strong>만 먼저 채우고 시작해도 됩니다.
+  </div>
+</div>
+
+<div className="meal-form-section-title">
+  <strong>필수 입력</strong>
+  <p>자동 계산과 기본 식단 생성을 위해 꼭 필요한 항목입니다.</p>
+</div>
+        
           <div className="grid-2">
             <label className="field">
               <span>회원 선택</span>
@@ -14462,6 +14510,11 @@ const filteredExercisesAdvanced = exercises.filter((exercise) => {
             </label>
           </div>
 
+<div className="meal-form-section-title">
+  <strong>선택 입력</strong>
+  <p>회원 취향과 제외 음식까지 반영해서 식단을 더 현실적으로 만듭니다.</p>
+</div>
+          
           <label className="field">
             <span>못 먹는 음식 (쉼표로 구분)</span>
             <input
@@ -14932,6 +14985,11 @@ const filteredExercisesAdvanced = exercises.filter((exercise) => {
   />
 </label>
 
+<div className="meal-form-section-title">
+  <strong>고급 설정</strong>
+  <p>식단 운영 강도, 생활습관, 허용 범위를 세밀하게 조정하는 영역입니다.</p>
+</div>
+          
 <div className="meal-section-card">
   <div className="list-card-top">
     <div>
@@ -15216,6 +15274,11 @@ const filteredExercisesAdvanced = exercises.filter((exercise) => {
 </div>
 </div>
 
+<div className="meal-form-section-title">
+  <strong>실행 단계</strong>
+  <p>처음이면 자동 계산 → 식단 설정 저장 → 월간 식단 생성 순서로 진행하면 됩니다.</p>
+</div>
+          
 <div className="meal-action-bar">
   <button className="primary-btn" type="button" onClick={handleMealPlanGenerate}>
     자동 계산
