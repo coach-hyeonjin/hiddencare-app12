@@ -16726,7 +16726,6 @@ const filteredExercisesAdvanced = exercises.filter((exercise) => {
   mealPlanForm.target_protein_g ||
   mealPlanForm.target_fat_g) ? (
   <>
-    <>
   <div className="detail-box">
     <p><strong>자동 계산 결과</strong></p>
     <p>하루 목표 열량: {mealPlanForm.target_kcal || 0} kcal</p>
