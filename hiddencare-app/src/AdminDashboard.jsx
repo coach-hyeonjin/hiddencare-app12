@@ -1348,7 +1348,16 @@ const handleMealPlanGenerate = async () => {
     goalType,
   })
 
-  setMealPlanRecommendation(recommendation)
+ setMealPlanRecommendation({
+  ...recommendation,
+  sex,
+  age,
+  height_cm: height,
+  weight_kg: weight,
+  body_fat_percent: bodyFatPercent,
+  bmr,
+  tdee,
+})
   setSelectedPlanStyle(recommendation.recommended_key || '')
   if (calculationId) {
   const { error: profileUpdateError } = await supabase
@@ -16709,14 +16718,30 @@ const filteredExercisesAdvanced = exercises.filter((exercise) => {
   mealPlanForm.target_protein_g ||
   mealPlanForm.target_fat_g) ? (
   <>
-    <div className="detail-box">
-              <p><strong>자동 계산 결과</strong></p>
-              <p>하루 목표 열량: {mealPlanForm.target_kcal || 0} kcal</p>
-              <p>탄수화물: {mealPlanForm.target_carbs_g || 0} g</p>
-              <p>단백질: {mealPlanForm.target_protein_g || 0} g</p>
-              <p>지방: {mealPlanForm.target_fat_g || 0} g</p>
-              <p>식사 슬롯: {(mealPlanForm.meal_slots || []).join(' / ')}</p>
-            </div>
+   <div className="detail-box">
+  <p><strong>자동 계산 결과</strong></p>
+
+  <p>하루 목표 열량: {mealPlanForm.target_kcal || 0} kcal</p>
+  <p>탄수화물: {mealPlanForm.target_carbs_g || 0} g</p>
+  <p>단백질: {mealPlanForm.target_protein_g || 0} g</p>
+  <p>지방: {mealPlanForm.target_fat_g || 0} g</p>
+  <p>식사 슬롯: {(mealPlanForm.meal_slots || []).join(' / ')}</p>
+
+  {mealPlanRecommendation ? (
+    <>
+      <hr style={{ margin: '12px 0' }} />
+
+      <p><strong>자동 계산 검증 정보</strong></p>
+      <p>성별: {mealPlanRecommendation.sex || '-'}</p>
+      <p>나이: {mealPlanRecommendation.age || 0}세</p>
+      <p>키: {mealPlanRecommendation.height_cm || 0} cm</p>
+      <p>체중: {mealPlanRecommendation.weight_kg || 0} kg</p>
+      <p>체지방률: {mealPlanRecommendation.body_fat_percent || 0}%</p>
+      <p>BMR: {mealPlanRecommendation.bmr || 0} kcal</p>
+      <p>TDEE: {mealPlanRecommendation.tdee || 0} kcal</p>
+    </>
+  ) : null}
+</div>
             {mealPlanRecommendation ? (
             <div className="detail-box" style={{ marginTop: '12px' }}>
               <p><strong>추천 식단 운영 방식</strong></p>
@@ -16732,6 +16757,32 @@ const filteredExercisesAdvanced = exercises.filter((exercise) => {
                   : null}
               </div>
 
+<div className="detail-box" style={{ marginBottom: '10px' }}>
+  <p><strong>운영 방식 상태 구분</strong></p>
+  <p>
+    AI 추천값:{' '}
+    <strong>
+      {PLAN_STYLE_META[mealPlanRecommendation.recommended_key]?.label ||
+        mealPlanRecommendation.recommended_label ||
+        '-'}
+    </strong>
+  </p>
+  <p>
+    현재 선택값:{' '}
+    <strong>
+      {PLAN_STYLE_META[selectedPlanStyle]?.label || selectedPlanStyle || '선택 안됨'}
+    </strong>
+  </p>
+  <p>
+    현재 적용값:{' '}
+    <strong>
+      {PLAN_STYLE_META[mealPlanForm.recommended_plan_style]?.label ||
+        mealPlanForm.recommended_plan_style ||
+        '적용 안됨'}
+    </strong>
+  </p>
+</div>
+              
               <label className="field" style={{ marginBottom: '10px' }}>
                 <span>추천 식단 방식</span>
                 <select
@@ -16989,37 +17040,52 @@ const filteredExercisesAdvanced = exercises.filter((exercise) => {
 </div>
 
 {!isSpecialMeal && (
-  <div className="compact-text">
-    {Array.isArray(meal.food_items) && meal.food_items.length > 0
-      ? meal.food_items
-          .map((item) => {
-            if (typeof item === 'string') return item
+  <div className="detail-box">
+    <p>
+      <strong>메뉴</strong> {meal.menu || '-'}
+    </p>
 
-            const name =
-              item.food_name ||
-              item.name ||
-              item.display_name ||
-              item.label ||
-              item.food ||
-              item.title ||
-              ''
+    <p className="compact-text" style={{ marginTop: '6px' }}>
+      <strong>구성</strong>{' '}
+      {Array.isArray(meal.food_items) && meal.food_items.length > 0
+        ? meal.food_items
+            .map((item) => {
+              if (typeof item === 'string') return item
 
-            const amount =
-              item.grams ??
-              item.amount_g ??
-              item.amount ??
-              item.serving_g ??
-              item.weight_g ??
-              item.quantity ??
-              ''
+              const name =
+                item.food_name ||
+                item.name ||
+                item.display_name ||
+                item.label ||
+                item.food ||
+                item.title ||
+                ''
 
-            if (name && amount) return `${name} ${amount}g`
-            if (name) return name
+              const amount =
+                item.grams ??
+                item.amount_g ??
+                item.amount ??
+                item.serving_g ??
+                item.weight_g ??
+                item.quantity ??
+                ''
 
-            return JSON.stringify(item)
-          })
-          .join(' · ')
-      : meal.menu || '-'}
+              if (name && amount) return `${name} ${amount}g`
+              if (name) return name
+
+              return ''
+            })
+            .filter(Boolean)
+            .join(' / ')
+        : '-'}
+    </p>
+
+    <p
+      className="compact-text"
+      style={{ marginTop: '6px', whiteSpace: 'pre-line', lineHeight: 1.6 }}
+    >
+      <strong>가이드</strong> {meal.guide_text || '가이드 없음'}
+    </p>
   </div>
 )}
 
