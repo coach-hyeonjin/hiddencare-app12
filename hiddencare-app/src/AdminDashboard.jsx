@@ -17039,67 +17039,77 @@ const filteredExercisesAdvanced = exercises.filter((exercise) => {
   </div>
 </div>
 
-{!isSpecialMeal && (
-  <div className="detail-box">
+<div className="meal-day-card">
+  <div className="meal-day-card-top">
+    <div>
+      <strong>{slotLabel}</strong>
+      <div className="compact-text" style={{ marginTop: '4px' }}>
+        {detailLabel || (isSpecialMeal ? '특수 식사' : '기본 식사')}
+      </div>
+    </div>
+
+    <div className="meal-day-card-pills">
+      {meal.menu ? <span className="pill">{meal.menu}</span> : null}
+      {isSpecialMeal ? <span className="pill soft">가이드형</span> : null}
+    </div>
+  </div>
+
+  <div className="detail-box" style={{ marginTop: '10px' }}>
     <p>
       <strong>메뉴</strong> {meal.menu || '-'}
     </p>
 
-    <p className="compact-text" style={{ marginTop: '6px' }}>
-      <strong>구성</strong>{' '}
-      {Array.isArray(meal.food_items) && meal.food_items.length > 0
-        ? meal.food_items
-            .map((item) => {
-              if (typeof item === 'string') return item
+    {!isSpecialMeal ? (
+      <p className="compact-text" style={{ marginTop: '6px' }}>
+        <strong>구성</strong>{' '}
+        {Array.isArray(meal.food_items) && meal.food_items.length > 0
+          ? meal.food_items
+              .map((item) => {
+                if (typeof item === 'string') return item
 
-              const name =
-                item.food_name ||
-                item.name ||
-                item.display_name ||
-                item.label ||
-                item.food ||
-                item.title ||
-                ''
+                const name =
+                  item.food_name ||
+                  item.name ||
+                  item.display_name ||
+                  item.label ||
+                  item.food ||
+                  item.title ||
+                  ''
 
-              const amount =
-                item.grams ??
-                item.amount_g ??
-                item.amount ??
-                item.serving_g ??
-                item.weight_g ??
-                item.quantity ??
-                ''
+                const amount =
+                  item.grams ??
+                  item.amount_g ??
+                  item.amount ??
+                  item.serving_g ??
+                  item.weight_g ??
+                  item.quantity ??
+                  ''
 
-              if (name && amount) return `${name} ${amount}g`
-              if (name) return name
-
-              return ''
-            })
-            .filter(Boolean)
-            .join(' / ')
-        : '-'}
-    </p>
+                if (name && amount) return `${name} ${amount}g`
+                if (name) return name
+                return ''
+              })
+              .filter(Boolean)
+              .join(' / ')
+          : '-'}
+      </p>
+    ) : null}
 
     <p
       className="compact-text"
       style={{ marginTop: '6px', whiteSpace: 'pre-line', lineHeight: 1.6 }}
     >
-      <strong>가이드</strong> {meal.guide_text || '가이드 없음'}
+      <strong>가이드</strong>{' '}
+      {meal.guide_text ||
+        (isSpecialMeal
+          ? '가이드 없음'
+          : '식사 목적에 맞게 메뉴와 양을 조절해서 진행하세요.')}
     </p>
-  </div>
-)}
 
-{isSpecialMeal && (
-  <div
-    className="compact-text"
-    style={{ whiteSpace: 'pre-line', lineHeight: 1.6 }}
-  >
-    {meal.guide_text}
+    <div className="compact-text" style={{ marginTop: '10px' }}>
+      약 {meal.kcal || 0} kcal / 탄 {meal.carbs_g || 0} / 단 {meal.protein_g || 0} / 지 {meal.fat_g || 0}
+    </div>
   </div>
-)}
-
-<div className="compact-text" style={{ marginTop: '8px' }}>
-  약 {meal.kcal || 0} kcal / 탄 {meal.carbs_g || 0} / 단 {meal.protein_g || 0} / 지 {meal.fat_g || 0}
 </div>
                           </div>
                         )
