@@ -905,6 +905,29 @@ const [mealPlanEditMeals, setMealPlanEditMeals] = useState([])
   weeklyXp: false,
   xpLogs: false,
 })
+
+  const getRiceAmountValue = (form) => {
+  const customValue = Number(form?.custom_rice_amount_g || 0)
+  if (customValue > 0) return customValue
+
+  const presetValue = Number(form?.usual_rice_amount_g || 0)
+  if (presetValue > 0) return presetValue
+
+  return 0
+}
+
+const getRiceGuideSummary = (riceAmountG) => {
+  const riceG = Number(riceAmountG || 0)
+
+  if (!riceG) {
+    return {
+      riceG: 0,
+      hetbahnCount: 0,
+      carbsG: 0,
+      kcal: 0,
+    }
+  }
+  
 const riceGuideSummary = useMemo(() => {
   return getRiceGuideSummary(getRiceAmountValue(mealPlanForm))
 }, [mealPlanForm.usual_rice_amount_g, mealPlanForm.custom_rice_amount_g])
@@ -2006,27 +2029,7 @@ const handleMealPlanSave = async () => {
 }
 
 
-const getRiceAmountValue = (form) => {
-  const customValue = Number(form?.custom_rice_amount_g || 0)
-  if (customValue > 0) return customValue
 
-  const presetValue = Number(form?.usual_rice_amount_g || 0)
-  if (presetValue > 0) return presetValue
-
-  return 0
-}
-
-const getRiceGuideSummary = (riceAmountG) => {
-  const riceG = Number(riceAmountG || 0)
-
-  if (!riceG) {
-    return {
-      riceG: 0,
-      hetbahnCount: 0,
-      carbsG: 0,
-      kcal: 0,
-    }
-  }
 
   const hetbahnCount = Math.round((riceG / 300) * 10) / 10
   const carbsG = Math.round((riceG * 31) / 100)
