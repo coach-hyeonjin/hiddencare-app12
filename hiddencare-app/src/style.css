@@ -21105,3 +21105,27 @@ textarea:focus {
     font-size: 13px;
   }
 }
+.meal-day-card {
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 14px;
+  padding: 14px;
+  background: rgba(255, 255, 255, 0.03);
+  margin-top: 10px;
+}
+
+.meal-day-card-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 10px;
+}
+
+.meal-day-card-pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.meal-day-card .detail-box {
+  margin-bottom: 0;
+}
