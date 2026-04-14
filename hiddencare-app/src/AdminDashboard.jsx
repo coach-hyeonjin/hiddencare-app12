@@ -618,6 +618,120 @@ function playAdminAlertSound() {
     console.error('알림음 재생 실패:', error)
   }
 }
+function getRiceGuide(riceAmount) {
+  const riceG = Number(riceAmount || 0)
+
+  if (!riceG) {
+    return {
+      rice_g: 0,
+      hetbahn_large_count: 0,
+      carbs_g: 0,
+      kcal: 0,
+      summary: '밥량 정보 없음',
+    }
+  }
+
+  const carbsPer100g = 31
+  const kcalPer100g = 130
+  const hetbahnLargeG = 300
+
+  const carbsG = Math.round((riceG * carbsPer100g) / 100)
+  const kcal = Math.round((riceG * kcalPer100g) / 100)
+  const hetbahnLargeCount = Math.round((riceG / hetbahnLargeG) * 10) / 10
+
+  return {
+    rice_g: riceG,
+    hetbahn_large_count: hetbahnLargeCount,
+    carbs_g: carbsG,
+    kcal,
+    summary: `현재 기준 밥량 ${riceG}g · 햇반 큰공기 약 ${hetbahnLargeCount}개 · 탄수화물 약 ${carbsG}g · 약 ${kcal}kcal`,
+  }
+}
+
+function getMealCarbDistribution({
+  mealSlots = [],
+  targetCarbs = 0,
+  usualRiceAmountG = 0,
+  largestMealSlot = '저녁',
+  mealStartMode = 'current',
+  goalType = 'diet',
+  isTrainingDay = false,
+}) {
+  const safeSlots = Array.isArray(mealSlots) ? mealSlots : []
+  if (!safeSlots.length) return []
+
+  const riceGuide = getRiceGuide(usualRiceAmountG)
+  const baselineLargestCarbs = Number(riceGuide.carbs_g || 0)
+
+  const weights = safeSlots.map((slot) => {
+    if (slot === largestMealSlot) return 1
+    if (slot === '야식') return 0.55
+    if (slot === '저녁') return 0.8
+    if (slot === '점심') return 0.75
+    if (slot === '아침') return 0.6
+    return 0.7
+  })
+
+  let baseline = safeSlots.map((slot, index) => ({
+    slot,
+    carbs: Math.round(baselineLargestCarbs * weights[index]),
+  }))
+
+  const baselineTotal = baseline.reduce((sum, item) => sum + Number(item.carbs || 0), 0)
+  if (!baselineTotal) {
+    const evenCarbs = Math.round(Number(targetCarbs || 0) / safeSlots.length)
+    return safeSlots.map((slot) => ({
+      slot,
+      carbs: evenCarbs,
+      baseline_rice_g: 0,
+      adjusted_rice_g: 0,
+      carb_distribution_reason: 'fallback_even_distribution',
+    }))
+  }
+
+  let startRatio = 1
+  if (mealStartMode === 'slightly_reduce') startRatio = 0.9
+  if (mealStartMode === 'aggressive_reduce') startRatio = 0.8
+
+  if (mealStartMode === 'cycle') {
+    if (goalType === 'diet') {
+      startRatio = isTrainingDay ? 0.95 : 0.8
+    } else if (goalType === 'bulk' || goalType === 'muscle_gain') {
+      startRatio = isTrainingDay ? 1.08 : 0.95
+    } else {
+      startRatio = isTrainingDay ? 1 : 0.92
+    }
+  }
+
+  baseline = baseline.map((item) => ({
+    ...item,
+    carbs: Math.round(item.carbs * startRatio),
+  }))
+
+  const adjustedTotal = baseline.reduce((sum, item) => sum + Number(item.carbs || 0), 0)
+  const scale = adjustedTotal > 0 ? Number(targetCarbs || 0) / adjustedTotal : 1
+
+  const result = baseline.map((item) => {
+    const finalCarbs = Math.max(0, Math.round(item.carbs * scale))
+    const adjustedRiceG = Math.round((finalCarbs / 31) * 100)
+
+    return {
+      slot: item.slot,
+      carbs: finalCarbs,
+      baseline_rice_g: item.slot === largestMealSlot ? Number(usualRiceAmountG || 0) : Math.round((item.carbs / 31) * 100),
+      adjusted_rice_g: adjustedRiceG,
+      carb_distribution_reason: `${goalType}_${mealStartMode}_${item.slot === largestMealSlot ? 'largest' : 'normal'}`,
+    }
+  })
+
+  const diff = Number(targetCarbs || 0) - result.reduce((sum, item) => sum + Number(item.carbs || 0), 0)
+  if (result.length > 0 && diff !== 0) {
+    result[result.length - 1].carbs += diff
+    result[result.length - 1].adjusted_rice_g = Math.round((result[result.length - 1].carbs / 31) * 100)
+  }
+
+  return result
+}
 
 const MANAGER_THOUGHT_CARDS = [
   {
@@ -862,6 +976,11 @@ const emptyMealPlanForm = {
   allowed_bread_per_week: 2,
   allowed_dessert_per_week: 1,
   meal_structure_mode: 'structured',
+    usual_rice_amount_g: 300,
+  largest_meal_slot: '저녁',
+  meal_start_mode: 'current',
+  rice_amount_source: 'preset',
+  usual_rice_amount_custom_g: '',
     alcohol_frequency_per_week: 0,
   allowed_alcohol_per_week: 1,
 }
@@ -1249,6 +1368,13 @@ const handleMealPlanGenerate = async () => {
   const mealsPerDay = Number(mealPlanForm.meals_per_day || 3)
  const mealSlots = getLifestyleMealSlots(mealPlanForm)
 
+    const usualRiceAmountG =
+    mealPlanForm.rice_amount_source === 'custom'
+      ? Number(mealPlanForm.usual_rice_amount_custom_g || 0)
+      : Number(mealPlanForm.usual_rice_amount_g || 0)
+
+  const riceGuide = getRiceGuide(usualRiceAmountG)
+  
   const sodiumLimitMg = 2000
   const saturatedFatLimitG = Math.round((targetKcal * 0.1) / 9)
 
@@ -1285,7 +1411,12 @@ const handleMealPlanGenerate = async () => {
     inputs_json: {
       mealPlanForm,
       latestHealth: health,
-          
+                riceGuide,
+      eatingBaseline: {
+        usual_rice_amount_g: usualRiceAmountG,
+        largest_meal_slot: mealPlanForm.largest_meal_slot || '저녁',
+        meal_start_mode: mealPlanForm.meal_start_mode || 'current',
+      },
     },
     result_json: {
       bmr,
@@ -1311,6 +1442,11 @@ const handleMealPlanGenerate = async () => {
     allowed_bread_per_week: Number(mealPlanForm.allowed_bread_per_week || 0),
     allowed_dessert_per_week: Number(mealPlanForm.allowed_dessert_per_week || 0),
     meal_structure_mode: mealPlanForm.meal_structure_mode || 'structured',
+          usual_rice_amount_g: usualRiceAmountG,
+    largest_meal_slot: mealPlanForm.largest_meal_slot || '저녁',
+    meal_start_mode: mealPlanForm.meal_start_mode || 'current',
+    rice_carbs_g: riceGuide.carbs_g,
+    rice_kcal: riceGuide.kcal,
       alcohol_frequency_per_week: Number(mealPlanForm.alcohol_frequency_per_week || 0),
     allowed_alcohol_per_week: Number(mealPlanForm.allowed_alcohol_per_week || 0),
     },
@@ -1397,6 +1533,10 @@ const handleMealPlanGenerate = async () => {
         allowed_bread_per_week: Number(mealPlanForm.allowed_bread_per_week || 0),
         allowed_dessert_per_week: Number(mealPlanForm.allowed_dessert_per_week || 0),
         meal_structure_mode: mealPlanForm.meal_structure_mode || 'structured',
+                usual_rice_amount_g: usualRiceAmountG,
+        largest_meal_slot: mealPlanForm.largest_meal_slot || '저녁',
+        meal_start_mode: mealPlanForm.meal_start_mode || 'current',
+        rice_amount_source: mealPlanForm.rice_amount_source || 'preset',
         alcohol_frequency_per_week: Number(mealPlanForm.alcohol_frequency_per_week || 0),
         allowed_alcohol_per_week: Number(mealPlanForm.allowed_alcohol_per_week || 0),
         last_calculation_id: calculationId,
@@ -5297,7 +5437,15 @@ const buildMealPlanDayRow = ({
   const baseFat = Number(mealPlanForm.target_fat_g || 0)
 
   const slotCount = Math.max(generationMealSlots.length, 1)
-
+  const carbDistribution = getMealCarbDistribution({
+    mealSlots: generationMealSlots,
+    targetCarbs: adjustedDayPlan.carbs,
+    usualRiceAmountG: usual_rice_amount_g,
+    largestMealSlot: largest_meal_slot || '저녁',
+    mealStartMode: meal_start_mode || 'current',
+    goalType: mealPlanForm.goal_type || 'diet',
+    isTrainingDay,
+  })
   let dayRecentUsedIds = []
   let daySlotUsedNames = []
   let dayPreferredIncludedCount = 0
@@ -5319,8 +5467,11 @@ const buildMealPlanDayRow = ({
   })
 
   const mealsJson = generationMealSlots.map((slot) => {
+      const carbRow =
+      carbDistribution.find((item) => item.slot === slot) || null
+
     const slotTarget = {
-      carbs_g: Math.round(adjustedDayPlan.carbs / slotCount),
+      carbs_g: Number(carbRow?.carbs || 0),
       protein_g: Math.round(adjustedDayPlan.protein / slotCount),
       fat_g: Math.round(adjustedDayPlan.fat / slotCount),
     }
@@ -5350,7 +5501,24 @@ const buildMealPlanDayRow = ({
     dayPreferredIncludedCount = Number(
       mealResult?.nextPreferredIncludedCount || dayPreferredIncludedCount
     )
-
+    return {
+      slot,
+      menu: mealResult?.menu || '',
+      guide_text: mealResult?.guide_text || '',
+      food_items: Array.isArray(mealResult?.items) ? mealResult.items : [],
+      kcal: Number(mealResult?.kcal || 0),
+      carbs_g: Number(mealResult?.carbs_g || slotTarget.carbs_g || 0),
+      protein_g: Number(mealResult?.protein_g || slotTarget.protein_g || 0),
+      fat_g: Number(mealResult?.fat_g || slotTarget.fat_g || 0),
+      sodium_mg: Number(mealResult?.sodium_mg || 0),
+      baseline_rice_g: Number(carbRow?.baseline_rice_g || 0),
+      adjusted_rice_g: Number(carbRow?.adjusted_rice_g || 0),
+      carb_distribution_reason: carbRow?.carb_distribution_reason || '',
+      target_carbs_g: Number(slotTarget.carbs_g || 0),
+      target_protein_g: Number(slotTarget.protein_g || 0),
+      target_fat_g: Number(slotTarget.fat_g || 0),
+    }
+  })
     const alternatives = getMealAlternatives(
       mealPlanForm.goal_type,
       slot,
@@ -5594,6 +5762,13 @@ const generationMealSlots = getLifestyleMealSlots(mealPlanForm)
     alcoholDaySet,
     latestCalculationId,
     currentAdminId,
+      usual_rice_amount_g:
+    mealPlanForm.rice_amount_source === 'custom'
+      ? Number(mealPlanForm.usual_rice_amount_custom_g || 0)
+      : Number(mealPlanForm.usual_rice_amount_g || 0),
+
+  largest_meal_slot: mealPlanForm.largest_meal_slot || '저녁',
+  meal_start_mode: mealPlanForm.meal_start_mode || 'current',
   })
 
   rows.push(row)
@@ -16760,6 +16935,108 @@ const filteredExercisesAdvanced = exercises.filter((exercise) => {
 </div>
 </div>
 
+<div className="meal-form-section-title">
+  <strong>현실 식사 패턴 설정</strong>
+  <p>회원이 실제 먹던 밥량과 가장 많이 먹는 끼니를 기준으로 식단 시작점을 맞춥니다.</p>
+</div>
+
+<div className="grid-3">
+  <label className="field">
+    <span>평소 한 끼 밥량</span>
+    <select
+      value={mealPlanForm.rice_amount_source === 'custom' ? 'custom' : String(mealPlanForm.usual_rice_amount_g || 300)}
+      onChange={(e) => {
+        const value = e.target.value
+        if (value === 'custom') {
+          setMealPlanForm((prev) => ({
+            ...prev,
+            rice_amount_source: 'custom',
+          }))
+          return
+        }
+
+        setMealPlanForm((prev) => ({
+          ...prev,
+          rice_amount_source: 'preset',
+          usual_rice_amount_g: Number(value),
+        }))
+      }}
+    >
+      <option value="150">150g</option>
+      <option value="210">210g</option>
+      <option value="300">300g</option>
+      <option value="450">450g</option>
+      <option value="600">600g</option>
+      <option value="custom">직접입력</option>
+    </select>
+  </label>
+
+  <label className="field">
+    <span>가장 많이 먹는 끼니</span>
+    <select
+      value={mealPlanForm.largest_meal_slot}
+      onChange={(e) =>
+        setMealPlanForm((prev) => ({
+          ...prev,
+          largest_meal_slot: e.target.value,
+        }))
+      }
+    >
+      <option value="아침">아침</option>
+      <option value="점심">점심</option>
+      <option value="저녁">저녁</option>
+      <option value="야식">야식</option>
+    </select>
+  </label>
+
+  <label className="field">
+    <span>식단 시작 방식</span>
+    <select
+      value={mealPlanForm.meal_start_mode}
+      onChange={(e) =>
+        setMealPlanForm((prev) => ({
+          ...prev,
+          meal_start_mode: e.target.value,
+        }))
+      }
+    >
+      <option value="current">평소 식사량 기준으로 시작</option>
+      <option value="slightly_reduce">조금 줄여서 시작</option>
+      <option value="aggressive_reduce">많이 줄여서 시작</option>
+      <option value="cycle">훈련일/휴식일에 따라 조절</option>
+    </select>
+  </label>
+</div>
+
+{mealPlanForm.rice_amount_source === 'custom' && (
+  <div className="grid-1">
+    <label className="field">
+      <span>직접입력 밥량(g)</span>
+      <input
+        type="number"
+        min="0"
+        value={mealPlanForm.usual_rice_amount_custom_g}
+        onChange={(e) =>
+          setMealPlanForm((prev) => ({
+            ...prev,
+            usual_rice_amount_custom_g: e.target.value,
+          }))
+        }
+      />
+    </label>
+  </div>
+)}
+
+<div className="sub-card">
+  <div className="compact-text">
+    {getRiceGuide(
+      mealPlanForm.rice_amount_source === 'custom'
+        ? mealPlanForm.usual_rice_amount_custom_g
+        : mealPlanForm.usual_rice_amount_g
+    ).summary}
+  </div>
+</div>
+          
 <div className="meal-form-section-title">
   <strong>실행 단계</strong>
   <p>처음이면 자동 계산 → 식단 설정 저장 → 월간 식단 생성 순서로 진행하면 됩니다.</p>
