@@ -5503,6 +5503,78 @@ const formatMealMenuWithRice = ({
     return nextItem
   })
 }
+  const getEffectiveStartingRiceAmount = ({
+  usualRiceAmountG = 0,
+  mealStartMode = 'current',
+  goalType = 'diet',
+  isTrainingDay = false,
+  dayNumber = 1,
+}) => {
+  const baseRice = Number(usualRiceAmountG || 0)
+
+  if (!baseRice) return 0
+
+  if (mealStartMode === 'current') {
+    if (goalType === 'diet' || goalType === 'recomposition') {
+      if (dayNumber <= 7) return baseRice
+      if (dayNumber <= 14) return Math.round(baseRice * 0.92)
+      if (dayNumber <= 21) return Math.round(baseRice * 0.85)
+      return Math.round(baseRice * 0.78)
+    }
+
+    if (goalType === 'maintenance') {
+      return baseRice
+    }
+
+    if (goalType === 'muscle_gain' || goalType === 'bulk') {
+      if (dayNumber <= 7) return baseRice
+      if (dayNumber <= 14) return Math.round(baseRice * 1.03)
+      return Math.round(baseRice * 1.05)
+    }
+
+    return baseRice
+  }
+
+  if (mealStartMode === 'slightly_reduce') {
+    if (goalType === 'diet' || goalType === 'recomposition') {
+      if (dayNumber <= 7) return Math.round(baseRice * 0.92)
+      if (dayNumber <= 14) return Math.round(baseRice * 0.86)
+      return Math.round(baseRice * 0.8)
+    }
+
+    return Math.round(baseRice * 0.95)
+  }
+
+  if (mealStartMode === 'aggressive_reduce') {
+    if (goalType === 'diet' || goalType === 'recomposition') {
+      if (dayNumber <= 7) return Math.round(baseRice * 0.85)
+      if (dayNumber <= 14) return Math.round(baseRice * 0.78)
+      return Math.round(baseRice * 0.72)
+    }
+
+    return Math.round(baseRice * 0.85)
+  }
+
+  if (mealStartMode === 'cycle') {
+    if (goalType === 'diet' || goalType === 'recomposition') {
+      return isTrainingDay
+        ? Math.round(baseRice * 0.95)
+        : Math.round(baseRice * 0.8)
+    }
+
+    if (goalType === 'muscle_gain' || goalType === 'bulk') {
+      return isTrainingDay
+        ? Math.round(baseRice * 1.08)
+        : Math.round(baseRice * 0.95)
+    }
+
+    return isTrainingDay
+      ? baseRice
+      : Math.round(baseRice * 0.92)
+  }
+
+  return baseRice
+}
 const buildMealPlanDayRow = ({
   date,
   dayNumber,
@@ -5572,11 +5644,17 @@ const adjustedDayPlan = getLifestyleAdjustedDayPlan({
   totalProtein: baseProtein,
   totalFat: baseFat,
 })
-
+const effectiveStartingRiceAmount = getEffectiveStartingRiceAmount({
+  usualRiceAmountG: usual_rice_amount_g,
+  mealStartMode: meal_start_mode || 'current',
+  goalType: mealPlanForm.goal_type || 'diet',
+  isTrainingDay,
+  dayNumber,
+})
 const carbDistribution = getMealCarbDistribution({
   mealSlots: generationMealSlots,
   targetCarbs: adjustedDayPlan.carbs,
-  usualRiceAmountG: usual_rice_amount_g,
+    usualRiceAmountG: effectiveStartingRiceAmount,
   largestMealSlot: largest_meal_slot || '저녁',
   mealStartMode: meal_start_mode || 'current',
   goalType: mealPlanForm.goal_type || 'diet',
