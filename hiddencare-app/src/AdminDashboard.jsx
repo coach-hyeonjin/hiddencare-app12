@@ -17042,7 +17042,7 @@ const filteredExercisesAdvanced = exercises.filter((exercise) => {
 <div className="meal-day-card">
   <div className="meal-day-card-top">
     <div>
-      <strong>{slotLabel}</strong>
+     <strong>{meal.slot || `식사 ${index + 1}`}</strong>
       <div className="compact-text" style={{ marginTop: '4px' }}>
         {detailLabel || (isSpecialMeal ? '특수 식사' : '기본 식사')}
       </div>
