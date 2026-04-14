@@ -7206,39 +7206,36 @@ const toggleChecklistItem = (field, item) => {
   )
 }
 
-const getBurnoutSignalText = (checks = []) => {
-  const count = checks.length
-
-  if (count <= 1) return '현재는 번아웃보다는 일반 피로 수준입니다.'
-  if (count <= 3) return '피로 누적이 시작된 상태입니다.'
-  return '번아웃 가능성이 높은 상태입니다. 회복 체크를 확인하세요.'
-}
-  const toggleBurnoutRecoveryItem = (item) => {
+const toggleBurnoutRecoveryItem = (item) => {
   setBurnoutRecoveryChecks((prev) =>
     prev.includes(item)
       ? prev.filter((v) => v !== item)
       : [...prev, item]
   )
 }
-  const toggleCoachConditionCollapse = (id) => {
+
+const toggleCoachConditionCollapse = (id) => {
   setCollapsedCoachConditions((prev) => ({
     ...prev,
     [id]: !prev[id],
   }))
 }
-  const filteredExercises = useMemo(() => {
-    const keyword = exerciseSearch.trim().toLowerCase()
-    if (!keyword) return exercises
-    return exercises.filter((exercise) => {
-      const brandName = exercise.brands?.name || ''
-      return (
-        exercise.name.toLowerCase().includes(keyword) ||
-        (exercise.body_part || '').toLowerCase().includes(keyword) ||
-        (exercise.category || '').toLowerCase().includes(keyword) ||
-        brandName.toLowerCase().includes(keyword)
-      )
-    })
-  }, [exerciseSearch, exercises])
+
+const filteredExercises = useMemo(() => {
+  const keyword = exerciseSearch.trim().toLowerCase()
+  if (!keyword) return exercises
+
+  return exercises.filter((exercise) => {
+    const brandName = exercise.brands?.name || ''
+
+    return (
+      exercise.name.toLowerCase().includes(keyword) ||
+      (exercise.body_part || '').toLowerCase().includes(keyword) ||
+      (exercise.category || '').toLowerCase().includes(keyword) ||
+      brandName.toLowerCase().includes(keyword)
+    )
+  })
+}, [exerciseSearch, exercises])
 
   const memberStats = useMemo(() => {
   return members.map((member) => {
