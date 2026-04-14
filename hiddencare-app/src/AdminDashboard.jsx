@@ -5395,18 +5395,7 @@ const buildMealPlanDayRow = ({
     }
   })
 
-  const mealsSummaryJson = mealsJson.map((meal) => ({
-    slot: meal.slot,
-    menu: meal.menu,
-    guide_text: meal.guide_text || '',
-    meal_detail_type: meal.meal_detail_type || '',
-    kcal: meal.kcal,
-    carbs_g: meal.carbs_g,
-    protein_g: meal.protein_g,
-    fat_g: meal.fat_g,
-    sodium_mg: meal.sodium_mg,
-  }))
-const actualDayTotals = mealsJson.reduce(
+  const rawDayTotals = mealsJson.reduce(
   (acc, meal) => {
     acc.kcal += Number(meal.kcal || 0)
     acc.carbs_g += Number(meal.carbs_g || 0)
@@ -5423,6 +5412,83 @@ const actualDayTotals = mealsJson.reduce(
     sodium_mg: 0,
   }
 )
+
+const targetDayTotals = {
+  kcal: Number(adjustedDayPlan?.kcal || adjustedTargetKcal || mealPlanForm.target_kcal || 0),
+  carbs_g: Number(adjustedDayPlan?.carbs || mealPlanForm.target_carbs_g || 0),
+  protein_g: Number(adjustedDayPlan?.protein || mealPlanForm.target_protein_g || 0),
+  fat_g: Number(adjustedDayPlan?.fat || mealPlanForm.target_fat_g || 0),
+}
+
+const kcalRatio =
+  rawDayTotals.kcal > 0 && targetDayTotals.kcal > 0
+    ? targetDayTotals.kcal / rawDayTotals.kcal
+    : 1
+
+const carbsRatio =
+  rawDayTotals.carbs_g > 0 && targetDayTotals.carbs_g > 0
+    ? targetDayTotals.carbs_g / rawDayTotals.carbs_g
+    : kcalRatio
+
+const proteinRatio =
+  rawDayTotals.protein_g > 0 && targetDayTotals.protein_g > 0
+    ? targetDayTotals.protein_g / rawDayTotals.protein_g
+    : kcalRatio
+
+const fatRatio =
+  rawDayTotals.fat_g > 0 && targetDayTotals.fat_g > 0
+    ? targetDayTotals.fat_g / rawDayTotals.fat_g
+    : kcalRatio
+
+const correctedMealsJson = mealsJson.map((meal) => {
+  const correctedCarbs = Math.max(0, Math.round(Number(meal.carbs_g || 0) * carbsRatio))
+  const correctedProtein = Math.max(0, Math.round(Number(meal.protein_g || 0) * proteinRatio))
+  const correctedFat = Math.max(0, Math.round(Number(meal.fat_g || 0) * fatRatio))
+  const correctedKcal = Math.max(
+    0,
+    Math.round(
+      Number(meal.kcal || 0) * kcalRatio
+    )
+  )
+
+  return {
+    ...meal,
+    carbs_g: correctedCarbs,
+    protein_g: correctedProtein,
+    fat_g: correctedFat,
+    kcal: correctedKcal,
+  }
+})
+
+const actualDayTotals = correctedMealsJson.reduce(
+  (acc, meal) => {
+    acc.kcal += Number(meal.kcal || 0)
+    acc.carbs_g += Number(meal.carbs_g || 0)
+    acc.protein_g += Number(meal.protein_g || 0)
+    acc.fat_g += Number(meal.fat_g || 0)
+    acc.sodium_mg += Number(meal.sodium_mg || 0)
+    return acc
+  },
+  {
+    kcal: 0,
+    carbs_g: 0,
+    protein_g: 0,
+    fat_g: 0,
+    sodium_mg: 0,
+  }
+)
+
+const mealsSummaryJson = correctedMealsJson.map((meal) => ({
+  slot: meal.slot,
+  menu: meal.menu,
+  guide_text: meal.guide_text || '',
+  meal_detail_type: meal.meal_detail_type || '',
+  kcal: meal.kcal,
+  carbs_g: meal.carbs_g,
+  protein_g: meal.protein_g,
+  fat_g: meal.fat_g,
+  sodium_mg: meal.sodium_mg,
+}))
   return {
     member_id: mealPlanForm.member_id,
     admin_id: currentAdminId || null,
@@ -5432,7 +5498,7 @@ const actualDayTotals = mealsJson.reduce(
 total_carbs_g: Math.round(actualDayTotals.carbs_g),
 total_protein_g: Math.round(actualDayTotals.protein_g),
 total_fat_g: Math.round(actualDayTotals.fat_g),
-    meals_json: mealsJson,
+   meals_json: correctedMealsJson,
     meals_summary_json: mealsSummaryJson,
     coach_memo: mealPlanForm.notes || '',
     checked_slots: [],
