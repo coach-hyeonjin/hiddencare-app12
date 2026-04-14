@@ -5658,7 +5658,7 @@ const carbDistribution = getMealCarbDistribution({
           : slot === '야식'
           ? '21:30'
           : '19:30',
-         menu: formatMealMenuWithRice({
+              menu: formatMealMenuWithRice({
         mealResult: {
           ...mealResult,
           items: adjustedFoodItems,
