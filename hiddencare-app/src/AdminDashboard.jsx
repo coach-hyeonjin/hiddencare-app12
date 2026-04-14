@@ -2911,6 +2911,14 @@ const loadMemberMealPlanProfile = async (memberId) => {
       meal_structure_mode: data?.meal_structure_mode || 'structured',
           alcohol_frequency_per_week: Number(data?.alcohol_frequency_per_week || 0),
       allowed_alcohol_per_week: Number(data?.allowed_alcohol_per_week || 0),
+          usual_rice_amount_g: Number(data?.usual_rice_amount_g || 300),
+      largest_meal_slot: data?.largest_meal_slot || '저녁',
+      meal_start_mode: data?.meal_start_mode || 'current',
+      rice_amount_source: data?.rice_amount_source || 'preset',
+      usual_rice_amount_custom_g:
+        data?.rice_amount_source === 'custom'
+          ? String(data?.usual_rice_amount_g || '')
+          : '',
   })
 }
   
