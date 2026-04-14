@@ -16369,35 +16369,7 @@ const filteredExercisesAdvanced = exercises.filter((exercise) => {
   </div>
 </div>
 
-                <div className="compact-text">
-                  {food.category_minor || '-'} / {food.source_type || '-'}
-                </div>
-
-                <div className="compact-text">
-                  <strong>aliases:</strong>{' '}
-                  {Array.isArray(food.aliases) && food.aliases.length > 0
-                    ? food.aliases.join(', ')
-                    : '-'}
-                </div>
-
-                <div className="compact-text">
-                  <strong>100g 기준:</strong>{' '}
-                  kcal {Number(food.kcal_per_100g || 0)} / 탄 {Number(food.carbs_per_100g || 0)}g / 단 {Number(food.protein_per_100g || 0)}g / 지 {Number(food.fat_per_100g || 0)}g / 나트륨 {Number(food.sodium_mg_per_100g || 0)}mg
-                </div>
-
-                {food.note ? (
-                  <div className="compact-text">
-                    <strong>메모:</strong> {food.note}
-                  </div>
-                ) : null}
-              </div>
-            ))}
-          </div>
-        )
-      })()}
-    </div>
-  ) : null}
-  
+             
           <label className="field">
   <span>코치 메모</span>
   <textarea
