@@ -864,10 +864,6 @@ const emptyMealPlanForm = {
   meal_structure_mode: 'structured',
     alcohol_frequency_per_week: 0,
   allowed_alcohol_per_week: 1,
-    usual_rice_amount_g: '210',
-  largest_meal_slot: '저녁',
-  meal_start_mode: 'current',
-  custom_rice_amount_g: '',
 }
 
 const [mealPlanForm, setMealPlanForm] = useState(emptyMealPlanForm)
@@ -905,44 +901,6 @@ const [mealPlanEditMeals, setMealPlanEditMeals] = useState([])
   weeklyXp: false,
   xpLogs: false,
 })
-
-  const getRiceAmountValue = (form) => {
-  const customValue = Number(form?.custom_rice_amount_g || 0)
-  if (customValue > 0) return customValue
-
-  const presetValue = Number(form?.usual_rice_amount_g || 0)
-  if (presetValue > 0) return presetValue
-
-  return 0
-}
-
-const getRiceGuideSummary = (riceAmountG) => {
-  const riceG = Number(riceAmountG || 0)
-
-  if (!riceG) {
-    return {
-      riceG: 0,
-      hetbahnCount: 0,
-      carbsG: 0,
-      kcal: 0,
-    }
-  }
-
-  const hetbahnCount = Math.round((riceG / 300) * 10) / 10
-  const carbsG = Math.round((riceG * 31) / 100)
-  const kcal = Math.round((riceG * 149) / 100)
-
-  return {
-    riceG,
-    hetbahnCount,
-    carbsG,
-    kcal,
-  }
-}
-
-const riceGuideSummary = useMemo(() => {
-  return getRiceGuideSummary(getRiceAmountValue(mealPlanForm))
-}, [mealPlanForm.usual_rice_amount_g, mealPlanForm.custom_rice_amount_g])
 
 const toggleActivityRankingSection = (key) => {
   setActivityRankingOpenSections((prev) => ({
@@ -1339,10 +1297,6 @@ const handleMealPlanGenerate = async () => {
       targetCarbs,
       sodiumLimitMg,
       saturatedFatLimitG,
-      usual_rice_amount_g: getRiceAmountValue(mealPlanForm),
-      largest_meal_slot: mealPlanForm.largest_meal_slot || '저녁',
-      meal_start_mode: mealPlanForm.meal_start_mode || 'current',
-      rice_guide_summary: getRiceGuideSummary(getRiceAmountValue(mealPlanForm)),
           diet_mode: mealPlanForm.diet_mode || 'balanced',
     adaptation_strategy: mealPlanForm.adaptation_strategy || 'gradual',
     current_meal_pattern: mealPlanForm.current_meal_pattern || 'mixed',
@@ -1978,9 +1932,6 @@ const handleMealPlanSave = async () => {
     meal_structure_mode: mealPlanForm.meal_structure_mode || 'structured',
         alcohol_frequency_per_week: Number(mealPlanForm.alcohol_frequency_per_week || 0),
     allowed_alcohol_per_week: Number(mealPlanForm.allowed_alcohol_per_week || 0),
-     usual_rice_amount_g: Number(getRiceAmountValue(mealPlanForm) || 0),
-    largest_meal_slot: mealPlanForm.largest_meal_slot || '저녁',
-    meal_start_mode: mealPlanForm.meal_start_mode || 'current',
   }
 
   const { error } = await supabase
@@ -2037,21 +1988,6 @@ const handleMealPlanSave = async () => {
   }
 
   alert('식단 설정 저장 완료')
-}
-
-
-
-
-  const hetbahnCount = Math.round((riceG / 300) * 10) / 10
-  const carbsG = Math.round((riceG * 31) / 100)
-  const kcal = Math.round((riceG * 149) / 100)
-
-  return {
-    riceG,
-    hetbahnCount,
-    carbsG,
-    kcal,
-  }
 }
   
 const buildMealSlotsByCount = (count) => {
@@ -7206,36 +7142,39 @@ const toggleChecklistItem = (field, item) => {
   )
 }
 
-const toggleBurnoutRecoveryItem = (item) => {
+const getBurnoutSignalText = (checks = []) => {
+  const count = checks.length
+
+  if (count <= 1) return '현재는 번아웃보다는 일반 피로 수준입니다.'
+  if (count <= 3) return '피로 누적이 시작된 상태입니다.'
+  return '번아웃 가능성이 높은 상태입니다. 회복 체크를 확인하세요.'
+}
+  const toggleBurnoutRecoveryItem = (item) => {
   setBurnoutRecoveryChecks((prev) =>
     prev.includes(item)
       ? prev.filter((v) => v !== item)
       : [...prev, item]
   )
 }
-
-const toggleCoachConditionCollapse = (id) => {
+  const toggleCoachConditionCollapse = (id) => {
   setCollapsedCoachConditions((prev) => ({
     ...prev,
     [id]: !prev[id],
   }))
 }
-
-const filteredExercises = useMemo(() => {
-  const keyword = exerciseSearch.trim().toLowerCase()
-  if (!keyword) return exercises
-
-  return exercises.filter((exercise) => {
-    const brandName = exercise.brands?.name || ''
-
-    return (
-      exercise.name.toLowerCase().includes(keyword) ||
-      (exercise.body_part || '').toLowerCase().includes(keyword) ||
-      (exercise.category || '').toLowerCase().includes(keyword) ||
-      brandName.toLowerCase().includes(keyword)
-    )
-  })
-}, [exerciseSearch, exercises])
+  const filteredExercises = useMemo(() => {
+    const keyword = exerciseSearch.trim().toLowerCase()
+    if (!keyword) return exercises
+    return exercises.filter((exercise) => {
+      const brandName = exercise.brands?.name || ''
+      return (
+        exercise.name.toLowerCase().includes(keyword) ||
+        (exercise.body_part || '').toLowerCase().includes(keyword) ||
+        (exercise.category || '').toLowerCase().includes(keyword) ||
+        brandName.toLowerCase().includes(keyword)
+      )
+    })
+  }, [exerciseSearch, exercises])
 
   const memberStats = useMemo(() => {
   return members.map((member) => {
@@ -16048,94 +15987,6 @@ const filteredExercisesAdvanced = exercises.filter((exercise) => {
             </label>
           </div>
 
-
-<div className="grid-3" style={{ marginTop: '12px' }}>
-  <label className="field">
-    <span>평소 한 끼 밥은 어느 정도 드시나요?</span>
-    <select
-      value={mealPlanForm.usual_rice_amount_g}
-      onChange={(e) =>
-        setMealPlanForm((prev) => ({
-          ...prev,
-          usual_rice_amount_g: e.target.value,
-        }))
-      }
-    >
-      <option value="150">150g</option>
-      <option value="210">210g</option>
-      <option value="300">300g</option>
-      <option value="450">450g</option>
-      <option value="600">600g</option>
-    </select>
-  </label>
-
-  <label className="field">
-    <span>가장 많이 드시는 끼니는 언제인가요?</span>
-    <select
-      value={mealPlanForm.largest_meal_slot}
-      onChange={(e) =>
-        setMealPlanForm((prev) => ({
-          ...prev,
-          largest_meal_slot: e.target.value,
-        }))
-      }
-    >
-      <option value="아침">아침</option>
-      <option value="점심">점심</option>
-      <option value="저녁">저녁</option>
-      <option value="야식">야식</option>
-    </select>
-  </label>
-
-  <label className="field">
-    <span>식사량은 어떤 방식으로 시작할까요?</span>
-    <select
-      value={mealPlanForm.meal_start_mode}
-      onChange={(e) =>
-        setMealPlanForm((prev) => ({
-          ...prev,
-          meal_start_mode: e.target.value,
-        }))
-      }
-    >
-      <option value="current">평소 드시던 식사량 기준으로 시작</option>
-      <option value="slightly_reduce">조금 줄여서 시작</option>
-      <option value="aggressive_reduce">많이 줄여서 시작</option>
-      <option value="cycle">목표에 따라 올리고 내리기</option>
-    </select>
-  </label>
-</div>
-
-<div className="grid-1" style={{ marginTop: '10px' }}>
-  <label className="field">
-    <span>직접 입력 밥량 (g)</span>
-    <input
-      type="number"
-      min="0"
-      step="10"
-      value={mealPlanForm.custom_rice_amount_g}
-      onChange={(e) =>
-        setMealPlanForm((prev) => ({
-          ...prev,
-          custom_rice_amount_g: e.target.value,
-        }))
-      }
-      placeholder="예: 420"
-    />
-    <div className="compact-text" style={{ marginTop: '6px' }}>
-      직접 입력이 있으면 위 선택값보다 우선 적용됩니다.
-    </div>
-  </label>
-</div>
-
-<div className="detail-box" style={{ marginTop: '10px', marginBottom: '10px' }}>
-  <p><strong>밥량 안내</strong></p>
-  <p>현재 기준 밥량: {riceGuideSummary.riceG || 0}g</p>
-  <p>햇반 큰공기 기준: 약 {riceGuideSummary.hetbahnCount || 0}개</p>
-  <p>탄수화물 환산: 약 {riceGuideSummary.carbsG || 0}g</p>
-  <p>열량 환산: 약 {riceGuideSummary.kcal || 0}kcal</p>
-</div>
-          
 <div className="meal-form-section-title">
   <strong>선택 입력</strong>
   <p>회원 취향과 제외 음식까지 반영해서 식단을 더 현실적으로 만듭니다.</p>
@@ -16941,22 +16792,7 @@ const filteredExercisesAdvanced = exercises.filter((exercise) => {
   <p>단백질: {mealPlanForm.target_protein_g || 0} g</p>
   <p>지방: {mealPlanForm.target_fat_g || 0} g</p>
   <p>식사 슬롯: {(mealPlanForm.meal_slots || []).join(' / ')}</p>
-<p>평소 한 끼 밥량: {riceGuideSummary.riceG || 0}g</p>
-<p>햇반 큰공기 기준: 약 {riceGuideSummary.hetbahnCount || 0}개</p>
-<p>밥량 기준 탄수화물: 약 {riceGuideSummary.carbsG || 0}g</p>
-<p>가장 많이 먹는 끼니: {mealPlanForm.largest_meal_slot || '-'}</p>
-<p>
-  시작 방식:{' '}
-  {mealPlanForm.meal_start_mode === 'current'
-    ? '평소 식사량 기준 시작'
-    : mealPlanForm.meal_start_mode === 'slightly_reduce'
-    ? '조금 줄여서 시작'
-    : mealPlanForm.meal_start_mode === 'aggressive_reduce'
-    ? '많이 줄여서 시작'
-    : '목표에 따라 올리고 내리기'}
-</p>
 
-     
   {mealPlanRecommendation ? (
     <>
       <hr style={{ margin: '12px 0' }} />
