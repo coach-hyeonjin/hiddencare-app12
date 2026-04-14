@@ -1322,36 +1322,19 @@ const handleMealPlanGenerate = async () => {
     .select('id')
     .single()
 
-   if (calcError) {
-    console.error('member_nutrition_calculations 저장 실패 상세:', {
-      message: calcError.message,
-      details: calcError.details,
-      hint: calcError.hint,
-      code: calcError.code,
-      calcPayload,
-    })
+  if (calcError) {
+    console.error('member_nutrition_calculations 저장 실패:', calcError)
   }
 
   const calculationId = calcInsert?.id || null
 
-   setMealPlanForm((prev) => ({
+  setMealPlanForm((prev) => ({
     ...prev,
     meal_slots: mealSlots,
     target_kcal: targetKcal,
     target_protein_g: targetProtein,
     target_fat_g: targetFat,
     target_carbs_g: targetCarbs,
-    calculated_bmr: bmr,
-    calculated_tdee: tdee,
-    calculated_activity_factor: activityFactor,
-    calculated_goal_adjustment_kcal: goalAdjustmentKcal,
-    calculated_bmr_source: bmrSource || '',
-    calculated_sex: health.sex || '',
-    calculated_age: age || '',
-    calculated_height_cm: height || '',
-    calculated_weight_kg: weight || '',
-    calculated_body_fat_percent: bodyFatPercent || '',
-    calculated_skeletal_muscle_mass: skeletalMuscleMass || '',
   }))
   const recommendation = buildPlanStyleRecommendation({
     mealPlanForm: {
@@ -16369,7 +16352,35 @@ const filteredExercisesAdvanced = exercises.filter((exercise) => {
   </div>
 </div>
 
-             
+                <div className="compact-text">
+                  {food.category_minor || '-'} / {food.source_type || '-'}
+                </div>
+
+                <div className="compact-text">
+                  <strong>aliases:</strong>{' '}
+                  {Array.isArray(food.aliases) && food.aliases.length > 0
+                    ? food.aliases.join(', ')
+                    : '-'}
+                </div>
+
+                <div className="compact-text">
+                  <strong>100g 기준:</strong>{' '}
+                  kcal {Number(food.kcal_per_100g || 0)} / 탄 {Number(food.carbs_per_100g || 0)}g / 단 {Number(food.protein_per_100g || 0)}g / 지 {Number(food.fat_per_100g || 0)}g / 나트륨 {Number(food.sodium_mg_per_100g || 0)}mg
+                </div>
+
+                {food.note ? (
+                  <div className="compact-text">
+                    <strong>메모:</strong> {food.note}
+                  </div>
+                ) : null}
+              </div>
+            ))}
+          </div>
+        )
+      })()}
+    </div>
+  ) : null}
+</div>
           <label className="field">
   <span>코치 메모</span>
   <textarea
@@ -16698,130 +16709,85 @@ const filteredExercisesAdvanced = exercises.filter((exercise) => {
   mealPlanForm.target_protein_g ||
   mealPlanForm.target_fat_g) ? (
   <>
-  <div className="detail-box">
-    <p><strong>자동 계산 결과</strong></p>
-    <p>하루 목표 열량: {mealPlanForm.target_kcal || 0} kcal</p>
-    <p>탄수화물: {mealPlanForm.target_carbs_g || 0} g</p>
-    <p>단백질: {mealPlanForm.target_protein_g || 0} g</p>
-    <p>지방: {mealPlanForm.target_fat_g || 0} g</p>
-    <p>식사 슬롯: {(mealPlanForm.meal_slots || []).join(' / ')}</p>
+    <div className="detail-box">
+              <p><strong>자동 계산 결과</strong></p>
+              <p>하루 목표 열량: {mealPlanForm.target_kcal || 0} kcal</p>
+              <p>탄수화물: {mealPlanForm.target_carbs_g || 0} g</p>
+              <p>단백질: {mealPlanForm.target_protein_g || 0} g</p>
+              <p>지방: {mealPlanForm.target_fat_g || 0} g</p>
+              <p>식사 슬롯: {(mealPlanForm.meal_slots || []).join(' / ')}</p>
+            </div>
+            {mealPlanRecommendation ? (
+            <div className="detail-box" style={{ marginTop: '12px' }}>
+              <p><strong>추천 식단 운영 방식</strong></p>
+              <p>{mealPlanRecommendation.recommended_label}</p>
+              <p className="compact-text">{mealPlanRecommendation.summary}</p>
 
-    <div className="compact-text" style={{ marginTop: '10px' }}>
-      성별: {mealPlanForm.calculated_sex === 'female' ? '여성' : mealPlanForm.calculated_sex === 'male' ? '남성' : '-'}
-    </div>
-    <div className="compact-text">
-      나이: {mealPlanForm.calculated_age || '-'} / 키: {mealPlanForm.calculated_height_cm || '-'}cm / 체중: {mealPlanForm.calculated_weight_kg || '-'}kg
-    </div>
-    <div className="compact-text">
-      체지방률: {mealPlanForm.calculated_body_fat_percent || '-'} / 골격근량: {mealPlanForm.calculated_skeletal_muscle_mass || '-'}
-    </div>
-    <div className="compact-text">
-      BMR: {mealPlanForm.calculated_bmr || 0} kcal / 활동계수: {mealPlanForm.calculated_activity_factor || 0}
-    </div>
-    <div className="compact-text">
-      TDEE: {mealPlanForm.calculated_tdee || 0} kcal / 목표보정: {mealPlanForm.calculated_goal_adjustment_kcal || 0} kcal
-    </div>
-    <div className="compact-text">
-      BMR 계산 기준: {mealPlanForm.calculated_bmr_source || '-'}
-    </div>
+              <div className="compact-text" style={{ marginTop: '8px', marginBottom: '10px' }}>
+                {Array.isArray(mealPlanRecommendation.reasons) &&
+                mealPlanRecommendation.reasons.length > 0
+                  ? mealPlanRecommendation.reasons.map((reason, index) => (
+                      <div key={`plan-reason-${index}`}>- {reason}</div>
+                    ))
+                  : null}
+              </div>
+
+              <label className="field" style={{ marginBottom: '10px' }}>
+                <span>추천 식단 방식</span>
+                <select
+                  value={selectedPlanStyle || ''}
+                  onChange={(e) => setSelectedPlanStyle(e.target.value)}
+                >
+                  <option value="">선택</option>
+                  {Array.isArray(mealPlanRecommendation.alternatives)
+                    ? mealPlanRecommendation.alternatives.map((item) => (
+                        <option key={item.key} value={item.key}>
+                          {item.label}
+                        </option>
+                      ))
+                    : null}
+                </select>
+              </label>
+
+              <div className="inline-actions wrap">
+                <button
+                  type="button"
+                  className="primary-btn"
+                  onClick={() => {
+  const nextPlanStyle =
+    selectedPlanStyle || mealPlanRecommendation?.recommended_key || ''
+
+  setMealPlanForm((prev) => ({
+    ...prev,
+    recommended_plan_style: nextPlanStyle,
+  }))
+
+  alert('추천 식단 방식이 적용되었습니다.')
+}}
+                >
+                  추천 방식 적용
+                </button>
+
+                <div className="compact-text">
+                  추천 방식을 적용한 뒤 월간 식단 생성을 진행하면 됩니다.
+                </div>
+                {mealPlanForm.recommended_plan_style ? (
+  <div className="compact-text" style={{ marginTop: '8px' }}>
+    현재 적용 방식:{' '}
+    <strong>
+      {PLAN_STYLE_META[mealPlanForm.recommended_plan_style]?.label ||
+        mealPlanForm.recommended_plan_style}
+    </strong>
   </div>
-
-  {mealPlanRecommendation ? (
-    <div className="detail-box" style={{ marginTop: '12px' }}>
-      <p><strong>추천 식단 운영 방식</strong></p>
-
-      <div className="compact-text" style={{ marginBottom: '6px' }}>
-        AI 추천 방식:{' '}
-        <strong>{mealPlanRecommendation.recommended_label || '-'}</strong>
-      </div>
-
-      <p className="compact-text">{mealPlanRecommendation.summary}</p>
-
-      <div className="compact-text" style={{ marginTop: '8px', marginBottom: '10px' }}>
-        {Array.isArray(mealPlanRecommendation.reasons) &&
-        mealPlanRecommendation.reasons.length > 0
-          ? mealPlanRecommendation.reasons.map((reason, index) => (
-              <div key={`plan-reason-${index}`}>- {reason}</div>
-            ))
-          : null}
-      </div>
-
-      <label className="field" style={{ marginBottom: '10px' }}>
-        <span>직접 선택할 식단 방식</span>
-        <select
-          value={
-            selectedPlanStyle ||
-            mealPlanForm.recommended_plan_style ||
-            mealPlanRecommendation?.recommended_key ||
-            ''
-          }
-          onChange={(e) => setSelectedPlanStyle(e.target.value)}
-        >
-          <option value="">선택</option>
-          {Array.isArray(mealPlanRecommendation.alternatives)
-            ? mealPlanRecommendation.alternatives.map((item) => (
-                <option key={item.key} value={item.key}>
-                  {item.label}
-                </option>
-              ))
-            : null}
-        </select>
-      </label>
-
-      <div className="compact-text" style={{ marginBottom: '10px' }}>
-        현재 선택 방식:{' '}
-        <strong>
-          {PLAN_STYLE_META[
-            selectedPlanStyle ||
-            mealPlanForm.recommended_plan_style ||
-            mealPlanRecommendation?.recommended_key ||
-            ''
-          ]?.label || '-'}
-        </strong>
-      </div>
-
-      <div className="inline-actions wrap">
-        <button
-          type="button"
-          className="primary-btn"
-          onClick={() => {
-            const nextPlanStyle =
-              selectedPlanStyle ||
-              mealPlanForm.recommended_plan_style ||
-              mealPlanRecommendation?.recommended_key ||
-              ''
-
-            setMealPlanForm((prev) => ({
-              ...prev,
-              recommended_plan_style: nextPlanStyle,
-            }))
-
-            setSelectedPlanStyle(nextPlanStyle)
-
-            alert('추천 식단 방식이 적용되었습니다.')
-          }}
-        >
-          추천 방식 적용
-        </button>
-
-        <div className="compact-text">
-          추천 방식을 적용한 뒤 월간 식단 생성을 진행하면 됩니다.
-        </div>
-
-        {mealPlanForm.recommended_plan_style ? (
-          <div className="compact-text" style={{ marginTop: '8px' }}>
-            현재 적용 방식:{' '}
-            <strong>
-              {PLAN_STYLE_META[mealPlanForm.recommended_plan_style]?.label ||
-                mealPlanForm.recommended_plan_style}
-            </strong>
-          </div>
-        ) : null}
-      </div>
-    </div>
-  ) : null}
-</>
 ) : null}
+              </div>
+            </div>
+        
+         ) : null}
+        </>
+      ) : null}
+    </>
+  )}
 
       <div className="list-stack">
         <div className="meal-planner-admin-toggle-wrap">
@@ -17164,12 +17130,10 @@ const filteredExercisesAdvanced = exercises.filter((exercise) => {
                 </div>
               </>
             )}
-                   </>
+          </>
         )}
       </div>
-
-      </>
-    )}
+    </div>
   </div>
 )}
       {activeTab === '통계' && (
