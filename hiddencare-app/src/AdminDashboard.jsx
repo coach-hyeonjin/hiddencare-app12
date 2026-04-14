@@ -5390,7 +5390,48 @@ const getAdjustedTargetKcalByPlanStyle = (baseKcal = 0, planStyleKey = 'mixed') 
 
   return Math.round(Number(baseKcal || 0) * (1 + offset))
 }
+const formatRiceGuideText = ({
+  adjustedRiceG = 0,
+  targetCarbsG = 0,
+  largestMealSlot = '',
+  currentSlot = '',
+  mealStartMode = 'current',
+}) => {
+  const riceG = Number(adjustedRiceG || 0)
+  const carbsG = Number(targetCarbsG || 0)
 
+  if (!riceG && !carbsG) return ''
+
+  const modeLabel =
+    mealStartMode === 'slightly_reduce'
+      ? '조금 줄여 시작'
+      : mealStartMode === 'aggressive_reduce'
+      ? '많이 줄여 시작'
+      : mealStartMode === 'cycle'
+      ? '사이클 조절'
+      : '평소 식사량 기준'
+
+  const slotComment =
+    largestMealSlot && currentSlot === largestMealSlot
+      ? '가장 많이 먹는 끼니 기준으로 반영했습니다.'
+      : '끼니별 분배 기준으로 반영했습니다.'
+
+  return `밥 약 ${riceG}g 기준 / 탄수화물 약 ${carbsG}g / ${modeLabel}. ${slotComment}`
+}
+
+const formatMealMenuWithRice = ({
+  mealResult,
+  slot,
+  adjustedRiceG = 0,
+}) => {
+  const baseMenu =
+    mealResult?.menu || buildMealMenuLabel(mealResult?.items || [], slot)
+
+  const riceG = Number(adjustedRiceG || 0)
+  if (!riceG) return baseMenu
+
+  return `${baseMenu} (밥 약 ${riceG}g 기준)`
+}
 const buildMealPlanDayRow = ({
   date,
   dayNumber,
@@ -5525,7 +5566,15 @@ const carbDistribution = getMealCarbDistribution({
       slot,
       meal_style_type: mealStyleType,
       meal_detail_type: mealResult?.meal_detail_type || '',
-      guide_text: mealResult?.guide_text || '',
+      guide_text:
+        mealResult?.guide_text ||
+        formatRiceGuideText({
+          adjustedRiceG: carbRow?.adjusted_rice_g,
+          targetCarbsG: slotTarget?.carbs_g,
+          largestMealSlot: largest_meal_slot,
+          currentSlot: slot,
+          mealStartMode: meal_start_mode,
+        }),
       time:
         slot === '아침'
           ? '08:00'
@@ -5540,7 +5589,11 @@ const carbDistribution = getMealCarbDistribution({
           : slot === '야식'
           ? '21:30'
           : '19:30',
-      menu: mealResult?.menu || buildMealMenuLabel(mealResult?.items || [], slot),
+      menu: formatMealMenuWithRice({
+        mealResult,
+        slot,
+        adjustedRiceG: carbRow?.adjusted_rice_g,
+      }),
       alternatives,
             food_items: Array.isArray(mealResult?.items) ? mealResult.items : [],
       carbs_g: Number(slotTarget.carbs_g || 0),
