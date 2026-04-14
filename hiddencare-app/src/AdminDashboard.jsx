@@ -5667,10 +5667,7 @@ const carbDistribution = getMealCarbDistribution({
         slot,
         adjustedRiceG: carbRow?.adjusted_rice_g,
       }),
-        mealResult,
-        slot,
-        adjustedRiceG: carbRow?.adjusted_rice_g,
-      }),
+       
       alternatives,
              food_items: adjustedFoodItems,
       carbs_g: Number(slotTarget.carbs_g || 0),
@@ -5689,12 +5686,7 @@ const carbDistribution = getMealCarbDistribution({
       target_carbs_g: Number(slotTarget.carbs_g || 0),
       target_protein_g: Number(slotTarget.protein_g || 0),
       target_fat_g: Number(slotTarget.fat_g || 0),
-      baseline_rice_g: Number(carbRow?.baseline_rice_g || 0),
-      adjusted_rice_g: Number(carbRow?.adjusted_rice_g || 0),
-      carb_distribution_reason: carbRow?.carb_distribution_reason || '',
-      target_carbs_g: Number(slotTarget.carbs_g || 0),
-      target_protein_g: Number(slotTarget.protein_g || 0),
-      target_fat_g: Number(slotTarget.fat_g || 0),
+  
     }
   })
 
