@@ -5432,6 +5432,69 @@ const formatMealMenuWithRice = ({
 
   return `${baseMenu} (밥 약 ${riceG}g 기준)`
 }
+
+  const adjustFoodItemsByRiceTarget = ({
+  items = [],
+  adjustedRiceG = 0,
+  slotTarget = {},
+}) => {
+  const safeItems = Array.isArray(items) ? items : []
+  if (!safeItems.length) return []
+
+  const riceG = Number(adjustedRiceG || 0)
+  const targetCarbs = Number(slotTarget?.carbs_g || 0)
+
+  return safeItems.map((item, index) => {
+    const nextItem = { ...item }
+    const itemName = String(
+      item?.name ||
+      item?.food_name ||
+      item?.label ||
+      item?.menu ||
+      ''
+    ).toLowerCase()
+
+    const currentAmount =
+      Number(
+        item?.amount_g ??
+        item?.grams ??
+        item?.serving_g ??
+        item?.portion_g ??
+        0
+      ) || 0
+
+    const isCarbSource =
+      itemName.includes('밥') ||
+      itemName.includes('현미') ||
+      itemName.includes('쌀') ||
+      itemName.includes('고구마') ||
+      itemName.includes('감자') ||
+      itemName.includes('오트') ||
+      itemName.includes('식빵') ||
+      itemName.includes('베이글') ||
+      itemName.includes('바나나')
+
+    if (index === 0 && riceG > 0 && (isCarbSource || safeItems.length === 1)) {
+      nextItem.amount_g = riceG
+      nextItem.adjusted_by_rice_engine = true
+      return nextItem
+    }
+
+    if (isCarbSource && riceG > 0) {
+      nextItem.amount_g = riceG
+      nextItem.adjusted_by_rice_engine = true
+      return nextItem
+    }
+
+    if (!currentAmount && targetCarbs > 0 && index === 0) {
+      nextItem.amount_g = Math.round(riceG || targetCarbs * 3.2)
+      nextItem.adjusted_by_rice_engine = true
+      return nextItem
+    }
+
+    return nextItem
+  })
+}
 const buildMealPlanDayRow = ({
   date,
   dayNumber,
@@ -5562,6 +5625,12 @@ const carbDistribution = getMealCarbDistribution({
       daySlotUsedNames
     )
 
+    const adjustedFoodItems = adjustFoodItemsByRiceTarget({
+      items: mealResult?.items || [],
+      adjustedRiceG: carbRow?.adjusted_rice_g,
+      slotTarget,
+    })
+      
     return {
       slot,
       meal_style_type: mealStyleType,
@@ -5589,13 +5658,21 @@ const carbDistribution = getMealCarbDistribution({
           : slot === '야식'
           ? '21:30'
           : '19:30',
-      menu: formatMealMenuWithRice({
+         menu: formatMealMenuWithRice({
+        mealResult: {
+          ...mealResult,
+          items: adjustedFoodItems,
+          menu: buildMealMenuLabel(adjustedFoodItems, slot),
+        },
+        slot,
+        adjustedRiceG: carbRow?.adjusted_rice_g,
+      }),
         mealResult,
         slot,
         adjustedRiceG: carbRow?.adjusted_rice_g,
       }),
       alternatives,
-            food_items: Array.isArray(mealResult?.items) ? mealResult.items : [],
+             food_items: adjustedFoodItems,
       carbs_g: Number(slotTarget.carbs_g || 0),
       protein_g: Number(mealResult?.protein_g || slotTarget.protein_g || 0),
       fat_g: Number(mealResult?.fat_g || slotTarget.fat_g || 0),
