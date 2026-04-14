@@ -5542,12 +5542,23 @@ const carbDistribution = getMealCarbDistribution({
           : '19:30',
       menu: mealResult?.menu || buildMealMenuLabel(mealResult?.items || [], slot),
       alternatives,
-      food_items: Array.isArray(mealResult?.items) ? mealResult.items : [],
-      carbs_g: Number(mealResult?.carbs_g || slotTarget.carbs_g || 0),
+            food_items: Array.isArray(mealResult?.items) ? mealResult.items : [],
+      carbs_g: Number(slotTarget.carbs_g || 0),
       protein_g: Number(mealResult?.protein_g || slotTarget.protein_g || 0),
       fat_g: Number(mealResult?.fat_g || slotTarget.fat_g || 0),
-      kcal: Number(mealResult?.kcal || 0),
+      kcal:
+        Math.round(
+          Number(slotTarget.carbs_g || 0) * 4 +
+          Number(mealResult?.protein_g || slotTarget.protein_g || 0) * 4 +
+          Number(mealResult?.fat_g || slotTarget.fat_g || 0) * 9
+        ),
       sodium_mg: Number(mealResult?.sodium_mg || 0),
+      baseline_rice_g: Number(carbRow?.baseline_rice_g || 0),
+      adjusted_rice_g: Number(carbRow?.adjusted_rice_g || 0),
+      carb_distribution_reason: carbRow?.carb_distribution_reason || '',
+      target_carbs_g: Number(slotTarget.carbs_g || 0),
+      target_protein_g: Number(slotTarget.protein_g || 0),
+      target_fat_g: Number(slotTarget.fat_g || 0),
       baseline_rice_g: Number(carbRow?.baseline_rice_g || 0),
       adjusted_rice_g: Number(carbRow?.adjusted_rice_g || 0),
       carb_distribution_reason: carbRow?.carb_distribution_reason || '',
