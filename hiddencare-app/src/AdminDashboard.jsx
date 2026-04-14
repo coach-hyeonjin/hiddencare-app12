@@ -5406,6 +5406,9 @@ const buildMealPlanDayRow = ({
   freeMealDaySet,
   alcoholDaySet,
   latestCalculationId,
+  usual_rice_amount_g,
+  largest_meal_slot,
+  meal_start_mode,
   currentAdminId,
 }) => {
   const dayIndex = new Date(date).getDay()
@@ -5437,34 +5440,36 @@ const buildMealPlanDayRow = ({
   const baseFat = Number(mealPlanForm.target_fat_g || 0)
 
   const slotCount = Math.max(generationMealSlots.length, 1)
-  const carbDistribution = getMealCarbDistribution({
-    mealSlots: generationMealSlots,
-    targetCarbs: adjustedDayPlan.carbs,
-    usualRiceAmountG: usual_rice_amount_g,
-    largestMealSlot: largest_meal_slot || '저녁',
-    mealStartMode: meal_start_mode || 'current',
-    goalType: mealPlanForm.goal_type || 'diet',
-    isTrainingDay,
-  })
-  let dayRecentUsedIds = []
-  let daySlotUsedNames = []
-  let dayPreferredIncludedCount = 0
 
-  const mealStyleType = pickMealStyleType(planStyleEngine.mealRatio)
+let dayRecentUsedIds = []
+let daySlotUsedNames = []
+let dayPreferredIncludedCount = 0
 
-  const effectiveTargetKcal = isTrainingDay
-    ? adjustedTargetKcal
-    : Math.round(adjustedTargetKcal * 0.95)
+const mealStyleType = pickMealStyleType(planStyleEngine.mealRatio)
 
-  const adjustedDayPlan = getLifestyleAdjustedDayPlan({
-    mealPlanForm,
-    isTrainingDay,
-    dayType,
-    baseKcal: effectiveTargetKcal,
-    totalCarbs: baseCarbs,
-    totalProtein: baseProtein,
-    totalFat: baseFat,
-  })
+const effectiveTargetKcal = isTrainingDay
+  ? adjustedTargetKcal
+  : Math.round(adjustedTargetKcal * 0.95)
+
+const adjustedDayPlan = getLifestyleAdjustedDayPlan({
+  mealPlanForm,
+  isTrainingDay,
+  dayType,
+  baseKcal: effectiveTargetKcal,
+  totalCarbs: baseCarbs,
+  totalProtein: baseProtein,
+  totalFat: baseFat,
+})
+
+const carbDistribution = getMealCarbDistribution({
+  mealSlots: generationMealSlots,
+  targetCarbs: adjustedDayPlan.carbs,
+  usualRiceAmountG: usual_rice_amount_g,
+  largestMealSlot: largest_meal_slot || '저녁',
+  mealStartMode: meal_start_mode || 'current',
+  goalType: mealPlanForm.goal_type || 'diet',
+  isTrainingDay,
+})
 
   const mealsJson = generationMealSlots.map((slot) => {
       const carbRow =
