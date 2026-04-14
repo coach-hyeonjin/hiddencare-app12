@@ -5471,8 +5471,8 @@ const carbDistribution = getMealCarbDistribution({
   isTrainingDay,
 })
 
-  const mealsJson = generationMealSlots.map((slot) => {
-      const carbRow =
+    const mealsJson = generationMealSlots.map((slot) => {
+    const carbRow =
       carbDistribution.find((item) => item.slot === slot) || null
 
     const slotTarget = {
@@ -5506,24 +5506,7 @@ const carbDistribution = getMealCarbDistribution({
     dayPreferredIncludedCount = Number(
       mealResult?.nextPreferredIncludedCount || dayPreferredIncludedCount
     )
-    return {
-      slot,
-      menu: mealResult?.menu || '',
-      guide_text: mealResult?.guide_text || '',
-      food_items: Array.isArray(mealResult?.items) ? mealResult.items : [],
-      kcal: Number(mealResult?.kcal || 0),
-      carbs_g: Number(mealResult?.carbs_g || slotTarget.carbs_g || 0),
-      protein_g: Number(mealResult?.protein_g || slotTarget.protein_g || 0),
-      fat_g: Number(mealResult?.fat_g || slotTarget.fat_g || 0),
-      sodium_mg: Number(mealResult?.sodium_mg || 0),
-      baseline_rice_g: Number(carbRow?.baseline_rice_g || 0),
-      adjusted_rice_g: Number(carbRow?.adjusted_rice_g || 0),
-      carb_distribution_reason: carbRow?.carb_distribution_reason || '',
-      target_carbs_g: Number(slotTarget.carbs_g || 0),
-      target_protein_g: Number(slotTarget.protein_g || 0),
-      target_fat_g: Number(slotTarget.fat_g || 0),
-    }
-  })
+
     const alternatives = getMealAlternatives(
       mealPlanForm.goal_type,
       slot,
@@ -5557,14 +5540,20 @@ const carbDistribution = getMealCarbDistribution({
           : slot === '야식'
           ? '21:30'
           : '19:30',
-     menu: mealResult?.menu || buildMealMenuLabel(mealResult.items || [], slot),
+      menu: mealResult?.menu || buildMealMenuLabel(mealResult?.items || [], slot),
       alternatives,
-      food_items: mealResult.items || [],
-      carbs_g: Number(mealResult.carbs_g || 0),
-      protein_g: Number(mealResult.protein_g || 0),
-      fat_g: Number(mealResult.fat_g || 0),
-      kcal: Number(mealResult.kcal || 0),
-      sodium_mg: Number(mealResult.sodium_mg || 0),
+      food_items: Array.isArray(mealResult?.items) ? mealResult.items : [],
+      carbs_g: Number(mealResult?.carbs_g || slotTarget.carbs_g || 0),
+      protein_g: Number(mealResult?.protein_g || slotTarget.protein_g || 0),
+      fat_g: Number(mealResult?.fat_g || slotTarget.fat_g || 0),
+      kcal: Number(mealResult?.kcal || 0),
+      sodium_mg: Number(mealResult?.sodium_mg || 0),
+      baseline_rice_g: Number(carbRow?.baseline_rice_g || 0),
+      adjusted_rice_g: Number(carbRow?.adjusted_rice_g || 0),
+      carb_distribution_reason: carbRow?.carb_distribution_reason || '',
+      target_carbs_g: Number(slotTarget.carbs_g || 0),
+      target_protein_g: Number(slotTarget.protein_g || 0),
+      target_fat_g: Number(slotTarget.fat_g || 0),
     }
   })
 
