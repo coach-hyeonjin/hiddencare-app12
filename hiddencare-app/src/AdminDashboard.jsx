@@ -1543,7 +1543,7 @@ const normalizedHighRiceSlots = normalizeHighRiceSlots(
         meal_structure_mode: mealPlanForm.meal_structure_mode || 'structured',
                 usual_rice_amount_g: usualRiceAmountG,
         largest_meal_slot: mealPlanForm.largest_meal_slot || '저녁',
-          high_rice_slots: normalizedHighRiceSlots,
+         
         meal_start_mode: mealPlanForm.meal_start_mode || 'current',
         rice_amount_source: mealPlanForm.rice_amount_source || 'preset',
         alcohol_frequency_per_week: Number(mealPlanForm.alcohol_frequency_per_week || 0),
@@ -6154,13 +6154,18 @@ useEffect(() => {
 }, [mealPlanForm.member_id, mealPlanViewMonth])
   
 useEffect(() => {
-  setMealPlanForm((prev) => ({
-    ...prev,
-    meal_slots: getLifestyleMealSlots({
+  setMealPlanForm((prev) => {
+    const nextMealSlots = getLifestyleMealSlots({
       ...prev,
       meals_per_day: Number(prev.meals_per_day || 3),
-    }),
-  }))
+    })
+
+    return {
+      ...prev,
+      meal_slots: nextMealSlots,
+      high_rice_slots: normalizeHighRiceSlots(prev.high_rice_slots, nextMealSlots),
+    }
+  })
 }, [mealPlanForm.meals_per_day])
   
   const loadMealPlansByMonth = async (memberId, monthValue) => {
