@@ -16397,7 +16397,7 @@ const filteredExercisesAdvanced = exercises.filter((exercise) => {
       })()}
     </div>
   ) : null}
-</div>
+  
           <label className="field">
   <span>코치 메모</span>
   <textarea
