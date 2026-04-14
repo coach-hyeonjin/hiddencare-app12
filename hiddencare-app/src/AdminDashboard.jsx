@@ -927,12 +927,23 @@ const getRiceGuideSummary = (riceAmountG) => {
       kcal: 0,
     }
   }
-  
+
+  const hetbahnCount = Math.round((riceG / 300) * 10) / 10
+  const carbsG = Math.round((riceG * 31) / 100)
+  const kcal = Math.round((riceG * 149) / 100)
+
+  return {
+    riceG,
+    hetbahnCount,
+    carbsG,
+    kcal,
+  }
+}
+
 const riceGuideSummary = useMemo(() => {
   return getRiceGuideSummary(getRiceAmountValue(mealPlanForm))
 }, [mealPlanForm.usual_rice_amount_g, mealPlanForm.custom_rice_amount_g])
 
-  
 const toggleActivityRankingSection = (key) => {
   setActivityRankingOpenSections((prev) => ({
     ...prev,
