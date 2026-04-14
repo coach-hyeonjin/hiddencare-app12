@@ -978,6 +978,7 @@ const emptyMealPlanForm = {
   meal_structure_mode: 'structured',
     usual_rice_amount_g: 300,
   largest_meal_slot: '저녁',
+   high_rice_slots: ['저녁'],
   meal_start_mode: 'current',
   rice_amount_source: 'preset',
   usual_rice_amount_custom_g: '',
@@ -1372,7 +1373,10 @@ const handleMealPlanGenerate = async () => {
     mealPlanForm.rice_amount_source === 'custom'
       ? Number(mealPlanForm.usual_rice_amount_custom_g || 0)
       : Number(mealPlanForm.usual_rice_amount_g || 0)
-
+const normalizedHighRiceSlots = normalizeHighRiceSlots(
+    mealPlanForm.high_rice_slots,
+    mealSlots
+  )
   const riceGuide = getRiceGuide(usualRiceAmountG)
   
   const sodiumLimitMg = 2000
@@ -1412,9 +1416,10 @@ const handleMealPlanGenerate = async () => {
       mealPlanForm,
       latestHealth: health,
                 riceGuide,
-      eatingBaseline: {
+       eatingBaseline: {
         usual_rice_amount_g: usualRiceAmountG,
         largest_meal_slot: mealPlanForm.largest_meal_slot || '저녁',
+        high_rice_slots: normalizedHighRiceSlots,
         meal_start_mode: mealPlanForm.meal_start_mode || 'current',
       },
     },
@@ -1443,7 +1448,9 @@ const handleMealPlanGenerate = async () => {
     allowed_dessert_per_week: Number(mealPlanForm.allowed_dessert_per_week || 0),
     meal_structure_mode: mealPlanForm.meal_structure_mode || 'structured',
           usual_rice_amount_g: usualRiceAmountG,
+      
     largest_meal_slot: mealPlanForm.largest_meal_slot || '저녁',
+      high_rice_slots: normalizedHighRiceSlots,
     meal_start_mode: mealPlanForm.meal_start_mode || 'current',
     rice_carbs_g: riceGuide.carbs_g,
     rice_kcal: riceGuide.kcal,
@@ -1505,6 +1512,7 @@ const handleMealPlanGenerate = async () => {
         goal_type: goalType,
         meals_per_day: mealsPerDay,
         meal_slots: mealSlots,
+         high_rice_slots: normalizedHighRiceSlots,
         activity_level: mealPlanForm.activity_level || 'light',
         training_days_per_week: Number(mealPlanForm.training_days_per_week || 3),
         training_time: mealPlanForm.training_time || 'evening',
@@ -1535,6 +1543,7 @@ const handleMealPlanGenerate = async () => {
         meal_structure_mode: mealPlanForm.meal_structure_mode || 'structured',
                 usual_rice_amount_g: usualRiceAmountG,
         largest_meal_slot: mealPlanForm.largest_meal_slot || '저녁',
+          high_rice_slots: normalizedHighRiceSlots,
         meal_start_mode: mealPlanForm.meal_start_mode || 'current',
         rice_amount_source: mealPlanForm.rice_amount_source || 'preset',
         alcohol_frequency_per_week: Number(mealPlanForm.alcohol_frequency_per_week || 0),
@@ -2033,12 +2042,17 @@ const handleMealPlanSave = async () => {
   const excludedFoodIds = resolveFoodIdsByText(mealPlanForm.excluded_foods, foods)
   const allergyFoodIds = resolveFoodIdsByText(mealPlanForm.allergies, foods)
   const finalMealSlots = getLifestyleMealSlots(mealPlanForm)
+    const normalizedHighRiceSlots = normalizeHighRiceSlots(
+    mealPlanForm.high_rice_slots,
+    finalMealSlots
+  )
   const payload = {
     member_id: mealPlanForm.member_id,
     admin_id: currentAdminId || null,
     goal_type: mealPlanForm.goal_type,
     meals_per_day: Number(mealPlanForm.meals_per_day || 3),
    meal_slots: finalMealSlots,
+      high_rice_slots: normalizedHighRiceSlots,
     activity_level: mealPlanForm.activity_level || 'light',
     training_days_per_week: Number(mealPlanForm.training_days_per_week || 3),
     training_time: mealPlanForm.training_time || 'evening',
@@ -2913,6 +2927,13 @@ const loadMemberMealPlanProfile = async (memberId) => {
       allowed_alcohol_per_week: Number(data?.allowed_alcohol_per_week || 0),
           usual_rice_amount_g: Number(data?.usual_rice_amount_g || 300),
       largest_meal_slot: data?.largest_meal_slot || '저녁',
+          high_rice_slots: normalizeHighRiceSlots(
+        data?.high_rice_slots,
+        getLifestyleMealSlots({
+          ...data,
+          meals_per_day: Number(data?.meals_per_day || 3),
+        })
+      ),
       meal_start_mode: data?.meal_start_mode || 'current',
       rice_amount_source: data?.rice_amount_source || 'preset',
       usual_rice_amount_custom_g:
@@ -2927,6 +2948,17 @@ const normalizeCommaTextToArray = (value) => {
     .split(',')
     .map((item) => item.trim())
     .filter(Boolean)
+}
+  const normalizeHighRiceSlots = (value, mealSlots = []) => {
+  const source = Array.isArray(value) ? value : []
+  const allowedSlots = Array.isArray(mealSlots) ? mealSlots : []
+
+  const normalized = source
+    .map((item) => String(item || '').trim())
+    .filter(Boolean)
+    .filter((item) => allowedSlots.includes(item))
+
+  return [...new Set(normalized)]
 }
 
 const getFoodSearchTokens = (food) => {
@@ -5591,7 +5623,8 @@ const buildMealPlanDayRow = ({
   alcoholDaySet,
   latestCalculationId,
   usual_rice_amount_g,
-  largest_meal_slot,
+   largest_meal_slot,
+  high_rice_slots,
   meal_start_mode,
   currentAdminId,
 }) => {
@@ -5651,20 +5684,93 @@ const effectiveStartingRiceAmount = getEffectiveStartingRiceAmount({
   isTrainingDay,
   dayNumber,
 })
-const carbDistribution = getMealCarbDistribution({
+
+const normalizedHighRiceSlots = normalizeHighRiceSlots(
+  high_rice_slots,
+  generationMealSlots
+)
+
+const fixedHighRiceCarbs = getRiceGuide(effectiveStartingRiceAmount).carbs_g
+
+let carbDistribution = getMealCarbDistribution({
   mealSlots: generationMealSlots,
   targetCarbs: adjustedDayPlan.carbs,
-    usualRiceAmountG: effectiveStartingRiceAmount,
+  usualRiceAmountG: effectiveStartingRiceAmount,
   largestMealSlot: largest_meal_slot || '저녁',
   mealStartMode: meal_start_mode || 'current',
   goalType: mealPlanForm.goal_type || 'diet',
   isTrainingDay,
 })
 
+if (
+  meal_start_mode === 'current' &&
+  normalizedHighRiceSlots.length > 0 &&
+  fixedHighRiceCarbs > 0
+) {
+  const slotCount = Math.max(generationMealSlots.length, 1)
+  const existingMap = new Map(
+    (Array.isArray(carbDistribution) ? carbDistribution : []).map((item) => [
+      item.slot,
+      Number(item.carbs || 0),
+    ])
+  )
+
+  let remainingCarbs = Number(adjustedDayPlan.carbs || 0)
+
+  normalizedHighRiceSlots.forEach((slot) => {
+    remainingCarbs -= fixedHighRiceCarbs
+  })
+
+  const nonHighSlots = generationMealSlots.filter(
+    (slot) => !normalizedHighRiceSlots.includes(slot)
+  )
+
+  const safeRemainingCarbs =
+    nonHighSlots.length > 0 ? Math.max(0, remainingCarbs) : Number(adjustedDayPlan.carbs || 0)
+
+  const fallbackPerSlot =
+    nonHighSlots.length > 0
+      ? Math.floor(safeRemainingCarbs / nonHighSlots.length)
+      : 0
+
+  let remainder =
+    nonHighSlots.length > 0
+      ? safeRemainingCarbs - fallbackPerSlot * nonHighSlots.length
+      : 0
+
+  carbDistribution = generationMealSlots.map((slot) => {
+    if (normalizedHighRiceSlots.includes(slot)) {
+      return {
+        slot,
+        carbs: fixedHighRiceCarbs,
+        adjusted_rice_g: effectiveStartingRiceAmount,
+        is_fixed_high_rice: true,
+      }
+    }
+
+    const baseCarbs =
+      existingMap.has(slot) && nonHighSlots.length === 0
+        ? Number(existingMap.get(slot) || 0)
+        : fallbackPerSlot + (remainder > 0 ? 1 : 0)
+
+    if (remainder > 0) remainder -= 1
+
+    return {
+      slot,
+      carbs: Math.max(0, Math.round(baseCarbs)),
+      adjusted_rice_g: null,
+      is_fixed_high_rice: false,
+    }
+  })
+}
+
     const mealsJson = generationMealSlots.map((slot) => {
     const carbRow =
       carbDistribution.find((item) => item.slot === slot) || null
-
+    const isFixedHighRiceSlot = !!carbRow?.is_fixed_high_rice
+    const appliedRiceAmountG = isFixedHighRiceSlot
+      ? Number(carbRow?.adjusted_rice_g || effectiveStartingRiceAmount || 0)
+      : Number(carbRow?.adjusted_rice_g || 0)
     const slotTarget = {
       carbs_g: Number(carbRow?.carbs || 0),
       protein_g: Math.round(adjustedDayPlan.protein / slotCount),
@@ -5861,7 +5967,9 @@ const actualDayTotals = correctedMealsJson.reduce(
 
 const mealsSummaryJson = correctedMealsJson.map((meal) => ({
   slot: meal.slot,
-  menu: meal.menu,
+ menu: meal.menu,
+applied_rice_g: meal.applied_rice_g || null,
+is_high_rice_slot: meal.is_high_rice_slot || false,
   guide_text: meal.guide_text || '',
   meal_detail_type: meal.meal_detail_type || '',
   kcal: meal.kcal,
@@ -5956,6 +6064,10 @@ const freeMealDaySet = new Set(freeMealDays)
 
   const rows = []
 const generationMealSlots = getLifestyleMealSlots(mealPlanForm)
+  const normalizedHighRiceSlots = normalizeHighRiceSlots(
+    mealPlanForm.high_rice_slots,
+    generationMealSlots
+  )
   for (let day = 1; day <= daysInMonth; day += 1) {
   const date = `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`
 
@@ -5981,6 +6093,7 @@ const generationMealSlots = getLifestyleMealSlots(mealPlanForm)
       : Number(mealPlanForm.usual_rice_amount_g || 0),
 
   largest_meal_slot: mealPlanForm.largest_meal_slot || '저녁',
+       high_rice_slots: normalizedHighRiceSlots,
   meal_start_mode: mealPlanForm.meal_start_mode || 'current',
   })
 
@@ -17188,12 +17301,16 @@ const filteredExercisesAdvanced = exercises.filter((exercise) => {
     <span>가장 많이 먹는 끼니</span>
     <select
       value={mealPlanForm.largest_meal_slot}
-      onChange={(e) =>
-        setMealPlanForm((prev) => ({
-          ...prev,
-          largest_meal_slot: e.target.value,
-        }))
-      }
+     onChange={(e) =>
+  setMealPlanForm((prev) => ({
+    ...prev,
+    largest_meal_slot: e.target.value,
+    high_rice_slots:
+      Array.isArray(prev.high_rice_slots) && prev.high_rice_slots.length > 0
+        ? prev.high_rice_slots
+        : [e.target.value],
+  }))
+}
     >
       <option value="아침">아침</option>
       <option value="점심">점심</option>
@@ -17221,6 +17338,55 @@ const filteredExercisesAdvanced = exercises.filter((exercise) => {
   </label>
 </div>
 
+<div className="grid-1">
+  <label className="field">
+    <span>600g 기준으로 먹는 끼니(복수 선택 가능)</span>
+
+    <div className="inline-actions wrap" style={{ marginTop: '8px' }}>
+      {getLifestyleMealSlots(mealPlanForm).map((slot) => {
+        const isActive = Array.isArray(mealPlanForm.high_rice_slots)
+          ? mealPlanForm.high_rice_slots.includes(slot)
+          : false
+
+        return (
+          <button
+            key={slot}
+            type="button"
+            className={isActive ? 'primary-btn' : 'secondary-btn'}
+            onClick={() =>
+              setMealPlanForm((prev) => {
+                const currentSlots = Array.isArray(prev.high_rice_slots)
+                  ? prev.high_rice_slots
+                  : []
+
+                const nextSlots = currentSlots.includes(slot)
+                  ? currentSlots.filter((item) => item !== slot)
+                  : [...currentSlots, slot]
+
+                return {
+                  ...prev,
+                  high_rice_slots: normalizeHighRiceSlots(
+                    nextSlots,
+                    getLifestyleMealSlots(prev)
+                  ),
+                }
+              })
+            }
+          >
+            {slot}
+          </button>
+        )
+      })}
+    </div>
+
+    <div className="compact-text" style={{ marginTop: '8px' }}>
+      현재 선택: {Array.isArray(mealPlanForm.high_rice_slots) && mealPlanForm.high_rice_slots.length > 0
+        ? mealPlanForm.high_rice_slots.join(' / ')
+        : '선택 없음'}
+    </div>
+  </label>
+</div>
+          
 {mealPlanForm.rice_amount_source === 'custom' && (
   <div className="grid-1">
     <label className="field">
