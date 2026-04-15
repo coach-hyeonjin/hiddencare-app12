@@ -14213,7 +14213,75 @@ const filteredExercisesAdvanced = exercises.filter((exercise) => {
         </div>
       </div>
     </section>
+    <details className="tab-usage-guide-card manager-usage-guide" open={false}>
+      <summary className="tab-usage-guide-summary">
+        <div>
+          <div className="tab-usage-guide-badge">HOW TO USE MY MANAGER</div>
+          <strong>나만의 매니저는 내 운영 방향을 잡는 탭입니다</strong>
+          <p>
+            지금 등급이 어디인지 보는 화면이 아니라,
+            내 실행력, 성장 방향, 우선 과제, 장기 구조를 스스로 관리하는 개인 운영 탭입니다.
+          </p>
+        </div>
+        <span className="tab-usage-guide-summary-icon">+</span>
+      </summary>
 
+      <div className="tab-usage-guide-body">
+        <div className="tab-usage-guide-grid">
+          <div className="tab-usage-guide-item">
+            <span className="tab-usage-guide-step">1</span>
+            <div>
+              <strong>현재 포지션 확인 → 지금 내가 어디쯤인지 봅니다</strong>
+              <p>
+                총 XP, 커리어 XP, 실행 XP, 과제 XP를 같이 보면
+                경험은 쌓였는지, 실행이 부족한지, 지금 막혀 있는 구간이 어디인지 보입니다.
+              </p>
+            </div>
+          </div>
+
+          <div className="tab-usage-guide-item">
+            <span className="tab-usage-guide-step">2</span>
+            <div>
+              <strong>다음 레벨 목표 / 오늘의 우선 과제 확인 → 바로 실행으로 연결합니다</strong>
+              <p>
+                막연히 열심히 하는 대신,
+                다음 레벨에 필요한 행동과 오늘 당장 해야 할 과제를 먼저 고르는 기준으로 씁니다.
+              </p>
+            </div>
+          </div>
+
+          <div className="tab-usage-guide-item">
+            <span className="tab-usage-guide-step">3</span>
+            <div>
+              <strong>실행 로그 / XP 로그 보기 → 말이 아니라 기록으로 남깁니다</strong>
+              <p>
+                블로그, 릴스, 후기, 홍보 같은 실행을 기록하면
+                내 성장이 느낌이 아니라 누적으로 보이고, 어떤 행동이 실제로 쌓이는지 확인할 수 있습니다.
+              </p>
+            </div>
+          </div>
+
+          <div className="tab-usage-guide-item">
+            <span className="tab-usage-guide-step">4</span>
+            <div>
+              <strong>창업 준비도 / 흐름 요약 보기 → 장기 방향을 정리합니다</strong>
+              <p>
+                이번 달 흐름과 장기 성장 단계를 같이 보면
+                지금은 회원관리 강화가 필요한지, 콘텐츠 확장이 필요한지, 브랜딩 구조를 잡을 시기인지 구분할 수 있습니다.
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <div className="tab-usage-guide-tip">
+          <strong>실무 활용 예시</strong>
+          <p>
+            운영대시보드에서 매출이 흔들리고, 리포트에서 후속관리 부족이 보이는데,
+            나만의 매니저에서 오늘의 우선 과제가 콘텐츠보다 회원관리/후속관리 쪽이라면 지금 달은 브랜딩보다 전환과 유지 구조를 먼저 잡는 게 맞습니다.
+          </p>
+        </div>
+      </div>
+    </details>
     <section className="manager-section manager-collapsible-section">
       <button
         type="button"
@@ -21458,7 +21526,75 @@ const filteredExercisesAdvanced = exercises.filter((exercise) => {
         </div>
       </div>
     </section>
+    <details className="tab-usage-guide-card coach-usage-guide" open={false}>
+      <summary className="tab-usage-guide-summary">
+        <div>
+          <div className="tab-usage-guide-badge">HOW TO USE COACH MANAGEMENT</div>
+          <strong>코치관리는 이렇게 보고, 이렇게 입력합니다</strong>
+          <p>
+            컨디션만 적는 화면이 아니라 이번 달 운영 상태를 먼저 보고,
+            자기관리와 운영 관리를 연결해서 기록하는 탭입니다.
+          </p>
+        </div>
+        <span className="tab-usage-guide-summary-icon">+</span>
+      </summary>
 
+      <div className="tab-usage-guide-body">
+        <div className="tab-usage-guide-grid">
+          <div className="tab-usage-guide-item">
+            <span className="tab-usage-guide-step">1</span>
+            <div>
+              <strong>월간 필터 먼저 확인 → 이번 달 상태를 먼저 봅니다</strong>
+              <p>
+                평균 컨디션, 행동 점수, 주의 필요 코치를 먼저 보면
+                지금 입력이 필요한 달인지, 이미 위험 신호가 있는지 먼저 판단할 수 있습니다.
+              </p>
+            </div>
+          </div>
+
+          <div className="tab-usage-guide-item">
+            <span className="tab-usage-guide-step">2</span>
+            <div>
+              <strong>체크리스트 입력 → 감정이 아니라 기준으로 기록됩니다</strong>
+              <p>
+                컨디션, 피로도, 스트레스, 집중도를 체크하면
+                막연한 기분 기록이 아니라 비교 가능한 운영 데이터로 남습니다.
+              </p>
+            </div>
+          </div>
+
+          <div className="tab-usage-guide-item">
+            <span className="tab-usage-guide-step">3</span>
+            <div>
+              <strong>번아웃 / 성과 행동 같이 보기 → 자기성찰이 현실화됩니다</strong>
+              <p>
+                힘든 이유와 실제 행동 점수를 같이 보면
+                단순히 힘들다에서 끝나지 않고, 회복이 필요한지 실행력이 떨어진 건지 구분할 수 있습니다.
+              </p>
+            </div>
+          </div>
+
+          <div className="tab-usage-guide-item">
+            <span className="tab-usage-guide-step">4</span>
+            <div>
+              <strong>자동 계산 결과 저장 → 운영대시보드 / 리포트와 연결됩니다</strong>
+              <p>
+                저장된 기록은 이후 주의 코치, 평균 상태, 월간 리포트 해석 기준이 되므로
+                내 상태 기록이 곧 운영 판단 데이터가 됩니다.
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <div className="tab-usage-guide-tip">
+          <strong>실무 활용 예시</strong>
+          <p>
+            피로도와 스트레스가 높은데 행동 점수까지 낮으면,
+            오늘은 세일즈 압박을 더 거는 날이 아니라 수업 밀도 조정, 회복, 우선순위 재정리가 먼저인 날로 보면 됩니다.
+          </p>
+        </div>
+      </div>
+    </details>
     <div className="coach-summary-modern-grid">
       <div className="coach-summary-modern-card summary-blue">
         <span>이번 달 기록 수</span>
@@ -22194,7 +22330,75 @@ const filteredExercisesAdvanced = exercises.filter((exercise) => {
         </div>
       </div>
     </section>
+    <details className="tab-usage-guide-card report-usage-guide" open={false}>
+      <summary className="tab-usage-guide-summary">
+        <div>
+          <div className="tab-usage-guide-badge">HOW TO READ THIS REPORT</div>
+          <strong>리포트는 결과를 읽고 다음 액션을 정하는 탭입니다</strong>
+          <p>
+            평균 숫자를 확인하는 데서 끝나는 화면이 아니라,
+            코치 상태, 목표 대비 실제, 주의 대상, 다음 조치를 정하는 월간 해석 화면입니다.
+          </p>
+        </div>
+        <span className="tab-usage-guide-summary-icon">+</span>
+      </summary>
 
+      <div className="tab-usage-guide-body">
+        <div className="tab-usage-guide-grid">
+          <div className="tab-usage-guide-item">
+            <span className="tab-usage-guide-step">1</span>
+            <div>
+              <strong>평균값 확인 → 팀 전체 흐름을 먼저 읽습니다</strong>
+              <p>
+                평균 컨디션, 평균 행동 점수, 주의 코치 수를 먼저 보면
+                이번 달이 전체적으로 안정적인지, 무너지는 구간인지 큰 흐름부터 판단할 수 있습니다.
+              </p>
+            </div>
+          </div>
+
+          <div className="tab-usage-guide-item">
+            <span className="tab-usage-guide-step">2</span>
+            <div>
+              <strong>목표 vs 실제 비교 → 운영과 매출 연결 상태를 봅니다</strong>
+              <p>
+                목표 매출, 신규 상담, 유지 목표와 실제값을 비교하면
+                문제의 원인이 컨디션인지, 세일즈인지, 후속관리 부족인지 더 정확히 볼 수 있습니다.
+              </p>
+            </div>
+          </div>
+
+          <div className="tab-usage-guide-item">
+            <span className="tab-usage-guide-step">3</span>
+            <div>
+              <strong>주의 필요 코치 / 비교 보기 → 누구를 먼저 챙길지 정합니다</strong>
+              <p>
+                전체 평균보다 개별 코치 상태가 무너진 사람이 있으면
+                교육, 일정 조정, 피드백, 목표 재설정 우선순위를 바로 정할 수 있습니다.
+              </p>
+            </div>
+          </div>
+
+          <div className="tab-usage-guide-item">
+            <span className="tab-usage-guide-step">4</span>
+            <div>
+              <strong>다음 액션 제안 활용 → 다음 달 운영 기준으로 넘깁니다</strong>
+              <p>
+                여기서 끝내지 말고, 코치관리의 목표 설정과 운영대시보드의 주의 흐름,
+                매출기록/세일즈일지 후속관리까지 연결해서 실제 액션으로 바꿔야 합니다.
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <div className="tab-usage-guide-tip">
+          <strong>실무 활용 예시</strong>
+          <p>
+            평균 상태는 무난한데 실제 결제 완료 수가 목표보다 낮고 후속관리가 많다면,
+            문제는 컨디션보다 상담 전환 구조일 가능성이 높으니 세일즈 멘트, 후속관리 속도, 재접촉 루틴을 먼저 손보는 게 맞습니다.
+          </p>
+        </div>
+      </div>
+    </details>
     <div className="coach-summary-modern-grid">
       <div className="coach-summary-modern-card summary-blue">
         <span>평균 컨디션</span>
