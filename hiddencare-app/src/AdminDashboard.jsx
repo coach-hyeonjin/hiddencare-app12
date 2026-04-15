@@ -975,6 +975,7 @@ const [exerciseSearchDropdown, setExerciseSearchDropdown] = useState({
   const [exerciseForm, setExerciseForm] = useState(emptyExerciseForm)
   const [editingExerciseId, setEditingExerciseId] = useState(null)
   const [exerciseSearch, setExerciseSearch] = useState('')
+  const [exerciseDbGuideOpen, setExerciseDbGuideOpen] = useState(false)
   const [exerciseBodyPartFilter, setExerciseBodyPartFilter] = useState('')
 const [exerciseCategoryFilter, setExerciseCategoryFilter] = useState('')
 const [exerciseBrandFilter, setExerciseBrandFilter] = useState('')
@@ -16366,7 +16367,77 @@ const filteredExercisesAdvanced = exercises.filter((exercise) => {
   </div>
 )}
       {activeTab === '운동DB' && (
-  <div className="two-col">
+  <div className="exercise-db-page">
+
+    <div className="exercise-db-guide-toggle-wrap">
+      <button
+        type="button"
+        className="exercise-db-guide-toggle"
+        onClick={() => setExerciseDbGuideOpen((prev) => !prev)}
+      >
+        <div>
+          <div className="exercise-db-guide-badge">GUIDE</div>
+          <h3>운동DB 사용방법</h3>
+          <p className="sub-text">
+            브랜드 등록부터 운동DB 관리까지 핵심 흐름만 빠르게 확인할 수 있습니다.
+          </p>
+        </div>
+
+        <span className="exercise-db-guide-toggle-mark">
+          {exerciseDbGuideOpen ? '−' : '+'}
+        </span>
+      </button>
+    </div>
+
+    {exerciseDbGuideOpen && (
+      <div className="exercise-db-guide-card">
+        <div className="exercise-db-guide-head">
+          <div className="exercise-db-guide-head-badge">처음 사용자 안내</div>
+          <h3>운동DB는 이렇게 사용합니다</h3>
+          <p>브랜드 → 운동 등록 → 필터 검색 흐름만 보면 됩니다.</p>
+        </div>
+
+        <div className="exercise-db-guide-grid">
+          <div className="exercise-db-guide-item">
+            <div className="exercise-db-guide-no">1</div>
+            <div>
+              <strong>브랜드 등록</strong>
+              <p>센터에서 사용하는 머신 브랜드를 먼저 등록합니다.</p>
+              <span>이렇게 하면 → 운동 등록 시 브랜드 선택이 가능합니다.</span>
+            </div>
+          </div>
+
+          <div className="exercise-db-guide-item">
+            <div className="exercise-db-guide-no">2</div>
+            <div>
+              <strong>운동 등록</strong>
+              <p>기구명, 부위, 분류, 설명을 입력합니다.</p>
+              <span>이렇게 하면 → 회원 기록 작성에서 선택 가능합니다.</span>
+            </div>
+          </div>
+
+          <div className="exercise-db-guide-item">
+            <div className="exercise-db-guide-no">3</div>
+            <div>
+              <strong>일괄 입력</strong>
+              <p>여러 운동을 한 번에 등록할 수 있습니다.</p>
+              <span>이렇게 하면 → 초기 세팅 시간을 줄일 수 있습니다.</span>
+            </div>
+          </div>
+
+          <div className="exercise-db-guide-item">
+            <div className="exercise-db-guide-no">4</div>
+            <div>
+              <strong>필터 / 검색</strong>
+              <p>부위, 분류, 브랜드 기준으로 찾습니다.</p>
+              <span>이렇게 하면 → 필요한 운동을 빠르게 찾을 수 있습니다.</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    )}
+
+    <div className="two-col">
     <section className="card brand-card">
       <div className="brand-hero">
         <div>
