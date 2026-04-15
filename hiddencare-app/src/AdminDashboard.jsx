@@ -9836,7 +9836,42 @@ const handleRoutineSave = async () => {
     items: [{ ...emptyWorkoutItem, sub_exercises: [createEmptySubExercise(), createEmptySubExercise()] }],
   })
 }
+const addPainLog = () => {
+  setWorkoutForm((prev) => ({
+    ...prev,
+    pain_enabled: true,
+    pain_logs: [...(prev.pain_logs || []), { ...emptyPainLog }],
+  }))
+}
 
+const updatePainLog = (index, field, value) => {
+  setWorkoutForm((prev) => {
+    const nextPainLogs = [...(prev.pain_logs || [])]
+
+    nextPainLogs[index] = {
+      ...(nextPainLogs[index] || { ...emptyPainLog }),
+      [field]: value,
+    }
+
+    return {
+      ...prev,
+      pain_logs: nextPainLogs,
+    }
+  })
+}
+
+const removePainLog = (index) => {
+  setWorkoutForm((prev) => {
+    const currentPainLogs = [...(prev.pain_logs || [])]
+    const nextPainLogs = currentPainLogs.filter((_, idx) => idx !== index)
+
+    return {
+      ...prev,
+      pain_logs: nextPainLogs,
+      pain_enabled: nextPainLogs.length > 0,
+    }
+  })
+}
 const updateWorkoutItemField = (itemIndex, field, value) => {
   setWorkoutForm((prev) => {
     const nextItems = [...prev.items]
