@@ -2892,27 +2892,7 @@ return { ok: true, xp: xpValue }
     setPartnerUsageForm(emptyPartnerUsageForm)
     await loadPartnerUsages()
   }
-  const updateMemberAlertSetting = (key, value) => {
-  setMemberAlertSettings((prev) => {
-    const next = { ...prev, [key]: value }
-    localStorage.setItem(
-      `member_alert_settings_${memberInfo?.id || member?.id || 'default'}`,
-      JSON.stringify(next)
-    )
-    return next
-  })
-}
-
-const removeMemberAlert = (alertId) => {
-  setMemberAlerts((prev) => prev.filter((item) => item.id !== alertId))
-}
-
-const clearMemberAlerts = () => {
-  setMemberAlerts([])
-  setUnreadMemberNoticeCount(0)
-  setUnreadMemberInquiryCount(0)
-  setUnreadMemberWorkoutCount(0)
-}
+  
 
 const filteredMemberAlerts = memberAlerts.filter((alert) =>
   String(alert.text || '')
