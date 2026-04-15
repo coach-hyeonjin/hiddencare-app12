@@ -21788,13 +21788,13 @@ textarea:focus {
 .meal-day-card .detail-box {
   margin-bottom: 0;
 }
-/* ===== 통계 / 활동랭킹 활용 가이드 ===== */
+/* ===== 회원/관리자 공통 안내 카드 ===== */
 .tab-usage-guide-card {
-  margin: 16px 0 18px;
+  margin: 14px 0 18px;
   border: 1px solid #dbe4f0;
-  border-radius: 20px;
+  border-radius: 22px;
   background: linear-gradient(180deg, #ffffff 0%, #f8fbff 100%);
-  box-shadow: 0 10px 28px rgba(15, 23, 42, 0.05);
+  box-shadow: 0 10px 24px rgba(15, 23, 42, 0.05);
   overflow: hidden;
 }
 
@@ -21804,12 +21804,30 @@ textarea:focus {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 16px;
-  padding: 18px 22px;
+  gap: 14px;
+  padding: 18px 20px;
 }
 
 .tab-usage-guide-summary::-webkit-details-marker {
   display: none;
+}
+
+.tab-usage-guide-summary strong,
+.tab-usage-guide-summary-text {
+  display: block;
+  font-size: 18px;
+  line-height: 1.35;
+  color: #0f172a;
+  font-weight: 800;
+  margin: 0;
+}
+
+.tab-usage-guide-summary p,
+.tab-usage-guide-sub {
+  margin: 6px 0 0;
+  font-size: 13px;
+  line-height: 1.55;
+  color: #64748b;
 }
 
 .tab-usage-guide-badge {
@@ -21825,33 +21843,19 @@ textarea:focus {
   margin-bottom: 8px;
 }
 
-.tab-usage-guide-summary strong {
-  display: block;
-  font-size: 18px;
-  line-height: 1.35;
-  color: #0f172a;
-  margin-bottom: 4px;
-}
-
-.tab-usage-guide-summary p {
-  margin: 0;
-  font-size: 13px;
-  line-height: 1.6;
-  color: #64748b;
-}
-
 .tab-usage-guide-summary-icon {
-  width: 36px;
-  height: 36px;
+  width: 34px;
+  height: 34px;
   border-radius: 999px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
-  font-size: 20px;
+  font-size: 18px;
   font-weight: 700;
   color: #1e3a8a;
-  background: rgba(59, 130, 246, 0.12);
+  background: rgba(59, 130, 246, 0.1);
+  transition: transform 0.2s ease;
 }
 
 .tab-usage-guide-card[open] .tab-usage-guide-summary-icon {
@@ -21859,76 +21863,140 @@ textarea:focus {
 }
 
 .tab-usage-guide-body {
-  padding: 0 22px 22px;
-  border-top: 1px solid #e6edf5;
+  padding: 0 20px 20px;
+  border-top: 1px solid #e8eef6;
 }
 
 .tab-usage-guide-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 14px;
-  margin-top: 18px;
+  gap: 12px;
+  margin-top: 16px;
 }
 
 .tab-usage-guide-item {
   display: flex;
-  gap: 12px;
-  align-items: flex-start;
-  padding: 16px;
+  flex-direction: column;
+  gap: 6px;
+  padding: 14px 15px;
   border-radius: 18px;
   background: #f8fafc;
   border: 1px solid #e2e8f0;
 }
 
+.tab-usage-guide-item strong {
+  display: block;
+  font-size: 14px;
+  line-height: 1.45;
+  color: #0f172a;
+  font-weight: 800;
+  margin: 0;
+}
+
+.tab-usage-guide-item span,
+.tab-usage-guide-item p {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.6;
+  color: #475569;
+}
+
 .tab-usage-guide-step {
-  width: 30px;
-  height: 30px;
+  width: 28px;
+  height: 28px;
   border-radius: 999px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 800;
   color: #ffffff;
   background: linear-gradient(135deg, #2563eb 0%, #4f46e5 100%);
-}
-
-.tab-usage-guide-item strong {
-  display: block;
-  font-size: 14px;
-  line-height: 1.5;
-  color: #0f172a;
-  margin-bottom: 6px;
-}
-
-.tab-usage-guide-item p {
-  margin: 0;
-  font-size: 13px;
-  line-height: 1.65;
-  color: #475569;
+  margin-bottom: 4px;
 }
 
 .tab-usage-guide-tip {
-  margin-top: 14px;
-  padding: 14px 16px;
+  margin-top: 12px;
+  padding: 13px 15px;
   border-radius: 16px;
   background: linear-gradient(135deg, rgba(37, 99, 235, 0.08) 0%, rgba(99, 102, 241, 0.1) 100%);
-  border: 1px solid rgba(99, 102, 241, 0.16);
+  border: 1px solid rgba(99, 102, 241, 0.14);
 }
 
 .tab-usage-guide-tip strong {
   display: block;
-  font-size: 14px;
+  font-size: 13px;
   color: #1e3a8a;
-  margin-bottom: 6px;
+  margin-bottom: 5px;
 }
 
 .tab-usage-guide-tip p {
   margin: 0;
-  font-size: 13px;
-  line-height: 1.65;
+  font-size: 12px;
+  line-height: 1.6;
   color: #334155;
+}
+
+/* ===== 모바일 최적화 ===== */
+@media (max-width: 768px) {
+  .tab-usage-guide-card {
+    margin: 12px 0 16px;
+    border-radius: 20px;
+  }
+
+  .tab-usage-guide-summary {
+    padding: 16px;
+    gap: 10px;
+  }
+
+  .tab-usage-guide-summary strong,
+  .tab-usage-guide-summary-text {
+    font-size: 16px;
+  }
+
+  .tab-usage-guide-summary p,
+  .tab-usage-guide-sub {
+    font-size: 12px;
+    margin-top: 4px;
+  }
+
+  .tab-usage-guide-body {
+    padding: 0 16px 16px;
+  }
+
+  .tab-usage-guide-grid {
+    grid-template-columns: 1fr;
+    gap: 10px;
+    margin-top: 14px;
+  }
+
+  .tab-usage-guide-item {
+    padding: 13px 14px;
+    border-radius: 16px;
+  }
+
+  .tab-usage-guide-item strong {
+    font-size: 15px;
+    line-height: 1.4;
+  }
+
+  .tab-usage-guide-item span,
+  .tab-usage-guide-item p {
+    font-size: 12px;
+    line-height: 1.55;
+  }
+
+  .tab-usage-guide-summary-icon {
+    width: 30px;
+    height: 30px;
+    font-size: 16px;
+  }
+
+  .tab-usage-guide-tip {
+    padding: 12px 13px;
+    border-radius: 14px;
+  }
 }
 
 @media (max-width: 900px) {
