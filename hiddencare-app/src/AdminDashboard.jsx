@@ -1356,6 +1356,8 @@ const [adminAlerts, setAdminAlerts] = useState([])
 const [unreadInquiryCount, setUnreadInquiryCount] = useState(0)
 const [unreadNoticeCount, setUnreadNoticeCount] = useState(0)
   const [collapsedAdminAlertBar, setCollapsedAdminAlertBar] = useState(false)
+  const [adminAlertTab, setAdminAlertTab] = useState('settings')
+const [adminAlertSearch, setAdminAlertSearch] = useState('')
   const [managerActionLogs, setManagerActionLogs] = useState([])
   const [managerTaskChecks, setManagerTaskChecks] = useState([])
   const [managerGoalSettings, setManagerGoalSettings] = useState(null)
@@ -9408,10 +9410,14 @@ const loadCoachReviews = async () => {
     setCollapsedInquiries(collapsed)
   }
 }
+  
 const updateAdminAlertSetting = (key, value) => {
   setAdminAlertSettings((prev) => {
     const next = { ...prev, [key]: value }
-    localStorage.setItem(`admin_alert_settings_${currentAdminId || 'default'}`, JSON.stringify(next))
+    localStorage.setItem(
+      `admin_alert_settings_${currentAdminId || 'default'}`,
+      JSON.stringify(next)
+    )
     return next
   })
 }
@@ -9425,6 +9431,12 @@ const clearAdminAlerts = () => {
   setUnreadInquiryCount(0)
   setUnreadNoticeCount(0)
 }
+
+const filteredAdminAlerts = adminAlerts.filter((alert) =>
+  String(alert.text || '')
+    .toLowerCase()
+    .includes(String(adminAlertSearch || '').trim().toLowerCase())
+)
   const resetMemberForm = () => {
     setMemberForm(emptyMemberForm)
     setEditingMemberId(null)
@@ -13092,14 +13104,14 @@ const filteredExercisesAdvanced = exercises.filter((exercise) => {
 })
   return (
     <div className="dashboard-shell">
-      <div className="admin-alert-bar collapsible-alert-bar">
+      <div className="admin-alert-bar collapsible-alert-bar alert-panel-modern">
   <button
     type="button"
-    className="alert-collapse-toggle"
+    className="alert-collapse-toggle alert-modern-toggle"
     onClick={() => setCollapsedAdminAlertBar((prev) => !prev)}
   >
-    <div className="alert-collapse-left">
-      <strong>알림</strong>
+    <div className="alert-collapse-left alert-modern-left">
+      <strong>🔔 알림</strong>
       <span>문의 {unreadInquiryCount}건 / 공지 {unreadNoticeCount}건</span>
     </div>
 
@@ -13109,66 +13121,99 @@ const filteredExercisesAdvanced = exercises.filter((exercise) => {
   </button>
 
   {!collapsedAdminAlertBar && (
-    <>
-      <div className="admin-alert-settings">
-        <label className="checkbox-line">
-          <input
-            type="checkbox"
-            checked={adminAlertSettings.inquiry}
-            onChange={(e) => updateAdminAlertSetting('inquiry', e.target.checked)}
-          />
-          <span>문의 알림</span>
-        </label>
-
-        <label className="checkbox-line">
-          <input
-            type="checkbox"
-            checked={adminAlertSettings.notice}
-            onChange={(e) => updateAdminAlertSetting('notice', e.target.checked)}
-          />
-          <span>공지 알림</span>
-        </label>
-
-        <label className="checkbox-line">
-          <input
-            type="checkbox"
-            checked={adminAlertSettings.sound}
-            onChange={(e) => updateAdminAlertSetting('sound', e.target.checked)}
-          />
-          <span>소리</span>
-        </label>
-
-        <label className="checkbox-line">
-          <input
-            type="checkbox"
-            checked={adminAlertSettings.popup}
-            onChange={(e) => updateAdminAlertSetting('popup', e.target.checked)}
-          />
-          <span>팝업</span>
-        </label>
-
-        <button type="button" className="secondary-btn" onClick={clearAdminAlerts}>
-          알림 초기화
+    <div className="alert-modern-body">
+      <div className="alert-modern-tabs">
+        <button
+          type="button"
+          className={`alert-modern-tab ${adminAlertTab === 'settings' ? 'active' : ''}`}
+          onClick={() => setAdminAlertTab('settings')}
+        >
+          알림설정
+        </button>
+        <button
+          type="button"
+          className={`alert-modern-tab ${adminAlertTab === 'list' ? 'active' : ''}`}
+          onClick={() => setAdminAlertTab('list')}
+        >
+          알림내역
         </button>
       </div>
 
-      {adminAlerts.length > 0 && (
-        <div className="admin-alert-list">
-          {adminAlerts.map((alert) => (
-            <div key={alert.id} className={`admin-alert-item ${alert.type}`}>
-              <span>{alert.text}</span>
-              <button
-                type="button"
-                className="secondary-btn"
-                onClick={() => removeAdminAlert(alert.id)}
-              >
-                닫기
-              </button>
-            </div>
-          ))}
+      {adminAlertTab === 'settings' && (
+        <div className="alert-modern-settings">
+          <label className="checkbox-line">
+            <input
+              type="checkbox"
+              checked={adminAlertSettings.inquiry}
+              onChange={(e) => updateAdminAlertSetting('inquiry', e.target.checked)}
+            />
+            <span>문의 알림</span>
+          </label>
+
+          <label className="checkbox-line">
+            <input
+              type="checkbox"
+              checked={adminAlertSettings.notice}
+              onChange={(e) => updateAdminAlertSetting('notice', e.target.checked)}
+            />
+            <span>공지 알림</span>
+          </label>
+
+          <label className="checkbox-line">
+            <input
+              type="checkbox"
+              checked={adminAlertSettings.sound}
+              onChange={(e) => updateAdminAlertSetting('sound', e.target.checked)}
+            />
+            <span>소리</span>
+          </label>
+
+          <label className="checkbox-line">
+            <input
+              type="checkbox"
+              checked={adminAlertSettings.popup}
+              onChange={(e) => updateAdminAlertSetting('popup', e.target.checked)}
+            />
+            <span>팝업</span>
+          </label>
+
+          <button type="button" className="secondary-btn" onClick={clearAdminAlerts}>
+            알림 초기화
+          </button>
         </div>
       )}
-    </>
+
+      {adminAlertTab === 'list' && (
+        <div className="alert-modern-list-wrap">
+          <input
+            type="text"
+            placeholder="알림 내용 검색"
+            value={adminAlertSearch}
+            onChange={(e) => setAdminAlertSearch(e.target.value)}
+            className="alert-modern-search"
+          />
+
+          {filteredAdminAlerts.length === 0 ? (
+            <div className="workout-list-empty">표시할 알림이 없습니다.</div>
+          ) : (
+            <div className="admin-alert-list">
+              {filteredAdminAlerts.map((alert) => (
+                <div key={alert.id} className={`admin-alert-item ${alert.type}`}>
+                  <span>{alert.text}</span>
+                  <button
+                    type="button"
+                    className="secondary-btn"
+                    onClick={() => removeAdminAlert(alert.id)}
+                  >
+                    닫기
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+    </div>
   )}
 </div>
       <header className="topbar">
