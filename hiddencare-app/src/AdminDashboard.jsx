@@ -18642,7 +18642,73 @@ const filteredExercisesAdvanced = exercises.filter((exercise) => {
         </div>
       </div>
     </section>
+    <details className="tab-usage-guide-card stats-usage-guide" open={false}>
+      <summary className="tab-usage-guide-summary">
+        <div>
+          <div className="tab-usage-guide-badge">HOW TO USE</div>
+          <strong>통계를 왜 보고, 어떻게 활용해야 하는지</strong>
+          <p>숫자 확인에서 끝나는 화면이 아니라 재등록, 연락, 관리 우선순위를 잡는 기준입니다.</p>
+        </div>
+        <span className="tab-usage-guide-summary-icon">+</span>
+      </summary>
 
+      <div className="tab-usage-guide-body">
+        <div className="tab-usage-guide-grid">
+          <div className="tab-usage-guide-item">
+            <span className="tab-usage-guide-step">1</span>
+            <div>
+              <strong>남은 세션 확인 → 재등록 타이밍 잡기</strong>
+              <p>
+                남은 세션이 5회 이하인 회원은 미리 체크해서
+                재등록 상담, 다음 목표 제안, 일정 안내를 먼저 잡는 기준으로 씁니다.
+              </p>
+            </div>
+          </div>
+
+          <div className="tab-usage-guide-item">
+            <span className="tab-usage-guide-step">2</span>
+            <div>
+              <strong>PT / 개인운동 비교 → 관리 집중도 판단</strong>
+              <p>
+                PT만 하고 개인운동이 거의 없으면 숙제 수행이 약한 회원일 수 있어서
+                밴드 피드백, 루틴 점검, 출석 유도 메시지 대상으로 바로 잡아낼 수 있습니다.
+              </p>
+            </div>
+          </div>
+
+          <div className="tab-usage-guide-item">
+            <span className="tab-usage-guide-step">3</span>
+            <div>
+              <strong>월별 활동량 확인 → 이탈 조짐 미리 보기</strong>
+              <p>
+                지난달보다 수업 수나 운동 빈도가 줄어들면
+                휴식 때문인지, 의욕 저하인지, 통증 때문인지 먼저 체크할 회원을 고를 수 있습니다.
+              </p>
+            </div>
+          </div>
+
+          <div className="tab-usage-guide-item">
+            <span className="tab-usage-guide-step">4</span>
+            <div>
+              <strong>회원별 숫자 비교 → 연락 우선순위 정리</strong>
+              <p>
+                회원별 통계에서 잔여 횟수와 활동량을 같이 보면
+                누가 먼저 관리 대상인지 빠르게 정리할 수 있고,
+                문자/상담/재등록 제안 순서를 잡기 쉬워집니다.
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <div className="tab-usage-guide-tip">
+          <strong>실무 활용 예시</strong>
+          <p>
+            남은 세션 3~5회 + 개인운동 거의 없음 + 이번 달 활동 감소 조합이면
+            “재등록 안내 + 운동 지속 유도 + 상태 체크”를 같이 들어가는 회원으로 보면 됩니다.
+          </p>
+        </div>
+      </div>
+    </details>
     <div className="stats-summary-grid">
       <div className="stats-summary-card summary-blue">
         <span>이번 달 PT 수업</span>
@@ -19289,7 +19355,73 @@ const filteredExercisesAdvanced = exercises.filter((exercise) => {
 </div>
       </div>
     </section>
+    <details className="tab-usage-guide-card activity-usage-guide" open={false}>
+      <summary className="tab-usage-guide-summary">
+        <div>
+          <div className="tab-usage-guide-badge">HOW TO READ THIS</div>
+          <strong>활동랭킹을 왜 보고, 어디에 써야 하는지</strong>
+          <p>단순 순위표가 아니라 칭찬, 자극, 보상, 재참여 유도 기준으로 쓰는 화면입니다.</p>
+        </div>
+        <span className="tab-usage-guide-summary-icon">+</span>
+      </summary>
 
+      <div className="tab-usage-guide-body">
+        <div className="tab-usage-guide-grid">
+          <div className="tab-usage-guide-item">
+            <span className="tab-usage-guide-step">1</span>
+            <div>
+              <strong>상위권 확인 → 칭찬/동기부여에 활용</strong>
+              <p>
+                PT, 개인운동, 전체 활동 상위권 회원은
+                공개 칭찬, 밴드 인증, 소소한 혜택 안내 대상으로 쓰기 좋습니다.
+              </p>
+            </div>
+          </div>
+
+          <div className="tab-usage-guide-item">
+            <span className="tab-usage-guide-step">2</span>
+            <div>
+              <strong>중간권 확인 → 상위권 도전 자극 주기</strong>
+              <p>
+                2~5위권 회원은 조금만 더 하면 올라갈 수 있는 구간이라
+                “이번 주 2번만 더 하면 순위 올라간다” 같은 자극 메시지에 잘 반응합니다.
+              </p>
+            </div>
+          </div>
+
+          <div className="tab-usage-guide-item">
+            <span className="tab-usage-guide-step">3</span>
+            <div>
+              <strong>하위권/이탈권 확인 → 다시 끌어올 회원 찾기</strong>
+              <p>
+                기존 등록 회원인데 랭킹에서 거의 보이지 않으면
+                운동 흐름이 끊긴 회원일 가능성이 높아서 재참여 유도 연락 대상으로 활용할 수 있습니다.
+              </p>
+            </div>
+          </div>
+
+          <div className="tab-usage-guide-item">
+            <span className="tab-usage-guide-step">4</span>
+            <div>
+              <strong>총 XP / 주간 XP 비교 → 꾸준함과 최근 흐름 분리해서 보기</strong>
+              <p>
+                총 XP는 누적 성장형 회원,
+                주간 XP는 최근 불붙은 회원을 보는 지표라서
+                장기 우수회원과 최근 반응 좋은 회원을 따로 관리할 수 있습니다.
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <div className="tab-usage-guide-tip">
+          <strong>실무 활용 예시</strong>
+          <p>
+            총 XP는 높은데 주간 XP가 갑자기 떨어지면 최근 페이스가 꺾인 회원일 수 있고,
+            주간 XP가 급상승하면 후기 요청, 인증 유도, 다음 단계 제안 타이밍으로 보기 좋습니다.
+          </p>
+        </div>
+      </div>
+    </details>
     <div className="activity-ranking-summary-grid">
       <div className="activity-summary-card summary-pt">
         <span>이번 달 PT 수업 1위</span>
