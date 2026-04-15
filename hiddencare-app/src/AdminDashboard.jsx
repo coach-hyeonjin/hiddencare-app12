@@ -18149,7 +18149,7 @@ const filteredExercisesAdvanced = exercises.filter((exercise) => {
       })}
     </div>
 
-    <div className="compact-text" style={{ marginTop: '8px' }}>
+      <div className="compact-text" style={{ marginTop: '8px' }}>
       현재 설정:
       {' '}
       {getLifestyleMealSlots(mealPlanForm)
@@ -18158,6 +18158,8 @@ const filteredExercisesAdvanced = exercises.filter((exercise) => {
     </div>
   </label>
 </div>
+</div>
+
 {mealPlanForm.rice_amount_source === 'custom' && (
   <div className="grid-1">
     <label className="field">
