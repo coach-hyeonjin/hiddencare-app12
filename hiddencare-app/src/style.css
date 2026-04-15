@@ -20428,56 +20428,179 @@ textarea:focus {
 
 .exercise-db-guide-toggle {
   width: 100%;
-  border-radius: 20px;
-  padding: 18px;
+  border-radius: 18px;
+  padding: 14px 16px;
   background: linear-gradient(180deg, #ffffff 0%, #f8fbff 100%);
   border: 1px solid #dfe7f2;
   display: flex;
   justify-content: space-between;
   align-items: center;
+  gap: 14px;
+  text-align: left;
+  box-shadow: 0 8px 20px rgba(15, 23, 42, 0.04);
+}
+
+.exercise-db-guide-toggle:hover {
+  transform: translateY(-1px);
+  border-color: #c7d2fe;
 }
 
 .exercise-db-guide-badge {
-  font-size: 12px;
-  font-weight: 800;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 24px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: #eef2ff;
   color: #4338ca;
-  margin-bottom: 8px;
+  font-size: 11px;
+  font-weight: 800;
+  margin-bottom: 6px;
+}
+
+.exercise-db-guide-toggle h3 {
+  margin: 0 0 4px;
+  font-size: 20px;
+  color: #111827;
+  letter-spacing: -0.02em;
+}
+
+.exercise-db-guide-toggle .sub-text {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.6;
+  color: #6b7280;
 }
 
 .exercise-db-guide-toggle-mark {
-  font-size: 22px;
+  flex-shrink: 0;
+  width: 34px;
+  height: 34px;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: #eef2ff;
+  color: #4338ca;
+  font-size: 20px;
+  font-weight: 700;
 }
 
 .exercise-db-guide-card {
-  border-radius: 20px;
-  padding: 18px;
+  border-radius: 18px;
+  padding: 16px;
   background: #ffffff;
   border: 1px solid #e2e8f0;
+  box-shadow: 0 8px 20px rgba(15, 23, 42, 0.04);
+}
+.exercise-db-guide-head {
+  margin-bottom: 14px;
 }
 
+.exercise-db-guide-head-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 24px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: #eff6ff;
+  color: #1d4ed8;
+  font-size: 11px;
+  font-weight: 800;
+  margin-bottom: 6px;
+}
+
+.exercise-db-guide-head h3 {
+  margin: 0 0 6px;
+  font-size: 22px;
+  color: #111827;
+  letter-spacing: -0.02em;
+}
+
+.exercise-db-guide-head p {
+  margin: 0;
+  color: #6b7280;
+  font-size: 13px;
+  line-height: 1.6;
+}
 .exercise-db-guide-grid {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 12px;
-}
-
-.exercise-db-guide-item {
-  border-radius: 16px;
-  padding: 14px;
-  background: #f8fafc;
-  display: flex;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 10px;
 }
 
+.exercise-db-guide-item {
+  border-radius: 14px;
+  padding: 12px;
+  background: #f8fafc;
+  border: 1px solid #e5edf6;
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+}
+
 .exercise-db-guide-no {
-  width: 28px;
-  height: 28px;
+  width: 26px;
+  height: 26px;
   border-radius: 999px;
   background: #eef2ff;
+  color: #4338ca;
   display: flex;
   align-items: center;
   justify-content: center;
+  font-size: 12px;
   font-weight: 800;
+  flex-shrink: 0;
+}
+.exercise-db-guide-item strong {
+  display: block;
+  margin-bottom: 4px;
+  font-size: 14px;
+  color: #111827;
+}
+
+.exercise-db-guide-item p {
+  margin: 0 0 6px;
+  font-size: 12px;
+  line-height: 1.5;
+  color: #475569;
+  word-break: keep-all;
+}
+
+.exercise-db-guide-item span {
+  display: block;
+  font-size: 12px;
+  line-height: 1.5;
+  color: #4338ca;
+  font-weight: 700;
+  word-break: keep-all;
+}
+@media (max-width: 1200px) {
+  .exercise-db-guide-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 720px) {
+  .exercise-db-guide-toggle,
+  .exercise-db-guide-card {
+    padding: 14px;
+    border-radius: 16px;
+  }
+
+  .exercise-db-guide-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .exercise-db-guide-toggle {
+    align-items: flex-start;
+  }
+
+  .exercise-db-guide-head h3 {
+    font-size: 20px;
+  }
 }
 /* ===== 운동DB 상단 버튼 정리 ===== */
 
