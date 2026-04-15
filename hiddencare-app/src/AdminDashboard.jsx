@@ -16769,7 +16769,8 @@ const filteredExercisesAdvanced = exercises.filter((exercise) => {
           )
         })}
       </div>
-    </section>
+     </section>
+  </div>
   </div>
 )}
 
