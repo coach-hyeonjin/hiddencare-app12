@@ -21078,19 +21078,19 @@ textarea:focus {
 }
 .meal-setting-guide-card {
   margin-bottom: 18px;
-  padding: 20px;
+  padding: 18px;
   border: 1px solid #dbe2f0;
-  border-radius: 22px;
+  border-radius: 20px;
   background: linear-gradient(180deg, #f8fbff 0%, #ffffff 100%);
   box-shadow: 0 8px 24px rgba(15, 23, 42, 0.04);
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 14px;
 }
 
 .meal-setting-guide-head h3 {
-  margin: 8px 0 8px;
-  font-size: 24px;
+  margin: 8px 0 6px;
+  font-size: 22px;
   font-weight: 800;
   color: #172033;
   letter-spacing: -0.02em;
@@ -21099,7 +21099,7 @@ textarea:focus {
 .meal-setting-guide-head p {
   margin: 0;
   font-size: 14px;
-  line-height: 1.7;
+  line-height: 1.6;
   color: #5b6475;
 }
 
@@ -21115,74 +21115,67 @@ textarea:focus {
   letter-spacing: 0.08em;
 }
 
-.meal-setting-guide-grid {
+.meal-setting-guide-simple-grid {
   display: grid;
-  grid-template-columns: 1fr;
+  grid-template-columns: 1fr 1fr;
   gap: 12px;
 }
 
-.meal-setting-guide-step {
-  display: grid;
-  grid-template-columns: 42px 1fr;
-  gap: 14px;
+.meal-setting-guide-simple-item {
+  display: flex;
+  gap: 12px;
   align-items: flex-start;
-  padding: 16px;
-  border-radius: 18px;
+  padding: 14px;
+  border-radius: 16px;
   background: #ffffff;
   border: 1px solid #e4eaf5;
 }
 
-.meal-setting-guide-step-no {
-  width: 42px;
-  height: 42px;
-  min-width: 42px;
-  border-radius: 14px;
+.meal-setting-guide-simple-no {
+  width: 34px;
+  height: 34px;
+  min-width: 34px;
+  border-radius: 12px;
   display: flex;
   align-items: center;
   justify-content: center;
   background: linear-gradient(135deg, #6259ff 0%, #7c6cff 100%);
   color: #ffffff;
-  font-size: 16px;
+  font-size: 14px;
   font-weight: 800;
 }
 
-.meal-setting-guide-step-body strong {
+.meal-setting-guide-simple-item strong {
   display: block;
   margin-bottom: 6px;
-  font-size: 17px;
+  font-size: 15px;
   font-weight: 800;
   color: #172033;
 }
 
-.meal-setting-guide-step-body p {
-  margin: 0 0 10px;
-  font-size: 14px;
-  line-height: 1.7;
+.meal-setting-guide-simple-item p {
+  margin: 0 0 6px;
+  font-size: 13px;
+  line-height: 1.6;
   color: #5b6475;
 }
 
-.meal-setting-guide-step-body ul {
-  margin: 0;
-  padding-left: 18px;
-}
-
-.meal-setting-guide-step-body li {
+.meal-setting-guide-simple-item span {
+  display: block;
   font-size: 13px;
-  line-height: 1.7;
-  color: #667085;
-  margin-bottom: 4px;
-  word-break: keep-all;
-  overflow-wrap: break-word;
+  line-height: 1.6;
+  color: #506080;
+  font-weight: 600;
 }
 
-.meal-setting-guide-tip-box {
-  padding: 16px 18px;
-  border-radius: 18px;
+.meal-setting-guide-result-box {
+  padding: 14px 16px;
+  border-radius: 16px;
   background: #eef4ff;
   border: 1px solid #d7e3ff;
 }
 
-.meal-setting-guide-tip-box strong {
+.meal-setting-guide-result-box strong {
   display: block;
   margin-bottom: 6px;
   font-size: 15px;
@@ -21190,7 +21183,7 @@ textarea:focus {
   color: #3346b5;
 }
 
-.meal-setting-guide-tip-box p {
+.meal-setting-guide-result-box p {
   margin: 0;
   font-size: 13px;
   line-height: 1.7;
@@ -21204,30 +21197,24 @@ textarea:focus {
   }
 
   .meal-setting-guide-head h3 {
-    font-size: 20px;
+    font-size: 19px;
   }
 
-  .meal-setting-guide-step {
-    grid-template-columns: 36px 1fr;
-    gap: 12px;
-    padding: 14px;
+  .meal-setting-guide-simple-grid {
+    grid-template-columns: 1fr;
   }
 
-  .meal-setting-guide-step-no {
-    width: 36px;
-    height: 36px;
-    min-width: 36px;
-    border-radius: 12px;
+  .meal-setting-guide-simple-item {
+    padding: 13px;
+  }
+
+  .meal-setting-guide-simple-item strong {
     font-size: 14px;
   }
 
-  .meal-setting-guide-step-body strong {
-    font-size: 15px;
-  }
-
-  .meal-setting-guide-step-body p,
-  .meal-setting-guide-step-body li {
-    font-size: 13px;
+  .meal-setting-guide-simple-item p,
+  .meal-setting-guide-simple-item span {
+    font-size: 12px;
   }
 }
 .meal-day-card {
