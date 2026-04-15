@@ -1067,7 +1067,11 @@ const emptyMealPlanForm = {
   meal_structure_mode: 'structured',
     usual_rice_amount_g: 300,
   largest_meal_slot: '저녁',
-   high_rice_slots: ['저녁'],
+  meal_rice_map: {
+  아침: 300,
+  점심: 300,
+  저녁: 300,
+},
   meal_start_mode: 'current',
   rice_amount_source: 'preset',
   usual_rice_amount_custom_g: '',
@@ -1465,10 +1469,13 @@ const handleMealPlanGenerate = async () => {
     mealPlanForm.rice_amount_source === 'custom'
       ? Number(mealPlanForm.usual_rice_amount_custom_g || 0)
       : Number(mealPlanForm.usual_rice_amount_g || 0)
-const normalizedHighRiceSlots = normalizeHighRiceSlots(
-    mealPlanForm.high_rice_slots,
-    mealSlots
-  )
+const normalizedMealRiceMap = mealSlots.reduce((acc, slot) => {
+  const fallbackValue = usualRiceAmountG
+  const slotValue = Number(mealPlanForm.meal_rice_map?.[slot] ?? fallbackValue)
+
+  acc[slot] = slotValue
+  return acc
+}, {})
   const riceGuide = getRiceGuide(usualRiceAmountG)
   
   const sodiumLimitMg = 2000
@@ -1511,7 +1518,7 @@ const normalizedHighRiceSlots = normalizeHighRiceSlots(
        eatingBaseline: {
         usual_rice_amount_g: usualRiceAmountG,
         largest_meal_slot: mealPlanForm.largest_meal_slot || '저녁',
-        high_rice_slots: normalizedHighRiceSlots,
+       meal_rice_map: normalizedMealRiceMap,
         meal_start_mode: mealPlanForm.meal_start_mode || 'current',
       },
     },
@@ -1542,7 +1549,7 @@ const normalizedHighRiceSlots = normalizeHighRiceSlots(
           usual_rice_amount_g: usualRiceAmountG,
       
     largest_meal_slot: mealPlanForm.largest_meal_slot || '저녁',
-      high_rice_slots: normalizedHighRiceSlots,
+      meal_rice_map: normalizedMealRiceMap,
     meal_start_mode: mealPlanForm.meal_start_mode || 'current',
     rice_carbs_g: riceGuide.carbs_g,
     rice_kcal: riceGuide.kcal,
@@ -2134,17 +2141,24 @@ const handleMealPlanSave = async () => {
   const excludedFoodIds = resolveFoodIdsByText(mealPlanForm.excluded_foods, foods)
   const allergyFoodIds = resolveFoodIdsByText(mealPlanForm.allergies, foods)
   const finalMealSlots = getLifestyleMealSlots(mealPlanForm)
-    const normalizedHighRiceSlots = normalizeHighRiceSlots(
-    mealPlanForm.high_rice_slots,
-    finalMealSlots
-  )
+    const normalizedMealRiceMap = finalMealSlots.reduce((acc, slot) => {
+  const fallbackValue =
+    mealPlanForm.rice_amount_source === 'custom'
+      ? Number(mealPlanForm.usual_rice_amount_custom_g || 0)
+      : Number(mealPlanForm.usual_rice_amount_g || 300)
+
+  const slotValue = Number(mealPlanForm.meal_rice_map?.[slot] ?? fallbackValue)
+
+  acc[slot] = slotValue
+  return acc
+}, {})
   const payload = {
     member_id: mealPlanForm.member_id,
     admin_id: currentAdminId || null,
     goal_type: mealPlanForm.goal_type,
     meals_per_day: Number(mealPlanForm.meals_per_day || 3),
    meal_slots: finalMealSlots,
-      high_rice_slots: normalizedHighRiceSlots,
+     meal_rice_map: normalizedMealRiceMap,
     activity_level: mealPlanForm.activity_level || 'light',
     training_days_per_week: Number(mealPlanForm.training_days_per_week || 3),
     training_time: mealPlanForm.training_time || 'evening',
@@ -3019,13 +3033,23 @@ const loadMemberMealPlanProfile = async (memberId) => {
       allowed_alcohol_per_week: Number(data?.allowed_alcohol_per_week || 0),
           usual_rice_amount_g: Number(data?.usual_rice_amount_g || 300),
       largest_meal_slot: data?.largest_meal_slot || '저녁',
-          high_rice_slots: normalizeHighRiceSlots(
-        data?.high_rice_slots,
-        getLifestyleMealSlots({
-          ...data,
-          meals_per_day: Number(data?.meals_per_day || 3),
-        })
-      ),
+          meal_rice_map: (() => {
+  const lifestyleSlots = getLifestyleMealSlots({
+    ...data,
+    meals_per_day: Number(data?.meals_per_day || 3),
+  })
+
+  const fallbackValue = Number(data?.usual_rice_amount_g || 300)
+  const sourceMap =
+    data?.meal_rice_map && typeof data.meal_rice_map === 'object'
+      ? data.meal_rice_map
+      : {}
+
+  return lifestyleSlots.reduce((acc, slot) => {
+    acc[slot] = Number(sourceMap?.[slot] ?? fallbackValue)
+    return acc
+  }, {})
+})(),
       meal_start_mode: data?.meal_start_mode || 'current',
       rice_amount_source: data?.rice_amount_source || 'preset',
       usual_rice_amount_custom_g:
@@ -18065,96 +18089,75 @@ const filteredExercisesAdvanced = exercises.filter((exercise) => {
     </select>
   </label>
 
+ <label className="field">
+  <span>가장 많이 먹는 끼니</span>
+  <select
+    value={mealPlanForm.largest_meal_slot}
+    onChange={(e) =>
+      setMealPlanForm((prev) => ({
+        ...prev,
+        largest_meal_slot: e.target.value,
+      }))
+    }
+  >
+    <option value="아침">아침</option>
+    <option value="점심">점심</option>
+    <option value="저녁">저녁</option>
+    <option value="야식">야식</option>
+  </select>
+</label>
+          <div className="grid-1">
   <label className="field">
-    <span>가장 많이 먹는 끼니</span>
-    <select
-      value={mealPlanForm.largest_meal_slot}
-     onChange={(e) =>
-  setMealPlanForm((prev) => ({
-    ...prev,
-    largest_meal_slot: e.target.value,
-    high_rice_slots:
-      Array.isArray(prev.high_rice_slots) && prev.high_rice_slots.length > 0
-        ? prev.high_rice_slots
-        : [e.target.value],
-  }))
-}
-    >
-      <option value="아침">아침</option>
-      <option value="점심">점심</option>
-      <option value="저녁">저녁</option>
-      <option value="야식">야식</option>
-    </select>
-  </label>
+    <span>끼니별 밥량 직접 설정(g)</span>
 
-  <label className="field">
-    <span>식단 시작 방식</span>
-    <select
-      value={mealPlanForm.meal_start_mode}
-      onChange={(e) =>
-        setMealPlanForm((prev) => ({
-          ...prev,
-          meal_start_mode: e.target.value,
-        }))
-      }
-    >
-      <option value="current">평소 식사량 기준으로 시작</option>
-      <option value="slightly_reduce">조금 줄여서 시작</option>
-      <option value="aggressive_reduce">많이 줄여서 시작</option>
-      <option value="cycle">훈련일/휴식일에 따라 조절</option>
-    </select>
-  </label>
-</div>
-
-<div className="grid-1">
-  <label className="field">
-    <span>600g 기준으로 먹는 끼니(복수 선택 가능)</span>
-
-    <div className="inline-actions wrap" style={{ marginTop: '8px' }}>
+    <div className="list-stack" style={{ marginTop: '8px' }}>
       {getLifestyleMealSlots(mealPlanForm).map((slot) => {
-        const isActive = Array.isArray(mealPlanForm.high_rice_slots)
-          ? mealPlanForm.high_rice_slots.includes(slot)
-          : false
+        const currentValue =
+          mealPlanForm.meal_rice_map?.[slot] ??
+          (mealPlanForm.rice_amount_source === 'custom'
+            ? Number(mealPlanForm.usual_rice_amount_custom_g || 0)
+            : Number(mealPlanForm.usual_rice_amount_g || 300))
 
         return (
-          <button
+          <div
             key={slot}
-            type="button"
-            className={isActive ? 'primary-btn' : 'secondary-btn'}
-            onClick={() =>
-              setMealPlanForm((prev) => {
-                const currentSlots = Array.isArray(prev.high_rice_slots)
-                  ? prev.high_rice_slots
-                  : []
-
-                const nextSlots = currentSlots.includes(slot)
-                  ? currentSlots.filter((item) => item !== slot)
-                  : [...currentSlots, slot]
-
-                return {
-                  ...prev,
-                  high_rice_slots: normalizeHighRiceSlots(
-                    nextSlots,
-                    getLifestyleMealSlots(prev)
-                  ),
-                }
-              })
-            }
+            className="inline-actions wrap"
+            style={{ justifyContent: 'space-between', gap: '8px' }}
           >
-            {slot}
-          </button>
+            <strong style={{ minWidth: '52px' }}>{slot}</strong>
+
+            <input
+              type="number"
+              min="0"
+              step="10"
+              value={currentValue}
+              onChange={(e) =>
+                setMealPlanForm((prev) => ({
+                  ...prev,
+                  meal_rice_map: {
+                    ...(prev.meal_rice_map || {}),
+                    [slot]: Number(e.target.value || 0),
+                  },
+                }))
+              }
+              style={{ maxWidth: '140px' }}
+            />
+
+            <span className="compact-text">g</span>
+          </div>
         )
       })}
     </div>
 
     <div className="compact-text" style={{ marginTop: '8px' }}>
-      현재 선택: {Array.isArray(mealPlanForm.high_rice_slots) && mealPlanForm.high_rice_slots.length > 0
-        ? mealPlanForm.high_rice_slots.join(' / ')
-        : '선택 없음'}
+      현재 설정:
+      {' '}
+      {getLifestyleMealSlots(mealPlanForm)
+        .map((slot) => `${slot} ${mealPlanForm.meal_rice_map?.[slot] ?? 0}g`)
+        .join(' / ')}
     </div>
   </label>
 </div>
-          
 {mealPlanForm.rice_amount_source === 'custom' && (
   <div className="grid-1">
     <label className="field">
