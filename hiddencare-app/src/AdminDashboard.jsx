@@ -904,6 +904,7 @@ export default function AdminDashboard({ profile, currentAdminId, currentGymId, 
   const [editingMemberId, setEditingMemberId] = useState(null)
   const [memberSearch, setMemberSearch] = useState('')
   const [memberDetailSearch, setMemberDetailSearch] = useState('')
+  const [memberDetailGuideOpen, setMemberDetailGuideOpen] = useState(false)
   const [memberProgramFilter, setMemberProgramFilter] = useState('')
   const [memberStatusFilter, setMemberStatusFilter] = useState('all')
   const [collapsedMembers, setCollapsedMembers] = useState({})
@@ -13618,6 +13619,77 @@ const filteredExercisesAdvanced = exercises.filter((exercise) => {
       </div>
     </div>
 
+
+<div className="member-detail-guide-toggle-wrap">
+  <button
+    type="button"
+    className="member-detail-guide-toggle"
+    onClick={() => setMemberDetailGuideOpen((prev) => !prev)}
+  >
+    <div>
+      <div className="member-detail-guide-badge">GUIDE</div>
+      <h3>회원상세 사용방법</h3>
+      <p className="sub-text">
+        회원 검색부터 루틴 관리, 메모 확인까지 필요한 흐름만 짧게 정리했습니다.
+      </p>
+    </div>
+
+    <span className="member-detail-guide-toggle-mark">
+      {memberDetailGuideOpen ? '−' : '+'}
+    </span>
+  </button>
+</div>
+
+{memberDetailGuideOpen && (
+  <section className="member-detail-guide-card">
+    <div className="member-detail-guide-head">
+      <div className="member-detail-guide-head-badge">처음 사용자 안내</div>
+      <h3>회원상세는 이렇게 보면 됩니다</h3>
+      <p>
+        검색하고, 선택하고, 루틴과 메모를 확인하는 흐름만 빠르게 볼 수 있게 정리했습니다.
+      </p>
+    </div>
+
+    <div className="member-detail-guide-grid">
+      <div className="member-detail-guide-item">
+        <div className="member-detail-guide-no">1</div>
+        <div>
+          <strong>회원 검색</strong>
+          <p>회원명, 목표, 프로그램명으로 먼저 검색합니다.</p>
+          <span>이렇게 하면 → 원하는 회원을 빠르게 찾을 수 있습니다.</span>
+        </div>
+      </div>
+
+      <div className="member-detail-guide-item">
+        <div className="member-detail-guide-no">2</div>
+        <div>
+          <strong>회원 선택</strong>
+          <p>검색 결과에서 해당 회원을 누릅니다.</p>
+          <span>이렇게 하면 → 회원 기본정보와 루틴 관리 화면이 열립니다.</span>
+        </div>
+      </div>
+
+      <div className="member-detail-guide-item">
+        <div className="member-detail-guide-no">3</div>
+        <div>
+          <strong>루틴 확인 / 수정</strong>
+          <p>주차와 요일을 열어서 운동, 세트, 메모를 수정합니다.</p>
+          <span>이렇게 하면 → 회원별 주차 루틴을 한 화면에서 관리할 수 있습니다.</span>
+        </div>
+      </div>
+
+      <div className="member-detail-guide-item">
+        <div className="member-detail-guide-no">4</div>
+        <div>
+          <strong>메모와 건강정보 확인</strong>
+          <p>아래에서 비공개 메모와 건강기록을 함께 봅니다.</p>
+          <span>이렇게 하면 → 수업 방향과 관리 포인트를 이어서 확인할 수 있습니다.</span>
+        </div>
+      </div>
+    </div>
+  </section>
+)}
+    
     {selectedMember ? (
       <div className="card">
         <div className="sub-card member-detail-modern-card">
