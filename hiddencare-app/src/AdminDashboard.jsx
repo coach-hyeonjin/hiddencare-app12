@@ -15522,20 +15522,68 @@ const filteredExercisesAdvanced = exercises.filter((exercise) => {
                     ) : item.entry_type === 'cardio' ? (
                       <>
                         <label className="field">
-                          <span>사용 기구 / 종목 선택</span>
-                          <select
-                            value={item.exercise_id}
-                            onChange={(e) => updateWorkoutItemSelect(itemIndex, e.target.value)}
-                          >
-                            <option value="">선택 안함</option>
-                            {exercises.map((exercise) => (
-                              <option key={exercise.id} value={exercise.id}>
-                                [{exercise.body_part || '-'} / {exercise.category || '-'} / {exercise.brands?.name || '브랜드없음'}] {exercise.name}
-                              </option>
-                            ))}
-                          </select>
-                        </label>
+  <span>사용 기구 / 종목 선택</span>
 
+  <button
+    type="button"
+    className="exercise-search-trigger"
+    onClick={() =>
+      isExerciseDropdownOpen('cardio', itemIndex)
+        ? closeExerciseDropdown()
+        : openExerciseDropdown('cardio', itemIndex)
+    }
+  >
+    <span>
+      {item.exercise_id
+        ? item.exercise_name_snapshot || item.equipment_name_snapshot || '선택됨'
+        : '선택 안함'}
+    </span>
+    <strong>⌄</strong>
+  </button>
+
+  {isExerciseDropdownOpen('cardio', itemIndex) ? (
+    <div className="exercise-search-dropdown">
+      <input
+        type="text"
+        placeholder="유산소 종목 검색"
+        value={exerciseSearchDropdown.keyword}
+        onChange={(e) =>
+          setExerciseSearchDropdown((prev) => ({
+            ...prev,
+            keyword: e.target.value,
+          }))
+        }
+      />
+
+      <div className="exercise-search-dropdown-list">
+        <button
+          type="button"
+          className={`exercise-search-dropdown-item ${item.exercise_id === '' ? 'active' : ''}`}
+          onClick={() => {
+            updateWorkoutItemSelect(itemIndex, '')
+            closeExerciseDropdown()
+          }}
+        >
+          선택 안함
+        </button>
+
+        {filteredExerciseOptions.map((exercise) => (
+          <button
+            key={exercise.id}
+            type="button"
+            className={`exercise-search-dropdown-item ${item.exercise_id === exercise.id ? 'active' : ''}`}
+            onClick={() => {
+              updateWorkoutItemSelect(itemIndex, exercise.id)
+              closeExerciseDropdown()
+            }}
+          >
+            [{exercise.body_part || '-'} / {exercise.category || '-'} / {exercise.brands?.name || '브랜드없음'}] {exercise.name}
+          </button>
+        ))}
+      </div>
+    </div>
+  ) : null}
+</label>
                         <label className="field">
                           <span>선택된 기구명 / 종목명</span>
                           <input
@@ -15567,19 +15615,68 @@ const filteredExercisesAdvanced = exercises.filter((exercise) => {
                     ) : (
                       <>
                         <label className="field">
-                          <span>케어 항목 선택</span>
-                          <select
-                            value={item.exercise_id}
-                            onChange={(e) => updateWorkoutItemSelect(itemIndex, e.target.value)}
-                          >
-                            <option value="">선택 안함</option>
-                            {exercises.map((exercise) => (
-                              <option key={exercise.id} value={exercise.id}>
-                                [{exercise.body_part || '-'} / {exercise.category || '-'} / {exercise.brands?.name || '브랜드없음'}] {exercise.name}
-                              </option>
-                            ))}
-                          </select>
-                        </label>
+  <span>케어 항목 선택</span>
+
+  <button
+    type="button"
+    className="exercise-search-trigger"
+    onClick={() =>
+      isExerciseDropdownOpen('care', itemIndex)
+        ? closeExerciseDropdown()
+        : openExerciseDropdown('care', itemIndex)
+    }
+  >
+    <span>
+      {item.exercise_id
+        ? item.exercise_name_snapshot || item.equipment_name_snapshot || '선택됨'
+        : '선택 안함'}
+    </span>
+    <strong>⌄</strong>
+  </button>
+
+  {isExerciseDropdownOpen('care', itemIndex) ? (
+    <div className="exercise-search-dropdown">
+      <input
+        type="text"
+        placeholder="케어 항목 검색"
+        value={exerciseSearchDropdown.keyword}
+        onChange={(e) =>
+          setExerciseSearchDropdown((prev) => ({
+            ...prev,
+            keyword: e.target.value,
+          }))
+        }
+      />
+
+      <div className="exercise-search-dropdown-list">
+        <button
+          type="button"
+          className={`exercise-search-dropdown-item ${item.exercise_id === '' ? 'active' : ''}`}
+          onClick={() => {
+            updateWorkoutItemSelect(itemIndex, '')
+            closeExerciseDropdown()
+          }}
+        >
+          선택 안함
+        </button>
+
+        {filteredExerciseOptions.map((exercise) => (
+          <button
+            key={exercise.id}
+            type="button"
+            className={`exercise-search-dropdown-item ${item.exercise_id === exercise.id ? 'active' : ''}`}
+            onClick={() => {
+              updateWorkoutItemSelect(itemIndex, exercise.id)
+              closeExerciseDropdown()
+            }}
+          >
+            [{exercise.body_part || '-'} / {exercise.category || '-'} / {exercise.brands?.name || '브랜드없음'}] {exercise.name}
+          </button>
+        ))}
+      </div>
+    </div>
+  ) : null}
+</label>
 
                         <label className="field">
                           <span>선택된 케어 항목명</span>
