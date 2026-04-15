@@ -1477,7 +1477,13 @@ const normalizedMealRiceMap = mealSlots.reduce((acc, slot) => {
   return acc
 }, {})
   const riceGuide = getRiceGuide(usualRiceAmountG)
-  
+  const normalizedMealRiceMap = mealSlots.reduce((acc, slot) => {
+  const fallbackValue = usualRiceAmountG
+  const slotValue = Number(mealPlanForm.meal_rice_map?.[slot] ?? fallbackValue)
+
+  acc[slot] = slotValue
+  return acc
+}, {})
   const sodiumLimitMg = 2000
   const saturatedFatLimitG = Math.round((targetKcal * 0.1) / 9)
 
@@ -1611,7 +1617,7 @@ const normalizedMealRiceMap = mealSlots.reduce((acc, slot) => {
         goal_type: goalType,
         meals_per_day: mealsPerDay,
         meal_slots: mealSlots,
-         high_rice_slots: normalizedHighRiceSlots,
+         meal_rice_map: normalizedMealRiceMap,
         activity_level: mealPlanForm.activity_level || 'light',
         training_days_per_week: Number(mealPlanForm.training_days_per_week || 3),
         training_time: mealPlanForm.training_time || 'evening',
