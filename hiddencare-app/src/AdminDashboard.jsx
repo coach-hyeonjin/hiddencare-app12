@@ -19885,7 +19885,74 @@ const filteredExercisesAdvanced = exercises.filter((exercise) => {
         </div>
       </div>
     </section>
+    <details className="tab-usage-guide-card member-level-usage-guide" open={false}>
+      <summary className="tab-usage-guide-summary">
+        <div>
+          <div className="tab-usage-guide-badge">HOW TO USE</div>
+          <strong>회원 레벨 기준 설정은 이렇게 사용합니다</strong>
+          <p>
+            레벨 단계와 XP 규칙을 따로 정리해서, 회원 성장 기준과 보상 기준을 한 번에 맞추는 설정 화면입니다.
+          </p>
+        </div>
+        <span className="tab-usage-guide-summary-icon">+</span>
+      </summary>
 
+      <div className="tab-usage-guide-body">
+        <div className="tab-usage-guide-grid">
+          <div className="tab-usage-guide-item">
+            <span className="tab-usage-guide-step">1</span>
+            <div>
+              <strong>레벨 단계 확인 → 성장 구간이 정리됩니다</strong>
+              <p>
+                실버, 골드, 다이아처럼 회원 등급 구간을 먼저 확인하면
+                회원이 어느 XP부터 다음 단계로 올라가는지 기준이 명확해집니다.
+              </p>
+            </div>
+          </div>
+
+          <div className="tab-usage-guide-item">
+            <span className="tab-usage-guide-step">2</span>
+            <div>
+              <strong>최소 XP 수정 → 등급 상승 난이도가 바뀝니다</strong>
+              <p>
+                레벨별 최소 XP를 조정하면
+                회원이 얼마나 자주 운동해야 다음 레벨로 가는지 성장 속도를 직접 조절할 수 있습니다.
+              </p>
+            </div>
+          </div>
+
+          <div className="tab-usage-guide-item">
+            <span className="tab-usage-guide-step">3</span>
+            <div>
+              <strong>XP 규칙 수정 → 어떤 활동을 인정할지 정해집니다</strong>
+              <p>
+                PT, 개인운동, 유산소 같은 활동별 XP와 하루 최대 횟수를 설정하면
+                어떤 행동에 보상을 줄지 운영 기준이 맞춰집니다.
+              </p>
+            </div>
+          </div>
+
+          <div className="tab-usage-guide-item">
+            <span className="tab-usage-guide-step">4</span>
+            <div>
+              <strong>저장 → 회원 XP/레벨 운영 기준에 반영됩니다</strong>
+              <p>
+                항목별로 저장하면 이후 회원 랭킹, XP 누적, 레벨 표시 기준이
+                지금 설정한 값 중심으로 맞춰지게 됩니다.
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <div className="tab-usage-guide-tip">
+          <strong>실무에서 이렇게 보면 됩니다</strong>
+          <p>
+            레벨 단계는 “회원 성장 구간표”, XP 규칙은 “무슨 행동을 얼마나 인정할지”를 정하는 기준입니다.
+            레벨은 너무 빠르게 오르지 않게, XP 규칙은 회원이 실제로 해주길 원하는 행동에 점수가 붙도록 잡는 게 핵심입니다.
+          </p>
+        </div>
+      </div>
+    </details>
     <div className="member-level-summary-grid">
       <div className="member-level-summary-card summary-blue">
         <span>회원 레벨 단계</span>
