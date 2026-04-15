@@ -958,6 +958,7 @@ const isMemberDropdownOpen = (type) => {
   
   const [workoutTypeFilter, setWorkoutTypeFilter] = useState('all')
   const [workoutDateFilter, setWorkoutDateFilter] = useState('')
+  const [recordGuideOpen, setRecordGuideOpen] = useState(false)
 const [exerciseSearchDropdown, setExerciseSearchDropdown] = useState({
   openType: '',
   itemIndex: null,
@@ -15099,7 +15100,75 @@ const filteredExercisesAdvanced = exercises.filter((exercise) => {
         </div>
       </div>
     </div>
+<div className="record-guide-toggle-wrap">
+  <button
+    type="button"
+    className="record-guide-toggle"
+    onClick={() => setRecordGuideOpen((prev) => !prev)}
+  >
+    <div>
+      <div className="record-guide-badge">GUIDE</div>
+      <h3>기록작성 사용방법</h3>
+      <p className="sub-text">
+        처음 사용하는 사람도 아래 4가지만 보면 기록 작성부터 저장까지 바로 할 수 있습니다.
+      </p>
+    </div>
 
+    <span className="record-guide-toggle-mark">
+      {recordGuideOpen ? '−' : '+'}
+    </span>
+  </button>
+</div>
+
+{recordGuideOpen && (
+  <section className="record-guide-card">
+    <div className="record-guide-head">
+      <div className="record-guide-head-badge">처음 사용자 안내</div>
+      <h3>운동 기록은 이렇게 하면 됩니다</h3>
+      <p>
+        설명을 길게 읽지 않아도 되도록, 실제 입력 순서와 결과만 짧게 묶었습니다.
+      </p>
+    </div>
+
+    <div className="record-guide-grid">
+      <div className="record-guide-item">
+        <div className="record-guide-no">1</div>
+        <div>
+          <strong>회원 선택</strong>
+          <p>어느 회원 기록인지 먼저 고릅니다.</p>
+          <span>이렇게 하면 → 해당 회원 기준으로 오늘 운동 기록이 연결됩니다.</span>
+        </div>
+      </div>
+
+      <div className="record-guide-item">
+        <div className="record-guide-no">2</div>
+        <div>
+          <strong>날짜 / 기록 타입 선택</strong>
+          <p>PT인지 개인운동인지, 어떤 날짜 기록인지 정합니다.</p>
+          <span>이렇게 하면 → 저장되는 운동 기록 기준이 정확히 잡힙니다.</span>
+        </div>
+      </div>
+
+      <div className="record-guide-item">
+        <div className="record-guide-no">3</div>
+        <div>
+          <strong>운동 종류와 세트/시간 입력</strong>
+          <p>근력운동, 유산소, 케어 중 맞는 유형으로 기록합니다.</p>
+          <span>이렇게 하면 → 실제 수행한 운동 내용이 보기 쉽게 정리됩니다.</span>
+        </div>
+      </div>
+
+      <div className="record-guide-item">
+        <div className="record-guide-no">4</div>
+        <div>
+          <strong>저장 후 목록에서 확인</strong>
+          <p>저장한 뒤 오른쪽 목록에서 날짜별로 다시 확인합니다.</p>
+          <span>이렇게 하면 → 수정, 삭제, 통증 기록 확인까지 바로 이어집니다.</span>
+        </div>
+      </div>
+    </div>
+  </section>
+)}
     <div className="two-col">
       <section className="card record-form-card-modern">
         <div className="record-card-head">
