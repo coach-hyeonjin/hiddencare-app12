@@ -8941,31 +8941,41 @@ const loadBrands = async () => {
   }
 }
 
- const loadWorkouts = async () => {
+const loadWorkouts = async () => {
   if (!currentAdminId) {
     setWorkouts([])
     setWorkoutItemsMap({})
+    setCollapsedWorkouts({})
     return
   }
 
-  const { data: workoutData } = await supabase
+  const { data: workoutData, error: workoutError } = await supabase
     .from('workouts')
     .select('*')
     .eq('admin_id', currentAdminId)
     .order('workout_date', { ascending: false })
     .order('created_at', { ascending: false })
 
-  if (!workoutData) return
+  if (workoutError) {
+    console.error('운동 기록 불러오기 실패:', workoutError)
+    return
+  }
+
+  const safeWorkoutData = Array.isArray(workoutData) ? workoutData : []
 
   let itemMap = {}
-  const workoutIds = workoutData.map((workout) => workout.id)
+  const workoutIds = safeWorkoutData.map((workout) => workout.id)
 
   if (workoutIds.length > 0) {
-    const { data: itemData } = await supabase
+    const { data: itemData, error: itemError } = await supabase
       .from('workout_items')
       .select('*')
       .in('workout_id', workoutIds)
       .order('sort_order', { ascending: true })
+
+    if (itemError) {
+      console.error('운동 상세항목 불러오기 실패:', itemError)
+    }
 
     itemMap = (itemData || []).reduce((acc, item) => {
       if (!acc[item.workout_id]) acc[item.workout_id] = []
@@ -8974,14 +8984,22 @@ const loadBrands = async () => {
     }, {})
   }
 
-  const collapsed = {}
-  workoutData.forEach((workout) => {
-    collapsed[workout.id] = true
-  })
-
-  setWorkouts(workoutData)
+  setWorkouts(safeWorkoutData)
   setWorkoutItemsMap(itemMap)
-  setCollapsedWorkouts(collapsed)
+
+  setCollapsedWorkouts((prev) => {
+    const next = {}
+
+    safeWorkoutData.forEach((workout) => {
+      if (Object.prototype.hasOwnProperty.call(prev, workout.id)) {
+        next[workout.id] = prev[workout.id]
+      } else {
+        next[workout.id] = true
+      }
+    })
+
+    return next
+  })
 }
 
   const loadDietLogs = async () => {
