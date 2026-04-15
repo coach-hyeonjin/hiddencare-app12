@@ -16694,132 +16694,57 @@ const filteredExercisesAdvanced = exercises.filter((exercise) => {
 </div>
 
 {mealPlannerAdminSections.guide && (
-  <div className="meal-setting-guide-card">
+  <div className="meal-setting-guide-card simple">
     <div className="meal-setting-guide-head">
-      <div className="meal-setting-guide-badge">처음 사용자용 안내</div>
-      <h3>식단설정은 이렇게 진행하면 됩니다</h3>
+      <div className="meal-setting-guide-badge">처음 사용자 안내</div>
+      <h3>식단설정은 이렇게 하면 됩니다</h3>
       <p>
-        아래 순서대로 입력하면 자동 계산, 식단 설정 저장, 월간 식단 생성까지 한 번에 이어집니다.
+        처음에는 아래 4가지만 보면 됩니다. 입력하면 무엇이 바뀌는지 같이 안내합니다.
       </p>
     </div>
 
-    <div className="meal-setting-guide-grid">
-      <div className="meal-setting-guide-step">
-        <div className="meal-setting-guide-step-no">1</div>
-        <div className="meal-setting-guide-step-body">
+    <div className="meal-setting-guide-simple-grid">
+      <div className="meal-setting-guide-simple-item">
+        <div className="meal-setting-guide-simple-no">1</div>
+        <div>
           <strong>회원 선택</strong>
-          <p>
-            먼저 식단을 설정할 회원을 고릅니다. 회원을 선택해야 해당 회원의 건강정보와 식단 설정이 연결됩니다.
-          </p>
-          <ul>
-            <li>회원 선택 버튼을 눌러 회원 검색</li>
-            <li>선택한 회원이 상단 “현재 회원”에 표시되는지 확인</li>
-          </ul>
+          <p>식단을 설정할 회원을 고릅니다.</p>
+          <span>이렇게 하면 → 해당 회원 기준으로 식단 설정, 계산 결과, 월간 식단이 연결됩니다.</span>
         </div>
       </div>
 
-      <div className="meal-setting-guide-step">
-        <div className="meal-setting-guide-step-no">2</div>
-        <div className="meal-setting-guide-step-body">
-          <strong>기본 목표 입력</strong>
-          <p>
-            식단 목표와 기본 활동 정보를 입력합니다. 이 값이 자동 계산의 기준이 됩니다.
-          </p>
-          <ul>
-            <li>목표: 감량 / 체형개선 / 유지 / 근비대 / 벌크업</li>
-            <li>식사 횟수: 하루 몇 끼 먹는지 선택</li>
-            <li>활동량 / 주간 운동일 수 / 운동 시간대 입력</li>
-            <li>필요하면 훈련일 / 휴식일 식단 분리 체크</li>
-          </ul>
+      <div className="meal-setting-guide-simple-item">
+        <div className="meal-setting-guide-simple-no">2</div>
+        <div>
+          <strong>목표 / 식사 횟수 / 활동량 입력</strong>
+          <p>기본 목표와 생활 정보를 입력합니다.</p>
+          <span>이렇게 하면 → 자동 계산에 필요한 열량과 탄단지 기준이 잡힙니다.</span>
         </div>
       </div>
 
-      <div className="meal-setting-guide-step">
-        <div className="meal-setting-guide-step-no">3</div>
-        <div className="meal-setting-guide-step-body">
-          <strong>선호 음식 / 제외 음식 입력</strong>
-          <p>
-            회원이 실제로 먹을 수 있는 식단이 되도록 음식 제한과 선호를 입력합니다.
-          </p>
-          <ul>
-            <li>못 먹는 음식: 싫어하거나 피하고 싶은 음식</li>
-            <li>선호 음식: 자주 먹거나 식단에 넣고 싶은 음식</li>
-            <li>알레르기 / 절대 제외 음식: 반드시 제외해야 하는 음식</li>
-            <li>아래 추천 음식 버튼이나 음식 DB를 참고하면 더 정확하게 입력 가능</li>
-          </ul>
+      <div className="meal-setting-guide-simple-item">
+        <div className="meal-setting-guide-simple-no">3</div>
+        <div>
+          <strong>못 먹는 음식 / 선호 음식 / 생활패턴 입력</strong>
+          <p>회원 취향과 현실 식습관을 반영합니다.</p>
+          <span>이렇게 하면 → 너무 빡빡하지 않고 실제로 유지 가능한 식단으로 바뀝니다.</span>
         </div>
       </div>
 
-      <div className="meal-setting-guide-step">
-        <div className="meal-setting-guide-step-no">4</div>
-        <div className="meal-setting-guide-step-body">
-          <strong>생활습관 / 식단 운영 강도 설정</strong>
-          <p>
-            회원의 현실적인 식습관을 반영하는 단계입니다. 이 부분이 정확할수록 유지 가능한 식단이 생성됩니다.
-          </p>
-          <ul>
-            <li>식단 강도 / 적응 전략 / 식사 구조 선택</li>
-            <li>현재 식습관, 간식, 빵, 정크, 외식, 야식, 음주 빈도 입력</li>
-            <li>허용 일반식 / 자유식 / 간식 / 디저트 / 음주 횟수 입력</li>
-          </ul>
-        </div>
-      </div>
-
-      <div className="meal-setting-guide-step">
-        <div className="meal-setting-guide-step-no">5</div>
-        <div className="meal-setting-guide-step-body">
-          <strong>현실 식사 패턴 입력</strong>
-          <p>
-            평소 밥량과 가장 많이 먹는 끼니를 반영해서 식단 시작점을 맞춥니다.
-          </p>
-          <ul>
-            <li>평소 한 끼 밥량 선택</li>
-            <li>가장 많이 먹는 끼니 선택</li>
-            <li>식단 시작 방식 선택</li>
-            <li>600g 기준으로 많이 먹는 끼니가 여러 개면 복수 선택</li>
-          </ul>
-        </div>
-      </div>
-
-      <div className="meal-setting-guide-step">
-        <div className="meal-setting-guide-step-no">6</div>
-        <div className="meal-setting-guide-step-body">
-          <strong>실행 버튼 순서</strong>
-          <p>
-            처음 사용할 때는 아래 순서대로 진행하면 됩니다.
-          </p>
-          <ul>
-            <li>1) 자동 계산</li>
-            <li>2) 계산 결과 확인</li>
-            <li>3) 필요하면 추천 식단 방식 적용</li>
-            <li>4) 식단 설정 저장</li>
-            <li>5) 월간 식단 생성</li>
-          </ul>
-        </div>
-      </div>
-
-      <div className="meal-setting-guide-step">
-        <div className="meal-setting-guide-step-no">7</div>
-        <div className="meal-setting-guide-step-body">
-          <strong>생성 후 확인할 것</strong>
-          <p>
-            월간 식단 생성이 끝나면 아래 항목을 확인하면 됩니다.
-          </p>
-          <ul>
-            <li>자동 계산 결과의 열량 / 탄단지 수치</li>
-            <li>추천 식단 운영 방식과 현재 적용 방식</li>
-            <li>월별 식단 기록 보기에서 실제 생성 여부 확인</li>
-            <li>필요시 날짜별 식단 수정 / 삭제 가능</li>
-          </ul>
+      <div className="meal-setting-guide-simple-item">
+        <div className="meal-setting-guide-simple-no">4</div>
+        <div>
+          <strong>자동 계산 → 저장 → 월간 식단 생성</strong>
+          <p>버튼은 이 순서대로 누르면 됩니다.</p>
+          <span>이렇게 하면 → 계산 결과가 저장되고, 선택한 월 기준으로 한 달 식단이 생성됩니다.</span>
         </div>
       </div>
     </div>
 
-    <div className="meal-setting-guide-tip-box">
-      <strong>중요</strong>
+    <div className="meal-setting-guide-result-box">
+      <strong>처음 사용하는 분은 이렇게만 기억하세요</strong>
       <p>
-        입력값이 회원의 실제 생활패턴과 가까울수록, 식단이 더 현실적이고 유지 가능하게 생성됩니다.
-        처음부터 완벽하게 넣으려 하기보다 기본값 → 자동 계산 → 결과 확인 순서로 시작하는 것이 가장 쉽습니다.
+        회원 선택 → 기본 입력 → 음식/생활패턴 입력 → 자동 계산 → 식단 설정 저장 → 월간 식단 생성
       </p>
     </div>
   </div>
