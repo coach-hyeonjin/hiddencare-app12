@@ -1477,13 +1477,7 @@ const normalizedMealRiceMap = mealSlots.reduce((acc, slot) => {
   return acc
 }, {})
   const riceGuide = getRiceGuide(usualRiceAmountG)
-  const normalizedMealRiceMap = mealSlots.reduce((acc, slot) => {
-  const fallbackValue = usualRiceAmountG
-  const slotValue = Number(mealPlanForm.meal_rice_map?.[slot] ?? fallbackValue)
-
-  acc[slot] = slotValue
-  return acc
-}, {})
+  
   const sodiumLimitMg = 2000
   const saturatedFatLimitG = Math.round((targetKcal * 0.1) / 9)
 
