@@ -20420,6 +20420,65 @@ textarea:focus {
   background: #f8fafc;
   border: 1px solid #e5edf6;
 }
+.exercise-db-page {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.exercise-db-guide-toggle {
+  width: 100%;
+  border-radius: 20px;
+  padding: 18px;
+  background: linear-gradient(180deg, #ffffff 0%, #f8fbff 100%);
+  border: 1px solid #dfe7f2;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.exercise-db-guide-badge {
+  font-size: 12px;
+  font-weight: 800;
+  color: #4338ca;
+  margin-bottom: 8px;
+}
+
+.exercise-db-guide-toggle-mark {
+  font-size: 22px;
+}
+
+.exercise-db-guide-card {
+  border-radius: 20px;
+  padding: 18px;
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+}
+
+.exercise-db-guide-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+}
+
+.exercise-db-guide-item {
+  border-radius: 16px;
+  padding: 14px;
+  background: #f8fafc;
+  display: flex;
+  gap: 10px;
+}
+
+.exercise-db-guide-no {
+  width: 28px;
+  height: 28px;
+  border-radius: 999px;
+  background: #eef2ff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 800;
+}
 /* ===== 운동DB 상단 버튼 정리 ===== */
 
 .exercise-top-actions {
