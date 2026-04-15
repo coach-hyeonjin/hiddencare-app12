@@ -18805,7 +18805,78 @@ const filteredExercisesAdvanced = exercises.filter((exercise) => {
         </div>
       </div>
     </div>
+    <details className="tab-usage-guide-card dashboard-usage-guide" open={false}>
+      <summary className="tab-usage-guide-summary">
+        <div>
+          <div className="tab-usage-guide-badge">HOW TO USE THIS DASHBOARD</div>
+          <strong>운영대시보드는 이렇게 보고, 이렇게 실무에 씁니다</strong>
+          <p>
+            숫자만 보는 화면이 아니라 지금 누구를 먼저 챙기고, 어떤 문제를 먼저 처리할지
+            우선순위를 잡는 운영 요약판입니다.
+          </p>
+        </div>
+        <span className="tab-usage-guide-summary-icon">+</span>
+      </summary>
 
+      <div className="tab-usage-guide-body">
+        <div className="tab-usage-guide-grid">
+          <div className="tab-usage-guide-item">
+            <span className="tab-usage-guide-step">1</span>
+            <div>
+              <strong>상단 KPI 먼저 확인 → 오늘 우선순위가 잡힙니다</strong>
+              <p>
+                매출, 전월 대비, 남은 세션, 미답변 문의를 먼저 보면
+                오늘이 매출 점검이 필요한 날인지, 재등록 관리가 필요한 날인지,
+                응답 처리가 급한 날인지 바로 판단할 수 있습니다.
+              </p>
+            </div>
+          </div>
+
+          <div className="tab-usage-guide-item">
+            <span className="tab-usage-guide-step">2</span>
+            <div>
+              <strong>세션 종료 임박 회원 확인 → 재등록 연락 타이밍을 잡습니다</strong>
+              <p>
+                남은 횟수가 적은 회원은 단순 조회용이 아니라
+                상담 예약, 다음 프로그램 제안, 문자 발송 우선 대상자로 보는 영역입니다.
+              </p>
+            </div>
+          </div>
+
+          <div className="tab-usage-guide-item">
+            <span className="tab-usage-guide-step">3</span>
+            <div>
+              <strong>위험 코치 / 미답변 문의 확인 → 문제를 먼저 막습니다</strong>
+              <p>
+                코치 상태가 위험이거나 문의가 쌓이면
+                매출보다 먼저 일정 조정, 컨디션 체크, 답변 처리부터 해야
+                운영 누수를 줄일 수 있습니다.
+              </p>
+            </div>
+          </div>
+
+          <div className="tab-usage-guide-item">
+            <span className="tab-usage-guide-step">4</span>
+            <div>
+              <strong>활동 회원 / 세일즈 흐름 확인 → 다음 액션을 정합니다</strong>
+              <p>
+                활동 많은 회원은 후기, 인증, 업셀 제안 대상으로,
+                후속관리 리드는 재접촉 대상으로,
+                최근 매출과 프로그램 매출은 어떤 상품을 더 밀지 판단하는 기준으로 씁니다.
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <div className="tab-usage-guide-tip">
+          <strong>실무 활용 예시</strong>
+          <p>
+            남은 세션 3~5회 회원이 많고, 전월 대비 매출이 떨어지며, 후속관리 리드가 쌓여 있으면
+            오늘은 신규 홍보보다 재등록 연락, 상담 전환, 미답변 처리부터 먼저 잡는 날로 보면 됩니다.
+          </p>
+        </div>
+      </div>
+    </details>
     <div className="dashboard-kpi-grid">
       <div className="dashboard-kpi-card kpi-blue">
         <span>오늘 매출</span>
