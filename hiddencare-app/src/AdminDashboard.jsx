@@ -922,38 +922,40 @@ export default function AdminDashboard({ profile, currentAdminId, currentGymId, 
   const [workoutForm, setWorkoutForm] = useState(emptyWorkoutForm)
   const [workoutSearch, setWorkoutSearch] = useState('')
   const [workoutMemberFilter, setWorkoutMemberFilter] = useState('')
-  const [workoutMemberSearchKeyword, setWorkoutMemberSearchKeyword] = useState('')
-const [workoutListMemberSearchKeyword, setWorkoutListMemberSearchKeyword] = useState('')
-const [mealPlanMemberSearchKeyword, setMealPlanMemberSearchKeyword] = useState('')
-  const filteredWorkoutFormMembers = useMemo(() => {
-  const keyword = String(workoutMemberSearchKeyword || '').trim().toLowerCase()
+ const [memberDropdown, setMemberDropdown] = useState({
+  type: '',
+  keyword: '',
+})
+
+const filteredMemberOptions = useMemo(() => {
+  const keyword = String(memberDropdown.keyword || '').trim().toLowerCase()
 
   if (!keyword) return members
 
   return members.filter((member) =>
     String(member.name || '').toLowerCase().includes(keyword)
   )
-}, [members, workoutMemberSearchKeyword])
+}, [members, memberDropdown.keyword])
 
-const filteredWorkoutListMembers = useMemo(() => {
-  const keyword = String(workoutListMemberSearchKeyword || '').trim().toLowerCase()
+const openMemberDropdown = (type) => {
+  setMemberDropdown({
+    type,
+    keyword: '',
+  })
+}
 
-  if (!keyword) return members
+const closeMemberDropdown = () => {
+  setMemberDropdown({
+    type: '',
+    keyword: '',
+  })
+}
 
-  return members.filter((member) =>
-    String(member.name || '').toLowerCase().includes(keyword)
-  )
-}, [members, workoutListMemberSearchKeyword])
+const isMemberDropdownOpen = (type) => {
+  return memberDropdown.type === type
+}
 
-const filteredMealPlanMembers = useMemo(() => {
-  const keyword = String(mealPlanMemberSearchKeyword || '').trim().toLowerCase()
-
-  if (!keyword) return members
-
-  return members.filter((member) =>
-    String(member.name || '').toLowerCase().includes(keyword)
-  )
-}, [members, mealPlanMemberSearchKeyword])
+  
   const [workoutTypeFilter, setWorkoutTypeFilter] = useState('all')
   const [workoutDateFilter, setWorkoutDateFilter] = useState('')
 const [exerciseSearchDropdown, setExerciseSearchDropdown] = useState({
@@ -15111,46 +15113,60 @@ const filteredExercisesAdvanced = exercises.filter((exercise) => {
 
         <form className="stack-gap" onSubmit={handleWorkoutSubmit}>
           <div className="record-top-grid">
+           
+            
             <label className="field">
   <span>회원 선택</span>
 
-  <input
-    type="text"
-    placeholder="회원 이름 검색"
-    value={workoutMemberSearchKeyword}
-    onChange={(e) => setWorkoutMemberSearchKeyword(e.target.value)}
-  />
+  <button
+    type="button"
+    className="exercise-search-trigger"
+    onClick={() =>
+      isMemberDropdownOpen('form')
+        ? closeMemberDropdown()
+        : openMemberDropdown('form')
+    }
+  >
+    <span>
+      {members.find((m) => m.id === workoutForm.member_id)?.name || '회원 선택'}
+    </span>
+    <strong>⌄</strong>
+  </button>
 
-  <div className="member-search-select-list">
-    <button
-      type="button"
-      className={`member-search-select-item ${workoutForm.member_id === '' ? 'active' : ''}`}
-      onClick={() =>
-        setWorkoutForm((prev) => ({
-          ...prev,
-          member_id: '',
-        }))
-      }
-    >
-      회원 선택
-    </button>
-
-    {filteredWorkoutFormMembers.map((member) => (
-      <button
-        key={member.id}
-        type="button"
-        className={`member-search-select-item ${workoutForm.member_id === member.id ? 'active' : ''}`}
-        onClick={() =>
-          setWorkoutForm((prev) => ({
+  {isMemberDropdownOpen('form') && (
+    <div className="exercise-search-dropdown">
+      <input
+        type="text"
+        placeholder="회원 검색"
+        value={memberDropdown.keyword}
+        onChange={(e) =>
+          setMemberDropdown((prev) => ({
             ...prev,
-            member_id: member.id,
+            keyword: e.target.value,
           }))
         }
-      >
-        {member.name}
-      </button>
-    ))}
-  </div>
+      />
+
+      <div className="exercise-search-dropdown-list">
+        {filteredMemberOptions.map((member) => (
+          <button
+            key={member.id}
+            type="button"
+            className="exercise-search-dropdown-item"
+            onClick={() => {
+              setWorkoutForm((prev) => ({
+                ...prev,
+                member_id: member.id,
+              }))
+              closeMemberDropdown()
+            }}
+          >
+            {member.name}
+          </button>
+        ))}
+      </div>
+    </div>
+  )}
 </label>
 
             <label className="field">
@@ -15911,33 +15927,63 @@ const filteredExercisesAdvanced = exercises.filter((exercise) => {
            <label className="field">
   <span>회원 검색</span>
 
-  <input
-    type="text"
-    placeholder="회원 이름 검색"
-    value={workoutListMemberSearchKeyword}
-    onChange={(e) => setWorkoutListMemberSearchKeyword(e.target.value)}
-  />
+  <button
+    type="button"
+    className="exercise-search-trigger"
+    onClick={() =>
+      isMemberDropdownOpen('list')
+        ? closeMemberDropdown()
+        : openMemberDropdown('list')
+    }
+  >
+    <span>
+      {members.find((m) => m.id === workoutMemberFilter)?.name || '전체 회원'}
+    </span>
+    <strong>⌄</strong>
+  </button>
 
-  <div className="member-search-select-list">
-    <button
-      type="button"
-      className={`member-search-select-item ${workoutMemberFilter === '' ? 'active' : ''}`}
-      onClick={() => setWorkoutMemberFilter('')}
-    >
-      전체 회원
-    </button>
+  {isMemberDropdownOpen('list') && (
+    <div className="exercise-search-dropdown">
+      <input
+        type="text"
+        placeholder="회원 검색"
+        value={memberDropdown.keyword}
+        onChange={(e) =>
+          setMemberDropdown((prev) => ({
+            ...prev,
+            keyword: e.target.value,
+          }))
+        }
+      />
 
-    {filteredWorkoutListMembers.map((member) => (
-      <button
-        key={member.id}
-        type="button"
-        className={`member-search-select-item ${workoutMemberFilter === member.id ? 'active' : ''}`}
-        onClick={() => setWorkoutMemberFilter(member.id)}
-      >
-        {member.name}
-      </button>
-    ))}
-  </div>
+      <div className="exercise-search-dropdown-list">
+        <button
+          type="button"
+          className="exercise-search-dropdown-item"
+          onClick={() => {
+            setWorkoutMemberFilter('')
+            closeMemberDropdown()
+          }}
+        >
+          전체 회원
+        </button>
+
+        {filteredMemberOptions.map((member) => (
+          <button
+            key={member.id}
+            type="button"
+            className="exercise-search-dropdown-item"
+            onClick={() => {
+              setWorkoutMemberFilter(member.id)
+              closeMemberDropdown()
+            }}
+          >
+            {member.name}
+          </button>
+        ))}
+      </div>
+    </div>
+  )}
 </label>
 
             <label className="field">
@@ -16678,43 +16724,55 @@ const filteredExercisesAdvanced = exercises.filter((exercise) => {
             <label className="field">
   <span>회원 선택</span>
 
-  <input
-    type="text"
-    placeholder="회원 이름 검색"
-    value={mealPlanMemberSearchKeyword}
-    onChange={(e) => setMealPlanMemberSearchKeyword(e.target.value)}
-  />
+  <button
+    type="button"
+    className="exercise-search-trigger"
+    onClick={() =>
+      isMemberDropdownOpen('meal')
+        ? closeMemberDropdown()
+        : openMemberDropdown('meal')
+    }
+  >
+    <span>
+      {members.find((m) => m.id === mealPlanForm.member_id)?.name || '회원 선택'}
+    </span>
+    <strong>⌄</strong>
+  </button>
 
-  <div className="member-search-select-list">
-    <button
-      type="button"
-      className={`member-search-select-item ${mealPlanForm.member_id === '' ? 'active' : ''}`}
-      onClick={() =>
-        setMealPlanForm((prev) => ({
-          ...prev,
-          member_id: '',
-        }))
-      }
-    >
-      회원 선택
-    </button>
-
-    {filteredMealPlanMembers.map((member) => (
-      <button
-        key={member.id}
-        type="button"
-        className={`member-search-select-item ${mealPlanForm.member_id === member.id ? 'active' : ''}`}
-        onClick={() =>
-          setMealPlanForm((prev) => ({
+  {isMemberDropdownOpen('meal') && (
+    <div className="exercise-search-dropdown">
+      <input
+        type="text"
+        placeholder="회원 검색"
+        value={memberDropdown.keyword}
+        onChange={(e) =>
+          setMemberDropdown((prev) => ({
             ...prev,
-            member_id: member.id,
+            keyword: e.target.value,
           }))
         }
-      >
-        {member.name}
-      </button>
-    ))}
-  </div>
+      />
+
+      <div className="exercise-search-dropdown-list">
+        {filteredMemberOptions.map((member) => (
+          <button
+            key={member.id}
+            type="button"
+            className="exercise-search-dropdown-item"
+            onClick={() => {
+              setMealPlanForm((prev) => ({
+                ...prev,
+                member_id: member.id,
+              }))
+              closeMemberDropdown()
+            }}
+          >
+            {member.name}
+          </button>
+        ))}
+      </div>
+    </div>
+  )}
 </label>
 
             <label className="field">
