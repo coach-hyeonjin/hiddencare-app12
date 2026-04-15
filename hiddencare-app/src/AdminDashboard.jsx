@@ -1352,6 +1352,8 @@ const [inquiryStatusFilter, setInquiryStatusFilter] = useState('all')
   const [adminAlertSettings, setAdminAlertSettings] = useState({
   inquiry: true,
   notice: true,
+  workout: true,
+  diet: true,
   sound: true,
   popup: true,
 })
@@ -1359,6 +1361,8 @@ const [inquiryStatusFilter, setInquiryStatusFilter] = useState('all')
 const [adminAlerts, setAdminAlerts] = useState([])
 const [unreadInquiryCount, setUnreadInquiryCount] = useState(0)
 const [unreadNoticeCount, setUnreadNoticeCount] = useState(0)
+  const [unreadWorkoutCount, setUnreadWorkoutCount] = useState(0)
+const [unreadDietCount, setUnreadDietCount] = useState(0)
   const [collapsedAdminAlertBar, setCollapsedAdminAlertBar] = useState(false)
   const [adminAlertTab, setAdminAlertTab] = useState('settings')
 const [adminAlertSearch, setAdminAlertSearch] = useState('')
@@ -8598,7 +8602,11 @@ const filteredNotices = useMemo(() => {
 useEffect(() => {
   const latestInquiry = inquiries[0]
   const latestNotice = notices[0]
+const latestWorkout = workouts[0]
+const latestDiet = dietLogs[0]
 
+const savedWorkoutId = localStorage.getItem(`admin_last_workout_${currentAdminId || 'default'}`)
+const savedDietId = localStorage.getItem(`admin_last_diet_${currentAdminId || 'default'}`)
   const savedInquiryId = localStorage.getItem(`admin_last_inquiry_${currentAdminId || 'default'}`)
   const savedNoticeId = localStorage.getItem(`admin_last_notice_${currentAdminId || 'default'}`)
 
@@ -8655,11 +8663,68 @@ useEffect(() => {
       localStorage.setItem(`admin_last_notice_${currentAdminId || 'default'}`, latestNotice.id)
     }
   }
-}, [inquiries, notices, adminAlertSettings, currentAdminId])
+  if (latestWorkout?.id) {
+  if (!savedWorkoutId) {
+    localStorage.setItem(`admin_last_workout_${currentAdminId || 'default'}`, latestWorkout.id)
+  } else if (savedWorkoutId !== latestWorkout.id && adminAlertSettings.workout) {
+    setUnreadWorkoutCount((prev) => prev + 1)
+
+    const nextAlert = {
+      id: `workout-${latestWorkout.id}`,
+      type: 'workout',
+      text: `새 운동기록이 등록되었습니다. (${latestWorkout.member_name || latestWorkout.member_id || '회원'})`,
+      createdAt: Date.now(),
+    }
+
+    setAdminAlerts((prev) => [nextAlert, ...prev].slice(0, 20))
+
+    if (adminAlertSettings.popup) {
+      setMessage(`🏋️ 새 운동기록이 등록되었습니다.`)
+    }
+
+    if (adminAlertSettings.sound) {
+      playAdminAlertSound()
+    }
+
+    localStorage.setItem(`admin_last_workout_${currentAdminId || 'default'}`, latestWorkout.id)
+  }
+}
+
+if (latestDiet?.id) {
+  if (!savedDietId) {
+    localStorage.setItem(`admin_last_diet_${currentAdminId || 'default'}`, latestDiet.id)
+  } else if (savedDietId !== latestDiet.id && adminAlertSettings.diet) {
+    setUnreadDietCount((prev) => prev + 1)
+
+    const nextAlert = {
+      id: `diet-${latestDiet.id}`,
+      type: 'diet',
+      text: `새 식단기록이 등록되었습니다. (${latestDiet.member_name || latestDiet.member_id || '회원'})`,
+      createdAt: Date.now(),
+    }
+
+    setAdminAlerts((prev) => [nextAlert, ...prev].slice(0, 20))
+
+    if (adminAlertSettings.popup) {
+      setMessage(`🍽️ 새 식단기록이 등록되었습니다.`)
+    }
+
+    if (adminAlertSettings.sound) {
+      playAdminAlertSound()
+    }
+
+    localStorage.setItem(`admin_last_diet_${currentAdminId || 'default'}`, latestDiet.id)
+  }
+}
+}, [inquiries, notices, workouts, dietLogs, adminAlertSettings, currentAdminId])
+
+  
   useEffect(() => {
   const interval = setInterval(() => {
-    loadInquiries()
-    loadNotices()
+   loadInquiries()
+loadNotices()
+loadWorkouts()
+loadDietLogs()
   }, 10000)
 
   return () => clearInterval(interval)
@@ -13182,7 +13247,23 @@ const filteredExercisesAdvanced = exercises.filter((exercise) => {
             />
             <span>공지 알림</span>
           </label>
+<label className="checkbox-line">
+  <input
+    type="checkbox"
+    checked={adminAlertSettings.workout}
+    onChange={(e) => updateAdminAlertSetting('workout', e.target.checked)}
+  />
+  <span>운동기록 알림</span>
+</label>
 
+<label className="checkbox-line">
+  <input
+    type="checkbox"
+    checked={adminAlertSettings.diet}
+    onChange={(e) => updateAdminAlertSetting('diet', e.target.checked)}
+  />
+  <span>식단기록 알림</span>
+</label>
           <label className="checkbox-line">
             <input
               type="checkbox"
