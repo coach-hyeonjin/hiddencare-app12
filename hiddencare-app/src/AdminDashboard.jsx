@@ -75,10 +75,12 @@ const emptyWorkoutItem = {
   equipment_name_snapshot: '',
   performed_name: '',
 
-  entry_type: 'strength', // strength | cardio | care
+  entry_type: 'strength', // strength | cardio | care | stretching | pain_only
   is_cardio: false,
   cardio_minutes: '',
   care_minutes: '',
+  stretch_minutes: '',
+  stretch_reps: '',
 
   sets: [createEmptySet()],
   training_method: 'normal', // normal | superset | dropset
@@ -9898,6 +9900,8 @@ const updateWorkoutEntryType = (itemIndex, entryType) => {
     const nextItems = [...prev.items]
     const currentItem = nextItems[itemIndex]
 
+    const isPainOnly = entryType === 'pain_only'
+
     nextItems[itemIndex] = {
       ...currentItem,
       entry_type: entryType,
@@ -9905,16 +9909,34 @@ const updateWorkoutEntryType = (itemIndex, entryType) => {
       training_method: entryType === 'strength' ? currentItem.training_method || 'normal' : 'normal',
       cardio_minutes: entryType === 'cardio' ? currentItem.cardio_minutes || '' : '',
       care_minutes: entryType === 'care' ? currentItem.care_minutes || '' : '',
-      sets: entryType === 'strength' ? (currentItem.sets?.length ? currentItem.sets : [createEmptySet()]) : [createEmptySet()],
+      stretch_minutes: entryType === 'stretching' ? currentItem.stretch_minutes || '' : '',
+      stretch_reps: entryType === 'stretching' ? currentItem.stretch_reps || '' : '',
+      sets:
+        entryType === 'strength'
+          ? (currentItem.sets?.length ? currentItem.sets : [createEmptySet()])
+          : [createEmptySet()],
       sub_exercises:
         entryType === 'strength' && currentItem.training_method === 'superset'
           ? currentItem.sub_exercises?.length
             ? currentItem.sub_exercises
             : [createEmptySubExercise(), createEmptySubExercise()]
           : [createEmptySubExercise(), createEmptySubExercise()],
+      exercise_id: isPainOnly ? '' : currentItem.exercise_id,
+      exercise_name_snapshot: isPainOnly ? '' : currentItem.exercise_name_snapshot,
+      equipment_name_snapshot: isPainOnly ? '' : currentItem.equipment_name_snapshot,
+      performed_name: isPainOnly ? '' : currentItem.performed_name,
+      method_note: isPainOnly ? '' : currentItem.method_note,
     }
 
-    return { ...prev, items: nextItems }
+    return {
+      ...prev,
+      pain_enabled: isPainOnly ? true : prev.pain_enabled,
+      pain_logs:
+        isPainOnly
+          ? (prev.pain_logs?.length ? prev.pain_logs : [{ ...emptyPainLog }])
+          : prev.pain_logs,
+      items: nextItems,
+    }
   })
 }
 const updateWorkoutTrainingMethod = (itemIndex, method) => {
@@ -10165,13 +10187,23 @@ const updateSetValue = (itemIndex, setIndex, field, value, subIndex = null) => {
     return
   }
 
+  const hasPainOnlyItem = workoutForm.items.some((item) => item.entry_type === 'pain_only')
+
   const cleanedItems = workoutForm.items
     .filter((item) => {
+      if (item.entry_type === 'pain_only') {
+        return false
+      }
+
       if (item.entry_type === 'cardio') {
         return (item.performed_name || item.equipment_name_snapshot || '').trim()
       }
 
       if (item.entry_type === 'care') {
+        return (item.performed_name || item.equipment_name_snapshot || '').trim()
+      }
+
+      if (item.entry_type === 'stretching') {
         return (item.performed_name || item.equipment_name_snapshot || '').trim()
       }
 
@@ -10197,6 +10229,8 @@ const updateSetValue = (itemIndex, setIndex, field, value, subIndex = null) => {
       is_cardio: item.entry_type === 'cardio',
       cardio_minutes: item.entry_type === 'cardio' ? Number(item.cardio_minutes || 0) : null,
       care_minutes: item.entry_type === 'care' ? Number(item.care_minutes || 0) : null,
+      stretch_minutes: item.entry_type === 'stretching' ? Number(item.stretch_minutes || 0) : null,
+      stretch_reps: item.entry_type === 'stretching' ? Number(item.stretch_reps || 0) : null,
       sets: item.entry_type === 'strength' ? normalizeSets(item.sets || []) : [],
       training_method: item.entry_type === 'strength' ? item.training_method || 'normal' : 'normal',
       method_note: item.method_note?.trim() || '',
@@ -10215,8 +10249,8 @@ const updateSetValue = (itemIndex, setIndex, field, value, subIndex = null) => {
           : [],
     }))
 
-  if (cleanedItems.length === 0) {
-    setMessage('최소 1개의 운동을 입력해주세요.')
+  if (cleanedItems.length === 0 && !(workoutForm.pain_enabled && (workoutForm.pain_logs || []).length > 0) && !hasPainOnlyItem) {
+    setMessage('최소 1개의 운동 또는 통증기록을 입력해주세요.')
     return
   }
 
@@ -10251,12 +10285,14 @@ const updateSetValue = (itemIndex, setIndex, field, value, subIndex = null) => {
     targetWorkoutId = data.id
   }
 
-  await supabase.from('workout_items').insert(
-    cleanedItems.map((item) => ({
-      ...item,
-      workout_id: targetWorkoutId,
-    })),
-  )
+  if (cleanedItems.length > 0) {
+    await supabase.from('workout_items').insert(
+      cleanedItems.map((item) => ({
+        ...item,
+        workout_id: targetWorkoutId,
+      })),
+    )
+  }
 
   await loadWorkouts()
 
@@ -10323,9 +10359,12 @@ const updateSetValue = (itemIndex, setIndex, field, value, subIndex = null) => {
             is_cardio: !!item.is_cardio,
             cardio_minutes: item.cardio_minutes || '',
             care_minutes: item.care_minutes || '',
+            stretch_minutes: item.stretch_minutes || '',
+            stretch_reps: item.stretch_reps || '',
             sets:
               !item.is_cardio &&
               item.entry_type !== 'care' &&
+              item.entry_type !== 'stretching' &&
               Array.isArray(item.sets) &&
               item.sets.length > 0
                 ? item.sets
@@ -13174,7 +13213,15 @@ const ENTRY_TYPE_META = {
   },
   care: {
     label: '케어',
-    description: '스포츠마사지, 컨디셔닝, 스트레칭처럼 케어 시간을 기록하는 항목입니다.',
+    description: '마사지, 컨디셔닝처럼 케어 시간을 기록하는 항목입니다.',
+  },
+  stretching: {
+    label: '스트레칭',
+    description: '스트레칭은 시간과 횟수를 함께 기록하는 항목입니다.',
+  },
+  pain_only: {
+    label: '통증기록',
+    description: '운동 입력 없이 통증 상태만 바로 기록하는 항목입니다.',
   },
 }
 
@@ -15641,13 +15688,15 @@ const filteredExercisesAdvanced = exercises.filter((exercise) => {
                     <label className="field">
                       <span>기록 종류</span>
                       <select
-                        value={item.entry_type || 'strength'}
-                        onChange={(e) => updateWorkoutEntryType(itemIndex, e.target.value)}
-                      >
-                        <option value="strength">근력운동</option>
-                        <option value="cardio">유산소</option>
-                        <option value="care">케어</option>
-                      </select>
+  value={item.entry_type || 'strength'}
+  onChange={(e) => updateWorkoutEntryType(itemIndex, e.target.value)}
+>
+  <option value="strength">근력운동</option>
+  <option value="cardio">유산소</option>
+  <option value="care">케어</option>
+  <option value="stretching">스트레칭</option>
+  <option value="pain_only">통증기록</option>
+</select>
                     </label>
 
                     <div className="detail-box">
@@ -15826,6 +15875,63 @@ const filteredExercisesAdvanced = exercises.filter((exercise) => {
                               )
                             })}
                           </div>
+
+                        ) : item.entry_type === 'stretching' ? (
+  <>
+    <label className="field">
+      <span>스트레칭 이름</span>
+      <input
+        value={item.performed_name || ''}
+        onChange={(e) => updateWorkoutItemName(itemIndex, e.target.value)}
+        placeholder="예: 햄스트링 스트레칭 / 고관절 스트레칭"
+      />
+    </label>
+
+    <div className="form-row">
+      <label className="field">
+        <span>시간(분)</span>
+        <input
+          type="number"
+          min="0"
+          value={item.stretch_minutes || ''}
+          onChange={(e) => updateWorkoutItemField(itemIndex, 'stretch_minutes', e.target.value)}
+          placeholder="예: 10"
+        />
+      </label>
+
+      <label className="field">
+        <span>횟수</span>
+        <input
+          type="number"
+          min="0"
+          value={item.stretch_reps || ''}
+          onChange={(e) => updateWorkoutItemField(itemIndex, 'stretch_reps', e.target.value)}
+          placeholder="예: 12"
+        />
+      </label>
+    </div>
+
+    <label className="field">
+      <span>추가 메모</span>
+      <input
+        value={item.method_note || ''}
+        onChange={(e) => updateWorkoutItemField(itemIndex, 'method_note', e.target.value)}
+        placeholder="예: 좌우 각각 30초씩 / 3세트"
+      />
+    </label>
+  </>
+) : item.entry_type === 'pain_only' ? (
+  <div className="detail-box">
+    <p>
+      <strong>통증기록 모드</strong>
+    </p>
+    <div className="compact-text">
+      아래 통증 기록 카드에서 통증 상태만 바로 작성하면 됩니다.
+    </div>
+    <div className="compact-text">
+      이 모드에서는 운동명, 기구명, 세트 입력 없이 통증 기록만 저장할 수 있습니다.
+    </div>
+  </div>
                         ) : (
                           <>
                            <label className="field">
