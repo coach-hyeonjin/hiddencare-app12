@@ -3152,7 +3152,33 @@ return { ok: true, xp: xpValue }
         </div>
       </div>
     </section>
+<details className="tab-usage-guide-card" open>
+  <summary className="tab-usage-guide-summary">
+    📊 이 화면 이렇게 보시면 됩니다
+  </summary>
 
+  <div className="tab-usage-guide-grid">
+    <div className="tab-usage-guide-item">
+      <strong>현재 레벨 / XP 확인</strong>
+      <span>→ 지금 회원 상태를 한눈에 파악합니다</span>
+    </div>
+
+    <div className="tab-usage-guide-item">
+      <strong>다음 레벨까지 남은 XP</strong>
+      <span>→ 목표 설정 & 동기부여 기준이 됩니다</span>
+    </div>
+
+    <div className="tab-usage-guide-item">
+      <strong>최근 활동일 확인</strong>
+      <span>→ 운동 공백 회원 바로 체크 가능</span>
+    </div>
+
+    <div className="tab-usage-guide-item">
+      <strong>👉 활용</strong>
+      <span>→ "지금 조금만 더 하면 레벨업입니다" 코칭 가능</span>
+    </div>
+  </div>
+</details>
     <section className="card growth-accordion-card">
       <button
         type="button"
@@ -3616,7 +3642,33 @@ return { ok: true, xp: xpValue }
         </div>
       </div>
     </section>
+<details className="tab-usage-guide-card">
+  <summary className="tab-usage-guide-summary">
+    🧾 건강기록 이렇게 사용합니다
+  </summary>
 
+  <div className="tab-usage-guide-grid">
+    <div className="tab-usage-guide-item">
+      <strong>체중 / 체지방 입력</strong>
+      <span>→ 변화 추적 데이터가 쌓입니다</span>
+    </div>
+
+    <div className="tab-usage-guide-item">
+      <strong>기록 비교 확인</strong>
+      <span>→ 이전 대비 변화 바로 확인 가능</span>
+    </div>
+
+    <div className="tab-usage-guide-item">
+      <strong>기록 주기 유지</strong>
+      <span>→ 꾸준한 관리 습관 형성</span>
+    </div>
+
+    <div className="tab-usage-guide-item">
+      <strong>👉 활용</strong>
+      <span>→ 정체 구간 / 변화 없는 회원 바로 체크</span>
+    </div>
+  </div>
+</details>
     <section className="member-health-summary-grid">
       <div className="member-health-summary-card">
         <span>현재 체중</span>
@@ -4359,6 +4411,35 @@ return { ok: true, xp: xpValue }
       </div>
     </section>
 
+<details className="tab-usage-guide-card">
+  <summary className="tab-usage-guide-summary">
+    🏋️ 운동기록 이렇게 입력하세요
+  </summary>
+
+  <div className="tab-usage-guide-grid">
+    <div className="tab-usage-guide-item">
+      <strong>운동 추가</strong>
+      <span>→ 오늘 수행 운동 기록</span>
+    </div>
+
+    <div className="tab-usage-guide-item">
+      <strong>세트 / 시간 입력</strong>
+      <span>→ 실제 운동량 데이터 축적</span>
+    </div>
+
+    <div className="tab-usage-guide-item">
+      <strong>기록 저장</strong>
+      <span>→ 운동 이력 자동 관리</span>
+    </div>
+
+    <div className="tab-usage-guide-item">
+      <strong>👉 활용</strong>
+      <span>→ 코치가 운동 패턴 분석 가능</span>
+    </div>
+  </div>
+</details>
+
+    
     <section className="member-personal-summary-grid">
       <div className="member-personal-summary-card">
         <span>입력 운동 수</span>
@@ -4888,6 +4969,35 @@ return { ok: true, xp: xpValue }
             </div>
           </section>
 
+
+<details className="tab-usage-guide-card">
+  <summary className="tab-usage-guide-summary">
+    🍽 식단기록 이렇게 하면 됩니다
+  </summary>
+
+  <div className="tab-usage-guide-grid">
+    <div className="tab-usage-guide-item">
+      <strong>식사 입력</strong>
+      <span>→ 실제 먹은 음식 기록</span>
+    </div>
+
+    <div className="tab-usage-guide-item">
+      <strong>식사 타입 선택</strong>
+      <span>→ 일반식 / 다이어트 구분</span>
+    </div>
+
+    <div className="tab-usage-guide-item">
+      <strong>누적 기록 확인</strong>
+      <span>→ 식습관 패턴 분석 가능</span>
+    </div>
+
+    <div className="tab-usage-guide-item">
+      <strong>👉 활용</strong>
+      <span>→ 폭식 / 불균형 식단 바로 체크</span>
+    </div>
+  </div>
+</details>
+          
           <div className="two-col member-diet-layout">
             <section className="card member-diet-form-card">
               <div className="member-diet-section-head">
@@ -5270,6 +5380,35 @@ return { ok: true, xp: xpValue }
         </div>
       </div>
     </section>
+
+<details className="tab-usage-guide-card" open>
+  <summary className="tab-usage-guide-summary">
+    📅 식단플랜 이렇게 활용하세요
+  </summary>
+
+  <div className="tab-usage-guide-grid">
+    <div className="tab-usage-guide-item">
+      <strong>오늘 식단 확인</strong>
+      <span>→ 무엇을 먹어야 하는지 바로 확인</span>
+    </div>
+
+    <div className="tab-usage-guide-item">
+      <strong>가이드 참고</strong>
+      <span>→ 식단 방향 유지 가능</span>
+    </div>
+
+    <div className="tab-usage-guide-item">
+      <strong>칼로리 확인</strong>
+      <span>→ 과식/부족 방지</span>
+    </div>
+
+    <div className="tab-usage-guide-item">
+      <strong>👉 활용</strong>
+      <span>→ 코치 식단 그대로 따라가기</span>
+    </div>
+  </div>
+</details>
+    
     <div className="two-col member-diet-layout" style={{ marginBottom: '20px' }}>
       <section className="card member-diet-log-card">
         <div className="member-diet-section-head">
@@ -5808,6 +5947,35 @@ return { ok: true, xp: xpValue }
             </div>
           </section>
 
+<details className="tab-usage-guide-card">
+  <summary className="tab-usage-guide-summary">
+    📆 루틴 이렇게 보시면 됩니다
+  </summary>
+
+  <div className="tab-usage-guide-grid">
+    <div className="tab-usage-guide-item">
+      <strong>주차 선택</strong>
+      <span>→ 해당 주 운동 확인</span>
+    </div>
+
+    <div className="tab-usage-guide-item">
+      <strong>요일별 확인</strong>
+      <span>→ 오늘 해야 할 운동 파악</span>
+    </div>
+
+    <div className="tab-usage-guide-item">
+      <strong>운동 상세 보기</strong>
+      <span>→ 세트 / 방법 확인</span>
+    </div>
+
+    <div className="tab-usage-guide-item">
+      <strong>👉 활용</strong>
+      <span>→ 운동 고민 없이 바로 수행 가능</span>
+    </div>
+  </div>
+</details>
+
+          
           <section className="card member-routine-main-card">
             {!routine ? (
               <div className="workout-list-empty">등록된 루틴이 없습니다.</div>
@@ -6973,6 +7141,36 @@ return { ok: true, xp: xpValue }
       </div>
     </section>
 
+<details className="tab-usage-guide-card">
+  <summary className="tab-usage-guide-summary">
+    💬 문의 이렇게 남기세요
+  </summary>
+
+  <div className="tab-usage-guide-grid">
+    <div className="tab-usage-guide-item">
+      <strong>문의 작성</strong>
+      <span>→ 궁금한 점 입력</span>
+    </div>
+
+    <div className="tab-usage-guide-item">
+      <strong>문의내역 확인</strong>
+      <span>→ 이전 질문 확인 가능</span>
+    </div>
+
+    <div className="tab-usage-guide-item">
+      <strong>답변 상태 확인</strong>
+      <span>→ 처리 여부 바로 확인</span>
+    </div>
+
+    <div className="tab-usage-guide-item">
+      <strong>👉 활용</strong>
+      <span>→ 운동/식단 문제 바로 해결</span>
+    </div>
+  </div>
+</details>
+
+
+    
     <section className="member-inquiry-summary-grid">
       <div className="member-inquiry-summary-card">
         <span>전체 문의</span>
