@@ -481,6 +481,8 @@ const [unreadMemberNoticeCount, setUnreadMemberNoticeCount] = useState(0)
 const [unreadMemberInquiryCount, setUnreadMemberInquiryCount] = useState(0)
 const [unreadMemberWorkoutCount, setUnreadMemberWorkoutCount] = useState(0)
   const [collapsedMemberAlertBar, setCollapsedMemberAlertBar] = useState(false)
+  const [memberAlertTab, setMemberAlertTab] = useState('settings')
+const [memberAlertSearch, setMemberAlertSearch] = useState('')
    const currentAdminId = memberInfo?.admin_id || member?.admin_id || null
   const currentGymId = memberInfo?.gym_id || member?.gym_id || null
 const calculatedBmr = useMemo(() => {
@@ -2890,20 +2892,47 @@ return { ok: true, xp: xpValue }
     setPartnerUsageForm(emptyPartnerUsageForm)
     await loadPartnerUsages()
   }
+  const updateMemberAlertSetting = (key, value) => {
+  setMemberAlertSettings((prev) => {
+    const next = { ...prev, [key]: value }
+    localStorage.setItem(
+      `member_alert_settings_${memberInfo?.id || member?.id || 'default'}`,
+      JSON.stringify(next)
+    )
+    return next
+  })
+}
+
+const removeMemberAlert = (alertId) => {
+  setMemberAlerts((prev) => prev.filter((item) => item.id !== alertId))
+}
+
+const clearMemberAlerts = () => {
+  setMemberAlerts([])
+  setUnreadMemberNoticeCount(0)
+  setUnreadMemberInquiryCount(0)
+  setUnreadMemberWorkoutCount(0)
+}
+
+const filteredMemberAlerts = memberAlerts.filter((alert) =>
+  String(alert.text || '')
+    .toLowerCase()
+    .includes(String(memberAlertSearch || '').trim().toLowerCase())
+)
   if (loading) {
     return <div className="loading-card">데이터 불러오는 중...</div>
   }
 
   return (
     <div className="dashboard-shell">
-      <div className="admin-alert-bar collapsible-alert-bar">
+      <div className="admin-alert-bar collapsible-alert-bar alert-panel-modern">
   <button
     type="button"
-    className="alert-collapse-toggle"
+    className="alert-collapse-toggle alert-modern-toggle"
     onClick={() => setCollapsedMemberAlertBar((prev) => !prev)}
   >
-    <div className="alert-collapse-left">
-      <strong>알림</strong>
+    <div className="alert-collapse-left alert-modern-left">
+      <strong>🔔 알림</strong>
       <span>
         공지 {unreadMemberNoticeCount}건 / 문의 {unreadMemberInquiryCount}건 / 운동 {unreadMemberWorkoutCount}건
       </span>
@@ -2915,75 +2944,108 @@ return { ok: true, xp: xpValue }
   </button>
 
   {!collapsedMemberAlertBar && (
-    <>
-      <div className="admin-alert-settings">
-        <label className="checkbox-line">
-          <input
-            type="checkbox"
-            checked={memberAlertSettings.notice}
-            onChange={(e) => updateMemberAlertSetting('notice', e.target.checked)}
-          />
-          <span>공지 알림</span>
-        </label>
-
-        <label className="checkbox-line">
-          <input
-            type="checkbox"
-            checked={memberAlertSettings.inquiryAnswer}
-            onChange={(e) => updateMemberAlertSetting('inquiryAnswer', e.target.checked)}
-          />
-          <span>문의 답변 알림</span>
-        </label>
-
-        <label className="checkbox-line">
-          <input
-            type="checkbox"
-            checked={memberAlertSettings.workout}
-            onChange={(e) => updateMemberAlertSetting('workout', e.target.checked)}
-          />
-          <span>운동기록 알림</span>
-        </label>
-
-        <label className="checkbox-line">
-          <input
-            type="checkbox"
-            checked={memberAlertSettings.sound}
-            onChange={(e) => updateMemberAlertSetting('sound', e.target.checked)}
-          />
-          <span>소리</span>
-        </label>
-
-        <label className="checkbox-line">
-          <input
-            type="checkbox"
-            checked={memberAlertSettings.popup}
-            onChange={(e) => updateMemberAlertSetting('popup', e.target.checked)}
-          />
-          <span>팝업</span>
-        </label>
-
-        <button type="button" className="secondary-btn" onClick={clearMemberAlerts}>
-          알림 초기화
+    <div className="alert-modern-body">
+      <div className="alert-modern-tabs">
+        <button
+          type="button"
+          className={`alert-modern-tab ${memberAlertTab === 'settings' ? 'active' : ''}`}
+          onClick={() => setMemberAlertTab('settings')}
+        >
+          알림설정
+        </button>
+        <button
+          type="button"
+          className={`alert-modern-tab ${memberAlertTab === 'list' ? 'active' : ''}`}
+          onClick={() => setMemberAlertTab('list')}
+        >
+          알림내역
         </button>
       </div>
 
-      {memberAlerts.length > 0 && (
-        <div className="admin-alert-list">
-          {memberAlerts.map((alert) => (
-            <div key={alert.id} className={`admin-alert-item ${alert.type}`}>
-              <span>{alert.text}</span>
-              <button
-                type="button"
-                className="secondary-btn"
-                onClick={() => removeMemberAlert(alert.id)}
-              >
-                닫기
-              </button>
-            </div>
-          ))}
+      {memberAlertTab === 'settings' && (
+        <div className="alert-modern-settings">
+          <label className="checkbox-line">
+            <input
+              type="checkbox"
+              checked={memberAlertSettings.notice}
+              onChange={(e) => updateMemberAlertSetting('notice', e.target.checked)}
+            />
+            <span>공지 알림</span>
+          </label>
+
+          <label className="checkbox-line">
+            <input
+              type="checkbox"
+              checked={memberAlertSettings.inquiryAnswer}
+              onChange={(e) => updateMemberAlertSetting('inquiryAnswer', e.target.checked)}
+            />
+            <span>문의 답변 알림</span>
+          </label>
+
+          <label className="checkbox-line">
+            <input
+              type="checkbox"
+              checked={memberAlertSettings.workout}
+              onChange={(e) => updateMemberAlertSetting('workout', e.target.checked)}
+            />
+            <span>운동기록 알림</span>
+          </label>
+
+          <label className="checkbox-line">
+            <input
+              type="checkbox"
+              checked={memberAlertSettings.sound}
+              onChange={(e) => updateMemberAlertSetting('sound', e.target.checked)}
+            />
+            <span>소리</span>
+          </label>
+
+          <label className="checkbox-line">
+            <input
+              type="checkbox"
+              checked={memberAlertSettings.popup}
+              onChange={(e) => updateMemberAlertSetting('popup', e.target.checked)}
+            />
+            <span>팝업</span>
+          </label>
+
+          <button type="button" className="secondary-btn" onClick={clearMemberAlerts}>
+            알림 초기화
+          </button>
         </div>
       )}
-    </>
+
+      {memberAlertTab === 'list' && (
+        <div className="alert-modern-list-wrap">
+          <input
+            type="text"
+            placeholder="알림 내용 검색"
+            value={memberAlertSearch}
+            onChange={(e) => setMemberAlertSearch(e.target.value)}
+            className="alert-modern-search"
+          />
+
+          {filteredMemberAlerts.length === 0 ? (
+            <div className="workout-list-empty">표시할 알림이 없습니다.</div>
+          ) : (
+            <div className="admin-alert-list">
+              {filteredMemberAlerts.map((alert) => (
+                <div key={alert.id} className={`admin-alert-item ${alert.type}`}>
+                  <span>{alert.text}</span>
+                  <button
+                    type="button"
+                    className="secondary-btn"
+                    onClick={() => removeMemberAlert(alert.id)}
+                  >
+                    닫기
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+    </div>
   )}
 </div>
       <header className="topbar">
