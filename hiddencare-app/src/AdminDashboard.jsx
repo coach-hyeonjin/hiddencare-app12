@@ -962,7 +962,22 @@ const [exerciseSearchDropdown, setExerciseSearchDropdown] = useState({
   subIndex: null,
   keyword: '',
 })
-  const filteredExerciseOptions = useMemo(() => {
+  
+  const [brands, setBrands] = useState([])
+  const [brandForm, setBrandForm] = useState(emptyBrandForm)
+  const [editingBrandId, setEditingBrandId] = useState(null)
+
+  const [exercises, setExercises] = useState([])
+  const [exerciseForm, setExerciseForm] = useState(emptyExerciseForm)
+  const [editingExerciseId, setEditingExerciseId] = useState(null)
+  const [exerciseSearch, setExerciseSearch] = useState('')
+  const [exerciseBodyPartFilter, setExerciseBodyPartFilter] = useState('')
+const [exerciseCategoryFilter, setExerciseCategoryFilter] = useState('')
+const [exerciseBrandFilter, setExerciseBrandFilter] = useState('')
+  const [collapsedExercises, setCollapsedExercises] = useState({})
+  const [bulkExerciseText, setBulkExerciseText] = useState(defaultBulkExerciseText)
+  const [showBulkInput, setShowBulkInput] = useState(false)
+const filteredExerciseOptions = useMemo(() => {
   const keyword = String(exerciseSearchDropdown.keyword || '').trim().toLowerCase()
 
   if (!keyword) return exercises
@@ -1009,21 +1024,6 @@ const isExerciseDropdownOpen = (openType, itemIndex, subIndex = null) => {
     exerciseSearchDropdown.subIndex === subIndex
   )
 }
-  const [brands, setBrands] = useState([])
-  const [brandForm, setBrandForm] = useState(emptyBrandForm)
-  const [editingBrandId, setEditingBrandId] = useState(null)
-
-  const [exercises, setExercises] = useState([])
-  const [exerciseForm, setExerciseForm] = useState(emptyExerciseForm)
-  const [editingExerciseId, setEditingExerciseId] = useState(null)
-  const [exerciseSearch, setExerciseSearch] = useState('')
-  const [exerciseBodyPartFilter, setExerciseBodyPartFilter] = useState('')
-const [exerciseCategoryFilter, setExerciseCategoryFilter] = useState('')
-const [exerciseBrandFilter, setExerciseBrandFilter] = useState('')
-  const [collapsedExercises, setCollapsedExercises] = useState({})
-  const [bulkExerciseText, setBulkExerciseText] = useState(defaultBulkExerciseText)
-  const [showBulkInput, setShowBulkInput] = useState(false)
-
   const [dietLogs, setDietLogs] = useState([])
   const [collapsedDiets, setCollapsedDiets] = useState({})
   const [dietMemberFilter, setDietMemberFilter] = useState('')
