@@ -762,7 +762,41 @@ img {
   grid-template-columns: 1fr 1fr;
   gap: 12px;
 }
+.member-search-select-list {
+  max-height: 220px;
+  overflow-y: auto;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  background: #ffffff;
+  display: flex;
+  flex-direction: column;
+}
 
+.member-search-select-item {
+  width: 100%;
+  text-align: left;
+  padding: 12px 14px;
+  background: #ffffff;
+  border: 0;
+  border-bottom: 1px solid #f1f5f9;
+  color: #111827;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.member-search-select-item:last-child {
+  border-bottom: 0;
+}
+
+.member-search-select-item:hover {
+  background: #f8fafc;
+}
+
+.member-search-select-item.active {
+  background: #eef2ff;
+  color: #4338ca;
+  font-weight: 700;
+}
 .workout-date-chip {
   white-space: nowrap;
   background: #f1f4f9;
