@@ -797,6 +797,73 @@ img {
   color: #4338ca;
   font-weight: 700;
 }
+.exercise-search-trigger {
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  background: #ffffff;
+  color: #111827;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.exercise-search-trigger:hover {
+  background: #f8fafc;
+}
+
+.exercise-search-dropdown {
+  margin-top: 8px;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  background: #ffffff;
+  box-shadow: 0 10px 24px rgba(15, 23, 42, 0.08);
+  overflow: hidden;
+}
+
+.exercise-search-dropdown input {
+  border: 0;
+  border-bottom: 1px solid #eef2f7;
+  border-radius: 0;
+  box-shadow: none;
+}
+
+.exercise-search-dropdown-list {
+  max-height: 220px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+}
+
+.exercise-search-dropdown-item {
+  width: 100%;
+  text-align: left;
+  padding: 12px 14px;
+  border: 0;
+  border-bottom: 1px solid #f1f5f9;
+  background: #ffffff;
+  color: #111827;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.exercise-search-dropdown-item:last-child {
+  border-bottom: 0;
+}
+
+.exercise-search-dropdown-item:hover {
+  background: #f8fafc;
+}
+
+.exercise-search-dropdown-item.active {
+  background: #eef2ff;
+  color: #4338ca;
+  font-weight: 700;
+}
 .workout-date-chip {
   white-space: nowrap;
   background: #f1f4f9;
