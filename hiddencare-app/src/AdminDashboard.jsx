@@ -922,6 +922,38 @@ export default function AdminDashboard({ profile, currentAdminId, currentGymId, 
   const [workoutForm, setWorkoutForm] = useState(emptyWorkoutForm)
   const [workoutSearch, setWorkoutSearch] = useState('')
   const [workoutMemberFilter, setWorkoutMemberFilter] = useState('')
+  const [workoutMemberSearchKeyword, setWorkoutMemberSearchKeyword] = useState('')
+const [workoutListMemberSearchKeyword, setWorkoutListMemberSearchKeyword] = useState('')
+const [mealPlanMemberSearchKeyword, setMealPlanMemberSearchKeyword] = useState('')
+  const filteredWorkoutFormMembers = useMemo(() => {
+  const keyword = String(workoutMemberSearchKeyword || '').trim().toLowerCase()
+
+  if (!keyword) return members
+
+  return members.filter((member) =>
+    String(member.name || '').toLowerCase().includes(keyword)
+  )
+}, [members, workoutMemberSearchKeyword])
+
+const filteredWorkoutListMembers = useMemo(() => {
+  const keyword = String(workoutListMemberSearchKeyword || '').trim().toLowerCase()
+
+  if (!keyword) return members
+
+  return members.filter((member) =>
+    String(member.name || '').toLowerCase().includes(keyword)
+  )
+}, [members, workoutListMemberSearchKeyword])
+
+const filteredMealPlanMembers = useMemo(() => {
+  const keyword = String(mealPlanMemberSearchKeyword || '').trim().toLowerCase()
+
+  if (!keyword) return members
+
+  return members.filter((member) =>
+    String(member.name || '').toLowerCase().includes(keyword)
+  )
+}, [members, mealPlanMemberSearchKeyword])
   const [workoutTypeFilter, setWorkoutTypeFilter] = useState('all')
   const [workoutDateFilter, setWorkoutDateFilter] = useState('')
 
@@ -15028,21 +15060,46 @@ const filteredExercisesAdvanced = exercises.filter((exercise) => {
         <form className="stack-gap" onSubmit={handleWorkoutSubmit}>
           <div className="record-top-grid">
             <label className="field">
-              <span>회원 선택</span>
-              <select
-                value={workoutForm.member_id}
-                onChange={(e) =>
-                  setWorkoutForm({ ...workoutForm, member_id: e.target.value })
-                }
-              >
-                <option value="">회원 선택</option>
-                {members.map((member) => (
-                  <option key={member.id} value={member.id}>
-                    {member.name}
-                  </option>
-                ))}
-              </select>
-            </label>
+  <span>회원 선택</span>
+
+  <input
+    type="text"
+    placeholder="회원 이름 검색"
+    value={workoutMemberSearchKeyword}
+    onChange={(e) => setWorkoutMemberSearchKeyword(e.target.value)}
+  />
+
+  <div className="member-search-select-list">
+    <button
+      type="button"
+      className={`member-search-select-item ${workoutForm.member_id === '' ? 'active' : ''}`}
+      onClick={() =>
+        setWorkoutForm((prev) => ({
+          ...prev,
+          member_id: '',
+        }))
+      }
+    >
+      회원 선택
+    </button>
+
+    {filteredWorkoutFormMembers.map((member) => (
+      <button
+        key={member.id}
+        type="button"
+        className={`member-search-select-item ${workoutForm.member_id === member.id ? 'active' : ''}`}
+        onClick={() =>
+          setWorkoutForm((prev) => ({
+            ...prev,
+            member_id: member.id,
+          }))
+        }
+      >
+        {member.name}
+      </button>
+    ))}
+  </div>
+</label>
 
             <label className="field">
               <span>날짜</span>
@@ -15606,17 +15663,37 @@ const filteredExercisesAdvanced = exercises.filter((exercise) => {
 
         <div className="stack-gap">
           <div className="workout-filter-grid">
-            <label className="field">
-              <span>회원 검색</span>
-              <select value={workoutMemberFilter} onChange={(e) => setWorkoutMemberFilter(e.target.value)}>
-                <option value="">전체 회원</option>
-                {members.map((member) => (
-                  <option key={member.id} value={member.id}>
-                    {member.name}
-                  </option>
-                ))}
-              </select>
-            </label>
+           <label className="field">
+  <span>회원 검색</span>
+
+  <input
+    type="text"
+    placeholder="회원 이름 검색"
+    value={workoutListMemberSearchKeyword}
+    onChange={(e) => setWorkoutListMemberSearchKeyword(e.target.value)}
+  />
+
+  <div className="member-search-select-list">
+    <button
+      type="button"
+      className={`member-search-select-item ${workoutMemberFilter === '' ? 'active' : ''}`}
+      onClick={() => setWorkoutMemberFilter('')}
+    >
+      전체 회원
+    </button>
+
+    {filteredWorkoutListMembers.map((member) => (
+      <button
+        key={member.id}
+        type="button"
+        className={`member-search-select-item ${workoutMemberFilter === member.id ? 'active' : ''}`}
+        onClick={() => setWorkoutMemberFilter(member.id)}
+      >
+        {member.name}
+      </button>
+    ))}
+  </div>
+</label>
 
             <label className="field">
               <span>기록 타입</span>
@@ -16354,24 +16431,46 @@ const filteredExercisesAdvanced = exercises.filter((exercise) => {
         
           <div className="grid-2">
             <label className="field">
-              <span>회원 선택</span>
-              <select
-                value={mealPlanForm.member_id}
-                onChange={(e) =>
-                  setMealPlanForm((prev) => ({
-                    ...prev,
-                    member_id: e.target.value,
-                  }))
-                }
-              >
-                <option value="">회원 선택</option>
-                {members.map((m) => (
-                  <option key={m.id} value={m.id}>
-                    {m.name}
-                  </option>
-                ))}
-              </select>
-            </label>
+  <span>회원 선택</span>
+
+  <input
+    type="text"
+    placeholder="회원 이름 검색"
+    value={mealPlanMemberSearchKeyword}
+    onChange={(e) => setMealPlanMemberSearchKeyword(e.target.value)}
+  />
+
+  <div className="member-search-select-list">
+    <button
+      type="button"
+      className={`member-search-select-item ${mealPlanForm.member_id === '' ? 'active' : ''}`}
+      onClick={() =>
+        setMealPlanForm((prev) => ({
+          ...prev,
+          member_id: '',
+        }))
+      }
+    >
+      회원 선택
+    </button>
+
+    {filteredMealPlanMembers.map((member) => (
+      <button
+        key={member.id}
+        type="button"
+        className={`member-search-select-item ${mealPlanForm.member_id === member.id ? 'active' : ''}`}
+        onClick={() =>
+          setMealPlanForm((prev) => ({
+            ...prev,
+            member_id: member.id,
+          }))
+        }
+      >
+        {member.name}
+      </button>
+    ))}
+  </div>
+</label>
 
             <label className="field">
               <span>목표</span>
