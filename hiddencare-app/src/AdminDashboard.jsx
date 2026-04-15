@@ -20411,7 +20411,74 @@ const filteredExercisesAdvanced = exercises.filter((exercise) => {
         </div>
       </div>
     </section>
+    <details className="tab-usage-guide-card sales-record-usage-guide" open={false}>
+      <summary className="tab-usage-guide-summary">
+        <div>
+          <div className="tab-usage-guide-badge">HOW TO USE SALES RECORD</div>
+          <strong>매출기록은 이렇게 보고, 이렇게 써야 합니다</strong>
+          <p>
+            금액 입력 화면이 아니라 월별 매출 흐름, 결제수단, VIP 비중, 프로그램별 매출을 보고 운영 판단까지 연결하는 탭입니다.
+          </p>
+        </div>
+        <span className="tab-usage-guide-summary-icon">+</span>
+      </summary>
 
+      <div className="tab-usage-guide-body">
+        <div className="tab-usage-guide-grid">
+          <div className="tab-usage-guide-item">
+            <span className="tab-usage-guide-step">1</span>
+            <div>
+              <strong>상단 숫자 먼저 확인 → 이번 달 매출 흐름을 먼저 읽습니다</strong>
+              <p>
+                총 매출, 등록 건수, VIP 결제 수, VIP 비율을 먼저 보면
+                이번 달이 양은 괜찮은지, 고가 상품 비중이 괜찮은지 먼저 판단할 수 있습니다.
+              </p>
+            </div>
+          </div>
+
+          <div className="tab-usage-guide-item">
+            <span className="tab-usage-guide-step">2</span>
+            <div>
+              <strong>입력 / 수정은 정확히 → 이후 통계와 XP에 반영됩니다</strong>
+              <p>
+                회원, 프로그램, 결제일, 결제방법, 구매 세션을 정확히 넣어야
+                매출 통계, 프로그램 매출, 판매 흐름, XP 반영까지 같이 맞아집니다.
+              </p>
+            </div>
+          </div>
+
+          <div className="tab-usage-guide-item">
+            <span className="tab-usage-guide-step">3</span>
+            <div>
+              <strong>월별 요약 보기 → 어떤 결제가 잘 나가는지 판단합니다</strong>
+              <p>
+                현금/카드/이체/할부 비중과 프로그램별 매출을 같이 보면
+                어떤 상품과 어떤 결제 방식이 실제로 많이 나가는지 바로 보입니다.
+              </p>
+            </div>
+          </div>
+
+          <div className="tab-usage-guide-item">
+            <span className="tab-usage-guide-step">4</span>
+            <div>
+              <strong>세일즈일지와 같이 보기 → 전환 구조까지 같이 해석합니다</strong>
+              <p>
+                매출이 떨어졌다고 바로 상품 문제로 보지 말고,
+                세일즈일지의 후속관리·결제완료 흐름과 같이 봐야 원인을 더 정확히 잡을 수 있습니다.
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <div className="tab-usage-guide-tip">
+          <strong>실무 활용 예시</strong>
+          <p>
+            등록 건수는 비슷한데 총 매출이 낮고 VIP 비율이 떨어졌다면,
+            이번 달은 저가/짧은 세션 위주로 팔리고 있다는 뜻이니 프로그램 구성이나 업셀 제안을 다시 점검하면 됩니다.
+          </p>
+        </div>
+      </div>
+    </details>
     <div className="sales-summary-modern-grid">
       <div className="sales-summary-modern-card summary-blue">
         <span>총 매출</span>
@@ -20817,7 +20884,75 @@ const filteredExercisesAdvanced = exercises.filter((exercise) => {
         </div>
       </div>
     </section>
+    <details className="tab-usage-guide-card sales-log-usage-guide" open={false}>
+      <summary className="tab-usage-guide-summary">
+        <div>
+          <div className="tab-usage-guide-badge">HOW TO USE SALES LOG</div>
+          <strong>세일즈일지는 기록보다 해석이 더 중요한 탭입니다</strong>
+          <p>
+            상담 내용을 적는 곳에서 끝나는 게 아니라,
+            누가 전환 가능성이 높고 누가 다시 접촉이 필요한지 정리하는 리드 관리 탭입니다.
+          </p>
+        </div>
+        <span className="tab-usage-guide-summary-icon">+</span>
+      </summary>
 
+      <div className="tab-usage-guide-body">
+        <div className="tab-usage-guide-grid">
+          <div className="tab-usage-guide-item">
+            <span className="tab-usage-guide-step">1</span>
+            <div>
+              <strong>상단 요약 먼저 보기 → 리드 상태를 먼저 파악합니다</strong>
+              <p>
+                전체 리드, 전환 높음, 결제완료, 후속관리중 숫자를 먼저 보면
+                지금 신규 유입보다 후속관리가 더 급한지 바로 판단할 수 있습니다.
+              </p>
+            </div>
+          </div>
+
+          <div className="tab-usage-guide-item">
+            <span className="tab-usage-guide-step">2</span>
+            <div>
+              <strong>기본 정보와 니즈를 정확히 적기 → 상담 품질이 쌓입니다</strong>
+              <p>
+                날짜, 시간, 담당 코치, 리드명, 문제 포인트, 니즈를 남겨야
+                다음 상담 때 맥락을 잃지 않고 이어갈 수 있습니다.
+              </p>
+            </div>
+          </div>
+
+          <div className="tab-usage-guide-item">
+            <span className="tab-usage-guide-step">3</span>
+            <div>
+              <strong>상담 흐름 / 세일즈 방식 / 결과를 남기기 → 전환 패턴이 보입니다</strong>
+              <p>
+                어떤 방식에서 반응이 좋았고 어디서 막혔는지를 남겨야
+                개인 감이 아니라 실제 전환 패턴으로 세일즈를 개선할 수 있습니다.
+              </p>
+            </div>
+          </div>
+
+          <div className="tab-usage-guide-item">
+            <span className="tab-usage-guide-step">4</span>
+            <div>
+              <strong>후속관리 대상으로 분류 → 매출기록과 이어집니다</strong>
+              <p>
+                여기서 후속관리중으로 남는 리드를 제때 다시 잡아야
+                나중에 매출기록의 결제완료로 이어지므로, 세일즈일지는 매출 전 단계 핵심 탭입니다.
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <div className="tab-usage-guide-tip">
+          <strong>실무 활용 예시</strong>
+          <p>
+            결제완료는 적은데 후속관리중이 많다면, 유입이 없는 게 아니라 마무리 전환이 약한 상태일 수 있으니
+            다시 연락할 기준일, 제안 멘트, 체험 후 팔로업 속도를 먼저 손보면 됩니다.
+          </p>
+        </div>
+      </div>
+    </details>
     <div className="sales-summary-modern-grid">
       <div className="sales-summary-modern-card summary-blue">
         <span>전체 리드</span>
@@ -22839,6 +22974,74 @@ const filteredExercisesAdvanced = exercises.filter((exercise) => {
 )}
 {activeTab === '코치스케줄' && (
   <div className="two-col">
+        <details className="tab-usage-guide-card schedule-usage-guide" open={false}>
+      <summary className="tab-usage-guide-summary">
+        <div>
+          <div className="tab-usage-guide-badge">HOW TO USE COACH SCHEDULE</div>
+          <strong>코치스케줄은 이렇게 보고, 이렇게 관리합니다</strong>
+          <p>
+            단순 근무표가 아니라 코치 배치, 예약 가능 시간, 운영 공백을 미리 막기 위한 기본 운영 탭입니다.
+          </p>
+        </div>
+        <span className="tab-usage-guide-summary-icon">+</span>
+      </summary>
+
+      <div className="tab-usage-guide-body">
+        <div className="tab-usage-guide-grid">
+          <div className="tab-usage-guide-item">
+            <span className="tab-usage-guide-step">1</span>
+            <div>
+              <strong>코치 / 기준 월 선택 → 운영 기준이 정리됩니다</strong>
+              <p>
+                먼저 코치와 기준 월을 잡아야
+                누구의 어떤 달 스케줄을 관리하는지 헷갈리지 않고 수정할 수 있습니다.
+              </p>
+            </div>
+          </div>
+
+          <div className="tab-usage-guide-item">
+            <span className="tab-usage-guide-step">2</span>
+            <div>
+              <strong>근무일 / 시간 / 가능 슬롯 입력 → 예약 가능한 구조가 만들어집니다</strong>
+              <p>
+                단순 출근시간만 적는 게 아니라 실제 가능한 시간 슬롯까지 선택해야
+                예약 배치와 운영 동선이 현실적으로 맞아집니다.
+              </p>
+            </div>
+          </div>
+
+          <div className="tab-usage-guide-item">
+            <span className="tab-usage-guide-step">3</span>
+            <div>
+              <strong>목록 확인 → 공백과 과밀 구간을 미리 봅니다</strong>
+              <p>
+                저장 후 목록에서 날짜별 근무/휴무와 가능 시간을 보면
+                특정 코치에 수업이 몰릴지, 빈 시간대가 생길지 미리 판단할 수 있습니다.
+              </p>
+            </div>
+          </div>
+
+          <div className="tab-usage-guide-item">
+            <span className="tab-usage-guide-step">4</span>
+            <div>
+              <strong>운영대시보드/코치관리와 같이 보기 → 실제 운영 조정이 쉬워집니다</strong>
+              <p>
+                코치 상태가 좋지 않은 달에는 스케줄까지 같이 봐야
+                회복이 필요한 코치를 어디서 줄여야 할지 더 정확히 판단할 수 있습니다.
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <div className="tab-usage-guide-tip">
+          <strong>실무 활용 예시</strong>
+          <p>
+            특정 코치가 주의 필요 상태인데 주말 근무와 슬롯이 과하게 열려 있으면,
+            스케줄 탭에서 먼저 시간대를 줄이고 다른 코치로 분산하는 식으로 운영 리스크를 줄이면 됩니다.
+          </p>
+        </div>
+      </div>
+    </details>
     <section className="card">
       <div className="section-head">
         <div>
@@ -23158,7 +23361,75 @@ const filteredExercisesAdvanced = exercises.filter((exercise) => {
         </div>
       </div>
     </section>
+    <details className="tab-usage-guide-card program-usage-guide" open={false}>
+      <summary className="tab-usage-guide-summary">
+        <div>
+          <div className="tab-usage-guide-badge">HOW TO USE PROGRAM MANAGEMENT</div>
+          <strong>프로그램 관리는 상품표가 아니라 판매 기준표입니다</strong>
+          <p>
+            프로그램명과 가격만 적는 화면이 아니라,
+            어떤 상품을 노출하고 추천하고 VIP로 운영할지 판매 구조를 정리하는 탭입니다.
+          </p>
+        </div>
+        <span className="tab-usage-guide-summary-icon">+</span>
+      </summary>
 
+      <div className="tab-usage-guide-body">
+        <div className="tab-usage-guide-grid">
+          <div className="tab-usage-guide-item">
+            <span className="tab-usage-guide-step">1</span>
+            <div>
+              <strong>기본 정보 입력 → 판매 단위가 정리됩니다</strong>
+              <p>
+                프로그램명, 가격, 세션 수를 먼저 정확히 잡아야
+                회원 등록, 매출기록, 상담 제안에서 기준이 흔들리지 않습니다.
+              </p>
+            </div>
+          </div>
+
+          <div className="tab-usage-guide-item">
+            <span className="tab-usage-guide-step">2</span>
+            <div>
+              <strong>설명 / 옵션 설정 → 어떤 상품을 밀지 정합니다</strong>
+              <p>
+                VIP, 추천, 인기, 회원노출, 노출 순서를 조정하면
+                실제 회원 화면과 상담 제안에서 어떤 상품을 먼저 보여줄지 결정됩니다.
+              </p>
+            </div>
+          </div>
+
+          <div className="tab-usage-guide-item">
+            <span className="tab-usage-guide-step">3</span>
+            <div>
+              <strong>목록 확인 → 비활성/노출 상태를 함께 점검합니다</strong>
+              <p>
+                등록 후 목록에서 활성 여부와 배지를 같이 보면
+                현재 어떤 상품이 실제 판매 구조 안에 들어와 있는지 빠르게 확인할 수 있습니다.
+              </p>
+            </div>
+          </div>
+
+          <div className="tab-usage-guide-item">
+            <span className="tab-usage-guide-step">4</span>
+            <div>
+              <strong>매출기록과 같이 보기 → 잘 팔리는 상품을 구분합니다</strong>
+              <p>
+                프로그램은 등록만 해두는 게 아니라,
+                매출기록의 프로그램별 매출과 같이 봐야 실제로 어떤 상품이 잘 나가는지 판단할 수 있습니다.
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <div className="tab-usage-guide-tip">
+          <strong>실무 활용 예시</strong>
+          <p>
+            특정 프로그램을 추천/인기로 올려놨는데 실제 매출기록에서 거의 안 잡히면,
+            상품명이 약한지, 설명이 약한지, 상담에서 제안이 안 되는지 다시 점검하면 됩니다.
+          </p>
+        </div>
+      </div>
+    </details>
     <div className="program-page-grid">
       <section className="card program-form-card-modern">
         <div className="program-card-head">
@@ -23477,6 +23748,75 @@ const filteredExercisesAdvanced = exercises.filter((exercise) => {
 )}
 {activeTab === '공지사항' && (
   <div className="two-col">
+    <details className="tab-usage-guide-card notice-usage-guide" open={false}>
+      <summary className="tab-usage-guide-summary">
+        <div>
+          <div className="tab-usage-guide-badge">HOW TO USE NOTICE</div>
+          <strong>공지사항은 회원 커뮤니케이션 기준을 정리하는 탭입니다</strong>
+          <p>
+            단순 공지 등록이 아니라 휴무, 이벤트, 안내, 소식을 회원 화면에 어떻게 전달할지 정리하는 기본 소통 탭입니다.
+          </p>
+        </div>
+        <span className="tab-usage-guide-summary-icon">+</span>
+      </summary>
+
+      <div className="tab-usage-guide-body">
+        <div className="tab-usage-guide-grid">
+          <div className="tab-usage-guide-item">
+            <span className="tab-usage-guide-step">1</span>
+            <div>
+              <strong>제목 / 카테고리 먼저 정리 → 공지 목적이 명확해집니다</strong>
+              <p>
+                공지, 이벤트, 안내, 소식 중 무엇인지 먼저 정리해야
+                회원이 이 글을 왜 봐야 하는지 한눈에 이해하기 쉽습니다.
+              </p>
+            </div>
+          </div>
+
+          <div className="tab-usage-guide-item">
+            <span className="tab-usage-guide-step">2</span>
+            <div>
+              <strong>내용은 짧고 핵심만 → 회원 행동으로 이어집니다</strong>
+              <p>
+                길게 쓰기보다 휴무일, 참여 방법, 대상, 기간처럼
+                회원이 바로 알아야 할 정보 위주로 적어야 실제 확인률이 높습니다.
+              </p>
+            </div>
+          </div>
+
+          <div className="tab-usage-guide-item">
+            <span className="tab-usage-guide-step">3</span>
+            <div>
+              <strong>노출 기간 / 게시 상태 확인 → 필요한 때만 보이게 합니다</strong>
+              <p>
+                항상 띄우는 것보다 필요한 기간만 노출해야
+                회원 화면이 복잡해지지 않고 중요한 안내가 묻히지 않습니다.
+              </p>
+            </div>
+          </div>
+
+          <div className="tab-usage-guide-item">
+            <span className="tab-usage-guide-step">4</span>
+            <div>
+              <strong>목록 확인 → 오래된 공지와 현재 공지를 구분합니다</strong>
+              <p>
+                등록 후 목록에서 날짜와 상태를 확인하면서
+                지난 안내를 내리고 현재 필요한 공지만 유지하는 게 중요합니다.
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <div className="tab-usage-guide-tip">
+          <strong>실무 활용 예시</strong>
+          <p>
+            휴무 공지, 이벤트 공지, 신규 프로그램 공지가 동시에 많아지면 회원이 핵심을 못 볼 수 있으니
+            기간 지난 공지는 내리고, 이번 주 행동과 직접 연결되는 공지부터 우선 노출하면 됩니다.
+          </p>
+        </div>
+      </div>
+    </details>
+    
     <section className="card">
       <div className="section-head">
         <div>
