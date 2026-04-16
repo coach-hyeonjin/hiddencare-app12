@@ -276,56 +276,55 @@ function AdminSignupRequest({ onBack }) {
   const [success, setSuccess] = useState(false)
 
   const handleSubmit = async (e) => {
-    e.preventDefault()
+  e.preventDefault()
 
-    if (!email.trim() || !password.trim() || !name.trim()) {
-      setMessage('이메일, 비밀번호, 이름은 필수입니다.')
+  if (!email.trim() || !password.trim() || !name.trim()) {
+    setMessage('이메일, 비밀번호, 이름은 필수입니다.')
+    setSuccess(false)
+    return
+  }
+
+  setLoading(true)
+  setMessage('')
+  setSuccess(false)
+
+  try {
+    const payload = {
+      email: email.trim(),
+      password,
+      name: name.trim(),
+      gym_name: gymName.trim() ? gymName.trim() : null,
+      phone: phone.trim() ? phone.trim() : null,
+      status: 'pending',
+    }
+
+    const { error } = await supabase
+      .from('admin_signup_requests')
+      .insert([payload])
+
+    if (error) {
+      console.error('관리자 가입신청 실패:', error)
+      setMessage(error.message || '가입신청에 실패했습니다.')
       setSuccess(false)
+      setLoading(false)
       return
     }
 
-    setLoading(true)
-    setMessage('')
+    setMessage('가입신청이 완료되었습니다. 승인 후 로그인할 수 있습니다.')
+    setSuccess(true)
+    setEmail('')
+    setPassword('')
+    setName('')
+    setGymName('')
+    setPhone('')
+  } catch (err) {
+    console.error('관리자 가입신청 예외:', err)
+    setMessage(err?.message || '가입신청 중 오류가 발생했습니다.')
     setSuccess(false)
-
-    try {
-      const res = await fetch('/api/request-admin-signup', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          email: email.trim(),
-          password,
-          name: name.trim(),
-          gym_name: gymName.trim(),
-          phone: phone.trim(),
-        }),
-      })
-
-      const data = await res.json()
-
-      if (!res.ok) {
-        setMessage(data?.error || '가입신청에 실패했습니다.')
-        setSuccess(false)
-        setLoading(false)
-        return
-      }
-
-      setMessage('가입신청이 완료되었습니다. 승인 후 로그인할 수 있습니다.')
-      setSuccess(true)
-      setEmail('')
-      setPassword('')
-      setName('')
-      setGymName('')
-      setPhone('')
-    } catch {
-      setMessage('가입신청 중 오류가 발생했습니다.')
-      setSuccess(false)
-    }
-
-    setLoading(false)
   }
+
+  setLoading(false)
+}
 
   return (
     <div className="auth-card auth-card-large">
