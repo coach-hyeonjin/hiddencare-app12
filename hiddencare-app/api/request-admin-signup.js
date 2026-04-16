@@ -1,5 +1,3 @@
-const { createClient } = require('@supabase/supabase-js')
-
 module.exports = async function handler(req, res) {
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' })
@@ -16,8 +14,6 @@ module.exports = async function handler(req, res) {
     if (!serviceRoleKey) {
       return res.status(500).json({ error: 'SUPABASE_SERVICE_ROLE_KEY 환경변수가 없습니다.' })
     }
-
-    const supabase = createClient(supabaseUrl, serviceRoleKey)
 
     const { email, password, name, gym_name, phone } = req.body || {}
 
@@ -36,22 +32,40 @@ module.exports = async function handler(req, res) {
       status: 'pending',
     }
 
-    const { data, error } = await supabase
-      .from('admin_signup_requests')
-      .insert([payload])
-      .select()
+    const response = await fetch(
+      `${supabaseUrl}/rest/v1/admin_signup_requests`,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          apikey: serviceRoleKey,
+          Authorization: `Bearer ${serviceRoleKey}`,
+          Prefer: 'return=representation',
+        },
+        body: JSON.stringify(payload),
+      }
+    )
 
-    if (error) {
-      console.error('admin_signup_requests insert error:', error)
-      return res.status(400).json({
-        error: error.message || '가입신청 저장 실패',
-        details: error,
+    const text = await response.text()
+
+    let result = null
+    try {
+      result = text ? JSON.parse(text) : null
+    } catch {
+      result = text
+    }
+
+    if (!response.ok) {
+      console.error('request-admin-signup REST insert error:', result)
+      return res.status(response.status).json({
+        error: '가입신청 저장 실패',
+        details: result,
       })
     }
 
     return res.status(200).json({
       success: true,
-      data,
+      data: result,
     })
   } catch (err) {
     console.error('request-admin-signup unexpected error:', err)
