@@ -8795,7 +8795,7 @@ const loadAdminSignupRequests = async () => {
     .from('admin_signup_requests')
     .select('*')
     .eq('status', 'pending')
-    .order('created_at', { ascending: false })
+    
 
   if (error) {
     console.error('가입신청 목록 불러오기 실패:', error)
@@ -13537,7 +13537,7 @@ const filteredExercisesAdvanced = exercises.filter((exercise) => {
                   <div className="compact-text"><strong>이메일:</strong> {request.email || '-'}</div>
                   <div className="compact-text"><strong>센터명:</strong> {request.gym_name || '-'}</div>
                   <div className="compact-text"><strong>연락처:</strong> {request.phone || '-'}</div>
-                  <div className="compact-text"><strong>신청일:</strong> {request.created_at ? request.created_at.slice(0, 10) : '-'}</div>
+                  <div className="compact-text"><strong>신청일:</strong> -</div>
                 </div>
               ))}
             </div>
