@@ -896,6 +896,8 @@ export default function AdminDashboard({ profile, currentAdminId, currentGymId, 
   const [activeTab, setActiveTab] = useState('회원')
   const [loading, setLoading] = useState(true)
   const [message, setMessage] = useState('')
+    const [adminSignupRequests, setAdminSignupRequests] = useState([])
+  const [adminSignupLoading, setAdminSignupLoading] = useState(false)
   const [selectedStatsMonth, setSelectedStatsMonth] = useState(
   new Date().toISOString().slice(0, 7)
 )
@@ -8781,6 +8783,31 @@ loadDietLogs()
     loadSalesSummary(saleMonth)
   }, [saleMonth])
 
+const loadAdminSignupRequests = async () => {
+  if (!profile?.is_super_admin) {
+    setAdminSignupRequests([])
+    return
+  }
+
+  setAdminSignupLoading(true)
+
+  const { data, error } = await supabase
+    .from('admin_signup_requests')
+    .select('*')
+    .eq('status', 'pending')
+    .order('created_at', { ascending: false })
+
+  if (error) {
+    console.error('가입신청 목록 불러오기 실패:', error)
+    setMessage(`가입신청 목록 불러오기 실패: ${error.message}`)
+    setAdminSignupLoading(false)
+    return
+  }
+
+  setAdminSignupRequests(data || [])
+  setAdminSignupLoading(false)
+}
+  
   const loadAll = async () => {
   setLoading(true)
   setMessage('')
@@ -8815,6 +8842,7 @@ loadDietLogs()
             ['loadManagerActionLogs', () => loadManagerActionLogs()],
       ['loadManagerTaskChecks', () => loadManagerTaskChecks()],
       ['loadManagerGoalSettings', () => loadManagerGoalSettings()],
+            ['loadAdminSignupRequests', () => loadAdminSignupRequests()],
     ]
 
     const results = await Promise.allSettled(
@@ -13466,7 +13494,7 @@ const filteredExercisesAdvanced = exercises.filter((exercise) => {
     <div className="dashboard-main-scroll">
       {message ? <div className="message success">{message}</div> : null}
       
-      {activeTab === '가입신청관리' && profile?.is_super_admin && (
+            {activeTab === '가입신청관리' && profile?.is_super_admin && (
         <div className="card">
           <div className="section-head">
             <h2>가입신청관리</h2>
@@ -13475,11 +13503,45 @@ const filteredExercisesAdvanced = exercises.filter((exercise) => {
             </p>
           </div>
 
-          <div className="detail-box">
-            <p><strong>현재 상태:</strong> 탭 연결 완료</p>
-            <p><strong>권한:</strong> super_admin만 표시</p>
-            <p><strong>다음 단계:</strong> pending 목록 조회 + 승인/거절 버튼 추가</p>
+          <div className="detail-box" style={{ marginBottom: '16px' }}>
+            <p><strong>조회 대상:</strong> pending 상태 가입신청</p>
+            <p><strong>현재 건수:</strong> {adminSignupRequests.length}건</p>
           </div>
+
+          <div style={{ marginBottom: '16px' }}>
+            <button
+              type="button"
+              className="secondary-btn"
+              onClick={loadAdminSignupRequests}
+              disabled={adminSignupLoading}
+            >
+              {adminSignupLoading ? '불러오는 중...' : '가입신청 새로고침'}
+            </button>
+          </div>
+
+          {adminSignupLoading ? (
+            <div className="workout-list-empty">가입신청 목록 불러오는 중...</div>
+          ) : adminSignupRequests.length === 0 ? (
+            <div className="workout-list-empty">대기 중인 가입신청이 없습니다.</div>
+          ) : (
+            <div className="list-stack">
+              {adminSignupRequests.map((request) => (
+                <div key={request.id} className="detail-box">
+                  <div className="list-card-top" style={{ marginBottom: '10px' }}>
+                    <strong>{request.name || '이름 없음'}</strong>
+                    <span className="status-pill status-pill-pending">
+                      {request.status || 'pending'}
+                    </span>
+                  </div>
+
+                  <div className="compact-text"><strong>이메일:</strong> {request.email || '-'}</div>
+                  <div className="compact-text"><strong>센터명:</strong> {request.gym_name || '-'}</div>
+                  <div className="compact-text"><strong>연락처:</strong> {request.phone || '-'}</div>
+                  <div className="compact-text"><strong>신청일:</strong> {request.created_at ? request.created_at.slice(0, 10) : '-'}</div>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       )}
       
