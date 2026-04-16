@@ -8807,6 +8807,44 @@ const loadAdminSignupRequests = async () => {
   setAdminSignupRequests(data || [])
   setAdminSignupLoading(false)
 }
+
+const handleApproveSignup = async (request) => {
+  const confirmOk = window.confirm('이 가입신청을 승인하시겠습니까?')
+  if (!confirmOk) return
+
+  const { error } = await supabase
+    .from('admin_signup_requests')
+    .update({ status: 'approved' })
+    .eq('id', request.id)
+
+  if (error) {
+    console.error('승인 실패:', error)
+    setMessage(`승인 실패: ${error.message}`)
+    return
+  }
+
+  setMessage('승인 처리되었습니다.')
+  await loadAdminSignupRequests()
+}
+
+const handleRejectSignup = async (request) => {
+  const confirmOk = window.confirm('이 가입신청을 거절하시겠습니까?')
+  if (!confirmOk) return
+
+  const { error } = await supabase
+    .from('admin_signup_requests')
+    .update({ status: 'rejected' })
+    .eq('id', request.id)
+
+  if (error) {
+    console.error('거절 실패:', error)
+    setMessage(`거절 실패: ${error.message}`)
+    return
+  }
+
+  setMessage('거절 처리되었습니다.')
+  await loadAdminSignupRequests()
+}
   
   const loadAll = async () => {
   setLoading(true)
@@ -13537,6 +13575,23 @@ const filteredExercisesAdvanced = exercises.filter((exercise) => {
                   <div className="compact-text"><strong>이메일:</strong> {request.email || '-'}</div>
                   <div className="compact-text"><strong>센터명:</strong> {request.gym_name || '-'}</div>
                   <div className="compact-text"><strong>연락처:</strong> {request.phone || '-'}</div>
+                  <div style={{ marginTop: '12px', display: 'flex', gap: '8px' }}>
+  <button
+    type="button"
+    className="primary-btn"
+    onClick={() => handleApproveSignup(request)}
+  >
+    승인
+  </button>
+
+  <button
+    type="button"
+    className="danger-btn"
+    onClick={() => handleRejectSignup(request)}
+  >
+    거절
+  </button>
+</div>
                   <div className="compact-text"><strong>신청일:</strong> -</div>
                 </div>
               ))}
