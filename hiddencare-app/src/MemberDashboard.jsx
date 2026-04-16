@@ -2030,6 +2030,44 @@ const clearMemberAlerts = () => {
     })
   }
 
+const addPainLog = () => {
+  setPersonalForm((prev) => ({
+    ...prev,
+    pain_enabled: true,
+    pain_logs: [...(prev.pain_logs || []), { ...emptyPainLog }],
+  }))
+}
+
+const updatePainLog = (index, field, value) => {
+  setPersonalForm((prev) => {
+    const nextPainLogs = [...(prev.pain_logs || [])]
+
+    nextPainLogs[index] = {
+      ...(nextPainLogs[index] || { ...emptyPainLog }),
+      [field]: value,
+    }
+
+    return {
+      ...prev,
+      pain_logs: nextPainLogs,
+    }
+  })
+}
+
+const removePainLog = (index) => {
+  setPersonalForm((prev) => {
+    const currentPainLogs = [...(prev.pain_logs || [])]
+    const nextPainLogs = currentPainLogs.filter((_, idx) => idx !== index)
+
+    return {
+      ...prev,
+      pain_logs: nextPainLogs.length > 0 ? nextPainLogs : [{ ...emptyPainLog }],
+      pain_enabled: nextPainLogs.length > 0 ? prev.pain_enabled : false,
+    }
+  })
+}
+
+  
   const updatePersonalItemField = (itemIndex, field, value) => {
   setPersonalForm((prev) => {
     const nextItems = [...prev.items]
