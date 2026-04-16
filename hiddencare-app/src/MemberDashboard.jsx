@@ -27,6 +27,7 @@ const createEmptyPersonalSubExercise = () => ({
   exercise_name_snapshot: '',
   equipment_name_snapshot: '',
   performed_name: '',
+  exercise_search: '',
   sets: [createEmptyPersonalSet()],
 })
 
@@ -35,6 +36,7 @@ const emptyPersonalItem = {
   exercise_name_snapshot: '',
   equipment_name_snapshot: '',
   performed_name: '',
+  exercise_search: '',
 
   entry_type: 'strength', // strength / cardio / care / stretching / pain_only
   cardio_minutes: '',
@@ -2112,13 +2114,14 @@ const updatePersonalItemSelect = (itemIndex, exerciseId) => {
     const nextItems = [...prev.items]
     const currentItem = nextItems[itemIndex]
 
-    nextItems[itemIndex] = {
-      ...currentItem,
-      exercise_id: found?.id || '',
-      exercise_name_snapshot: found?.name || '',
-      equipment_name_snapshot: found?.name || '',
-      performed_name: currentItem.performed_name || found?.name || '',
-    }
+   nextItems[itemIndex] = {
+  ...currentItem,
+  exercise_id: found?.id || '',
+  exercise_name_snapshot: found?.name || '',
+  equipment_name_snapshot: found?.name || '',
+  performed_name: currentItem.performed_name || found?.name || '',
+  exercise_search: '',
+}
 
     return { ...prev, items: nextItems }
   })
@@ -2143,13 +2146,14 @@ const updatePersonalSubExerciseSelect = (itemIndex, subIndex, exerciseId) => {
     const currentItem = nextItems[itemIndex]
     const nextSubs = [...(currentItem.sub_exercises || [createEmptyPersonalSubExercise(), createEmptyPersonalSubExercise()])]
 
-    nextSubs[subIndex] = {
-      ...nextSubs[subIndex],
-      exercise_id: found?.id || '',
-      exercise_name_snapshot: found?.name || '',
-      equipment_name_snapshot: found?.name || '',
-      performed_name: nextSubs[subIndex].performed_name || found?.name || '',
-    }
+   nextSubs[subIndex] = {
+  ...nextSubs[subIndex],
+  exercise_id: found?.id || '',
+  exercise_name_snapshot: found?.name || '',
+  equipment_name_snapshot: found?.name || '',
+  performed_name: nextSubs[subIndex].performed_name || found?.name || '',
+  exercise_search: '',
+}
 
     nextItems[itemIndex] = {
       ...currentItem,
@@ -2478,14 +2482,15 @@ const updateSetValue = (itemIndex, setIndex, field, value, subIndex = null) => {
             pain_note: log?.pain_note || '',
           }))
         : [{ ...emptyPainLog }],
-    items:
-      items.length > 0
-        ? items.map((item) => ({
-            exercise_id: item.exercise_id || '',
-            exercise_name_snapshot: item.exercise_name_snapshot || '',
-            equipment_name_snapshot: item.equipment_name_snapshot || item.exercise_name_snapshot || '',
-            performed_name: item.performed_name || item.exercise_name_snapshot || '',
-            entry_type: item.entry_type || (item.is_cardio ? 'cardio' : 'strength'),
+   items:
+  items.length > 0
+    ? items.map((item) => ({
+        exercise_id: item.exercise_id || '',
+        exercise_name_snapshot: item.exercise_name_snapshot || '',
+        equipment_name_snapshot: item.equipment_name_snapshot || item.exercise_name_snapshot || '',
+        performed_name: item.performed_name || item.exercise_name_snapshot || '',
+        exercise_search: '',
+        entry_type: item.entry_type || (item.is_cardio ? 'cardio' : 'strength'),
             cardio_minutes: item.cardio_minutes || '',
             care_minutes: item.care_minutes || '',
             sets:
@@ -2498,17 +2503,18 @@ const updateSetValue = (itemIndex, setIndex, field, value, subIndex = null) => {
             training_method: item.training_method || 'normal',
             method_note: item.method_note || '',
             sub_exercises:
-              item.training_method === 'superset' && Array.isArray(item.sub_exercises) && item.sub_exercises.length > 0
-                ? item.sub_exercises.map((sub) => ({
-                    exercise_id: sub.exercise_id || '',
-                    exercise_name_snapshot: sub.exercise_name_snapshot || '',
-                    equipment_name_snapshot: sub.equipment_name_snapshot || sub.exercise_name_snapshot || '',
-                    performed_name: sub.performed_name || sub.exercise_name_snapshot || '',
-                    sets:
-                      Array.isArray(sub.sets) && sub.sets.length > 0
-                        ? sub.sets
-                        : [createEmptyPersonalSet()],
-                  }))
+  item.training_method === 'superset' && Array.isArray(item.sub_exercises) && item.sub_exercises.length > 0
+    ? item.sub_exercises.map((sub) => ({
+        exercise_id: sub.exercise_id || '',
+        exercise_name_snapshot: sub.exercise_name_snapshot || '',
+        equipment_name_snapshot: sub.equipment_name_snapshot || sub.exercise_name_snapshot || '',
+        performed_name: sub.performed_name || sub.exercise_name_snapshot || '',
+        exercise_search: '',
+        sets:
+          Array.isArray(sub.sets) && sub.sets.length > 0
+            ? sub.sets
+            : [createEmptyPersonalSet()],
+      }))
                 : [createEmptyPersonalSubExercise(), createEmptyPersonalSubExercise()],
             collapsed: false,
           }))
@@ -4688,19 +4694,53 @@ const filteredMemberAlerts = memberAlerts.filter((alert) =>
 )}
 
                   <label className="field">
-                    <span>{item.entry_type === 'care' ? '케어 항목 선택' : '사용 기구 / 종목 선택'}</span>
-                    <select
-                      value={item.exercise_id}
-                      onChange={(e) => updatePersonalItemSelect(itemIndex, e.target.value)}
-                    >
-                      <option value="">선택 안함</option>
-                      {exercises.map((exercise) => (
-                        <option key={exercise.id} value={exercise.id}>
-                          [{exercise.body_part || '기타'} / {exercise.category || '분류없음'} / {exercise.brands?.name || '브랜드없음'}] {exercise.name}
-                        </option>
-                      ))}
-                    </select>
-                  </label>
+  <span>{item.entry_type === 'care' ? '케어 항목 검색' : '사용 기구 / 종목 검색'}</span>
+  <input
+    type="text"
+    value={item.exercise_search || ''}
+    onChange={(e) => updatePersonalItemField(itemIndex, 'exercise_search', e.target.value)}
+    placeholder={
+      item.entry_type === 'care'
+        ? '예: 케어, 마사지, 스트레칭'
+        : '예: 가슴, 등, 하체, 유산소'
+    }
+  />
+</label>
+
+<label className="field">
+  <span>{item.entry_type === 'care' ? '케어 항목 선택' : '사용 기구 / 종목 선택'}</span>
+  <select
+    value={item.exercise_id}
+    onChange={(e) => updatePersonalItemSelect(itemIndex, e.target.value)}
+  >
+    <option value="">선택 안함</option>
+    {exercises
+      .filter((exercise) => {
+        const keyword = String(item.exercise_search || '').trim().toLowerCase()
+
+        if (!keyword) return true
+
+        const name = String(exercise.name || '').toLowerCase()
+        const bodyPart = String(exercise.body_part || '').toLowerCase()
+        const category = String(exercise.category || '').toLowerCase()
+        const brand = String(exercise.brands?.name || '').toLowerCase()
+        const guide = String(exercise.guide_text || '').toLowerCase()
+
+        return (
+          name.includes(keyword) ||
+          bodyPart.includes(keyword) ||
+          category.includes(keyword) ||
+          brand.includes(keyword) ||
+          guide.includes(keyword)
+        )
+      })
+      .map((exercise) => (
+        <option key={exercise.id} value={exercise.id}>
+          [{exercise.body_part || '기타'} / {exercise.category || '분류없음'} / {exercise.brands?.name || '브랜드없음'}] {exercise.name}
+        </option>
+      ))}
+  </select>
+</label>
 
                   <label className="field">
                     <span>{item.entry_type === 'care' ? '선택된 케어 항목명' : '선택된 기구명 / 종목명'}</span>
@@ -4802,22 +4842,70 @@ const filteredMemberAlerts = memberAlerts.filter((alert) =>
             {subIndex === 0 ? '운동 A' : '운동 B'}
           </div>
 
-          <label className="field">
-            <span>사용 기구 선택</span>
-            <select
-              value={sub.exercise_id}
-              onChange={(e) =>
-                updatePersonalSubExerciseSelect(itemIndex, subIndex, e.target.value)
-              }
-            >
-              <option value="">선택 안함</option>
-              {exercises.map((exercise) => (
-                <option key={exercise.id} value={exercise.id}>
-                  [{exercise.body_part || '기타'} / {exercise.category || '분류없음'} / {exercise.brands?.name || '브랜드없음'}] {exercise.name}
-                </option>
-              ))}
-            </select>
-          </label>
+         <label className="field">
+  <span>사용 기구 검색</span>
+  <input
+    type="text"
+    value={sub.exercise_search || ''}
+    onChange={(e) =>
+      setPersonalForm((prev) => {
+        const nextItems = [...prev.items]
+        const currentItem = nextItems[itemIndex]
+        const nextSubs = [...(currentItem.sub_exercises || [createEmptyPersonalSubExercise(), createEmptyPersonalSubExercise()])]
+
+        nextSubs[subIndex] = {
+          ...nextSubs[subIndex],
+          exercise_search: e.target.value,
+        }
+
+        nextItems[itemIndex] = {
+          ...currentItem,
+          sub_exercises: nextSubs,
+        }
+
+        return { ...prev, items: nextItems }
+      })
+    }
+    placeholder="예: 등, 가슴, 하체, 케어"
+  />
+</label>
+
+<label className="field">
+  <span>사용 기구 선택</span>
+  <select
+    value={sub.exercise_id}
+    onChange={(e) =>
+      updatePersonalSubExerciseSelect(itemIndex, subIndex, e.target.value)
+    }
+  >
+    <option value="">선택 안함</option>
+    {exercises
+      .filter((exercise) => {
+        const keyword = String(sub.exercise_search || '').trim().toLowerCase()
+
+        if (!keyword) return true
+
+        const name = String(exercise.name || '').toLowerCase()
+        const bodyPart = String(exercise.body_part || '').toLowerCase()
+        const category = String(exercise.category || '').toLowerCase()
+        const brand = String(exercise.brands?.name || '').toLowerCase()
+        const guide = String(exercise.guide_text || '').toLowerCase()
+
+        return (
+          name.includes(keyword) ||
+          bodyPart.includes(keyword) ||
+          category.includes(keyword) ||
+          brand.includes(keyword) ||
+          guide.includes(keyword)
+        )
+      })
+      .map((exercise) => (
+        <option key={exercise.id} value={exercise.id}>
+          [{exercise.body_part || '기타'} / {exercise.category || '분류없음'} / {exercise.brands?.name || '브랜드없음'}] {exercise.name}
+        </option>
+      ))}
+  </select>
+</label>
 
           <label className="field">
             <span>실제 수행 운동명</span>
