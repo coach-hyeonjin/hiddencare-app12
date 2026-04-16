@@ -984,6 +984,15 @@ const [exerciseBrandFilter, setExerciseBrandFilter] = useState('')
   const [collapsedExercises, setCollapsedExercises] = useState({})
   const [bulkExerciseText, setBulkExerciseText] = useState(defaultBulkExerciseText)
   const [showBulkInput, setShowBulkInput] = useState(false)
+  const visibleTabs = useMemo(() => {
+  const nextTabs = [...TABS]
+
+  if (profile?.is_super_admin) {
+    nextTabs.push('가입신청관리')
+  }
+
+  return nextTabs
+}, [profile?.is_super_admin])
 const filteredExerciseOptions = useMemo(() => {
   const keyword = String(exerciseSearchDropdown.keyword || '').trim().toLowerCase()
 
@@ -13439,7 +13448,7 @@ const filteredExercisesAdvanced = exercises.filter((exercise) => {
   <aside className="dashboard-sidebar">
     <div className="dashboard-sidebar-scroll">
       <nav className="side-tab-list">
-        {TABS.map((tab) => (
+        {visibleTabs.map((tab) => (
           <button
             key={tab}
             className={`side-tab-btn ${activeTab === tab ? 'active' : ''}`}
@@ -13456,7 +13465,24 @@ const filteredExercisesAdvanced = exercises.filter((exercise) => {
   <section className="dashboard-main">
     <div className="dashboard-main-scroll">
       {message ? <div className="message success">{message}</div> : null}
+      
+      {activeTab === '가입신청관리' && profile?.is_super_admin && (
+        <div className="card">
+          <div className="section-head">
+            <h2>가입신청관리</h2>
+            <p className="sub-text">
+              최고관리자만 볼 수 있는 관리자 가입신청 관리 탭입니다.
+            </p>
+          </div>
 
+          <div className="detail-box">
+            <p><strong>현재 상태:</strong> 탭 연결 완료</p>
+            <p><strong>권한:</strong> super_admin만 표시</p>
+            <p><strong>다음 단계:</strong> pending 목록 조회 + 승인/거절 버튼 추가</p>
+          </div>
+        </div>
+      )}
+      
      {activeTab === '회원' && (
   <div className="member-page-modern">
     <div className="member-page-hero">
