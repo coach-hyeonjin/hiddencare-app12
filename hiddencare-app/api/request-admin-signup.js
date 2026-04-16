@@ -1,3 +1,52 @@
+const https = require('https')
+
+function postJson(url, headers, body) {
+  return new Promise((resolve, reject) => {
+    const parsedUrl = new URL(url)
+
+    const req = https.request(
+      {
+        hostname: parsedUrl.hostname,
+        path: parsedUrl.pathname + parsedUrl.search,
+        method: 'POST',
+        protocol: parsedUrl.protocol,
+        port: parsedUrl.port || 443,
+        headers,
+      },
+      (res) => {
+        let data = ''
+
+        res.on('data', (chunk) => {
+          data += chunk
+        })
+
+        res.on('end', () => {
+          let parsed = null
+
+          try {
+            parsed = data ? JSON.parse(data) : null
+          } catch {
+            parsed = data
+          }
+
+          resolve({
+            ok: res.statusCode >= 200 && res.statusCode < 300,
+            status: res.statusCode,
+            data: parsed,
+          })
+        })
+      }
+    )
+
+    req.on('error', (err) => {
+      reject(err)
+    })
+
+    req.write(body)
+    req.end()
+  })
+}
+
 module.exports = async function handler(req, res) {
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' })
@@ -15,7 +64,12 @@ module.exports = async function handler(req, res) {
       return res.status(500).json({ error: 'SUPABASE_SERVICE_ROLE_KEY 환경변수가 없습니다.' })
     }
 
-    const { email, password, name, gym_name, phone } = req.body || {}
+    const body =
+      typeof req.body === 'string'
+        ? JSON.parse(req.body || '{}')
+        : req.body || {}
+
+    const { email, password, name, gym_name, phone } = body
 
     if (!email || !password || !name) {
       return res.status(400).json({
@@ -32,40 +86,28 @@ module.exports = async function handler(req, res) {
       status: 'pending',
     }
 
-    const response = await fetch(
+    const response = await postJson(
       `${supabaseUrl}/rest/v1/admin_signup_requests`,
       {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          apikey: serviceRoleKey,
-          Authorization: `Bearer ${serviceRoleKey}`,
-          Prefer: 'return=representation',
-        },
-        body: JSON.stringify(payload),
-      }
+        'Content-Type': 'application/json',
+        apikey: serviceRoleKey,
+        Authorization: `Bearer ${serviceRoleKey}`,
+        Prefer: 'return=representation',
+      },
+      JSON.stringify(payload)
     )
 
-    const text = await response.text()
-
-    let result = null
-    try {
-      result = text ? JSON.parse(text) : null
-    } catch {
-      result = text
-    }
-
     if (!response.ok) {
-      console.error('request-admin-signup REST insert error:', result)
-      return res.status(response.status).json({
+      console.error('request-admin-signup REST insert error:', response.data)
+      return res.status(response.status || 500).json({
         error: '가입신청 저장 실패',
-        details: result,
+        details: response.data,
       })
     }
 
     return res.status(200).json({
       success: true,
-      data: result,
+      data: response.data,
     })
   } catch (err) {
     console.error('request-admin-signup unexpected error:', err)
