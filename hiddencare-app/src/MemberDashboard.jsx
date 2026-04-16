@@ -2054,6 +2054,10 @@ const updatePainLog = (index, field, value) => {
   })
 }
 
+const updatePainLogValue = (index, field, value) => {
+  updatePainLog(index, field, value)
+}
+  
 const removePainLog = (index) => {
   setPersonalForm((prev) => {
     const currentPainLogs = [...(prev.pain_logs || [])]
