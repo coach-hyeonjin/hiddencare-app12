@@ -265,7 +265,141 @@ function MemberAccess({ initialMemberId, initialAccessCode, onSuccess, onBack })
     </div>
   )
 }
+function AdminSignupRequest({ onBack }) {
+  const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
+  const [name, setName] = useState('')
+  const [gymName, setGymName] = useState('')
+  const [phone, setPhone] = useState('')
+  const [loading, setLoading] = useState(false)
+  const [message, setMessage] = useState('')
+  const [success, setSuccess] = useState(false)
 
+  const handleSubmit = async (e) => {
+    e.preventDefault()
+
+    if (!email.trim() || !password.trim() || !name.trim()) {
+      setMessage('이메일, 비밀번호, 이름은 필수입니다.')
+      setSuccess(false)
+      return
+    }
+
+    setLoading(true)
+    setMessage('')
+    setSuccess(false)
+
+    try {
+      const res = await fetch('/api/request-admin-signup', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          email: email.trim(),
+          password,
+          name: name.trim(),
+          gym_name: gymName.trim(),
+          phone: phone.trim(),
+        }),
+      })
+
+      const data = await res.json()
+
+      if (!res.ok) {
+        setMessage(data?.error || '가입신청에 실패했습니다.')
+        setSuccess(false)
+        setLoading(false)
+        return
+      }
+
+      setMessage('가입신청이 완료되었습니다. 승인 후 로그인할 수 있습니다.')
+      setSuccess(true)
+      setEmail('')
+      setPassword('')
+      setName('')
+      setGymName('')
+      setPhone('')
+    } catch {
+      setMessage('가입신청 중 오류가 발생했습니다.')
+      setSuccess(false)
+    }
+
+    setLoading(false)
+  }
+
+  return (
+    <div className="auth-card auth-card-large">
+      <BrandHeader large />
+      <h1>관리자 가입신청</h1>
+      <p className="sub-text">
+        가입신청 후 최고관리자 승인 완료 시 관리자 로그인이 가능합니다.
+      </p>
+
+      <form onSubmit={handleSubmit} className="stack-gap">
+        <label className="field">
+          <span>이름</span>
+          <input
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            placeholder="이름 입력"
+          />
+        </label>
+
+        <label className="field">
+          <span>이메일</span>
+          <input
+            type="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            placeholder="admin@email.com"
+          />
+        </label>
+
+        <label className="field">
+          <span>비밀번호</span>
+          <input
+            type="password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            placeholder="비밀번호 입력"
+          />
+        </label>
+
+        <label className="field">
+          <span>센터명</span>
+          <input
+            value={gymName}
+            onChange={(e) => setGymName(e.target.value)}
+            placeholder="센터명 입력"
+          />
+        </label>
+
+        <label className="field">
+          <span>연락처</span>
+          <input
+            value={phone}
+            onChange={(e) => setPhone(e.target.value)}
+            placeholder="연락처 입력"
+          />
+        </label>
+
+        <button className="primary-btn" type="submit" disabled={loading}>
+          {loading ? '신청 중...' : '관리자 가입신청'}
+        </button>
+
+        <button type="button" className="secondary-btn" onClick={onBack}>
+          돌아가기
+        </button>
+
+        {message ? (
+          <div className={`message ${success ? 'success' : 'error'}`}>
+            {message}
+          </div>
+        ) : null}
+      </form>
+    </div>
+  )
+}
 export default function App() {
   const [loading, setLoading] = useState(true)
   const [mode, setMode] = useState('home')
@@ -482,7 +616,13 @@ export default function App() {
       </div>
     )
   }
-
+  if (mode === 'admin-signup') {
+    return (
+      <div className="app-shell center-screen">
+        <AdminSignupRequest onBack={() => setMode('home')} />
+      </div>
+    )
+  }
   return (
     <div className="app-shell center-screen">
       <div className="choice-grid">
@@ -498,6 +638,9 @@ export default function App() {
             <button className="secondary-btn" onClick={() => setMode('member-access')}>
               회원 입장
             </button>
+            <button className="secondary-btn" onClick={() => setMode('admin-signup')}>
+  관리자 가입신청
+</button>
           </div>
         </div>
 
