@@ -2354,36 +2354,29 @@ const updateSetValue = (itemIndex, setIndex, field, value, subIndex = null) => {
   })
 }
 
- const handlePersonalSubmit = async (e) => {
+const handlePersonalSubmit = async (e) => {
   e.preventDefault()
 
   const hasPainOnlyItem = personalForm.items.some((item) => item.entry_type === 'pain_only')
 
   const cleanedItems = personalForm.items
     .filter((item) => {
-      if (item.entry_type === 'pain_only') {
-        return false
-      }
-
+      if (item.entry_type === 'pain_only') return false
       if (item.entry_type === 'cardio') {
         return (item.performed_name || item.equipment_name_snapshot || '').trim()
       }
-
       if (item.entry_type === 'care') {
         return (item.performed_name || item.equipment_name_snapshot || '').trim()
       }
-
       if (item.entry_type === 'stretching') {
         return (item.performed_name || item.equipment_name_snapshot || '').trim()
       }
-
       if (item.training_method === 'superset') {
         return (item.sub_exercises || []).some(
           (sub) =>
             (sub.performed_name || sub.exercise_name_snapshot || sub.equipment_name_snapshot || '').trim(),
         )
       }
-
       return (item.performed_name || item.exercise_name_snapshot || item.equipment_name_snapshot || '').trim()
     })
     .map((item, index) => ({
@@ -2467,41 +2460,94 @@ const updateSetValue = (itemIndex, setIndex, field, value, subIndex = null) => {
     gym_id: currentGymId || null,
   }
 
-  let workoutId = personalForm.id
+  try {
+    let workoutId = personalForm.id
 
-  if (personalForm.id) {
-    await supabase.from('workouts').update(payload).eq('id', personalForm.id)
-    await supabase.from('workout_items').delete().eq('workout_id', personalForm.id)
-  } else {
-    const { data } = await supabase.from('workouts').insert(payload).select().single()
-    workoutId = data.id
+    if (personalForm.id) {
+      const { error: updateError } = await supabase
+        .from('workouts')
+        .update(payload)
+        .eq('id', personalForm.id)
+
+      if (updateError) {
+        console.error('개인운동 수정 실패:', updateError)
+        setMessage(`개인운동 수정 실패: ${updateError.message}`)
+        return
+      }
+
+      const { error: deleteItemsError } = await supabase
+        .from('workout_items')
+        .delete()
+        .eq('workout_id', personalForm.id)
+
+      if (deleteItemsError) {
+        console.error('기존 운동 상세 삭제 실패:', deleteItemsError)
+        setMessage(`기존 운동 상세 삭제 실패: ${deleteItemsError.message}`)
+        return
+      }
+    } else {
+      const { data: insertedWorkout, error: insertError } = await supabase
+        .from('workouts')
+        .insert(payload)
+        .select()
+        .single()
+
+      if (insertError) {
+        console.error('개인운동 저장 실패:', insertError)
+        setMessage(`개인운동 저장 실패: ${insertError.message}`)
+        return
+      }
+
+      if (!insertedWorkout?.id) {
+        console.error('개인운동 저장 실패: workout id 없음', insertedWorkout)
+        setMessage('개인운동 저장에 실패했습니다. 다시 시도해주세요.')
+        return
+      }
+
+      workoutId = insertedWorkout.id
+    }
+
+    if (cleanedItems.length > 0) {
+      const { error: insertItemsError } = await supabase
+        .from('workout_items')
+        .insert(
+          cleanedItems.map((item) => ({
+            ...item,
+            workout_id: workoutId,
+            admin_id: currentAdminId || null,
+            gym_id: currentGymId || null,
+          })),
+        )
+
+      if (insertItemsError) {
+        console.error('운동 상세 저장 실패:', insertItemsError)
+        setMessage(`운동 상세 저장 실패: ${insertItemsError.message}`)
+        return
+      }
+    }
+
+    if (!personalForm.id) {
+      try {
+        await applyMemberXp({
+          memberId: member.id,
+          sourceType: 'personal_workout',
+          sourceId: workoutId,
+          sourceDate: personalForm.workout_date,
+          note: '회원 개인운동 입력',
+        })
+      } catch (xpError) {
+        console.error('개인운동 XP 처리 실패:', xpError)
+      }
+    }
+
+    setMessage(personalForm.id ? '개인운동이 수정되었습니다.' : '개인운동이 저장되었습니다.')
+    resetPersonalForm()
+    await loadWorkouts()
+    setActiveTab('운동기록')
+  } catch (error) {
+    console.error('handlePersonalSubmit 오류:', error)
+    setMessage(error instanceof Error ? error.message : '개인운동 저장 중 오류가 발생했습니다.')
   }
-
-  if (cleanedItems.length > 0) {
-    await supabase.from('workout_items').insert(
-      cleanedItems.map((item) => ({
-        ...item,
-        workout_id: workoutId,
-        admin_id: currentAdminId || null,
-        gym_id: currentGymId || null,
-      })),
-    )
-  }
-
-  if (!personalForm.id) {
-    await applyMemberXp({
-      memberId: member.id,
-      sourceType: 'personal_workout',
-      sourceId: workoutId,
-      sourceDate: personalForm.workout_date,
-      note: '회원 개인운동 입력',
-    })
-  }
-
-  setMessage(personalForm.id ? '개인운동이 수정되었습니다.' : '개인운동이 저장되었습니다.')
-  resetPersonalForm()
-  await loadWorkouts()
-  setActiveTab('운동기록')
 }
 
   const handlePersonalEdit = (workout) => {
@@ -2574,33 +2620,43 @@ const updateSetValue = (itemIndex, setIndex, field, value, subIndex = null) => {
   }
 
   const handleDietSubmit = async (e) => {
-    e.preventDefault()
+  e.preventDefault()
 
-    const payload = {
-      member_id: member.id,
-      log_date: dietForm.log_date,
-      meal_type: dietForm.meal_type?.trim() || '아침',
-      meal_time: dietForm.meal_time || null,
-      content: dietForm.content?.trim() || '',
-      carb_g: Number(dietForm.carb_g) || 0,
-      protein_g: Number(dietForm.protein_g) || 0,
-      fat_g: Number(dietForm.fat_g) || 0,
-      product_brand: dietForm.product_brand?.trim() || '',
-      product_name: dietForm.product_name?.trim() || '',
-      meal_category: dietForm.meal_category?.trim() || '일반식',
-      hunger_level: Number(dietForm.hunger_level) || 0,
-      member_note: dietForm.member_note?.trim() || '',
-      admin_id: currentAdminId || null,
-      gym_id: currentGymId || null,
-    }
+  const payload = {
+    member_id: member.id,
+    log_date: dietForm.log_date,
+    meal_type: dietForm.meal_type?.trim() || '아침',
+    meal_time: dietForm.meal_time || null,
+    content: dietForm.content?.trim() || '',
+    carb_g: Number(dietForm.carb_g) || 0,
+    protein_g: Number(dietForm.protein_g) || 0,
+    fat_g: Number(dietForm.fat_g) || 0,
+    product_brand: dietForm.product_brand?.trim() || '',
+    product_name: dietForm.product_name?.trim() || '',
+    meal_category: dietForm.meal_category?.trim() || '일반식',
+    hunger_level: Number(dietForm.hunger_level) || 0,
+    member_note: dietForm.member_note?.trim() || '',
+    admin_id: currentAdminId || null,
+    gym_id: currentGymId || null,
+  }
 
-    if (!payload.content) {
-      setMessage('식단 내용을 입력해주세요.')
-      return
-    }
+  if (!payload.content) {
+    setMessage('식단 내용을 입력해주세요.')
+    return
+  }
 
-        if (dietForm.id) {
-      await supabase.from('diet_logs').update(payload).eq('id', dietForm.id)
+  try {
+    if (dietForm.id) {
+      const { error: updateError } = await supabase
+        .from('diet_logs')
+        .update(payload)
+        .eq('id', dietForm.id)
+
+      if (updateError) {
+        setMessage(`식단 수정 실패: ${updateError.message}`)
+        return
+      }
+
       setMessage('식단이 수정되었습니다.')
     } else {
       const { data, error } = await supabase
@@ -2610,24 +2666,32 @@ const updateSetValue = (itemIndex, setIndex, field, value, subIndex = null) => {
         .single()
 
       if (error) {
-        setMessage(error.message)
+        setMessage(`식단 저장 실패: ${error.message}`)
         return
       }
 
-       await applyMemberXp({
-        memberId: member.id,
-        sourceType: 'diet',
-        sourceId: data.id,
-        sourceDate: dietForm.log_date,
-        note: '회원 식단 입력',
-      })
+      try {
+        await applyMemberXp({
+          memberId: member.id,
+          sourceType: 'diet',
+          sourceId: data.id,
+          sourceDate: dietForm.log_date,
+          note: '회원 식단 입력',
+        })
+      } catch (xpError) {
+        console.error('식단 XP 처리 실패:', xpError)
+      }
 
       setMessage('식단이 저장되었습니다.')
     }
 
     resetDietForm()
     await loadDietLogs()
+  } catch (error) {
+    console.error('handleDietSubmit 오류:', error)
+    setMessage(error instanceof Error ? error.message : '식단 저장 중 오류가 발생했습니다.')
   }
+}
   const handleDietEdit = (diet) => {
     setDietForm({
       id: diet.id,
