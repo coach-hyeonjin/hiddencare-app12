@@ -9,51 +9,53 @@ const SUPER_ADMIN_UID = 'c3e35f5c-3f1e-4c62-b098-482ebcd805fa'
 
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
-    return new Response('ok', {
-      headers: corsHeaders,
-    })
+    return new Response('ok', { headers: corsHeaders })
   }
 
   try {
     const authHeader = req.headers.get('Authorization')
+    console.log('Authorization header exists:', !!authHeader)
 
     if (!authHeader) {
       return new Response(
         JSON.stringify({ error: 'Authorization header is missing.' }),
         {
           status: 401,
-          headers: {
-            ...corsHeaders,
-            'Content-Type': 'application/json',
-          },
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         }
       )
     }
 
     const token = authHeader.replace('Bearer ', '').trim()
+    console.log('Token exists:', !!token)
 
     if (!token) {
       return new Response(
         JSON.stringify({ error: 'Access token is missing.' }),
         {
           status: 401,
-          headers: {
-            ...corsHeaders,
-            'Content-Type': 'application/json',
-          },
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         }
       )
     }
 
-    const supabase = createClient(
-      Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
-    )
+    const supabaseUrl = Deno.env.get('SUPABASE_URL') ?? ''
+    const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+
+    console.log('SUPABASE_URL exists:', !!supabaseUrl)
+    console.log('SERVICE_ROLE_KEY exists:', !!serviceRoleKey)
+
+    const supabase = createClient(supabaseUrl, serviceRoleKey)
 
     const {
       data: { user },
       error: userError,
     } = await supabase.auth.getUser(token)
+
+    console.log('getUser result user.id:', user?.id ?? null)
+    console.log('getUser result user.email:', user?.email ?? null)
+    console.log('SUPER_ADMIN_UID:', SUPER_ADMIN_UID)
+    console.log('userError:', userError)
 
     if (userError || !user) {
       return new Response(
@@ -62,28 +64,28 @@ Deno.serve(async (req) => {
         }),
         {
           status: 401,
-          headers: {
-            ...corsHeaders,
-            'Content-Type': 'application/json',
-          },
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         }
       )
     }
 
     if (user.id !== SUPER_ADMIN_UID) {
       return new Response(
-        JSON.stringify({ error: 'Not super admin.' }),
+        JSON.stringify({
+          error: 'Not super admin.',
+          current_user_id: user.id,
+          expected_super_admin_uid: SUPER_ADMIN_UID,
+        }),
         {
-          status: 401,
-          headers: {
-            ...corsHeaders,
-            'Content-Type': 'application/json',
-          },
+          status: 403,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         }
       )
     }
 
     const body = await req.json().catch(() => null)
+    console.log('request body:', body)
+
     const requestId = body?.request_id
 
     if (!requestId) {
@@ -91,10 +93,7 @@ Deno.serve(async (req) => {
         JSON.stringify({ error: 'request_id is required.' }),
         {
           status: 400,
-          headers: {
-            ...corsHeaders,
-            'Content-Type': 'application/json',
-          },
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         }
       )
     }
@@ -105,6 +104,9 @@ Deno.serve(async (req) => {
       .eq('id', requestId)
       .single()
 
+    console.log('signupRequest:', signupRequest)
+    console.log('signupRequestError:', signupRequestError)
+
     if (signupRequestError || !signupRequest) {
       return new Response(
         JSON.stringify({
@@ -112,10 +114,7 @@ Deno.serve(async (req) => {
         }),
         {
           status: 404,
-          headers: {
-            ...corsHeaders,
-            'Content-Type': 'application/json',
-          },
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         }
       )
     }
@@ -125,10 +124,7 @@ Deno.serve(async (req) => {
         JSON.stringify({ error: 'This request is already approved.' }),
         {
           status: 400,
-          headers: {
-            ...corsHeaders,
-            'Content-Type': 'application/json',
-          },
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         }
       )
     }
@@ -141,10 +137,7 @@ Deno.serve(async (req) => {
         JSON.stringify({ error: 'Signup request email or password is missing.' }),
         {
           status: 400,
-          headers: {
-            ...corsHeaders,
-            'Content-Type': 'application/json',
-          },
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         }
       )
     }
@@ -156,15 +149,15 @@ Deno.serve(async (req) => {
         email_confirm: true,
       })
 
+    console.log('createdUserData:', createdUserData)
+    console.log('createUserError:', createUserError)
+
     if (createUserError) {
       return new Response(
         JSON.stringify({ error: createUserError.message }),
         {
           status: 500,
-          headers: {
-            ...corsHeaders,
-            'Content-Type': 'application/json',
-          },
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         }
       )
     }
@@ -176,10 +169,7 @@ Deno.serve(async (req) => {
         JSON.stringify({ error: 'User was created but user id is missing.' }),
         {
           status: 500,
-          headers: {
-            ...corsHeaders,
-            'Content-Type': 'application/json',
-          },
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         }
       )
     }
@@ -194,15 +184,14 @@ Deno.serve(async (req) => {
       })
       .eq('id', requestId)
 
+    console.log('updateError:', updateError)
+
     if (updateError) {
       return new Response(
         JSON.stringify({ error: updateError.message }),
         {
           status: 500,
-          headers: {
-            ...corsHeaders,
-            'Content-Type': 'application/json',
-          },
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         }
       )
     }
@@ -214,23 +203,19 @@ Deno.serve(async (req) => {
       }),
       {
         status: 200,
-        headers: {
-          ...corsHeaders,
-          'Content-Type': 'application/json',
-        },
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       }
     )
   } catch (error) {
+    console.error('approve-admin-signup fatal error:', error)
+
     return new Response(
       JSON.stringify({
         error: error instanceof Error ? error.message : 'Unknown error',
       }),
       {
         status: 500,
-        headers: {
-          ...corsHeaders,
-          'Content-Type': 'application/json',
-        },
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       }
     )
   }
