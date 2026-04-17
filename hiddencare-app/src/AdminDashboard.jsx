@@ -8810,21 +8810,40 @@ const loadAdminSignupRequests = async () => {
 
 const handleApproveSignup = async (request) => {
   try {
-    const { data, error } = await supabase.functions.invoke('approve-admin-signup', {
-      body: {
-        request_id: request.id,
-      },
-    })
+    const {
+      data: { session },
+      error: sessionError,
+    } = await supabase.auth.getSession()
 
-    if (error) {
-      console.error('관리자 승인 함수 호출 실패:', error)
-      alert(`승인 실패: ${error.message}`)
+    if (sessionError || !session?.access_token) {
+      alert('로그인 세션을 확인할 수 없습니다. 다시 로그인해주세요.')
       return
     }
 
-    if (data?.error) {
-      console.error('관리자 승인 처리 실패:', data.error)
-      alert(`승인 실패: ${data.error}`)
+    const functionUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/approve-admin-signup`
+
+    const response = await fetch(functionUrl, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${session.access_token}`,
+      },
+      body: JSON.stringify({
+        request_id: request.id,
+      }),
+    })
+
+    const result = await response.json()
+
+    if (!response.ok) {
+      console.error('관리자 승인 함수 호출 실패:', result)
+      alert(`승인 실패: ${result.error || '알 수 없는 오류'}`)
+      return
+    }
+
+    if (result?.error) {
+      console.error('관리자 승인 처리 실패:', result.error)
+      alert(`승인 실패: ${result.error}`)
       return
     }
 
