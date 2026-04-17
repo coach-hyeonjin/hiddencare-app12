@@ -898,6 +898,10 @@ export default function AdminDashboard({ profile, currentAdminId, currentGymId, 
   const [message, setMessage] = useState('')
     const [adminSignupRequests, setAdminSignupRequests] = useState([])
   const [adminSignupLoading, setAdminSignupLoading] = useState(false)
+  const [approvedSignupRequests, setApprovedSignupRequests] = useState([])
+const [rejectedSignupRequests, setRejectedSignupRequests] = useState([])
+const [adminAccounts, setAdminAccounts] = useState([])
+const [adminActionLogs, setAdminActionLogs] = useState([])
   const [selectedStatsMonth, setSelectedStatsMonth] = useState(
   new Date().toISOString().slice(0, 7)
 )
@@ -8808,6 +8812,90 @@ const loadAdminSignupRequests = async () => {
   setAdminSignupLoading(false)
 }
 
+const loadApprovedSignupRequests = async () => {
+  if (!profile?.is_super_admin) {
+    setApprovedSignupRequests([])
+    return
+  }
+
+  const { data, error } = await supabase
+    .from('admin_signup_requests')
+    .select('*')
+    .eq('status', 'approved')
+    .order('approved_at', { ascending: false })
+
+  if (error) {
+    console.error('승인 내역 불러오기 실패:', error)
+    setMessage(`승인 내역 불러오기 실패: ${error.message}`)
+    return
+  }
+
+  setApprovedSignupRequests(data || [])
+}
+
+const loadRejectedSignupRequests = async () => {
+  if (!profile?.is_super_admin) {
+    setRejectedSignupRequests([])
+    return
+  }
+
+  const { data, error } = await supabase
+    .from('admin_signup_requests')
+    .select('*')
+    .eq('status', 'rejected')
+    .order('rejected_at', { ascending: false })
+
+  if (error) {
+    console.error('거절 내역 불러오기 실패:', error)
+    setMessage(`거절 내역 불러오기 실패: ${error.message}`)
+    return
+  }
+
+  setRejectedSignupRequests(data || [])
+}
+
+const loadAdminAccounts = async () => {
+  if (!profile?.is_super_admin) {
+    setAdminAccounts([])
+    return
+  }
+
+  const { data, error } = await supabase
+    .from('profiles')
+    .select('id, name, email, role, account_status, approved_at, approved_by')
+    .in('role', ['admin', 'super_admin'])
+    .order('approved_at', { ascending: false })
+
+  if (error) {
+    console.error('관리자 계정 불러오기 실패:', error)
+    setMessage(`관리자 계정 불러오기 실패: ${error.message}`)
+    return
+  }
+
+  setAdminAccounts(data || [])
+}
+
+const loadAdminActionLogs = async () => {
+  if (!profile?.is_super_admin) {
+    setAdminActionLogs([])
+    return
+  }
+
+  const { data, error } = await supabase
+    .from('admin_account_action_logs')
+    .select('*')
+    .order('action_at', { ascending: false })
+
+  if (error) {
+    console.error('관리자 작업 이력 불러오기 실패:', error)
+    setMessage(`관리자 작업 이력 불러오기 실패: ${error.message}`)
+    return
+  }
+
+  setAdminActionLogs(data || [])
+}
+
+  
 const handleApproveSignup = async (request) => {
   try {
     const {
@@ -8873,6 +8961,95 @@ const handleRejectSignup = async (request) => {
   setMessage('거절 처리되었습니다.')
   await loadAdminSignupRequests()
 }
+
+const callEdgeFunction = async (functionName, body) => {
+  const {
+    data: { session },
+    error: sessionError,
+  } = await supabase.auth.getSession()
+
+  if (sessionError || !session?.access_token) {
+    throw new Error('로그인 세션을 확인할 수 없습니다.')
+  }
+
+  const response = await fetch(
+    `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/${functionName}`,
+    {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${session.access_token}`,
+      },
+      body: JSON.stringify(body),
+    }
+  )
+
+  const result = await response.json()
+
+  if (!response.ok) {
+    throw new Error(result?.error || '알 수 없는 오류')
+  }
+
+  return result
+}
+
+const handleResetAdminPassword = async (admin) => {
+  const confirmOk = window.confirm(`${admin.name || admin.email} 계정의 임시 비밀번호를 발급할까요?`)
+  if (!confirmOk) return
+
+  try {
+    const result = await callEdgeFunction('reset-admin-password', {
+      target_admin_id: admin.id,
+    })
+
+    alert(
+      `임시 비밀번호 발급 완료\n\n이메일: ${result.email}\n임시 비밀번호: ${result.temp_password}\n\n지금 복사해서 전달하세요.`
+    )
+
+    await loadAdminActionLogs()
+  } catch (error) {
+    alert(`임시 비밀번호 발급 실패: ${error.message}`)
+  }
+}
+
+const handleDeactivateAdmin = async (admin) => {
+  const confirmOk = window.confirm(`${admin.name || admin.email} 계정을 비활성화할까요?`)
+  if (!confirmOk) return
+
+  try {
+    await callEdgeFunction('manage-admin-account', {
+      target_admin_id: admin.id,
+      action: 'deactivate',
+      note: 'super_admin 수동 비활성화',
+    })
+
+    alert('관리자 계정이 비활성화되었습니다.')
+    await loadAdminAccounts()
+    await loadAdminActionLogs()
+  } catch (error) {
+    alert(`비활성화 실패: ${error.message}`)
+  }
+}
+
+const handleDeleteAdmin = async (admin) => {
+  const confirmOk = window.confirm(`${admin.name || admin.email} 계정을 완전히 삭제할까요?`)
+  if (!confirmOk) return
+
+  try {
+    await callEdgeFunction('manage-admin-account', {
+      target_admin_id: admin.id,
+      action: 'delete',
+      note: 'super_admin 수동 삭제',
+    })
+
+    alert('관리자 계정이 삭제되었습니다.')
+    await loadAdminAccounts()
+    await loadAdminActionLogs()
+  } catch (error) {
+    alert(`삭제 실패: ${error.message}`)
+  }
+}
+
   
   const loadAll = async () => {
   setLoading(true)
@@ -8909,6 +9086,10 @@ const handleRejectSignup = async (request) => {
       ['loadManagerTaskChecks', () => loadManagerTaskChecks()],
       ['loadManagerGoalSettings', () => loadManagerGoalSettings()],
             ['loadAdminSignupRequests', () => loadAdminSignupRequests()],
+      ['loadApprovedSignupRequests', () => loadApprovedSignupRequests()],
+['loadRejectedSignupRequests', () => loadRejectedSignupRequests()],
+['loadAdminAccounts', () => loadAdminAccounts()],
+['loadAdminActionLogs', () => loadAdminActionLogs()],
     ]
 
     const results = await Promise.allSettled(
@@ -13627,6 +13808,96 @@ const filteredExercisesAdvanced = exercises.filter((exercise) => {
           )}
         </div>
       )}
+
+{activeTab === '가입신청관리' ? (
+  <div className="stack-gap">
+    <div className="admin-card">
+      <h3>가입승인내역</h3>
+      {(approvedSignupRequests || []).length === 0 ? (
+        <div>승인 내역이 없습니다.</div>
+      ) : (
+        approvedSignupRequests.map((item) => (
+          <div key={item.id} className="list-card">
+            <div>이름: {item.name}</div>
+            <div>이메일: {item.email}</div>
+            <div>센터명: {item.gym_name || '-'}</div>
+            <div>연락처: {item.phone || '-'}</div>
+            <div>승인일: {item.approved_at || '-'}</div>
+            <div>승인자: {item.approved_by || '-'}</div>
+          </div>
+        ))
+      )}
+    </div>
+
+    <div className="admin-card">
+      <h3>가입거절내역</h3>
+      {(rejectedSignupRequests || []).length === 0 ? (
+        <div>거절 내역이 없습니다.</div>
+      ) : (
+        rejectedSignupRequests.map((item) => (
+          <div key={item.id} className="list-card">
+            <div>이름: {item.name}</div>
+            <div>이메일: {item.email}</div>
+            <div>센터명: {item.gym_name || '-'}</div>
+            <div>연락처: {item.phone || '-'}</div>
+            <div>거절일: {item.rejected_at || '-'}</div>
+            <div>거절자: {item.rejected_by || '-'}</div>
+            <div>사유: {item.reject_reason || '-'}</div>
+          </div>
+        ))
+      )}
+    </div>
+
+    <div className="admin-card">
+      <h3>관리자계정관리</h3>
+      {(adminAccounts || []).length === 0 ? (
+        <div>관리자 계정이 없습니다.</div>
+      ) : (
+        adminAccounts.map((admin) => (
+          <div key={admin.id} className="list-card">
+            <div>이름: {admin.name || '-'}</div>
+            <div>이메일: {admin.email || '-'}</div>
+            <div>권한: {admin.role}</div>
+            <div>상태: {admin.account_status || '-'}</div>
+            <div>승인일: {admin.approved_at || '-'}</div>
+
+            {admin.role === 'admin' ? (
+              <div style={{ display: 'flex', gap: '8px', marginTop: '8px', flexWrap: 'wrap' }}>
+                <button type="button" onClick={() => handleResetAdminPassword(admin)}>
+                  임시 비밀번호 발급
+                </button>
+                <button type="button" onClick={() => handleDeactivateAdmin(admin)}>
+                  비활성화
+                </button>
+                <button type="button" onClick={() => handleDeleteAdmin(admin)}>
+                  삭제
+                </button>
+              </div>
+            ) : null}
+          </div>
+        ))
+      )}
+    </div>
+
+    <div className="admin-card">
+      <h3>관리자 작업이력</h3>
+      {(adminActionLogs || []).length === 0 ? (
+        <div>작업 이력이 없습니다.</div>
+      ) : (
+        adminActionLogs.map((log) => (
+          <div key={log.id} className="list-card">
+            <div>작업유형: {log.action_type}</div>
+            <div>대상 이름: {log.target_name || '-'}</div>
+            <div>대상 이메일: {log.target_email || '-'}</div>
+            <div>작업자: {log.action_by}</div>
+            <div>작업일시: {log.action_at}</div>
+            <div>메모: {log.note || '-'}</div>
+          </div>
+        ))
+      )}
+    </div>
+  </div>
+) : null}
       
      {activeTab === '회원' && (
   <div className="member-page-modern">
