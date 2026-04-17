@@ -9038,7 +9038,55 @@ const handleChangeAdminPassword = async (admin) => {
 
   alert('비밀번호 변경 완료')
 }
-  
+ const handleChangeAdminPassword = async (admin) => {
+  const newPassword = window.prompt('새 비밀번호를 입력하세요. (8자 이상)')
+
+  if (!newPassword) return
+
+  if (newPassword.length < 8) {
+    alert('비밀번호는 8자 이상이어야 합니다.')
+    return
+  }
+
+  try {
+    const {
+      data: { session },
+      error: sessionError,
+    } = await supabase.auth.getSession()
+
+    if (sessionError || !session?.access_token) {
+      alert('로그인 세션을 확인할 수 없습니다. 다시 로그인해주세요.')
+      return
+    }
+
+    const { data: result, error } = await supabase.functions.invoke('change-admin-password', {
+      body: {
+        target_admin_id: admin.id,
+        new_password: newPassword,
+      },
+      headers: {
+        Authorization: `Bearer ${session.access_token}`,
+      },
+    })
+
+    if (error) {
+      console.error('비밀번호 변경 함수 호출 실패:', error)
+      alert(`비밀번호 변경 실패: ${JSON.stringify(error)}`)
+      return
+    }
+
+    if (result?.error) {
+      console.error('비밀번호 변경 처리 실패:', result)
+      alert(`비밀번호 변경 실패: ${JSON.stringify(result)}`)
+      return
+    }
+
+    alert(`비밀번호 변경 완료\n\n이메일: ${admin.email}\n새 비밀번호: ${newPassword}`)
+  } catch (err) {
+    console.error('handleChangeAdminPassword 오류:', err)
+    alert('비밀번호 변경 중 오류가 발생했습니다.')
+  }
+} 
 const handleDeactivateAdmin = async (admin) => {
   const confirmOk = window.confirm(`${admin.name || admin.email} 계정을 비활성화할까요?`)
   if (!confirmOk) return
@@ -14052,6 +14100,13 @@ const filteredExercisesAdvanced = exercises.filter((exercise) => {
                     className="action-btn neutral"
                     onClick={() => handleDeactivateAdmin(admin)}
                   >
+                    <button
+  type="button"
+  className="action-btn purple"
+  onClick={() => handleChangeAdminPassword(admin)}
+>
+  비밀번호 변경
+</button>
                     비활성화
                   </button>
                   <button
