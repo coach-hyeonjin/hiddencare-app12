@@ -8810,22 +8810,9 @@ const loadAdminSignupRequests = async () => {
 
 const handleApproveSignup = async (request) => {
   try {
-    const {
-      data: { session },
-      error: sessionError,
-    } = await supabase.auth.getSession()
-
-    if (sessionError || !session?.access_token) {
-      alert('로그인 세션을 확인할 수 없습니다. 다시 로그인해주세요.')
-      return
-    }
-
     const { data, error } = await supabase.functions.invoke('approve-admin-signup', {
       body: {
         request_id: request.id,
-      },
-      headers: {
-        Authorization: `Bearer ${session.access_token}`,
       },
     })
 
