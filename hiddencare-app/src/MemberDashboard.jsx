@@ -1462,51 +1462,45 @@ const toggleGrowthSection = (key) => {
 }
 
   const loadAll = async () => {
-    setLoading(true)
-    setMessage('')
+  setLoading(true)
+  setMessage('')
 
-    try {
-      const loadedMember = await loadMemberInfo()
-      const adminId = loadedMember?.admin_id || member?.admin_id || null
+  try {
+    const loadedMember = await loadMemberInfo()
+    const adminId = loadedMember?.admin_id || member?.admin_id || null
 
-      await Promise.all([
-  loadExercises(adminId),
-  loadWorkouts(),
-  loadDietLogs(),
-  loadMealPlans(),
-        loadExercises(adminId),
-loadWorkouts(),
-loadDietLogs(),
-loadMealPlans(),
-loadMealPlanProfile(),
-loadHealthLogs(),
-loadRoutine(),
-loadManual(),
-  loadHealthLogs(),
-  loadRoutine(),
-  loadManual(),
-  loadPrograms(adminId),
-  loadPartners(adminId),
-  loadMedicalPartners(adminId),
-  loadPartnerUsages(),
-  loadCoaches(adminId),
-  loadCoachSchedules(adminId),
-  loadNotices(adminId),
-  loadInquiries(),
-  loadMemberLevel(loadedMember),
-  loadMemberXpLogs(loadedMember),
-  loadMemberLevelSettings(adminId),
-  loadMemberLevelRanking(adminId),
-  loadMemberXpSettings(adminId),
-])
-     await loadMemberStats() 
-    } catch (error) {
-      console.error('loadAll 전체 오류:', error)
-      setMessage(error?.message || '데이터 불러오기 중 오류가 발생했습니다.')
-    } finally {
-      setLoading(false)
-    }
+    await Promise.all([
+      loadExercises(adminId),
+      loadWorkouts(),
+      loadDietLogs(),
+      loadMealPlans(),
+      loadMealPlanProfile(),
+      loadHealthLogs(),
+      loadRoutine(),
+      loadManual(),
+      loadPrograms(adminId),
+      loadPartners(adminId),
+      loadMedicalPartners(adminId),
+      loadPartnerUsages(),
+      loadCoaches(adminId),
+      loadCoachSchedules(adminId),
+      loadNotices(adminId),
+      loadInquiries(),
+      loadMemberLevel(loadedMember),
+      loadMemberXpLogs(loadedMember),
+      loadMemberLevelSettings(adminId),
+      loadMemberLevelRanking(adminId),
+      loadMemberXpSettings(adminId),
+    ])
+
+    await loadMemberStats()
+  } catch (error) {
+    console.error('loadAll 전체 오류:', error)
+    setMessage(error?.message || '데이터 불러오기 중 오류가 발생했습니다.')
+  } finally {
+    setLoading(false)
   }
+}
 
   const loadMemberInfo = async () => {
     const { data, error } = await supabase
@@ -1532,23 +1526,34 @@ loadManual(),
     return data || null
   }
 
-  const loadExercises = async (adminIdParam = null) => {
-    const adminId = adminIdParam || currentAdminId || member?.admin_id || null
+ const loadExercises = async (adminIdParam = null) => {
+  const adminId = adminIdParam || currentAdminId || memberInfo?.admin_id || member?.admin_id || null
 
-    if (!adminId) {
-      setExercises([])
-      return
-    }
+  console.log('loadExercises adminId:', adminId)
 
-    const { data, error } = await supabase
-      .from('exercises')
-      .select('*, brands(id, name)')
-      .eq('admin_id', adminId)
-      .order('created_at', { ascending: false })
-
-    if (error) throw error
-    if (data) setExercises(data)
+  if (!adminId) {
+    console.log('loadExercises: adminId 없음')
+    setExercises([])
+    return
   }
+
+  const { data, error } = await supabase
+    .from('exercises')
+    .select('*, brands(id, name)')
+    .eq('admin_id', adminId)
+    .order('created_at', { ascending: false })
+
+  console.log('loadExercises error:', error)
+  console.log('loadExercises data:', data)
+
+  if (error) {
+    console.error('운동DB 불러오기 실패:', error)
+    setExercises([])
+    return
+  }
+
+  setExercises(data || [])
+}
 
   const loadWorkouts = async () => {
     const { data: workoutData } = await supabase
