@@ -9012,6 +9012,33 @@ const handleResetAdminPassword = async (admin) => {
   }
 }
 
+const handleChangeAdminPassword = async (admin) => {
+  const newPassword = prompt('새 비밀번호를 입력하세요')
+
+  if (!newPassword) return
+
+  const {
+    data: { session },
+  } = await supabase.auth.getSession()
+
+  const { data, error } = await supabase.functions.invoke('change-admin-password', {
+    body: {
+      target_admin_id: admin.id,
+      new_password: newPassword,
+    },
+    headers: {
+      Authorization: `Bearer ${session.access_token}`,
+    },
+  })
+
+  if (error || data?.error) {
+    alert('비밀번호 변경 실패')
+    return
+  }
+
+  alert('비밀번호 변경 완료')
+}
+  
 const handleDeactivateAdmin = async (admin) => {
   const confirmOk = window.confirm(`${admin.name || admin.email} 계정을 비활성화할까요?`)
   if (!confirmOk) return
@@ -13810,92 +13837,274 @@ const filteredExercisesAdvanced = exercises.filter((exercise) => {
       )}
 
 {activeTab === '가입신청관리' ? (
-  <div className="stack-gap">
-    <div className="admin-card">
-      <h3>가입승인내역</h3>
-      {(approvedSignupRequests || []).length === 0 ? (
-        <div>승인 내역이 없습니다.</div>
-      ) : (
-        approvedSignupRequests.map((item) => (
-          <div key={item.id} className="list-card">
-            <div>이름: {item.name}</div>
-            <div>이메일: {item.email}</div>
-            <div>센터명: {item.gym_name || '-'}</div>
-            <div>연락처: {item.phone || '-'}</div>
-            <div>승인일: {item.approved_at || '-'}</div>
-            <div>승인자: {item.approved_by || '-'}</div>
+  <div className="admin-manage-page">
+    <section className="admin-section-card">
+      <div className="admin-section-head">
+        <div>
+          <div className="admin-section-badge">SIGNUP REQUESTS</div>
+          <h3>가입신청관리</h3>
+          <p>대기 중인 관리자 가입신청을 승인하거나 거절할 수 있습니다.</p>
+        </div>
+        <div className="admin-section-stats">
+          <div className="admin-stat-box">
+            <span className="admin-stat-label">대기 건수</span>
+            <strong>{(adminSignupRequests || []).length}건</strong>
           </div>
-        ))
-      )}
-    </div>
+        </div>
+      </div>
 
-    <div className="admin-card">
-      <h3>가입거절내역</h3>
-      {(rejectedSignupRequests || []).length === 0 ? (
-        <div>거절 내역이 없습니다.</div>
+      {(adminSignupRequests || []).length === 0 ? (
+        <div className="admin-empty-box">대기 중인 가입신청이 없습니다.</div>
       ) : (
-        rejectedSignupRequests.map((item) => (
-          <div key={item.id} className="list-card">
-            <div>이름: {item.name}</div>
-            <div>이메일: {item.email}</div>
-            <div>센터명: {item.gym_name || '-'}</div>
-            <div>연락처: {item.phone || '-'}</div>
-            <div>거절일: {item.rejected_at || '-'}</div>
-            <div>거절자: {item.rejected_by || '-'}</div>
-            <div>사유: {item.reject_reason || '-'}</div>
-          </div>
-        ))
-      )}
-    </div>
+        <div className="admin-grid-list">
+          {adminSignupRequests.map((request) => (
+            <article key={request.id} className="admin-info-card pending-card">
+              <div className="admin-info-card-top">
+                <div>
+                  <h4>{request.name || '이름 없음'}</h4>
+                  <p>{request.email || '-'}</p>
+                </div>
+                <span className="status-badge pending">pending</span>
+              </div>
 
-    <div className="admin-card">
-      <h3>관리자계정관리</h3>
-      {(adminAccounts || []).length === 0 ? (
-        <div>관리자 계정이 없습니다.</div>
-      ) : (
-        adminAccounts.map((admin) => (
-          <div key={admin.id} className="list-card">
-            <div>이름: {admin.name || '-'}</div>
-            <div>이메일: {admin.email || '-'}</div>
-            <div>권한: {admin.role}</div>
-            <div>상태: {admin.account_status || '-'}</div>
-            <div>승인일: {admin.approved_at || '-'}</div>
+              <div className="admin-info-meta">
+                <div><span>센터명</span><strong>{request.gym_name || '-'}</strong></div>
+                <div><span>연락처</span><strong>{request.phone || '-'}</strong></div>
+                <div><span>신청일</span><strong>{request.requested_at || '-'}</strong></div>
+              </div>
 
-            {admin.role === 'admin' ? (
-              <div style={{ display: 'flex', gap: '8px', marginTop: '8px', flexWrap: 'wrap' }}>
-                <button type="button" onClick={() => handleResetAdminPassword(admin)}>
-                  임시 비밀번호 발급
+              <div className="admin-action-row">
+                <button
+  type="button"
+  className="action-btn primary"
+  onClick={() => handleResetAdminPassword(admin)}
+>
+  임시 비밀번호 발급
+</button>
+
+<button
+  type="button"
+  className="action-btn purple"
+  onClick={() => handleChangeAdminPassword(admin)}
+>
+  비밀번호 변경
+</button>
+                <button
+                  type="button"
+                  className="action-btn primary"
+                  onClick={() => handleApproveSignup(request)}
+                >
+                  승인
                 </button>
-                <button type="button" onClick={() => handleDeactivateAdmin(admin)}>
-                  비활성화
-                </button>
-                <button type="button" onClick={() => handleDeleteAdmin(admin)}>
-                  삭제
+                <button
+                  type="button"
+                  className="action-btn danger"
+                  onClick={() => handleRejectSignup(request)}
+                >
+                  거절
                 </button>
               </div>
-            ) : null}
-          </div>
-        ))
+            </article>
+          ))}
+        </div>
       )}
-    </div>
+    </section>
 
-    <div className="admin-card">
-      <h3>관리자 작업이력</h3>
-      {(adminActionLogs || []).length === 0 ? (
-        <div>작업 이력이 없습니다.</div>
-      ) : (
-        adminActionLogs.map((log) => (
-          <div key={log.id} className="list-card">
-            <div>작업유형: {log.action_type}</div>
-            <div>대상 이름: {log.target_name || '-'}</div>
-            <div>대상 이메일: {log.target_email || '-'}</div>
-            <div>작업자: {log.action_by}</div>
-            <div>작업일시: {log.action_at}</div>
-            <div>메모: {log.note || '-'}</div>
+    <section className="admin-section-card">
+      <div className="admin-section-head">
+        <div>
+          <div className="admin-section-badge">APPROVED HISTORY</div>
+          <h3>가입승인내역</h3>
+          <p>승인 완료된 관리자 신청 내역입니다.</p>
+        </div>
+        <div className="admin-section-stats">
+          <div className="admin-stat-box">
+            <span className="admin-stat-label">총 승인</span>
+            <strong>{(approvedSignupRequests || []).length}건</strong>
           </div>
-        ))
+        </div>
+      </div>
+
+      {(approvedSignupRequests || []).length === 0 ? (
+        <div className="admin-empty-box">승인 내역이 없습니다.</div>
+      ) : (
+        <div className="admin-grid-list">
+          {approvedSignupRequests.map((item) => (
+            <article key={item.id} className="admin-info-card approved-card">
+              <div className="admin-info-card-top">
+                <div>
+                  <h4>{item.name || '이름 없음'}</h4>
+                  <p>{item.email || '-'}</p>
+                </div>
+                <span className="status-badge approved">approved</span>
+              </div>
+
+              <div className="admin-info-meta">
+                <div><span>센터명</span><strong>{item.gym_name || '-'}</strong></div>
+                <div><span>연락처</span><strong>{item.phone || '-'}</strong></div>
+                <div><span>승인일</span><strong>{item.approved_at || '-'}</strong></div>
+                <div><span>승인자</span><strong>{item.approved_by || '-'}</strong></div>
+              </div>
+            </article>
+          ))}
+        </div>
       )}
-    </div>
+    </section>
+
+    <section className="admin-section-card">
+      <div className="admin-section-head">
+        <div>
+          <div className="admin-section-badge">REJECTED HISTORY</div>
+          <h3>가입거절내역</h3>
+          <p>거절 처리된 관리자 신청 내역입니다.</p>
+        </div>
+        <div className="admin-section-stats">
+          <div className="admin-stat-box">
+            <span className="admin-stat-label">총 거절</span>
+            <strong>{(rejectedSignupRequests || []).length}건</strong>
+          </div>
+        </div>
+      </div>
+
+      {(rejectedSignupRequests || []).length === 0 ? (
+        <div className="admin-empty-box">거절 내역이 없습니다.</div>
+      ) : (
+        <div className="admin-grid-list">
+          {rejectedSignupRequests.map((item) => (
+            <article key={item.id} className="admin-info-card rejected-card">
+              <div className="admin-info-card-top">
+                <div>
+                  <h4>{item.name || '이름 없음'}</h4>
+                  <p>{item.email || '-'}</p>
+                </div>
+                <span className="status-badge rejected">rejected</span>
+              </div>
+
+              <div className="admin-info-meta">
+                <div><span>센터명</span><strong>{item.gym_name || '-'}</strong></div>
+                <div><span>연락처</span><strong>{item.phone || '-'}</strong></div>
+                <div><span>거절일</span><strong>{item.rejected_at || '-'}</strong></div>
+                <div><span>거절자</span><strong>{item.rejected_by || '-'}</strong></div>
+                <div className="full-row"><span>사유</span><strong>{item.reject_reason || '-'}</strong></div>
+              </div>
+            </article>
+          ))}
+        </div>
+      )}
+    </section>
+
+    <section className="admin-section-card">
+      <div className="admin-section-head">
+        <div>
+          <div className="admin-section-badge">ADMIN ACCOUNTS</div>
+          <h3>관리자계정관리</h3>
+          <p>관리자 계정 상태를 관리하고 비밀번호 재발급/삭제를 처리합니다.</p>
+        </div>
+        <div className="admin-section-stats">
+          <div className="admin-stat-box">
+            <span className="admin-stat-label">전체 계정</span>
+            <strong>{(adminAccounts || []).length}명</strong>
+          </div>
+        </div>
+      </div>
+
+      {(adminAccounts || []).length === 0 ? (
+        <div className="admin-empty-box">관리자 계정이 없습니다.</div>
+      ) : (
+        <div className="admin-grid-list">
+          {adminAccounts.map((admin) => (
+            <article key={admin.id} className="admin-info-card account-card">
+              <div className="admin-info-card-top">
+                <div>
+                  <h4>{admin.name || '이름 없음'}</h4>
+                  <p>{admin.email || '-'}</p>
+                </div>
+                <span
+                  className={`status-badge ${
+                    admin.account_status === 'active'
+                      ? 'approved'
+                      : admin.account_status === 'inactive'
+                      ? 'pending'
+                      : 'deleted'
+                  }`}
+                >
+                  {admin.account_status || '-'}
+                </span>
+              </div>
+
+              <div className="admin-info-meta">
+                <div><span>권한</span><strong>{admin.role || '-'}</strong></div>
+                <div><span>상태</span><strong>{admin.account_status || '-'}</strong></div>
+                <div><span>승인일</span><strong>{admin.approved_at || '-'}</strong></div>
+              </div>
+
+              {admin.role === 'admin' ? (
+                <div className="admin-action-row">
+                  <button
+                    type="button"
+                    className="action-btn primary"
+                    onClick={() => handleResetAdminPassword(admin)}
+                  >
+                    임시 비밀번호 발급
+                  </button>
+                  <button
+                    type="button"
+                    className="action-btn neutral"
+                    onClick={() => handleDeactivateAdmin(admin)}
+                  >
+                    비활성화
+                  </button>
+                  <button
+                    type="button"
+                    className="action-btn danger"
+                    onClick={() => handleDeleteAdmin(admin)}
+                  >
+                    삭제
+                  </button>
+                </div>
+              ) : null}
+            </article>
+          ))}
+        </div>
+      )}
+    </section>
+
+    <section className="admin-section-card">
+      <div className="admin-section-head">
+        <div>
+          <div className="admin-section-badge">ACTION LOGS</div>
+          <h3>관리자 작업이력</h3>
+          <p>승인, 거절, 비밀번호 발급, 비활성화, 삭제 등의 이력을 확인합니다.</p>
+        </div>
+        <div className="admin-section-stats">
+          <div className="admin-stat-box">
+            <span className="admin-stat-label">기록 수</span>
+            <strong>{(adminActionLogs || []).length}건</strong>
+          </div>
+        </div>
+      </div>
+
+      {(adminActionLogs || []).length === 0 ? (
+        <div className="admin-empty-box">작업 이력이 없습니다.</div>
+      ) : (
+        <div className="admin-log-list">
+          {adminActionLogs.map((log) => (
+            <article key={log.id} className="admin-log-card">
+              <div className="admin-log-top">
+                <strong>{log.action_type}</strong>
+                <span>{log.action_at || '-'}</span>
+              </div>
+              <div className="admin-log-body">
+                <div>대상 이름: {log.target_name || '-'}</div>
+                <div>대상 이메일: {log.target_email || '-'}</div>
+                <div>작업자: {log.action_by || '-'}</div>
+                <div>메모: {log.note || '-'}</div>
+              </div>
+            </article>
+          ))}
+        </div>
+      )}
+    </section>
   </div>
 ) : null}
       
