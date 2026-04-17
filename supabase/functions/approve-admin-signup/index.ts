@@ -1,5 +1,4 @@
-console.log('FUNCTION_VERSION: 2026-04-17-fix-approved-by-user-id')
-  import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -14,37 +13,33 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const authHeader = req.headers.get('Authorization')
-    console.log('Authorization header exists:', !!authHeader)
+    console.log('FUNCTION_VERSION: 2026-04-17-approve-final')
 
+    const authHeader = req.headers.get('Authorization')
     if (!authHeader) {
       return new Response(
         JSON.stringify({ error: 'Authorization header is missing.' }),
-        {
-          status: 401,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        }
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       )
     }
 
     const token = authHeader.replace('Bearer ', '').trim()
-    console.log('Token exists:', !!token)
-
     if (!token) {
       return new Response(
         JSON.stringify({ error: 'Access token is missing.' }),
-        {
-          status: 401,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        }
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       )
     }
 
     const supabaseUrl = Deno.env.get('SUPABASE_URL') ?? ''
     const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
 
-    console.log('SUPABASE_URL exists:', !!supabaseUrl)
-    console.log('SERVICE_ROLE_KEY exists:', !!serviceRoleKey)
+    if (!supabaseUrl || !serviceRoleKey) {
+      return new Response(
+        JSON.stringify({ error: 'Missing SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY.' }),
+        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
+    }
 
     const supabase = createClient(supabaseUrl, serviceRoleKey)
 
@@ -53,49 +48,27 @@ Deno.serve(async (req) => {
       error: userError,
     } = await supabase.auth.getUser(token)
 
-    console.log('getUser result user.id:', user?.id ?? null)
-    console.log('getUser result user.email:', user?.email ?? null)
-    console.log('SUPER_ADMIN_UID:', SUPER_ADMIN_UID)
-    console.log('userError:', userError)
-
     if (userError || !user) {
       return new Response(
-        JSON.stringify({
-          error: userError?.message || 'Failed to verify current user.',
-        }),
-        {
-          status: 401,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        }
+        JSON.stringify({ error: userError?.message || 'Failed to verify current user.' }),
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       )
     }
 
     if (user.id !== SUPER_ADMIN_UID) {
       return new Response(
-        JSON.stringify({
-          error: 'Not super admin.',
-          current_user_id: user.id,
-          expected_super_admin_uid: SUPER_ADMIN_UID,
-        }),
-        {
-          status: 403,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        }
+        JSON.stringify({ error: 'Not super admin.' }),
+        { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       )
     }
 
     const body = await req.json().catch(() => null)
-    console.log('request body:', body)
-
-    const requestId = body?.request_id
+    const requestId = String(body?.request_id || '').trim()
 
     if (!requestId) {
       return new Response(
         JSON.stringify({ error: 'request_id is required.' }),
-        {
-          status: 400,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        }
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       )
     }
 
@@ -105,41 +78,31 @@ Deno.serve(async (req) => {
       .eq('id', requestId)
       .single()
 
-    console.log('signupRequest:', signupRequest)
-    console.log('signupRequestError:', signupRequestError)
-
     if (signupRequestError || !signupRequest) {
       return new Response(
-        JSON.stringify({
-          error: signupRequestError?.message || 'Signup request not found.',
-        }),
-        {
-          status: 404,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        }
+        JSON.stringify({ error: signupRequestError?.message || 'Signup request not found.' }),
+        { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       )
     }
 
-    if (signupRequest.status === 'approved') {
+    if (signupRequest.status === 'approved' && signupRequest.approved_user_id) {
       return new Response(
-        JSON.stringify({ error: 'This request is already approved.' }),
-        {
-          status: 400,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        }
+        JSON.stringify({
+          error: 'This request is already approved.',
+          approved_user_id: signupRequest.approved_user_id,
+        }),
+        { status: 409, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       )
     }
 
     const email = String(signupRequest.email || '').trim()
     const password = String(signupRequest.password || '').trim()
+    const name = String(signupRequest.name || '').trim()
 
     if (!email || !password) {
       return new Response(
         JSON.stringify({ error: 'Signup request email or password is missing.' }),
-        {
-          status: 400,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        }
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       )
     }
 
@@ -148,76 +111,91 @@ Deno.serve(async (req) => {
         email,
         password,
         email_confirm: true,
+        user_metadata: {
+          name,
+          approved_from_signup_request: signupRequest.id,
+        },
       })
 
-    console.log('createdUserData:', createdUserData)
-    console.log('createUserError:', createUserError)
-
-    if (createUserError) {
+    if (createUserError || !createdUserData?.user?.id) {
       return new Response(
-        JSON.stringify({ error: createUserError.message }),
-        {
-          status: 500,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        }
+        JSON.stringify({ error: createUserError?.message || 'Failed to create auth user.' }),
+        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       )
     }
 
-    const createdUserId = createdUserData?.user?.id
+    const createdUserId = createdUserData.user.id
 
-    if (!createdUserId) {
+    const profilePayload = {
+      id: createdUserId,
+      name: name || null,
+      email,
+      role: 'admin',
+      admin_id: createdUserId,
+      signup_request_id: signupRequest.id,
+      account_status: 'active',
+      approved_at: new Date().toISOString(),
+      approved_by: user.id,
+      updated_at: new Date().toISOString(),
+    }
+
+    const { error: profileInsertError } = await supabase
+      .from('profiles')
+      .insert([profilePayload])
+
+    if (profileInsertError) {
+      await supabase.auth.admin.deleteUser(createdUserId)
+
       return new Response(
-        JSON.stringify({ error: 'User was created but user id is missing.' }),
-        {
-          status: 500,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        }
+        JSON.stringify({ error: `profiles insert failed: ${profileInsertError.message}` }),
+        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       )
+    }
+
+    const updatePayload = {
+      status: 'approved',
+      approved_at: new Date().toISOString(),
+      approved_by: user.id,
+      approved_user_id: createdUserId,
+      password: null,
     }
 
     const { error: updateError } = await supabase
-  .from('admin_signup_requests')
-  .update({
-    status: 'approved',
-    approved_at: new Date().toISOString(),
-    approved_by: user.id,
-    approved_user_id: createdUserId,
-  })
-  .eq('id', requestId)
-
-    console.log('updateError:', updateError)
+      .from('admin_signup_requests')
+      .update(updatePayload)
+      .eq('id', requestId)
 
     if (updateError) {
       return new Response(
         JSON.stringify({ error: updateError.message }),
-        {
-          status: 500,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        }
+        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       )
     }
+
+    await supabase.from('admin_account_action_logs').insert([{
+      action_type: 'approve_signup',
+      target_admin_id: createdUserId,
+      target_email: email,
+      target_name: name || null,
+      action_by: user.id,
+      note: '관리자 가입 승인 완료',
+      extra: { signup_request_id: signupRequest.id },
+    }])
 
     return new Response(
       JSON.stringify({
         success: true,
         approved_user_id: createdUserId,
+        email,
       }),
-      {
-        status: 200,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      }
+      { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     )
   } catch (error) {
-    console.error('approve-admin-signup fatal error:', error)
-
     return new Response(
       JSON.stringify({
         error: error instanceof Error ? error.message : 'Unknown error',
       }),
-      {
-        status: 500,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      }
+      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     )
   }
 })
