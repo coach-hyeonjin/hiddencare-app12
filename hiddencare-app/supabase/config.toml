@@ -1,0 +1,2 @@
+[functions.approve-admin-signup]
+verify_jwt = false
