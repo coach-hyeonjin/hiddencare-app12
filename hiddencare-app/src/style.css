@@ -22266,3 +22266,277 @@ textarea:focus {
     padding: 14px;
   }
 }
+.admin-manage-page {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.admin-section-card {
+  background: #ffffff;
+  border: 1px solid #d9e2f1;
+  border-radius: 20px;
+  padding: 22px;
+  box-shadow: 0 10px 30px rgba(27, 39, 94, 0.05);
+}
+
+.admin-section-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 18px;
+}
+
+.admin-section-head h3 {
+  margin: 6px 0 6px;
+  font-size: 22px;
+  font-weight: 800;
+  color: #1c274c;
+}
+
+.admin-section-head p {
+  margin: 0;
+  color: #667085;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.admin-section-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 5px 10px;
+  border-radius: 999px;
+  background: #eef4ff;
+  color: #3863d9;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+}
+
+.admin-section-stats {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.admin-stat-box {
+  min-width: 110px;
+  padding: 12px 14px;
+  border-radius: 16px;
+  background: #f8fbff;
+  border: 1px solid #e1ebfb;
+  text-align: right;
+}
+
+.admin-stat-label {
+  display: block;
+  font-size: 12px;
+  color: #6b7280;
+  margin-bottom: 4px;
+}
+
+.admin-stat-box strong {
+  font-size: 18px;
+  color: #1c274c;
+}
+
+.admin-empty-box {
+  border: 1px dashed #c8d6ee;
+  background: #f8fbff;
+  color: #667085;
+  border-radius: 16px;
+  padding: 18px;
+  text-align: center;
+}
+
+.admin-grid-list {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.admin-info-card {
+  border-radius: 18px;
+  border: 1px solid #dde6f5;
+  background: #fcfdff;
+  padding: 18px;
+}
+
+.admin-info-card-top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.admin-info-card-top h4 {
+  margin: 0 0 4px;
+  font-size: 18px;
+  font-weight: 800;
+  color: #1f2a44;
+}
+
+.admin-info-card-top p {
+  margin: 0;
+  font-size: 13px;
+  color: #667085;
+  word-break: break-all;
+}
+
+.admin-info-meta {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px 14px;
+}
+
+.admin-info-meta div {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.admin-info-meta .full-row {
+  grid-column: 1 / -1;
+}
+
+.admin-info-meta span {
+  font-size: 12px;
+  color: #8a94a6;
+}
+
+.admin-info-meta strong {
+  font-size: 14px;
+  color: #24324d;
+  word-break: break-word;
+}
+
+.admin-action-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 16px;
+}
+
+.action-btn {
+  border: none;
+  border-radius: 12px;
+  padding: 10px 14px;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: transform 0.15s ease, opacity 0.15s ease;
+}
+
+.action-btn:hover {
+  transform: translateY(-1px);
+  opacity: 0.95;
+}
+
+.action-btn.primary {
+  background: #2f6bff;
+  color: #ffffff;
+}
+
+.action-btn.neutral {
+  background: #edf2f7;
+  color: #364152;
+}
+
+.action-btn.danger {
+  background: #ef4444;
+  color: #ffffff;
+}
+
+.status-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 82px;
+  padding: 6px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 800;
+  text-transform: lowercase;
+}
+
+.status-badge.approved {
+  background: #eafaf0;
+  color: #15803d;
+}
+
+.status-badge.pending {
+  background: #fff7e8;
+  color: #b45309;
+}
+
+.status-badge.rejected,
+.status-badge.deleted {
+  background: #f3f4f6;
+  color: #6b7280;
+}
+
+.admin-log-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.admin-log-card {
+  border-radius: 16px;
+  border: 1px solid #e2e8f0;
+  background: #fbfdff;
+  padding: 16px;
+}
+
+.admin-log-top {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 10px;
+  font-size: 14px;
+  color: #1f2937;
+}
+
+.admin-log-body {
+  display: grid;
+  gap: 6px;
+  font-size: 14px;
+  color: #475467;
+}
+
+.pending-card {
+  border-left: 5px solid #f59e0b;
+}
+
+.approved-card {
+  border-left: 5px solid #22c55e;
+}
+
+.rejected-card {
+  border-left: 5px solid #9ca3af;
+}
+
+.account-card {
+  border-left: 5px solid #3b82f6;
+}
+
+@media (max-width: 1100px) {
+  .admin-grid-list {
+    grid-template-columns: 1fr;
+  }
+
+  .admin-section-head {
+    flex-direction: column;
+  }
+
+  .admin-info-meta {
+    grid-template-columns: 1fr;
+  }
+}
+
+              .action-btn.purple {
+  background: #7c3aed;
+  color: white;
+}
