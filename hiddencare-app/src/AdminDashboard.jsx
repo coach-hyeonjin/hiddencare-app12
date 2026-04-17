@@ -14038,38 +14038,41 @@ const filteredExercisesAdvanced = exercises.filter((exercise) => {
                 <div><span>승인일</span><strong>{admin.approved_at || '-'}</strong></div>
               </div>
 
-              {admin.role === 'admin' ? (
-                <div className="admin-action-row">
-                  <button
-                    type="button"
-                    className="action-btn primary"
-                    onClick={() => handleResetAdminPassword(admin)}
-                  >
-                    임시 비밀번호 발급
-                  </button>
-                  <button
-                    type="button"
-                    className="action-btn neutral"
-                    onClick={() => handleDeactivateAdmin(admin)}
-                  >
-                    <button
-  type="button"
-  className="action-btn purple"
-  onClick={() => handleChangeAdminPassword(admin)}
->
-  비밀번호 변경
-</button>
-                    비활성화
-                  </button>
-                  <button
-                    type="button"
-                    className="action-btn danger"
-                    onClick={() => handleDeleteAdmin(admin)}
-                  >
-                    삭제
-                  </button>
-                </div>
-              ) : null}
+            {admin.role === 'admin' ? (
+  <div className="admin-action-row">
+    <button
+      type="button"
+      className="action-btn primary"
+      onClick={() => handleResetAdminPassword(admin)}
+    >
+      임시 비밀번호 발급
+    </button>
+
+    <button
+      type="button"
+      className="action-btn purple"
+      onClick={() => handleChangeAdminPassword(admin)}
+    >
+      비밀번호 변경
+    </button>
+
+    <button
+      type="button"
+      className="action-btn neutral"
+      onClick={() => handleDeactivateAdmin(admin)}
+    >
+      비활성화
+    </button>
+
+    <button
+      type="button"
+      className="action-btn danger"
+      onClick={() => handleDeleteAdmin(admin)}
+    >
+      삭제
+    </button>
+  </div>
+) : null}
             </article>
           ))}
         </div>
