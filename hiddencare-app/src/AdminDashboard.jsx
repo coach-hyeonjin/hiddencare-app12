@@ -9002,9 +9002,9 @@ const handleResetAdminPassword = async (admin) => {
       target_admin_id: admin.id,
     })
 
-    alert(
-      `임시 비밀번호 발급 완료\n\n이메일: ${result.email}\n임시 비밀번호: ${result.temp_password}\n\n지금 복사해서 전달하세요.`
-    )
+   alert(
+  `임시 비밀번호 발급 완료\n\n이메일: ${admin.email}\n임시 비밀번호: ${result.temp_password}\n\n지금 복사해서 전달하세요.`
+)
 
     await loadAdminActionLogs()
   } catch (error) {
