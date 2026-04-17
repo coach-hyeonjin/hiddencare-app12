@@ -175,14 +175,14 @@ Deno.serve(async (req) => {
     }
 
     const { error: updateError } = await supabase
-      .from('admin_signup_requests')
-      .update({
-        status: 'approved',
-        approved_at: new Date().toISOString(),
-        approved_by: user.email || null,
-        approved_user_id: createdUserId,
-      })
-      .eq('id', requestId)
+  .from('admin_signup_requests')
+  .update({
+    status: 'approved',
+    approved_at: new Date().toISOString(),
+    approved_by: user.id,
+    approved_user_id: createdUserId,
+  })
+  .eq('id', requestId)
 
     console.log('updateError:', updateError)
 
