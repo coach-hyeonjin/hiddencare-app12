@@ -13,7 +13,7 @@ Deno.serve(async (req) => {
   }
 
   try {
-    console.log('FUNCTION_VERSION: 2026-04-17-approve-final')
+    console.log('FUNCTION_VERSION: 2026-04-17-approve-safe')
 
     const authHeader = req.headers.get('Authorization')
     if (!authHeader) {
@@ -126,24 +126,27 @@ Deno.serve(async (req) => {
 
     const createdUserId = createdUserData.user.id
 
+    console.log('createdUserId:', createdUserId)
+
+    // profiles 최소 insert 버전
     const profilePayload = {
       id: createdUserId,
       name: name || null,
-      email,
       role: 'admin',
       admin_id: createdUserId,
-      signup_request_id: signupRequest.id,
       account_status: 'active',
       approved_at: new Date().toISOString(),
       approved_by: user.id,
-      updated_at: new Date().toISOString(),
     }
+
+    console.log('profilePayload:', profilePayload)
 
     const { error: profileInsertError } = await supabase
       .from('profiles')
       .insert([profilePayload])
 
     if (profileInsertError) {
+      console.log('profileInsertError:', profileInsertError)
       await supabase.auth.admin.deleteUser(createdUserId)
 
       return new Response(
@@ -157,8 +160,9 @@ Deno.serve(async (req) => {
       approved_at: new Date().toISOString(),
       approved_by: user.id,
       approved_user_id: createdUserId,
-      password: null,
     }
+
+    console.log('updatePayload:', updatePayload)
 
     const { error: updateError } = await supabase
       .from('admin_signup_requests')
@@ -166,21 +170,27 @@ Deno.serve(async (req) => {
       .eq('id', requestId)
 
     if (updateError) {
+      console.log('updateError:', updateError)
       return new Response(
         JSON.stringify({ error: updateError.message }),
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       )
     }
 
-    await supabase.from('admin_account_action_logs').insert([{
-      action_type: 'approve_signup',
-      target_admin_id: createdUserId,
-      target_email: email,
-      target_name: name || null,
-      action_by: user.id,
-      note: '관리자 가입 승인 완료',
-      extra: { signup_request_id: signupRequest.id },
-    }])
+    const { error: actionLogError } = await supabase
+      .from('admin_account_action_logs')
+      .insert([{
+        action_type: 'approve_signup',
+        target_admin_id: createdUserId,
+        target_email: email,
+        target_name: name || null,
+        action_by: user.id,
+        note: '관리자 가입 승인 완료',
+      }])
+
+    if (actionLogError) {
+      console.log('actionLogError:', actionLogError)
+    }
 
     return new Response(
       JSON.stringify({
@@ -191,6 +201,8 @@ Deno.serve(async (req) => {
       { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     )
   } catch (error) {
+    console.log('fatalError:', error)
+
     return new Response(
       JSON.stringify({
         error: error instanceof Error ? error.message : 'Unknown error',
