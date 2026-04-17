@@ -1461,7 +1461,7 @@ const toggleGrowthSection = (key) => {
   }
 }
 
-  const loadAll = async () => {
+ const loadAll = async () => {
   setLoading(true)
   setMessage('')
 
@@ -1526,13 +1526,10 @@ const toggleGrowthSection = (key) => {
     return data || null
   }
 
- const loadExercises = async (adminIdParam = null) => {
+const loadExercises = async (adminIdParam = null) => {
   const adminId = adminIdParam || currentAdminId || memberInfo?.admin_id || member?.admin_id || null
 
-  console.log('loadExercises adminId:', adminId)
-
   if (!adminId) {
-    console.log('loadExercises: adminId 없음')
     setExercises([])
     return
   }
@@ -1543,6 +1540,7 @@ const toggleGrowthSection = (key) => {
     .eq('admin_id', adminId)
     .order('created_at', { ascending: false })
 
+  console.log('loadExercises adminId:', adminId)
   console.log('loadExercises error:', error)
   console.log('loadExercises data:', data)
 
