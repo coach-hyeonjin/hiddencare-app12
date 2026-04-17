@@ -126,12 +126,16 @@ function AdminLogin({ onLogin, onBack }) {
 
       const profile = await fetchProfileByUserId(userId)
 
-      if (!profile || !ADMIN_ROLES.includes(profile.role)) {
-        await supabase.auth.signOut()
-        setMessage('관리자 계정만 접근할 수 있습니다.')
-        setLoading(false)
-        return
-      }
+     if (
+  !profile ||
+  !ADMIN_ROLES.includes(profile.role) ||
+  profile.account_status !== 'active'
+) {
+  await supabase.auth.signOut()
+  setMessage('활성 관리자 계정만 로그인할 수 있습니다.')
+  setLoading(false)
+  return
+}
 
       onLogin(profile)
     } catch {
