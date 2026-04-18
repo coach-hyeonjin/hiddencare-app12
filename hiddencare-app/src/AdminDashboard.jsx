@@ -2341,22 +2341,7 @@ const getAllowedFatFoodNamesByStructure = (structureType = '') => {
 
   return map[structureType] || map.general_meal
 }
-const applyPastaMinimumFat = ({ items = [], foods = [], slot = '' }) => {
-  const nextItems = Array.isArray(items) ? [...items] : []
-  const structureType = getMealStructureType(nextItems, slot)
-
-  if (structureType !== 'pasta_meal') {
-    return nextItems
-  }
-
-  const hasPastaSauceOrFat = nextItems.some((item) => {
-    const normalizedItemName = normalizeMenuFoodName(String(item?.name || '').trim())
-    return ['올리브오일', '치즈', '토마토소스', '페스토'].includes(normalizedItemName)
-  })
-
-  if (hasPastaSauceOrFat) {
-    return nextItems
-  }
+const applyPastaMinimumFat = ({ items = [], foods = [], sl
 
   const pastaExtraCandidates = (Array.isArray(foods) ? foods : [])
     .filter((food) => {
@@ -2503,6 +2488,10 @@ const getPastaMenuTitle = ({
     return '참치 오일 파스타'
   }
 
+  if (proteinName === '소고기' && fatNames.includes('올리브오일')) {
+    return '소고기 오일 파스타'
+  }
+
   if (proteinName === '닭가슴살' && fatNames.includes('치즈')) {
     return '닭가슴살 치즈 파스타'
   }
@@ -2513,6 +2502,10 @@ const getPastaMenuTitle = ({
 
   if (proteinName === '참치' && fatNames.includes('치즈')) {
     return '참치 치즈 파스타'
+  }
+
+  if (proteinName === '소고기' && fatNames.includes('치즈')) {
+    return '소고기 치즈 파스타'
   }
 
   if (proteinName === '닭가슴살' && fatNames.includes('토마토소스')) {
@@ -2527,12 +2520,24 @@ const getPastaMenuTitle = ({
     return '참치 토마토 파스타'
   }
 
+  if (proteinName === '연어' && fatNames.includes('토마토소스')) {
+    return '연어 토마토 파스타'
+  }
+
   if (proteinName === '닭가슴살' && fatNames.includes('페스토')) {
     return '닭가슴살 페스토 파스타'
   }
 
   if (proteinName === '연어' && fatNames.includes('페스토')) {
     return '연어 페스토 파스타'
+  }
+
+  if (proteinName === '참치' && fatNames.includes('페스토')) {
+    return '참치 페스토 파스타'
+  }
+
+  if (proteinName === '소고기' && fatNames.includes('페스토')) {
+    return '소고기 페스토 파스타'
   }
 
   if (proteinName === '소고기') return '소고기 단백질 파스타'
@@ -5673,10 +5678,11 @@ if (currentMealType === 'alcohol') {
   templateSummary = sumMealItems(templateItems)
 }
 
-                  templateItems = applyPastaMinimumFat({
+                 templateItems = applyPastaMinimumFat({
         items: templateItems,
         foods: styleFilteredFoods,
         slot,
+        dateString,
       })
       templateSummary = sumMealItems(templateItems)
       const nextUsedIds = [
@@ -5917,10 +5923,11 @@ if (currentMealType === 'alcohol') {
   let adjustedMealItems = [...mealItems]
   let summary = sumMealItems(adjustedMealItems)
 
-  adjustedMealItems = applyPastaMinimumFat({
+   adjustedMealItems = applyPastaMinimumFat({
     items: adjustedMealItems,
     foods: filteredFoodsForSlot,
     slot,
+    dateString,
   })
   summary = sumMealItems(adjustedMealItems)
   
