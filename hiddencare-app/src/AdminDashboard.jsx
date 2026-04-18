@@ -2354,24 +2354,34 @@ const applyPastaMinimumFat = ({
     return nextItems
   }
 
-  const hasPastaSauceOrFat = nextItems.some((item) => {
-    const normalizedItemName = normalizeMenuFoodName(String(item?.name || '').trim())
-    return ['올리브오일', '치즈', '토마토소스', '페스토'].includes(normalizedItemName)
-  })
-
+ const hasPastaSauceOrFat = nextItems.some((item) => {
+  const normalizedItemName = normalizeMenuFoodName(String(item?.name || '').trim())
+  return (
+    normalizedItemName === '올리브오일' ||
+    normalizedItemName === '토마토소스' ||
+    normalizedItemName === '페스토' ||
+    normalizedItemName.includes('치즈')
+  )
+})
   if (hasPastaSauceOrFat) {
     return nextItems
   }
 
-  const pastaExtraCandidates = (Array.isArray(foods) ? foods :
-    .sort((a, b) => {
-      const priority = ['올리브오일', '치즈', '토마토소스', '페스토']
-      const aName = normalizeMenuFoodName(String(a?.name || '').trim())
-      const bName = normalizeMenuFoodName(String(b?.name || '').trim())
+const pastaExtraCandidates = (Array.isArray(foods) ? [...foods] : []).sort((a, b) => {
+  const priority = ['올리브오일', '치즈', '토마토소스', '페스토']
+  const aName = normalizeMenuFoodName(String(a?.name || '').trim())
+  const bName = normalizeMenuFoodName(String(b?.name || '').trim())
 
-      return priority.indexOf(aName) - priority.indexOf(bName)
-    })
+  const aPriority =
+    aName.includes('치즈') ? '치즈' : aName
+  const bPriority =
+    bName.includes('치즈') ? '치즈' : bName
 
+  const aIndex = priority.indexOf(aPriority)
+  const bIndex = priority.indexOf(bPriority)
+
+  return (aIndex === -1 ? 999 : aIndex) - (bIndex === -1 ? 999 : bIndex)
+})
   if (!pastaExtraCandidates.length) {
     return nextItems
   }
@@ -2417,8 +2427,8 @@ const normalizeMenuFoodName = (rawName = '') => {
 
   if (name.includes('올리브오일')) return '올리브오일'
   if (name.includes('토마토소스') || name.includes('토마토 파스타소스')) return '토마토소스'
-  if (name.includes('페스토')) return '페스토'
-    if (name.includes('크림소스') || name.includes('화이트소스')) return '크림소스'
+ if (name.includes('페스토')) return '페스토'
+if (name.includes('크림소스') || name.includes('화이트소스')) return '크림소스'
   if (name.includes('파마산')) return '파마산치즈'
   if (name.includes('모짜렐라')) return '모짜렐라치즈'
 
