@@ -2191,6 +2191,40 @@ const buildMealCookingGuide = ({ items = [], slot = '' }) => {
 
   return steps.join(' / ')
 }
+
+const getMealStructureType = (items = [], slot = '') => {
+  const rows = Array.isArray(items) ? items : []
+  const names = rows.map((item) => String(item?.name || '').trim())
+
+  const hasRice = names.some((name) => name.includes('밥') || name.includes('덮밥'))
+  const hasBread = names.some((name) => name.includes('식빵') || name.includes('베이글') || name.includes('토스트'))
+  const hasOat = names.some((name) => name.includes('오트밀'))
+  const hasYogurt = names.some((name) => name.includes('요거트'))
+  const hasSalad = names.some((name) => name.includes('샐러드') || name.includes('채소'))
+  const isSnackLike = ['간식', '오전간식', '야식'].includes(slot)
+
+  if (hasRice) return 'rice_meal'
+  if (hasBread) return 'bread_meal'
+  if (hasOat || hasYogurt) return 'bowl_meal'
+  if (hasSalad) return 'salad_meal'
+  if (isSnackLike) return 'snack_meal'
+
+  return 'general_meal'
+}
+
+const getAllowedFatFoodNamesByStructure = (structureType = '') => {
+  const map = {
+    rice_meal: ['아보카도', '올리브오일', '아몬드', '호두', '치즈'],
+    bread_meal: ['아보카도', '땅콩버터', '아몬드버터', '치즈'],
+    bowl_meal: ['아몬드', '호두', '캐슈넛', '피스타치오', '땅콩버터', '아몬드버터'],
+    salad_meal: ['아보카도', '올리브오일', '아몬드', '호두', '치즈'],
+    snack_meal: ['아몬드', '호두', '캐슈넛', '피스타치오', '땅콩버터', '아몬드버터', '치즈'],
+    general_meal: ['아보카도', '올리브오일', '아몬드', '호두', '치즈'],
+  }
+
+  return map[structureType] || map.general_meal
+}
+  
 const getMealMenuTitleByItems = (items = [], slot = '') => {
   const rows = getMealPrimaryItems(items)
 
@@ -5166,15 +5200,24 @@ if (currentMealType === 'alcohol') {
     })
 
     if (templateMeal) {
-                      let templateItems = Array.isArray(templateMeal.items) ? [...templateMeal.items] : []
+                          let templateItems = Array.isArray(templateMeal.items) ? [...templateMeal.items] : []
       let templateSummary = sumMealItems(templateItems)
 
       const currentFat = Number(templateSummary.fat_g || 0)
       const fatGap = Math.max(0, Number(targetFat || 0) - currentFat)
 
       if (fatGap >= 5) {
+        const structureType = getMealStructureType(templateItems, slot)
+        const allowedFatNames = getAllowedFatFoodNamesByStructure(structureType)
+
         const fatCandidates = styleFilteredFoods.filter((food) => {
-          return String(food?.category_major || '').trim() === 'fat'
+          if (String(food?.category_major || '').trim() !== 'fat') return false
+
+          const foodName = String(food?.name || '').trim()
+          const aliases = Array.isArray(food?.aliases) ? food.aliases : []
+
+          if (allowedFatNames.includes(foodName)) return true
+          return aliases.some((alias) => allowedFatNames.includes(String(alias || '').trim()))
         })
 
         if (fatCandidates.length > 0) {
