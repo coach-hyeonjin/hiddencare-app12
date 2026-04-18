@@ -5917,6 +5917,13 @@ if (currentMealType === 'alcohol') {
   let adjustedMealItems = [...mealItems]
   let summary = sumMealItems(adjustedMealItems)
 
+  adjustedMealItems = applyPastaMinimumFat({
+    items: adjustedMealItems,
+    foods: filteredFoodsForSlot,
+    slot,
+  })
+  summary = sumMealItems(adjustedMealItems)
+  
   if (Number(targetKcal || 0) > 0 && adjustedMealItems.length > 0) {
     const lowerBound = Number(targetKcal) * 0.92
     const upperBound = Number(targetKcal) * 1.08
