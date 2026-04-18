@@ -5544,7 +5544,7 @@ if (currentMealType === 'alcohol') {
       const currentFat = Number(templateSummary.fat_g || 0)
       const fatGap = Math.max(0, Number(targetFat || 0) - currentFat)
 
-      if (fatGap >= 5) {
+    if (fatGap >= 5) {
   const structureType = getMealStructureType(templateItems, slot)
   const allowedFatNames = getAllowedFatFoodNamesByStructure(structureType)
 
@@ -5557,20 +5557,27 @@ if (currentMealType === 'alcohol') {
   })
 
   if (structureType === 'pasta_meal') {
-    fatCandidates = [...fatCandidates].sort((a, b) => {
-      const aName = normalizeMenuFoodName(String(a?.name || '').trim())
-      const bName = normalizeMenuFoodName(String(b?.name || '').trim())
-
-      const score = (name) => {
-        if (name === '올리브오일') return 100
-        if (name === '치즈') return 80
-        if (name === '토마토소스') return 60
-        if (name === '페스토') return 40
-        return 0
-      }
-
-      return score(bName) - score(aName)
+    const hasPastaFatAlready = templateItems.some((item) => {
+      const normalizedItemName = normalizeMenuFoodName(String(item?.name || '').trim())
+      return ['올리브오일', '치즈', '토마토소스', '페스토'].includes(normalizedItemName)
     })
+
+    if (!hasPastaFatAlready) {
+      fatCandidates = [...fatCandidates].sort((a, b) => {
+        const aName = normalizeMenuFoodName(String(a?.name || '').trim())
+        const bName = normalizeMenuFoodName(String(b?.name || '').trim())
+
+        const score = (name) => {
+          if (name === '올리브오일') return 100
+          if (name === '치즈') return 80
+          if (name === '토마토소스') return 60
+          if (name === '페스토') return 40
+          return 0
+        }
+
+        return score(bName) - score(aName)
+      })
+    }
   }
 
   let remainingFatGap = fatGap
@@ -5592,8 +5599,6 @@ if (currentMealType === 'alcohol') {
     )
 
     const addedItem = buildMealFoodItem(selectedFatFood, addGrams)
-
-    if (!addedItem) break
 
     templateItems.push(addedItem)
 
