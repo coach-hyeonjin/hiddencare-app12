@@ -2341,7 +2341,27 @@ const getAllowedFatFoodNamesByStructure = (structureType = '') => {
 
   return map[structureType] || map.general_meal
 }
-const applyPastaMinimumFat = ({ items = [], foods = [], sl
+const applyPastaMinimumFat = ({
+  items = [],
+  foods = [],
+  slot = '',
+  dateString = '',
+}) => {
+  const nextItems = Array.isArray(items) ? [...items] : []
+  const structureType = getMealStructureType(nextItems, slot)
+
+  if (structureType !== 'pasta_meal') {
+    return nextItems
+  }
+
+  const hasPastaSauceOrFat = nextItems.some((item) => {
+    const normalizedItemName = normalizeMenuFoodName(String(item?.name || '').trim())
+    return ['올리브오일', '치즈', '토마토소스', '페스토'].includes(normalizedItemName)
+  })
+
+  if (hasPastaSauceOrFat) {
+    return nextItems
+  }
 
   const pastaExtraCandidates = (Array.isArray(foods) ? foods : [])
     .filter((food) => {
@@ -2352,30 +2372,40 @@ const applyPastaMinimumFat = ({ items = [], foods = [], sl
       return ['올리브오일', '치즈', '토마토소스', '페스토'].includes(normalizedName)
     })
     .sort((a, b) => {
+      const priority = ['올리브오일', '치즈', '토마토소스', '페스토']
       const aName = normalizeMenuFoodName(String(a?.name || '').trim())
       const bName = normalizeMenuFoodName(String(b?.name || '').trim())
 
-      const score = (name) => {
-        if (name === '올리브오일') return 100
-        if (name === '치즈') return 80
-        if (name === '토마토소스') return 60
-        if (name === '페스토') return 40
-        return 0
-      }
-
-      return score(bName) - score(aName)
+      return priority.indexOf(aName) - priority.indexOf(bName)
     })
 
-  const pastaExtraFood = pastaExtraCandidates[0]
-
-  if (!pastaExtraFood) {
+  if (!pastaExtraCandidates.length) {
     return nextItems
   }
 
+  const slotSeedMap = {
+    아침: 0,
+    점심: 1,
+    저녁: 2,
+    간식: 3,
+    오전간식: 4,
+    야식: 5,
+    운동후: 6,
+  }
+
+  const daySeed = Number(String(dateString || '').slice(-2) || 0)
+  const slotSeed = Number(slotSeedMap[slot] || 0)
+  const rotateIndex = (daySeed + slotSeed) % pastaExtraCandidates.length
+
+  const pastaExtraFood = pastaExtraCandidates[rotateIndex]
+  const normalizedSelectedName = normalizeMenuFoodName(String(pastaExtraFood?.name || '').trim())
+
   const defaultGrams =
-    normalizeMenuFoodName(String(pastaExtraFood?.name || '').trim()) === '올리브오일'
+    normalizedSelectedName === '올리브오일'
       ? 10
-      : Number(pastaExtraFood?.typical_portion_g || 20)
+      : normalizedSelectedName === '치즈'
+        ? 20
+        : Number(pastaExtraFood?.typical_portion_g || 20)
 
   nextItems.push(buildMealFoodItem(pastaExtraFood, defaultGrams))
   return nextItems
