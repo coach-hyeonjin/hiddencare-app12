@@ -2351,27 +2351,39 @@ const normalizeMenuFoodName = (rawName = '') => {
   if (name.includes('구운계란') || name.includes('계란노른자')) return '계란'
   if (name.includes('백미밥') || name.includes('현미밥')) return '밥'
   if (name.includes('파스타면') || name.includes('스파게티면') || name.includes('펜네')) return '파스타'
+
   if (name.includes('올리브오일')) return '올리브오일'
+  if (name.includes('토마토소스') || name.includes('토마토 파스타소스')) return '토마토소스'
+  if (name.includes('페스토')) return '페스토'
+
   if (name.includes('아몬드버터')) return '아몬드버터'
   if (name.includes('땅콩버터')) return '땅콩버터'
   if (name.includes('아보카도')) return '아보카도'
-  if (name.includes('닭가슴살')) return '닭가슴살'
+
+  if (
+    name.includes('닭가슴살') ||
+    name.includes('닭안심') ||
+    name.includes('닭안심살') ||
+    name.includes('치킨브레스트')
+  ) return '닭가슴살'
+
   if (name.includes('닭다리살')) return '닭다리살'
   if (name.includes('연어')) return '연어'
   if (name.includes('참치살') || name.includes('참치캔') || name.includes('물참치') || name.includes('참치')) return '참치'
   if (name.includes('소고기 우둔') || name.includes('소고기')) return '소고기'
+
   if (name.includes('치즈')) return '치즈'
   if (name.includes('아몬드')) return '아몬드'
   if (name.includes('호두')) return '호두'
   if (name.includes('캐슈')) return '캐슈넛'
   if (name.includes('피스타치오')) return '피스타치오'
+
   if (name.includes('오트밀')) return '오트밀'
   if (name.includes('바나나')) return '바나나'
   if (name.includes('사과')) return '사과'
   if (name.includes('블루베리')) return '블루베리'
+
   if (name.includes('통밀식빵') || name.includes('베이글') || name.includes('토스트')) return '빵'
-  if (name.includes('토마토소스') || name.includes('토마토 파스타소스')) return '토마토소스'
-  if (name.includes('페스토')) return '페스토'
 
   return name
 }
@@ -2468,25 +2480,11 @@ const getPastaMenuTitle = ({
     return '연어 페스토 파스타'
   }
 
-  if (proteinName === '소고기') {
-    return '소고기 단백질 파스타'
-  }
-
-  if (proteinName === '참치') {
-    return '참치 단백질 파스타'
-  }
-
-  if (proteinName === '연어') {
-    return '연어 단백질 파스타'
-  }
-
-  if (proteinName === '닭가슴살') {
-    return '닭가슴살 단백질 파스타'
-  }
-
-  if (proteinName === '닭다리살') {
-    return '닭다리살 단백질 파스타'
-  }
+  if (proteinName === '소고기') return '소고기 단백질 파스타'
+  if (proteinName === '참치') return '참치 단백질 파스타'
+  if (proteinName === '연어') return '연어 단백질 파스타'
+  if (proteinName === '닭가슴살') return '닭가슴살 단백질 파스타'
+  if (proteinName === '닭다리살') return '닭다리살 단백질 파스타'
 
   return '단백질 파스타'
 }
@@ -5547,69 +5545,73 @@ if (currentMealType === 'alcohol') {
       const fatGap = Math.max(0, Number(targetFat || 0) - currentFat)
 
       if (fatGap >= 5) {
-        const structureType = getMealStructureType(templateItems, slot)
-        const allowedFatNames = getAllowedFatFoodNamesByStructure(structureType)
+  const structureType = getMealStructureType(templateItems, slot)
+  const allowedFatNames = getAllowedFatFoodNamesByStructure(structureType)
 
-        const fatCandidates = styleFilteredFoods.filter((food) => {
-          if (String(food?.category_major || '').trim() !== 'fat') return false
+  let fatCandidates = styleFilteredFoods.filter((food) => {
+    const category = String(food?.category_major || '').trim()
+    const normalizedName = normalizeMenuFoodName(String(food?.name || '').trim())
 
-          const foodName = String(food?.name || '').trim()
-          const aliases = Array.isArray(food?.aliases) ? food.aliases : []
+    if (category !== 'fat') return false
+    return allowedFatNames.includes(normalizedName)
+  })
 
-          if (allowedFatNames.includes(foodName)) return true
-          return aliases.some((alias) => allowedFatNames.includes(String(alias || '').trim()))
-        })
+  if (structureType === 'pasta_meal') {
+    fatCandidates = [...fatCandidates].sort((a, b) => {
+      const aName = normalizeMenuFoodName(String(a?.name || '').trim())
+      const bName = normalizeMenuFoodName(String(b?.name || '').trim())
 
-        if (fatCandidates.length > 0) {
-          const maxFatComponents =
-            fatGap >= 18 ? 3 :
-            fatGap >= 10 ? 2 :
-            1
-
-          const usedFatIds = new Set(
-            templateItems.map((item) => item.food_id).filter(Boolean)
-          )
-
-          let remainingFatGap = fatGap
-          let fatAddedCount = 0
-
-          while (remainingFatGap >= 4 && fatAddedCount < maxFatComponents) {
-            const fatFood = pickFood({
-              foods: fatCandidates,
-              preferredSet,
-              blockedSet,
-              categories: ['fat'],
-              goalType,
-              dateString,
-              slot,
-              offset: offset + 7 + fatAddedCount,
-              usedIds: usedFatIds,
-              recentUsedIds,
-              slotUsedNames,
-            })
-
-            if (!fatFood) break
-
-            const fatGrams = calcPortionByMacro({
-              food: fatFood,
-              macroKey: 'fat_per_100g',
-              targetGrams: Math.max(4, remainingFatGap),
-              fallbackGrams: fatFood.typical_portion_g || 15,
-              minGrams: 5,
-              maxGrams: 40,
-            })
-
-            const nextFatItem = buildMealFoodItem(fatFood, fatGrams)
-
-            templateItems.push(nextFatItem)
-            usedFatIds.add(fatFood.id)
-
-            templateSummary = sumMealItems(templateItems)
-            remainingFatGap -= Number(nextFatItem.fat_g || 0)
-            fatAddedCount += 1
-          }
-        }
+      const score = (name) => {
+        if (name === '올리브오일') return 100
+        if (name === '치즈') return 80
+        if (name === '토마토소스') return 60
+        if (name === '페스토') return 40
+        return 0
       }
+
+      return score(bName) - score(aName)
+    })
+  }
+
+  let remainingFatGap = fatGap
+  let fatAddCount = 0
+
+  while (remainingFatGap >= 4 && fatCandidates.length > 0 && fatAddCount < 2) {
+    const selectedFatFood = fatCandidates[0]
+    if (!selectedFatFood) break
+
+    const fatPer100g = Number(selectedFatFood.fat_per_100g || 0)
+    const typicalPortionG = Number(selectedFatFood.typical_portion_g || 0)
+
+    if (!fatPer100g || !typicalPortionG) break
+
+    const needGramByFat = (remainingFatGap / fatPer100g) * 100
+    const addGrams = Math.max(
+      typicalPortionG,
+      roundToNearest(Math.min(needGramByFat, typicalPortionG * 2), 5)
+    )
+
+    const addedItem = createMealItemFromFood(selectedFatFood, addGrams)
+
+    if (!addedItem) break
+
+    templateItems.push(addedItem)
+
+    const addedFat = Number(addedItem.fat_g || 0)
+    remainingFatGap -= addedFat
+    fatAddCount += 1
+
+    if (structureType === 'pasta_meal') {
+      fatCandidates = fatCandidates.filter(
+        (food) => food?.id !== selectedFatFood?.id
+      )
+    } else {
+      break
+    }
+  }
+
+  templateSummary = sumMealItems(templateItems)
+}
       const nextUsedIds = [
         ...recentUsedIds,
         ...(templateMeal.items || []).map((item) => item.food_id).filter(Boolean),
