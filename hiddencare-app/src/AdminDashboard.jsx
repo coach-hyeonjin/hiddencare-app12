@@ -2133,7 +2133,7 @@ const buildMealCookingGuide = ({ items = [], slot = '', menuTitle = '' }) => {
       return [
         '파스타면은 삶아서 물기를 뺀 뒤 준비',
         proteinName ? `${proteinName}은 따로 익혀 메인 단백질로 준비` : '',
-        '올리브오일과 마늘 향을 살려 가볍게 볶은 뒤 면과 함께 섞어서 섭취',
+        '마늘 향을 살리고 올리브오일로 가볍게 볶아 면과 함께 섞어서 섭취',
       ].filter(Boolean).join(' / ')
     }
 
@@ -2149,7 +2149,31 @@ const buildMealCookingGuide = ({ items = [], slot = '', menuTitle = '' }) => {
       return [
         '파스타면은 삶아서 준비',
         proteinName ? `${proteinName}은 먼저 익혀서 준비` : '',
-        '치즈는 과하지 않게 넣어 풍미만 보완하고 면과 함께 섞어서 섭취',
+        '치즈는 과하지 않게 넣어 풍미만 더하고 면과 함께 섞어서 섭취',
+      ].filter(Boolean).join(' / ')
+    }
+
+    if (menuTitle.includes('토마토 파스타')) {
+      return [
+        '파스타면은 삶아서 준비',
+        proteinName ? `${proteinName}은 먼저 익혀서 준비` : '',
+        '토마토소스를 더해 면과 가볍게 섞어 한 끼 식사로 섭취',
+      ].filter(Boolean).join(' / ')
+    }
+
+    if (menuTitle.includes('볼로네제')) {
+      return [
+        '파스타면은 삶아서 준비',
+        '소고기는 먼저 익혀서 토마토소스와 함께 볶아 소스처럼 준비',
+        '면과 소스를 함께 섞어 볼로네제 형태로 섭취',
+      ].join(' / ')
+    }
+
+    if (menuTitle.includes('페스토')) {
+      return [
+        '파스타면은 삶아서 준비',
+        proteinName ? `${proteinName}은 먼저 익혀서 준비` : '',
+        '페스토를 과하지 않게 넣고 면과 함께 섞어 풍미를 살려 섭취',
       ].filter(Boolean).join(' / ')
     }
 
@@ -2307,7 +2331,7 @@ const getMealStructureType = (items = [], slot = '') => {
 const getAllowedFatFoodNamesByStructure = (structureType = '') => {
     const map = {
     rice_meal: ['아보카도', '올리브오일', '아몬드', '호두', '치즈'],
-       pasta_meal: ['올리브오일', '치즈', '아보카도'],
+      pasta_meal: ['올리브오일', '치즈', '토마토소스', '페스토'],
     bread_meal: ['아보카도', '땅콩버터', '아몬드버터', '치즈'],
     bowl_meal: ['아몬드', '호두', '캐슈넛', '피스타치오', '땅콩버터', '아몬드버터'],
     salad_meal: ['아보카도', '올리브오일', '아몬드', '호두', '치즈'],
@@ -2324,8 +2348,9 @@ const normalizeMenuFoodName = (rawName = '') => {
 
   if (name.includes('고단백요거트')) return '그릭요거트'
   if (name.includes('샐러드채소')) return '샐러드'
-  if (name.includes('구운계란')) return '계란'
+  if (name.includes('구운계란') || name.includes('계란노른자')) return '계란'
   if (name.includes('백미밥') || name.includes('현미밥')) return '밥'
+  if (name.includes('파스타면') || name.includes('스파게티면') || name.includes('펜네')) return '파스타'
   if (name.includes('올리브오일')) return '올리브오일'
   if (name.includes('아몬드버터')) return '아몬드버터'
   if (name.includes('땅콩버터')) return '땅콩버터'
@@ -2333,8 +2358,8 @@ const normalizeMenuFoodName = (rawName = '') => {
   if (name.includes('닭가슴살')) return '닭가슴살'
   if (name.includes('닭다리살')) return '닭다리살'
   if (name.includes('연어')) return '연어'
-  if (name.includes('참치')) return '참치'
-  if (name.includes('소고기')) return '소고기'
+  if (name.includes('참치살') || name.includes('참치캔') || name.includes('물참치') || name.includes('참치')) return '참치'
+  if (name.includes('소고기 우둔') || name.includes('소고기')) return '소고기'
   if (name.includes('치즈')) return '치즈'
   if (name.includes('아몬드')) return '아몬드'
   if (name.includes('호두')) return '호두'
@@ -2344,7 +2369,9 @@ const normalizeMenuFoodName = (rawName = '') => {
   if (name.includes('바나나')) return '바나나'
   if (name.includes('사과')) return '사과'
   if (name.includes('블루베리')) return '블루베리'
-  if (name.includes('통밀식빵') || name.includes('베이글')) return '빵'
+  if (name.includes('통밀식빵') || name.includes('베이글') || name.includes('토스트')) return '빵'
+  if (name.includes('토마토소스') || name.includes('토마토 파스타소스')) return '토마토소스'
+  if (name.includes('페스토')) return '페스토'
 
   return name
 }
@@ -2405,16 +2432,48 @@ const getPastaMenuTitle = ({
     return '연어 오일 파스타'
   }
 
+  if (proteinName === '참치' && fatNames.includes('올리브오일')) {
+    return '참치 오일 파스타'
+  }
+
   if (proteinName === '닭가슴살' && fatNames.includes('치즈')) {
     return '닭가슴살 치즈 파스타'
+  }
+
+  if (proteinName === '연어' && fatNames.includes('치즈')) {
+    return '연어 치즈 파스타'
+  }
+
+  if (proteinName === '참치' && fatNames.includes('치즈')) {
+    return '참치 치즈 파스타'
+  }
+
+  if (proteinName === '닭가슴살' && fatNames.includes('토마토소스')) {
+    return '닭가슴살 토마토 파스타'
+  }
+
+  if (proteinName === '소고기' && fatNames.includes('토마토소스')) {
+    return '소고기 볼로네제 파스타'
+  }
+
+  if (proteinName === '참치' && fatNames.includes('토마토소스')) {
+    return '참치 토마토 파스타'
+  }
+
+  if (proteinName === '닭가슴살' && fatNames.includes('페스토')) {
+    return '닭가슴살 페스토 파스타'
+  }
+
+  if (proteinName === '연어' && fatNames.includes('페스토')) {
+    return '연어 페스토 파스타'
   }
 
   if (proteinName === '소고기') {
     return '소고기 단백질 파스타'
   }
 
-  if (proteinName === '참치' && fatNames.includes('올리브오일')) {
-    return '참치 오일 파스타'
+  if (proteinName === '참치') {
+    return '참치 단백질 파스타'
   }
 
   if (proteinName === '연어') {
@@ -2425,12 +2484,16 @@ const getPastaMenuTitle = ({
     return '닭가슴살 단백질 파스타'
   }
 
-  return '맞춤 파스타'
+  if (proteinName === '닭다리살') {
+    return '닭다리살 단백질 파스타'
+  }
+
+  return '단백질 파스타'
 }
 
 const getMealReasonText = ({ menuTitle = '', slot = '' }) => {
-  if (menuTitle.includes('알리오 올리오')) {
-    return '과한 소스 없이 지방을 낮추고 깔끔하게 먹기 좋은 파스타입니다.'
+    if (menuTitle.includes('알리오 올리오')) {
+    return '과한 소스 없이 깔끔하게 먹으면서 단백질까지 챙기기 좋은 파스타입니다.'
   }
 
   if (menuTitle.includes('오일 파스타')) {
@@ -2439,6 +2502,18 @@ const getMealReasonText = ({ menuTitle = '', slot = '' }) => {
 
   if (menuTitle.includes('치즈 파스타')) {
     return '풍미와 만족감을 높이면서 단백질을 함께 확보하는 파스타입니다.'
+  }
+
+  if (menuTitle.includes('토마토 파스타')) {
+    return '상대적으로 부담이 적고 깔끔하게 먹기 좋은 파스타 구성입니다.'
+  }
+
+  if (menuTitle.includes('볼로네제')) {
+    return '벌크나 유지 단계에서 탄수와 단백질을 함께 확보하기 좋은 파스타입니다.'
+  }
+
+  if (menuTitle.includes('페스토')) {
+    return '풍미와 지방을 함께 챙기면서 식사 만족감을 높이기 좋은 파스타입니다.'
   }
 
   if (menuTitle.includes('단백질 파스타')) {
