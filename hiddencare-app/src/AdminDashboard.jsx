@@ -2111,85 +2111,138 @@ const getMealFatTotalFromFatItems = (items = []) => {
   }, 0)
 }
 
-const buildMealCookingGuide = ({ items = [], slot = '' }) => {
+const buildMealCookingGuide = ({ items = [], slot = '', menuTitle = '' }) => {
   const names = (Array.isArray(items) ? items : []).map((item) =>
-    String(item?.name || '').trim()
+    normalizeMenuFoodName(String(item?.name || '').trim())
   )
 
-  const hasRice = names.some((name) => name.includes('밥'))
-  const hasSalad = names.some((name) => name.includes('샐러드') || name.includes('채소'))
-  const hasAvocado = names.some((name) => name.includes('아보카도'))
-  const hasNut = names.some((name) =>
-    name.includes('아몬드') ||
-    name.includes('호두') ||
-    name.includes('캐슈') ||
-    name.includes('피스타치오')
-  )
-  const hasNutButter = names.some((name) =>
-    name.includes('땅콩버터') || name.includes('아몬드버터')
-  )
-  const hasOil = names.some((name) => name.includes('오일'))
-  const hasSalmon = names.some((name) => name.includes('연어'))
-  const hasChicken = names.some((name) => name.includes('닭가슴살') || name.includes('닭다리살'))
-  const hasEgg = names.some((name) => name.includes('계란'))
-  const hasYogurt = names.some((name) => name.includes('요거트'))
-  const hasFruit = names.some((name) =>
-    name.includes('바나나') || name.includes('사과') || name.includes('블루베리')
+  const structureType = getMealStructureType(items, slot)
+
+  const proteinName =
+    names.find((name) => ['닭가슴살', '닭다리살', '연어', '참치', '소고기', '계란', '그릭요거트'].includes(name)) || ''
+
+  const fatNames = getMealFatItems(items).map((item) =>
+    normalizeMenuFoodName(String(item?.name || '').trim())
   )
 
-  const steps = []
+  const mainFatName = fatNames[0] || ''
+  const secondFatName = fatNames[1] || ''
 
-  if (hasSalmon) {
-    steps.push('연어는 소금/후추만 해서 팬 또는 에어프라이어로 구워서 사용')
+  if (menuTitle.includes('덮밥')) {
+    const parts = []
+
+    if (proteinName) {
+      parts.push(`${proteinName}은 굽거나 익혀서 메인 단백질로 준비`)
+    }
+
+    parts.push('밥 위에 단백질과 곁들임 재료를 올려 덮밥 형태로 구성')
+
+    if (mainFatName === '아보카도') {
+      parts.push('아보카도는 슬라이스해서 마지막에 올려 함께 섭취')
+    } else if (mainFatName === '올리브오일') {
+      parts.push('올리브오일은 조리 후 또는 채소 위에 소량만 추가')
+    } else if (isNutLikeFatName(mainFatName)) {
+      parts.push('견과류는 소량만 곁들여 식감과 지방을 보완')
+    } else if (mainFatName === '치즈') {
+      parts.push('치즈는 과하지 않게 소량만 추가해 풍미를 보완')
+    }
+
+    return parts.join(' / ')
   }
 
-  if (hasChicken) {
-    steps.push('닭가슴살/닭다리살은 굽거나 에어프라이어로 익혀서 메인 단백질로 사용')
+  if (menuTitle.includes('플레이트')) {
+    const parts = []
+
+    if (proteinName) {
+      parts.push(`${proteinName}은 굽거나 익혀서 메인 단백질로 준비`)
+    }
+
+    parts.push('밥과 단백질, 채소를 접시에 나눠 담아 플레이트 형태로 구성')
+
+    if (mainFatName === '올리브오일') {
+      parts.push('올리브오일은 샐러드 또는 채소 위에 소량만 추가')
+    } else if (mainFatName === '아보카도') {
+      parts.push('아보카도는 슬라이스해서 곁들여 섭취')
+    }
+
+    return parts.join(' / ')
   }
 
-  if (hasEgg) {
-    steps.push('계란은 삶거나 스크램블 형태로 준비')
+  if (menuTitle.includes('샐러드')) {
+    const parts = []
+
+    if (proteinName) {
+      parts.push(`${proteinName}은 굽거나 익혀서 샐러드 위에 올려 사용`)
+    }
+
+    parts.push('채소와 메인 단백질을 함께 담아 샐러드 형태로 구성')
+
+    if (mainFatName === '아보카도') {
+      parts.push('아보카도는 슬라이스해서 토핑처럼 올려 함께 섭취')
+    } else if (mainFatName === '올리브오일') {
+      parts.push('올리브오일은 드레싱처럼 소량만 둘러서 섭취')
+    } else if (isNutLikeFatName(mainFatName) || isNutLikeFatName(secondFatName)) {
+      parts.push('견과류는 토핑처럼 소량만 올려 식감과 지방을 보완')
+    }
+
+    return parts.join(' / ')
   }
 
-  if (hasRice && hasSalad) {
-    steps.push('밥 위에 단백질과 채소를 올려 볼 또는 플레이트 형태로 구성')
-  } else if (hasRice) {
-    steps.push('밥과 메인 단백질을 함께 한 끼 식사 형태로 구성')
+  if (menuTitle.includes('토스트')) {
+    const parts = ['빵은 가볍게 구워서 사용']
+
+    if (mainFatName && isNutButterLikeFatName(mainFatName)) {
+      parts.push(`${mainFatName}는 빵에 얇게 바르고 과하지 않게 섭취`)
+    } else if (mainFatName === '아보카도') {
+      parts.push('아보카도는 으깨거나 슬라이스해서 빵 위에 올려 섭취')
+    }
+
+    if (proteinName && proteinName !== '그릭요거트') {
+      parts.push(`${proteinName}은 곁들이거나 함께 올려 섭취`)
+    }
+
+    return parts.join(' / ')
   }
 
-  if (hasAvocado) {
-    steps.push('아보카도는 슬라이스해서 마지막에 올려 함께 섭취')
+  if (menuTitle.includes('견과볼') || menuTitle.includes('그릭요거트') || menuTitle.includes('오트밀')) {
+    const parts = []
+
+    if (names.includes('그릭요거트')) {
+      parts.push('요거트에 과일과 견과류를 넣어 볼 형태로 섞어서 섭취')
+    } else if (names.includes('오트밀')) {
+      parts.push('오트밀에 토핑을 올려 볼 형태로 섭취')
+    } else {
+      parts.push('한 그릇에 담아 가볍게 섭취')
+    }
+
+    if (mainFatName && isNutButterLikeFatName(mainFatName)) {
+      parts.push(`${mainFatName}는 소량만 추가해서 지방을 보완`)
+    } else if (mainFatName && isNutLikeFatName(mainFatName)) {
+      parts.push('견과류는 토핑처럼 올려 식감과 지방을 보완')
+    }
+
+    return parts.join(' / ')
   }
 
-  if (hasOil) {
-    steps.push('오일류는 조리 후 또는 샐러드 위에 소량만 추가')
+  if (structureType === 'rice_meal') {
+    return '밥과 메인 단백질을 함께 한 끼 식사 형태로 구성'
   }
 
-  if (hasNut) {
-    steps.push('견과류는 토핑처럼 올리거나 따로 곁들여 섭취')
+  if (structureType === 'salad_meal') {
+    return '채소와 단백질을 함께 담아 샐러드 형태로 섭취'
   }
 
-  if (hasNutButter) {
-    steps.push('견과버터는 빵/오트밀/과일과 함께 소량 발라서 섭취')
+  if (structureType === 'bowl_meal') {
+    return '한 그릇에 담아 볼 형태로 섭취'
   }
 
-  if (hasYogurt) {
-    steps.push('요거트류는 과일 또는 견과류를 섞어서 볼 형태로 섭취')
+  if (structureType === 'bread_meal') {
+    return '빵과 곁들임 재료를 함께 구성해 섭취'
   }
 
-  if (hasFruit && !hasYogurt && !hasNutButter) {
-    steps.push('과일은 후식보다 식사/간식 구성 안에 함께 포함해서 섭취')
-  }
-
-  if (!steps.length) {
-    steps.push(
-      slot === '간식' || slot === '오전간식' || slot === '야식'
-        ? '간식 형태로 가볍게 구성해서 섭취'
-        : '한 끼 식사 형태로 준비해서 섭취'
-    )
-  }
-
-  return steps.join(' / ')
+  return slot === '간식' || slot === '오전간식' || slot === '야식'
+    ? '간식 형태로 가볍게 구성해서 섭취'
+    : '한 끼 식사 형태로 준비해서 섭취'
 }
 
 const getMealStructureType = (items = [], slot = '') => {
@@ -2213,7 +2266,7 @@ const getMealStructureType = (items = [], slot = '') => {
 }
 
 const getAllowedFatFoodNamesByStructure = (structureType = '') => {
-  const map = {
+    const map = {
     rice_meal: ['아보카도', '올리브오일', '아몬드', '호두', '치즈'],
     bread_meal: ['아보카도', '땅콩버터', '아몬드버터', '치즈'],
     bowl_meal: ['아몬드', '호두', '캐슈넛', '피스타치오', '땅콩버터', '아몬드버터'],
@@ -2224,6 +2277,80 @@ const getAllowedFatFoodNamesByStructure = (structureType = '') => {
 
   return map[structureType] || map.general_meal
 }
+const normalizeMenuFoodName = (rawName = '') => {
+  const name = String(rawName || '').trim()
+
+  if (!name) return ''
+
+  if (name.includes('고단백요거트')) return '그릭요거트'
+  if (name.includes('샐러드채소')) return '샐러드'
+  if (name.includes('구운계란')) return '계란'
+  if (name.includes('백미밥') || name.includes('현미밥')) return '밥'
+  if (name.includes('올리브오일')) return '올리브오일'
+  if (name.includes('아몬드버터')) return '아몬드버터'
+  if (name.includes('땅콩버터')) return '땅콩버터'
+  if (name.includes('아보카도')) return '아보카도'
+  if (name.includes('닭가슴살')) return '닭가슴살'
+  if (name.includes('닭다리살')) return '닭다리살'
+  if (name.includes('연어')) return '연어'
+  if (name.includes('참치')) return '참치'
+  if (name.includes('소고기')) return '소고기'
+  if (name.includes('치즈')) return '치즈'
+  if (name.includes('아몬드')) return '아몬드'
+  if (name.includes('호두')) return '호두'
+  if (name.includes('캐슈')) return '캐슈넛'
+  if (name.includes('피스타치오')) return '피스타치오'
+  if (name.includes('오트밀')) return '오트밀'
+  if (name.includes('바나나')) return '바나나'
+  if (name.includes('사과')) return '사과'
+  if (name.includes('블루베리')) return '블루베리'
+  if (name.includes('통밀식빵') || name.includes('베이글')) return '빵'
+
+  return name
+}
+
+const isNutLikeFatName = (name = '') => {
+  const value = String(name || '').trim()
+  return ['아몬드', '호두', '캐슈넛', '피스타치오'].includes(value)
+}
+
+const isNutButterLikeFatName = (name = '') => {
+  const value = String(name || '').trim()
+  return ['땅콩버터', '아몬드버터'].includes(value)
+}
+
+const getPrimaryMealItemsForNaming = (items = [], slot = '') => {
+  const rows = getMealPrimaryItems(items)
+  const structureType = getMealStructureType(rows, slot)
+
+  const proteinItem =
+    rows.find((item) => String(item?.category_major || '').trim() === 'protein') ||
+    rows.find((item) => String(item?.category_major || '').trim() === 'dairy') ||
+    rows[0] ||
+    null
+
+  const carbItem = rows.find((item) => String(item?.category_major || '').trim() === 'carb') || null
+  const fruitItem = rows.find((item) => String(item?.category_major || '').trim() === 'fruit') || null
+  const fatItem = getMealFatItems(rows)[0] || null
+  const secondFatItem = getMealFatItems(rows)[1] || null
+
+  return {
+    rows,
+    structureType,
+    proteinName: normalizeMenuFoodName(getMealItemDisplayName(proteinItem)),
+    carbName: normalizeMenuFoodName(getMealItemDisplayName(carbItem)),
+    fruitName: normalizeMenuFoodName(getMealItemDisplayName(fruitItem)),
+    fatName: normalizeMenuFoodName(getMealItemDisplayName(fatItem)),
+    secondFatName: normalizeMenuFoodName(getMealItemDisplayName(secondFatItem)),
+    hasSalad: rows.some((item) => normalizeMenuFoodName(getMealItemDisplayName(item)) === '샐러드'),
+    hasRice: rows.some((item) => normalizeMenuFoodName(getMealItemDisplayName(item)) === '밥'),
+    hasYogurt: rows.some((item) => normalizeMenuFoodName(getMealItemDisplayName(item)) === '그릭요거트'),
+    hasOatmeal: rows.some((item) => normalizeMenuFoodName(getMealItemDisplayName(item)) === '오트밀'),
+    hasBread: rows.some((item) => normalizeMenuFoodName(getMealItemDisplayName(item)) === '빵'),
+  }
+}
+
+
   
 const getMealMenuTitleByItems = (items = [], slot = '') => {
   const rows = getMealPrimaryItems(items)
@@ -2234,43 +2361,87 @@ const getMealMenuTitleByItems = (items = [], slot = '') => {
       : '맞춤 식사 구성'
   }
 
-  const carbItem = rows.find((item) => String(item?.category_major || '').trim() === 'carb')
-  const proteinItem = rows.find((item) => String(item?.category_major || '').trim() === 'protein')
-  const dairyItem = rows.find((item) => String(item?.category_major || '').trim() === 'dairy')
-  const fruitItem = rows.find((item) => String(item?.category_major || '').trim() === 'fruit')
-  const vegetableItem = rows.find((item) => String(item?.category_major || '').trim() === 'vegetable')
-  const fatItem = rows.find((item) => String(item?.category_major || '').trim() === 'fat')
+  const {
+    structureType,
+    proteinName,
+    carbName,
+    fruitName,
+    fatName,
+    secondFatName,
+    hasSalad,
+    hasRice,
+    hasYogurt,
+    hasOatmeal,
+    hasBread,
+  } = getPrimaryMealItemsForNaming(rows, slot)
 
-  const carbName = getMealItemDisplayName(carbItem)
-  const proteinName = getMealItemDisplayName(proteinItem)
-  const dairyName = getMealItemDisplayName(dairyItem)
-  const fruitName = getMealItemDisplayName(fruitItem)
-  const fatName = getMealItemDisplayName(fatItem)
+  const snackLike = ['간식', '오전간식', '야식'].includes(slot)
 
-  const isSnackSlot = ['간식', '오전간식', '운동후', '야식'].includes(slot)
+  if (structureType === 'rice_meal') {
+    if (fatName === '아보카도' && proteinName) return `${proteinName} 아보카도 덮밥`
+    if (fatName === '올리브오일' && proteinName) return `${proteinName} 올리브오일 플레이트`
+    if (fatName === '치즈' && proteinName) return `${proteinName} 치즈 덮밥`
+    if (isNutLikeFatName(fatName) && proteinName) return `${proteinName} 견과볼`
+    if (proteinName) return `${proteinName} 밥 식사`
+  }
 
-  if (isSnackSlot) {
-    if (dairyName && fruitName && fatName) return `${dairyName} + ${fruitName} + ${fatName} 간식`
-    if (dairyName && fruitName) return `${dairyName} + ${fruitName} 간식`
-    if (proteinName && fruitName && fatName) return `${proteinName} + ${fruitName} + ${fatName} 간식`
-    if (proteinName && fruitName) return `${proteinName} + ${fruitName} 간식`
-    if (proteinName && fatName) return `${proteinName} + ${fatName} 간식`
+  if (structureType === 'salad_meal') {
+    if (proteinName && fatName === '아보카도') return `${proteinName} 아보카도 샐러드`
+    if (proteinName && fatName === '올리브오일') return `${proteinName} 올리브오일 샐러드`
+    if (proteinName && fatName === '치즈') return `${proteinName} 치즈 샐러드`
+    if (proteinName) return `${proteinName} 샐러드 플레이트`
+  }
+
+  if (structureType === 'bread_meal') {
+    if (proteinName && fatName) return `${proteinName} ${fatName} 토스트`
+    if (fatName) return `${fatName} 토스트`
+    return '토스트 식사'
+  }
+
+  if (structureType === 'bowl_meal') {
+    if (hasYogurt && fruitName && isNutLikeFatName(fatName)) {
+      return `그릭요거트 ${fruitName} 견과볼`
+    }
+
+    if (hasYogurt && isNutButterLikeFatName(fatName)) {
+      return `그릭요거트 ${fatName} 볼`
+    }
+
+    if (hasOatmeal && isNutButterLikeFatName(fatName) && fruitName) {
+      return `${fatName} ${fruitName} 오트밀볼`
+    }
+
+    if (hasOatmeal && isNutLikeFatName(fatName)) {
+      return `오트밀 견과볼`
+    }
+
+    if (hasYogurt) return '그릭요거트 볼'
+    if (hasOatmeal) return '오트밀 볼'
+  }
+
+  if (snackLike) {
+    if (hasYogurt && isNutLikeFatName(fatName)) return '그릭요거트 견과볼'
+    if (fruitName && isNutButterLikeFatName(fatName)) return `${fruitName} ${fatName} 간식`
+    if (proteinName && fatName) return `${proteinName} ${fatName} 간식`
     if (proteinName) return `${proteinName} 간식`
-    if (dairyName) return `${dairyName} 간식`
   }
 
-  if (proteinName && carbName) {
-    if (fatName && vegetableItem) return `${proteinName} + ${carbName} + ${fatName} + 채소식`
-    if (fatName) return `${proteinName} + ${carbName} + ${fatName} 식사`
-    if (vegetableItem) return `${proteinName} + ${carbName} + 채소식`
-    return `${proteinName} + ${carbName} 식사`
+  if (proteinName && fatName && secondFatName) {
+    return `${proteinName} ${fatName} ${secondFatName} 식사`
   }
 
-  if (proteinName && fatName) return `${proteinName} + ${fatName} 식사`
-  if (proteinName) return `${proteinName} 단백질 식사`
-  if (carbName) return `${carbName} 탄수화물 식사`
+  if (proteinName && fatName) {
+    return `${proteinName} ${fatName} 식사`
+  }
 
-  const firstName = getMealItemDisplayName(rows[0])
+  if (proteinName && hasRice) {
+    return `${proteinName} 밥 식사`
+  }
+
+  if (proteinName) return `${proteinName} 식사`
+  if (carbName) return `${carbName} 식사`
+
+  const firstName = normalizeMenuFoodName(getMealItemDisplayName(rows[0]))
   return firstName ? `${firstName} 구성` : '맞춤 식사 구성'
 }
 
@@ -2283,38 +2454,28 @@ const buildMealMenuLabel = (items = [], slot = '') => {
 }
   
 const buildMealGuideTextFromItems = ({ items = [], slot = '', mealType = 'normal', targetKcal = 0 }) => {
+  const menuTitle = getMealMenuTitleByItems(items, slot)
   const composition = buildMealCompositionText(items)
   const fatDetailText = buildMealFatDetailText(items)
   const fatTotal = Math.round(getMealFatTotalFromFatItems(items))
-  const cookingGuide = buildMealCookingGuide({ items, slot })
+  const cookingGuide = buildMealCookingGuide({ items, slot, menuTitle })
 
-  if (mealType === 'free') {
-    return [
-      '자유식 허용 끼니입니다.',
-      `섭취 방법: ${cookingGuide}`,
-      composition ? `구성: ${composition}` : '',
-      '주의: 단백질 먼저 먹고, 과식하지 말고 다음 끼니에서 바로 복귀',
-    ].filter(Boolean).join('\n')
-  }
+  let description = `목표 열량 ${Math.round(Number(targetKcal || 0))}kcal 기준 식사`
 
   if (mealType === 'general') {
-    return [
-      '일반식 허용 끼니입니다.',
-      `섭취 방법: ${cookingGuide}`,
-      composition ? `구성: ${composition}` : '',
-      fatDetailText ? `지방 성분: ${fatDetailText}` : '',
-      fatDetailText ? `지방 합계: 약 ${fatTotal}g` : '',
-      '설명: 외식 시에도 이 구성과 비슷하게 맞추면 됩니다.',
-    ].filter(Boolean).join('\n')
-  }
-
-  if (mealType === 'alcohol') {
-    return [
-      '음주 예정 끼니입니다.',
-      `섭취 방법: ${cookingGuide}`,
-      composition ? `구성: ${composition}` : '',
-      '주의: 안주는 단백질 위주로, 튀김/면/밥 추가는 최소화',
-    ].filter(Boolean).join('\n')
+    description = '외식 시에도 이 구성과 비슷하게 맞추면 됩니다.'
+  } else if (mealType === 'free') {
+    description = '단백질 먼저 먹고, 과식하지 말고 다음 끼니에서 바로 복귀하세요.'
+  } else if (mealType === 'alcohol') {
+    description = '안주는 단백질 위주로, 튀김/면/밥 추가는 최소화하세요.'
+  } else if (menuTitle.includes('덮밥')) {
+    description = '한 그릇 식사처럼 이해하기 쉬운 구조로 맞춘 식사입니다.'
+  } else if (menuTitle.includes('플레이트')) {
+    description = '탄수·단백질·지방을 나눠 담아 조절하기 쉬운 식사입니다.'
+  } else if (menuTitle.includes('샐러드')) {
+    description = '포만감과 지방 보완을 함께 고려한 샐러드형 식사입니다.'
+  } else if (menuTitle.includes('견과볼') || menuTitle.includes('그릭요거트') || menuTitle.includes('오트밀')) {
+    description = '간식이나 가벼운 끼니로 소화 부담을 줄인 구성입니다.'
   }
 
   return [
@@ -2322,7 +2483,7 @@ const buildMealGuideTextFromItems = ({ items = [], slot = '', mealType = 'normal
     composition ? `구성: ${composition}` : '',
     fatDetailText ? `지방 성분: ${fatDetailText}` : '',
     fatDetailText ? `지방 합계: 약 ${fatTotal}g` : '',
-    `설명: 목표 열량 ${Math.round(Number(targetKcal || 0))}kcal 기준 식사`,
+    `설명: ${description}`,
   ].filter(Boolean).join('\n')
 }
 const handleMealPlanSave = async () => {
