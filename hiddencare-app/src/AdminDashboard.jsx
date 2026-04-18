@@ -2070,7 +2070,127 @@ const buildMealCompositionText = (items = []) => {
     .filter(Boolean)
     .join(' + ')
 }
+const getMealFatItems = (items = []) => {
+  const rows = Array.isArray(items) ? items : []
 
+  return rows.filter((item) => {
+    const category = String(item?.category_major || '').trim()
+    const name = String(item?.name || '').trim().toLowerCase()
+
+    if (category === 'fat') return true
+
+    return (
+      name.includes('연어') ||
+      name.includes('고등어') ||
+      name.includes('계란') ||
+      name.includes('치즈') ||
+      name.includes('닭다리살') ||
+      name.includes('소고기')
+    )
+  })
+}
+
+const buildMealFatDetailText = (items = []) => {
+  const fatItems = getMealFatItems(items)
+
+  if (!fatItems.length) return ''
+
+  return fatItems
+    .map((item) => {
+      const name = String(item?.name || '').trim()
+      const grams = Math.round(Number(item?.grams || 0))
+      const fat = Math.round(Number(item?.fat_g || 0))
+      return `${name} ${grams}g (지방 약 ${fat}g)`
+    })
+    .join(', ')
+}
+
+const getMealFatTotalFromFatItems = (items = []) => {
+  return getMealFatItems(items).reduce((sum, item) => {
+    return sum + Number(item?.fat_g || 0)
+  }, 0)
+}
+
+const buildMealCookingGuide = ({ items = [], slot = '' }) => {
+  const names = (Array.isArray(items) ? items : []).map((item) =>
+    String(item?.name || '').trim()
+  )
+
+  const hasRice = names.some((name) => name.includes('밥'))
+  const hasSalad = names.some((name) => name.includes('샐러드') || name.includes('채소'))
+  const hasAvocado = names.some((name) => name.includes('아보카도'))
+  const hasNut = names.some((name) =>
+    name.includes('아몬드') ||
+    name.includes('호두') ||
+    name.includes('캐슈') ||
+    name.includes('피스타치오')
+  )
+  const hasNutButter = names.some((name) =>
+    name.includes('땅콩버터') || name.includes('아몬드버터')
+  )
+  const hasOil = names.some((name) => name.includes('오일'))
+  const hasSalmon = names.some((name) => name.includes('연어'))
+  const hasChicken = names.some((name) => name.includes('닭가슴살') || name.includes('닭다리살'))
+  const hasEgg = names.some((name) => name.includes('계란'))
+  const hasYogurt = names.some((name) => name.includes('요거트'))
+  const hasFruit = names.some((name) =>
+    name.includes('바나나') || name.includes('사과') || name.includes('블루베리')
+  )
+
+  const steps = []
+
+  if (hasSalmon) {
+    steps.push('연어는 소금/후추만 해서 팬 또는 에어프라이어로 구워서 사용')
+  }
+
+  if (hasChicken) {
+    steps.push('닭가슴살/닭다리살은 굽거나 에어프라이어로 익혀서 메인 단백질로 사용')
+  }
+
+  if (hasEgg) {
+    steps.push('계란은 삶거나 스크램블 형태로 준비')
+  }
+
+  if (hasRice && hasSalad) {
+    steps.push('밥 위에 단백질과 채소를 올려 볼 또는 플레이트 형태로 구성')
+  } else if (hasRice) {
+    steps.push('밥과 메인 단백질을 함께 한 끼 식사 형태로 구성')
+  }
+
+  if (hasAvocado) {
+    steps.push('아보카도는 슬라이스해서 마지막에 올려 함께 섭취')
+  }
+
+  if (hasOil) {
+    steps.push('오일류는 조리 후 또는 샐러드 위에 소량만 추가')
+  }
+
+  if (hasNut) {
+    steps.push('견과류는 토핑처럼 올리거나 따로 곁들여 섭취')
+  }
+
+  if (hasNutButter) {
+    steps.push('견과버터는 빵/오트밀/과일과 함께 소량 발라서 섭취')
+  }
+
+  if (hasYogurt) {
+    steps.push('요거트류는 과일 또는 견과류를 섞어서 볼 형태로 섭취')
+  }
+
+  if (hasFruit && !hasYogurt && !hasNutButter) {
+    steps.push('과일은 후식보다 식사/간식 구성 안에 함께 포함해서 섭취')
+  }
+
+  if (!steps.length) {
+    steps.push(
+      slot === '간식' || slot === '오전간식' || slot === '야식'
+        ? '간식 형태로 가볍게 구성해서 섭취'
+        : '한 끼 식사 형태로 준비해서 섭취'
+    )
+  }
+
+  return steps.join(' / ')
+}
 const getMealMenuTitleByItems = (items = [], slot = '') => {
   const rows = getMealPrimaryItems(items)
 
@@ -2130,30 +2250,46 @@ const buildMealMenuLabel = (items = [], slot = '') => {
   
 const buildMealGuideTextFromItems = ({ items = [], slot = '', mealType = 'normal', targetKcal = 0 }) => {
   const composition = buildMealCompositionText(items)
+  const fatDetailText = buildMealFatDetailText(items)
+  const fatTotal = Math.round(getMealFatTotalFromFatItems(items))
+  const cookingGuide = buildMealCookingGuide({ items, slot })
 
   if (mealType === 'free') {
-    return '자유식 허용 끼니입니다. 단백질 먼저 먹고, 과식하지 말고 다음 끼니에서 바로 복귀하세요.'
+    return [
+      '자유식 허용 끼니입니다.',
+      `섭취 방법: ${cookingGuide}`,
+      composition ? `구성: ${composition}` : '',
+      '주의: 단백질 먼저 먹고, 과식하지 말고 다음 끼니에서 바로 복귀',
+    ].filter(Boolean).join('\n')
   }
 
   if (mealType === 'general') {
-    return composition
-      ? `일반식 허용 끼니입니다. 기준 구성은 ${composition} 입니다. 외식 시에도 단백질과 탄수화물 중심으로 비슷하게 맞추세요.`
-      : '일반식 허용 끼니입니다. 밥/단백질 위주로 맞추고 튀김·디저트는 줄여주세요.'
+    return [
+      '일반식 허용 끼니입니다.',
+      `섭취 방법: ${cookingGuide}`,
+      composition ? `구성: ${composition}` : '',
+      fatDetailText ? `지방 성분: ${fatDetailText}` : '',
+      fatDetailText ? `지방 합계: 약 ${fatTotal}g` : '',
+      '설명: 외식 시에도 이 구성과 비슷하게 맞추면 됩니다.',
+    ].filter(Boolean).join('\n')
   }
 
   if (mealType === 'alcohol') {
-    return '음주 예정일입니다. 안주는 단백질 위주로, 튀김과 면·밥 추가는 최소화하세요.'
+    return [
+      '음주 예정 끼니입니다.',
+      `섭취 방법: ${cookingGuide}`,
+      composition ? `구성: ${composition}` : '',
+      '주의: 안주는 단백질 위주로, 튀김/면/밥 추가는 최소화',
+    ].filter(Boolean).join('\n')
   }
 
-  if (slot === '야식') {
-    return composition
-      ? `야식은 ${composition} 기준으로 가볍게 맞추고, 탄수화물은 과하지 않게 조절하세요.`
-      : '야식은 단백질 위주로 가볍게 마무리하세요.'
-  }
-
-  return composition
-    ? `권장 구성은 ${composition} 입니다. 이 범위 안에서 비슷한 일반식으로 바꿔도 됩니다.`
-    : `목표 열량 ${Math.round(Number(targetKcal || 0))}kcal 기준 맞춤 식사입니다.`
+  return [
+    `섭취 방법: ${cookingGuide}`,
+    composition ? `구성: ${composition}` : '',
+    fatDetailText ? `지방 성분: ${fatDetailText}` : '',
+    fatDetailText ? `지방 합계: 약 ${fatTotal}g` : '',
+    `설명: 목표 열량 ${Math.round(Number(targetKcal || 0))}kcal 기준 식사`,
+  ].filter(Boolean).join('\n')
 }
 const handleMealPlanSave = async () => {
   if (!mealPlanForm.member_id) {
@@ -2347,6 +2483,158 @@ const FOOD_MASTER_STARTER_ITEMS = [
     typical_portion_g: 20,
     tags: ['fat', 'snack'],
     note: '간식/지방 보완용',
+  },
+    {
+    name: '아보카도',
+    aliases: ['생아보카도', '아보카도슬라이스'],
+    category_major: 'fat',
+    category_minor: 'fruit_fat',
+    source_type: 'plant',
+    kcal_per_100g: 160,
+    carbs_per_100g: 9,
+    protein_per_100g: 2,
+    fat_per_100g: 15,
+    saturated_fat_per_100g: 2,
+    unsaturated_fat_per_100g: 13,
+    sugar_per_100g: 1,
+    fiber_per_100g: 7,
+    sodium_mg_per_100g: 7,
+    typical_portion_g: 50,
+    tags: ['fat', 'balanced'],
+    note: '볼/샐러드/덮밥에 넣기 좋은 지방 성분',
+  },
+  {
+    name: '호두',
+    aliases: ['생호두', '구운호두'],
+    category_major: 'fat',
+    category_minor: 'nut',
+    source_type: 'plant',
+    kcal_per_100g: 654,
+    carbs_per_100g: 14,
+    protein_per_100g: 15,
+    fat_per_100g: 65,
+    saturated_fat_per_100g: 6,
+    unsaturated_fat_per_100g: 59,
+    sugar_per_100g: 3,
+    fiber_per_100g: 7,
+    sodium_mg_per_100g: 2,
+    typical_portion_g: 15,
+    tags: ['fat', 'snack'],
+    note: '간식/요거트 토핑용 지방 성분',
+  },
+  {
+    name: '캐슈넛',
+    aliases: ['생캐슈넛', '구운캐슈넛'],
+    category_major: 'fat',
+    category_minor: 'nut',
+    source_type: 'plant',
+    kcal_per_100g: 553,
+    carbs_per_100g: 30,
+    protein_per_100g: 18,
+    fat_per_100g: 44,
+    saturated_fat_per_100g: 8,
+    unsaturated_fat_per_100g: 36,
+    sugar_per_100g: 6,
+    fiber_per_100g: 3,
+    sodium_mg_per_100g: 12,
+    typical_portion_g: 15,
+    tags: ['fat', 'snack'],
+    note: '간식/토핑용 지방 성분',
+  },
+  {
+    name: '피스타치오',
+    aliases: ['구운피스타치오'],
+    category_major: 'fat',
+    category_minor: 'nut',
+    source_type: 'plant',
+    kcal_per_100g: 562,
+    carbs_per_100g: 28,
+    protein_per_100g: 20,
+    fat_per_100g: 45,
+    saturated_fat_per_100g: 6,
+    unsaturated_fat_per_100g: 39,
+    sugar_per_100g: 8,
+    fiber_per_100g: 10,
+    sodium_mg_per_100g: 1,
+    typical_portion_g: 15,
+    tags: ['fat', 'snack'],
+    note: '간식/요거트 토핑용 지방 성분',
+  },
+  {
+    name: '땅콩버터',
+    aliases: ['피넛버터', '무가당땅콩버터'],
+    category_major: 'fat',
+    category_minor: 'nut_butter',
+    source_type: 'plant',
+    kcal_per_100g: 588,
+    carbs_per_100g: 20,
+    protein_per_100g: 25,
+    fat_per_100g: 50,
+    saturated_fat_per_100g: 10,
+    unsaturated_fat_per_100g: 40,
+    sugar_per_100g: 9,
+    fiber_per_100g: 6,
+    sodium_mg_per_100g: 17,
+    typical_portion_g: 15,
+    tags: ['fat', 'snack'],
+    note: '과일/토스트/오트밀에 넣는 지방 성분',
+  },
+  {
+    name: '아몬드버터',
+    aliases: ['무가당아몬드버터'],
+    category_major: 'fat',
+    category_minor: 'nut_butter',
+    source_type: 'plant',
+    kcal_per_100g: 614,
+    carbs_per_100g: 19,
+    protein_per_100g: 21,
+    fat_per_100g: 56,
+    saturated_fat_per_100g: 5,
+    unsaturated_fat_per_100g: 51,
+    sugar_per_100g: 4,
+    fiber_per_100g: 10,
+    sodium_mg_per_100g: 2,
+    typical_portion_g: 15,
+    tags: ['fat', 'snack'],
+    note: '요거트/토스트에 넣는 지방 성분',
+  },
+  {
+    name: '올리브오일',
+    aliases: ['엑스트라버진올리브오일', '올리브유'],
+    category_major: 'fat',
+    category_minor: 'oil',
+    source_type: 'plant',
+    kcal_per_100g: 884,
+    carbs_per_100g: 0,
+    protein_per_100g: 0,
+    fat_per_100g: 100,
+    saturated_fat_per_100g: 14,
+    unsaturated_fat_per_100g: 86,
+    sugar_per_100g: 0,
+    fiber_per_100g: 0,
+    sodium_mg_per_100g: 0,
+    typical_portion_g: 5,
+    tags: ['fat', 'balanced'],
+    note: '샐러드/플레이트에 추가하는 지방 성분',
+  },
+  {
+    name: '치즈',
+    aliases: ['체다치즈', '모짜렐라치즈'],
+    category_major: 'fat',
+    category_minor: 'cheese',
+    source_type: 'animal',
+    kcal_per_100g: 402,
+    carbs_per_100g: 1,
+    protein_per_100g: 25,
+    fat_per_100g: 33,
+    saturated_fat_per_100g: 19,
+    unsaturated_fat_per_100g: 14,
+    sugar_per_100g: 1,
+    fiber_per_100g: 0,
+    sodium_mg_per_100g: 621,
+    typical_portion_g: 20,
+    tags: ['fat', 'mixed'],
+    note: '오믈렛/샐러드/토스트용 지방 성분',
   },
   {
     name: '블루베리',
@@ -3405,6 +3693,9 @@ const buildMealFoodItem = (food, grams) => {
   return {
     food_id: food.id,
     name: food.name,
+    category_major: String(food?.category_major || '').trim(),
+    category_minor: String(food?.category_minor || '').trim(),
+    source_type: String(food?.source_type || '').trim(),
     grams: safeGrams,
     kcal: Math.round((Number(food.kcal_per_100g || 0) * safeGrams) / 100),
     carbs_g: Math.round((Number(food.carbs_per_100g || 0) * safeGrams) / 100),
@@ -3856,7 +4147,72 @@ const buildMonthlyDietFramework = ({
     },
   ],
 }
-
+const FAT_MENU_TEMPLATE_LIBRARY = {
+  아침: [
+    { name: '닭가슴살 아보카도 현미볼', foods: ['현미밥', '닭가슴살', '아보카도'], goalTypes: ['diet', 'recomposition', 'maintenance'] },
+    { name: '연어 아보카도 아침볼', foods: ['현미밥', '연어', '아보카도'], goalTypes: ['diet', 'recomposition', 'maintenance'] },
+    { name: '그릭요거트 블루베리 아몬드볼', foods: ['고단백요거트', '블루베리', '아몬드'], goalTypes: ['diet', 'recomposition', 'maintenance'] },
+    { name: '그릭요거트 호두 과일볼', foods: ['고단백요거트', '블루베리', '호두'], goalTypes: ['diet', 'recomposition', 'maintenance'] },
+    { name: '오트밀 땅콩버터 바나나볼', foods: ['오트밀', '땅콩버터', '바나나'], goalTypes: ['maintenance', 'muscle_gain', 'bulk'] },
+    { name: '오트밀 아몬드버터 블루베리볼', foods: ['오트밀', '아몬드버터', '블루베리'], goalTypes: ['maintenance', 'muscle_gain', 'bulk'] },
+    { name: '계란 아보카도 토스트', foods: ['통밀식빵', '구운계란', '아보카도'], goalTypes: ['maintenance', 'muscle_gain'] },
+    { name: '치즈 오믈렛 아침', foods: ['구운계란', '치즈'], goalTypes: ['maintenance', 'muscle_gain', 'bulk'] },
+  ],
+  점심: [
+    { name: '연어 아보카도 덮밥', foods: ['백미밥', '연어', '아보카도'], goalTypes: ['diet', 'recomposition', 'maintenance'] },
+    { name: '닭가슴살 아보카도 플레이트', foods: ['현미밥', '닭가슴살', '아보카도', '샐러드채소'], goalTypes: ['diet', 'recomposition', 'maintenance'] },
+    { name: '연어 올리브오일 샐러드볼', foods: ['연어', '샐러드채소', '올리브오일'], goalTypes: ['diet', 'recomposition', 'maintenance'] },
+    { name: '닭다리살 아보카도 덮밥', foods: ['백미밥', '닭다리살', '아보카도'], goalTypes: ['maintenance', 'muscle_gain', 'bulk'] },
+    { name: '소고기 치즈 플레이트', foods: ['백미밥', '소고기', '치즈'], goalTypes: ['maintenance', 'muscle_gain', 'bulk'] },
+    { name: '참치 아보카도 볼', foods: ['현미밥', '참치', '아보카도'], goalTypes: ['diet', 'recomposition', 'maintenance'] },
+    { name: '연어 견과 샐러드', foods: ['연어', '샐러드채소', '호두'], goalTypes: ['diet', 'recomposition', 'maintenance'] },
+    { name: '닭가슴살 올리브오일 샐러드', foods: ['닭가슴살', '샐러드채소', '올리브오일'], goalTypes: ['diet', 'recomposition', 'maintenance'] },
+  ],
+  저녁: [
+    { name: '닭다리살 샐러드 플레이트', foods: ['닭다리살', '샐러드채소', '아보카도'], goalTypes: ['diet', 'recomposition', 'maintenance'] },
+    { name: '연어 아보카도 플레이트', foods: ['연어', '샐러드채소', '아보카도'], goalTypes: ['diet', 'recomposition', 'maintenance'] },
+    { name: '닭가슴살 올리브오일 샐러드 저녁', foods: ['닭가슴살', '샐러드채소', '올리브오일'], goalTypes: ['diet', 'recomposition', 'maintenance'] },
+    { name: '소고기 아보카도 저녁볼', foods: ['현미밥', '소고기', '아보카도'], goalTypes: ['maintenance', 'muscle_gain', 'bulk'] },
+    { name: '연어 치즈 샐러드', foods: ['연어', '샐러드채소', '치즈'], goalTypes: ['maintenance', 'muscle_gain'] },
+    { name: '참치 아보카도 저녁볼', foods: ['현미밥', '참치', '아보카도'], goalTypes: ['diet', 'recomposition', 'maintenance'] },
+    { name: '닭가슴살 아몬드 샐러드', foods: ['닭가슴살', '샐러드채소', '아몬드'], goalTypes: ['diet', 'recomposition', 'maintenance'] },
+    { name: '연어 올리브오일 채소볼', foods: ['연어', '샐러드채소', '올리브오일'], goalTypes: ['diet', 'recomposition', 'maintenance'] },
+  ],
+  간식: [
+    { name: '그릭요거트 블루베리 아몬드 간식', foods: ['고단백요거트', '블루베리', '아몬드'], goalTypes: ['diet', 'recomposition', 'maintenance'] },
+    { name: '그릭요거트 블루베리 호두 간식', foods: ['고단백요거트', '블루베리', '호두'], goalTypes: ['diet', 'recomposition', 'maintenance'] },
+    { name: '사과 땅콩버터 간식', foods: ['사과', '땅콩버터'], goalTypes: ['diet', 'recomposition', 'maintenance'] },
+    { name: '바나나 땅콩버터 간식', foods: ['바나나', '땅콩버터'], goalTypes: ['maintenance', 'muscle_gain', 'bulk'] },
+    { name: '고구마 아몬드 간식', foods: ['고구마', '아몬드'], goalTypes: ['diet', 'recomposition', 'maintenance'] },
+    { name: '오트밀 견과 간식볼', foods: ['오트밀', '아몬드', '호두'], goalTypes: ['maintenance', 'muscle_gain', 'bulk'] },
+    { name: '치즈 계란 간식', foods: ['치즈', '구운계란'], goalTypes: ['maintenance', 'muscle_gain', 'bulk'] },
+    { name: '요거트 아몬드버터 볼', foods: ['고단백요거트', '아몬드버터'], goalTypes: ['maintenance', 'muscle_gain', 'bulk'] },
+  ],
+  오전간식: [
+    { name: '요거트 아몬드 오전간식', foods: ['고단백요거트', '아몬드'], goalTypes: ['diet', 'recomposition', 'maintenance'] },
+    { name: '요거트 호두 오전간식', foods: ['고단백요거트', '호두'], goalTypes: ['diet', 'recomposition', 'maintenance'] },
+    { name: '사과 땅콩버터 오전간식', foods: ['사과', '땅콩버터'], goalTypes: ['diet', 'recomposition', 'maintenance'] },
+    { name: '바나나 아몬드버터 오전간식', foods: ['바나나', '아몬드버터'], goalTypes: ['maintenance', 'muscle_gain', 'bulk'] },
+    { name: '고구마 견과 오전간식', foods: ['고구마', '아몬드'], goalTypes: ['diet', 'recomposition', 'maintenance'] },
+    { name: '치즈 계란 오전간식', foods: ['치즈', '구운계란'], goalTypes: ['maintenance', 'muscle_gain', 'bulk'] },
+  ],
+  운동후: [
+    { name: '연어 아보카도 운동후볼', foods: ['백미밥', '연어', '아보카도'], goalTypes: ['maintenance', 'muscle_gain', 'bulk'] },
+    { name: '닭가슴살 올리브오일 운동후볼', foods: ['백미밥', '닭가슴살', '올리브오일'], goalTypes: ['maintenance', 'muscle_gain', 'bulk'] },
+    { name: '프로틴 땅콩버터 바나나 운동후', foods: ['프로틴파우더', '땅콩버터', '바나나'], goalTypes: ['muscle_gain', 'bulk'] },
+    { name: '백미밥 치즈 계란 운동후', foods: ['백미밥', '구운계란', '치즈'], goalTypes: ['maintenance', 'muscle_gain', 'bulk'] },
+    { name: '닭다리살 아보카도 운동후덮밥', foods: ['백미밥', '닭다리살', '아보카도'], goalTypes: ['maintenance', 'muscle_gain', 'bulk'] },
+    { name: '연어 견과 운동후볼', foods: ['백미밥', '연어', '아몬드'], goalTypes: ['maintenance', 'muscle_gain', 'bulk'] },
+  ],
+  야식: [
+    { name: '그릭요거트 호두 야식', foods: ['고단백요거트', '호두'], goalTypes: ['diet', 'recomposition', 'maintenance'] },
+    { name: '그릭요거트 아몬드 야식', foods: ['고단백요거트', '아몬드'], goalTypes: ['diet', 'recomposition', 'maintenance'] },
+    { name: '계란 아보카도 야식', foods: ['구운계란', '아보카도'], goalTypes: ['diet', 'recomposition', 'maintenance'] },
+    { name: '우유 땅콩버터 야식', foods: ['우유', '땅콩버터'], goalTypes: ['maintenance', 'muscle_gain', 'bulk'] },
+    { name: '치즈 계란 야식', foods: ['치즈', '구운계란'], goalTypes: ['maintenance', 'muscle_gain', 'bulk'] },
+    { name: '요거트 아몬드버터 야식', foods: ['고단백요거트', '아몬드버터'], goalTypes: ['maintenance', 'muscle_gain', 'bulk'] },
+  ],
+}
 const findFoodByTemplateName = (foods = [], rawName = '') => {
   const target = String(rawName || '').trim().toLowerCase()
   if (!target) return null
@@ -3872,7 +4228,15 @@ const findFoodByTemplateName = (foods = [], rawName = '') => {
 }
 
 const getTemplateCandidatesBySlot = (slot = '') => {
-  return Array.isArray(MEAL_TEMPLATE_LIBRARY?.[slot]) ? MEAL_TEMPLATE_LIBRARY[slot] : []
+  const baseTemplates = Array.isArray(MEAL_TEMPLATE_LIBRARY?.[slot])
+    ? MEAL_TEMPLATE_LIBRARY[slot]
+    : []
+
+  const fatTemplates = Array.isArray(FAT_MENU_TEMPLATE_LIBRARY?.[slot])
+    ? FAT_MENU_TEMPLATE_LIBRARY[slot]
+    : []
+
+  return [...fatTemplates, ...baseTemplates]
 }
 
 const isTemplateAllowedForGoal = (template, goalType = 'diet') => {
@@ -4802,7 +5166,7 @@ if (currentMealType === 'alcohol') {
     })
 
     if (templateMeal) {
-            let templateItems = Array.isArray(templateMeal.items) ? [...templateMeal.items] : []
+                      let templateItems = Array.isArray(templateMeal.items) ? [...templateMeal.items] : []
       let templateSummary = sumMealItems(templateItems)
 
       const currentFat = Number(templateSummary.fat_g || 0)
@@ -4814,34 +5178,52 @@ if (currentMealType === 'alcohol') {
         })
 
         if (fatCandidates.length > 0) {
-          const fatFood = pickFood({
-            foods: fatCandidates,
-            preferredSet,
-            blockedSet,
-            categories: ['fat'],
-            goalType,
-            dateString,
-            slot,
-            offset: offset + 7,
-            usedIds: new Set(
-              templateItems.map((item) => item.food_id).filter(Boolean)
-            ),
-            recentUsedIds,
-            slotUsedNames,
-          })
+          const maxFatComponents =
+            fatGap >= 18 ? 3 :
+            fatGap >= 10 ? 2 :
+            1
 
-          if (fatFood) {
+          const usedFatIds = new Set(
+            templateItems.map((item) => item.food_id).filter(Boolean)
+          )
+
+          let remainingFatGap = fatGap
+          let fatAddedCount = 0
+
+          while (remainingFatGap >= 4 && fatAddedCount < maxFatComponents) {
+            const fatFood = pickFood({
+              foods: fatCandidates,
+              preferredSet,
+              blockedSet,
+              categories: ['fat'],
+              goalType,
+              dateString,
+              slot,
+              offset: offset + 7 + fatAddedCount,
+              usedIds: usedFatIds,
+              recentUsedIds,
+              slotUsedNames,
+            })
+
+            if (!fatFood) break
+
             const fatGrams = calcPortionByMacro({
               food: fatFood,
               macroKey: 'fat_per_100g',
-              targetGrams: Math.max(5, fatGap),
+              targetGrams: Math.max(4, remainingFatGap),
               fallbackGrams: fatFood.typical_portion_g || 15,
-              minGrams: 10,
+              minGrams: 5,
               maxGrams: 40,
             })
 
-            templateItems.push(buildMealFoodItem(fatFood, fatGrams))
+            const nextFatItem = buildMealFoodItem(fatFood, fatGrams)
+
+            templateItems.push(nextFatItem)
+            usedFatIds.add(fatFood.id)
+
             templateSummary = sumMealItems(templateItems)
+            remainingFatGap -= Number(nextFatItem.fat_g || 0)
+            fatAddedCount += 1
           }
         }
       }
@@ -4862,7 +5244,7 @@ if (currentMealType === 'alcohol') {
       const nextPreferredIncludedCount =
         preferredIncludedCount + (hasPreferredInMeal ? 1 : 0)
 
-            return {
+                 return {
         items: templateItems,
         menu: buildMealMenuLabel(templateItems, slot),
         guide_text:
