@@ -2341,6 +2341,61 @@ const getAllowedFatFoodNamesByStructure = (structureType = '') => {
 
   return map[structureType] || map.general_meal
 }
+const applyPastaMinimumFat = ({ items = [], foods = [], slot = '' }) => {
+  const nextItems = Array.isArray(items) ? [...items] : []
+  const structureType = getMealStructureType(nextItems, slot)
+
+  if (structureType !== 'pasta_meal') {
+    return nextItems
+  }
+
+  const hasPastaSauceOrFat = nextItems.some((item) => {
+    const normalizedItemName = normalizeMenuFoodName(String(item?.name || '').trim())
+    return ['올리브오일', '치즈', '토마토소스', '페스토'].includes(normalizedItemName)
+  })
+
+  if (hasPastaSauceOrFat) {
+    return nextItems
+  }
+
+  const pastaExtraCandidates = (Array.isArray(foods) ? foods : [])
+    .filter((food) => {
+      const category = String(food?.category_major || '').trim()
+      const normalizedName = normalizeMenuFoodName(String(food?.name || '').trim())
+
+      if (category !== 'fat') return false
+      return ['올리브오일', '치즈', '토마토소스', '페스토'].includes(normalizedName)
+    })
+    .sort((a, b) => {
+      const aName = normalizeMenuFoodName(String(a?.name || '').trim())
+      const bName = normalizeMenuFoodName(String(b?.name || '').trim())
+
+      const score = (name) => {
+        if (name === '올리브오일') return 100
+        if (name === '치즈') return 80
+        if (name === '토마토소스') return 60
+        if (name === '페스토') return 40
+        return 0
+      }
+
+      return score(bName) - score(aName)
+    })
+
+  const pastaExtraFood = pastaExtraCandidates[0]
+
+  if (!pastaExtraFood) {
+    return nextItems
+  }
+
+  const defaultGrams =
+    normalizeMenuFoodName(String(pastaExtraFood?.name || '').trim()) === '올리브오일'
+      ? 10
+      : Number(pastaExtraFood?.typical_portion_g || 20)
+
+  nextItems.push(buildMealFoodItem(pastaExtraFood, defaultGrams))
+  return nextItems
+}
+  
 const normalizeMenuFoodName = (rawName = '') => {
   const name = String(rawName || '').trim()
 
@@ -5618,65 +5673,25 @@ if (currentMealType === 'alcohol') {
   templateSummary = sumMealItems(templateItems)
 }
 
-            const structureTypeAfterFat = getMealStructureType(templateItems, slot)
-
-      if (structureTypeAfterFat === 'pasta_meal') {
-        const hasPastaSauceOrFat = templateItems.some((item) => {
-          const normalizedItemName = normalizeMenuFoodName(String(item?.name || '').trim())
-          return ['올리브오일', '치즈', '토마토소스', '페스토'].includes(normalizedItemName)
-        })
-
-        if (!hasPastaSauceOrFat) {
-          const pastaExtraCandidates = styleFilteredFoods
-            .filter((food) => {
-              const category = String(food?.category_major || '').trim()
-              const normalizedName = normalizeMenuFoodName(String(food?.name || '').trim())
-
-              if (category !== 'fat') return false
-              return ['올리브오일', '치즈', '토마토소스', '페스토'].includes(normalizedName)
-            })
-            .sort((a, b) => {
-              const aName = normalizeMenuFoodName(String(a?.name || '').trim())
-              const bName = normalizeMenuFoodName(String(b?.name || '').trim())
-
-              const score = (name) => {
-                if (name === '올리브오일') return 100
-                if (name === '치즈') return 80
-                if (name === '토마토소스') return 60
-                if (name === '페스토') return 40
-                return 0
-              }
-
-              return score(bName) - score(aName)
-            })
-
-          const pastaExtraFood = pastaExtraCandidates[0]
-
-          if (pastaExtraFood) {
-            const defaultGrams =
-              normalizeMenuFoodName(String(pastaExtraFood?.name || '').trim()) === '올리브오일'
-                ? 10
-                : Number(pastaExtraFood?.typical_portion_g || 20)
-
-            const pastaExtraItem = buildMealFoodItem(pastaExtraFood, defaultGrams)
-            templateItems.push(pastaExtraItem)
-            templateSummary = sumMealItems(templateItems)
-          }
-        }
-      }
+                  templateItems = applyPastaMinimumFat({
+        items: templateItems,
+        foods: styleFilteredFoods,
+        slot,
+      })
+      templateSummary = sumMealItems(templateItems)
       const nextUsedIds = [
         ...recentUsedIds,
-        ...(templateMeal.items || []).map((item) => item.food_id).filter(Boolean),
+        ...templateItems.map((item) => item.food_id).filter(Boolean),
       ].slice(-8)
 
       const nextSlotUsedNames = [
         ...slotUsedNames,
-        ...(templateMeal.items || []).map((item) => item.name).filter(Boolean),
+        ...templateItems.map((item) => item.name).filter(Boolean),
       ].slice(-8)
 
-      const hasPreferredInMeal = (templateMeal.items || []).some((item) =>
-        preferredSet.has(item.food_id)
-      )
+     const hasPreferredInMeal = templateItems.some((item) =>
+  preferredSet.has(item.food_id)
+)
 
       const nextPreferredIncludedCount =
         preferredIncludedCount + (hasPreferredInMeal ? 1 : 0)
