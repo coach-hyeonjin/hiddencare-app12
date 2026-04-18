@@ -5591,7 +5591,7 @@ if (currentMealType === 'alcohol') {
       roundToNearest(Math.min(needGramByFat, typicalPortionG * 2), 5)
     )
 
-    const addedItem = createMealItemFromFood(selectedFatFood, addGrams)
+    const addedItem = buildMealFoodItem(selectedFatFood, addGrams)
 
     if (!addedItem) break
 
