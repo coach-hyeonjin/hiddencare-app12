@@ -2341,6 +2341,36 @@ const getAllowedFatFoodNamesByStructure = (structureType = '') => {
 
   return map[structureType] || map.general_meal
 }
+
+  const normalizePastaSauceName = (rawName = '') => {
+  const name = String(rawName || '').trim()
+
+  if (!name) return ''
+
+  if (name.includes('볼로네제')) return '토마토소스'
+  if (name.includes('토마토소스') || name.includes('토마토 파스타소스')) return '토마토소스'
+  if (name.includes('페스토')) return '페스토'
+  if (name.includes('크림소스') || name.includes('화이트소스') || name.includes('크림')) return '크림소스'
+  if (name.includes('파마산')) return '파마산치즈'
+  if (name.includes('모짜렐라')) return '모짜렐라치즈'
+  if (name.includes('치즈')) return '치즈'
+  if (name.includes('올리브오일')) return '올리브오일'
+
+  return ''
+}
+
+const getPastaExtraPriorityName = (rawName = '') => {
+  const normalized = normalizePastaSauceName(rawName)
+
+  if (normalized === '파마산치즈' || normalized === '모짜렐라치즈') return '치즈'
+  if (normalized === '토마토소스') return '토마토소스'
+  if (normalized === '페스토') return '페스토'
+  if (normalized === '크림소스') return '크림소스'
+  if (normalized === '치즈') return '치즈'
+  if (normalized === '올리브오일') return '올리브오일'
+
+  return ''
+}
 const applyPastaMinimumFat = ({
   items = [],
   foods = [],
@@ -2354,34 +2384,42 @@ const applyPastaMinimumFat = ({
     return nextItems
   }
 
- const hasPastaSauceOrFat = nextItems.some((item) => {
-  const normalizedItemName = normalizeMenuFoodName(String(item?.name || '').trim())
-  return (
-    normalizedItemName === '올리브오일' ||
-    normalizedItemName === '토마토소스' ||
-    normalizedItemName === '페스토' ||
-    normalizedItemName.includes('치즈')
-  )
-})
+  const hasPastaSauceOrFat = nextItems.some((item) => {
+    const normalizedItemName = normalizeMenuFoodName(String(item?.name || '').trim())
+    return (
+      normalizedItemName === '올리브오일' ||
+      normalizedItemName === '토마토소스' ||
+      normalizedItemName === '페스토' ||
+      normalizedItemName === '크림소스' ||
+      normalizedItemName === '파마산치즈' ||
+      normalizedItemName === '모짜렐라치즈' ||
+      normalizedItemName === '치즈'
+    )
+  })
+
   if (hasPastaSauceOrFat) {
     return nextItems
   }
 
-const pastaExtraCandidates = (Array.isArray(foods) ? [...foods] : []).sort((a, b) => {
-  const priority = ['올리브오일', '치즈', '토마토소스', '페스토']
-  const aName = normalizeMenuFoodName(String(a?.name || '').trim())
-  const bName = normalizeMenuFoodName(String(b?.name || '').trim())
+  const allowedNames = ['올리브오일', '치즈', '토마토소스', '페스토', '크림소스', '파마산치즈', '모짜렐라치즈']
 
-  const aPriority =
-    aName.includes('치즈') ? '치즈' : aName
-  const bPriority =
-    bName.includes('치즈') ? '치즈' : bName
+  const pastaExtraCandidates = (Array.isArray(foods) ? [...foods] : [])
+    .filter((food) => {
+      const normalizedName = normalizeMenuFoodName(String(food?.name || '').trim())
+      return allowedNames.includes(normalizedName)
+    })
+    .sort((a, b) => {
+      const priority = ['올리브오일', '치즈', '토마토소스', '페스토', '크림소스']
 
-  const aIndex = priority.indexOf(aPriority)
-  const bIndex = priority.indexOf(bPriority)
+      const aPriority = getPastaExtraPriorityName(String(a?.name || '').trim())
+      const bPriority = getPastaExtraPriorityName(String(b?.name || '').trim())
 
-  return (aIndex === -1 ? 999 : aIndex) - (bIndex === -1 ? 999 : bIndex)
-})
+      const aIndex = priority.indexOf(aPriority)
+      const bIndex = priority.indexOf(bPriority)
+
+      return (aIndex === -1 ? 999 : aIndex) - (bIndex === -1 ? 999 : bIndex)
+    })
+
   if (!pastaExtraCandidates.length) {
     return nextItems
   }
@@ -2406,7 +2444,11 @@ const pastaExtraCandidates = (Array.isArray(foods) ? [...foods] : []).sort((a, b
   const defaultGrams =
     normalizedSelectedName === '올리브오일'
       ? 10
-      : normalizedSelectedName === '치즈'
+      : (
+          normalizedSelectedName === '치즈' ||
+          normalizedSelectedName === '파마산치즈' ||
+          normalizedSelectedName === '모짜렐라치즈'
+        )
         ? 20
         : Number(pastaExtraFood?.typical_portion_g || 20)
 
@@ -2426,9 +2468,10 @@ const normalizeMenuFoodName = (rawName = '') => {
   if (name.includes('파스타면') || name.includes('스파게티면') || name.includes('펜네')) return '파스타'
 
   if (name.includes('올리브오일')) return '올리브오일'
+  if (name.includes('볼로네제')) return '토마토소스'
   if (name.includes('토마토소스') || name.includes('토마토 파스타소스')) return '토마토소스'
- if (name.includes('페스토')) return '페스토'
-if (name.includes('크림소스') || name.includes('화이트소스')) return '크림소스'
+  if (name.includes('페스토')) return '페스토'
+  if (name.includes('크림소스') || name.includes('화이트소스') || name.includes('크림')) return '크림소스'
   if (name.includes('파마산')) return '파마산치즈'
   if (name.includes('모짜렐라')) return '모짜렐라치즈'
 
