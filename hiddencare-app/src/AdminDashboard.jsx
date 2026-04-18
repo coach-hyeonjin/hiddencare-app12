@@ -2331,7 +2331,7 @@ const getMealStructureType = (items = [], slot = '') => {
 const getAllowedFatFoodNamesByStructure = (structureType = '') => {
     const map = {
     rice_meal: ['아보카도', '올리브오일', '아몬드', '호두', '치즈'],
-      pasta_meal: ['올리브오일', '치즈', '토마토소스', '페스토'],
+      pasta_meal: ['올리브오일', '치즈', '토마토소스', '페스토', '크림소스', '파마산치즈', '모짜렐라치즈'],
     bread_meal: ['아보카도', '땅콩버터', '아몬드버터', '치즈'],
     bowl_meal: ['아몬드', '호두', '캐슈넛', '피스타치오', '땅콩버터', '아몬드버터'],
     salad_meal: ['아보카도', '올리브오일', '아몬드', '호두', '치즈'],
@@ -2363,14 +2363,7 @@ const applyPastaMinimumFat = ({
     return nextItems
   }
 
-  const pastaExtraCandidates = (Array.isArray(foods) ? foods : [])
-    .filter((food) => {
-      const category = String(food?.category_major || '').trim()
-      const normalizedName = normalizeMenuFoodName(String(food?.name || '').trim())
-
-      if (category !== 'fat') return false
-      return ['올리브오일', '치즈', '토마토소스', '페스토'].includes(normalizedName)
-    })
+  const pastaExtraCandidates = (Array.isArray(foods) ? foods :
     .sort((a, b) => {
       const priority = ['올리브오일', '치즈', '토마토소스', '페스토']
       const aName = normalizeMenuFoodName(String(a?.name || '').trim())
@@ -2425,6 +2418,9 @@ const normalizeMenuFoodName = (rawName = '') => {
   if (name.includes('올리브오일')) return '올리브오일'
   if (name.includes('토마토소스') || name.includes('토마토 파스타소스')) return '토마토소스'
   if (name.includes('페스토')) return '페스토'
+    if (name.includes('크림소스') || name.includes('화이트소스')) return '크림소스'
+  if (name.includes('파마산')) return '파마산치즈'
+  if (name.includes('모짜렐라')) return '모짜렐라치즈'
 
   if (name.includes('아몬드버터')) return '아몬드버터'
   if (name.includes('땅콩버터')) return '땅콩버터'
@@ -2569,7 +2565,29 @@ const getPastaMenuTitle = ({
   if (proteinName === '소고기' && fatNames.includes('페스토')) {
     return '소고기 페스토 파스타'
   }
+  if (proteinName === '닭가슴살' && fatNames.includes('크림소스')) {
+    return '닭가슴살 크림 파스타'
+  }
 
+  if (proteinName === '연어' && fatNames.includes('크림소스')) {
+    return '연어 크림 파스타'
+  }
+
+  if (proteinName === '소고기' && fatNames.includes('크림소스')) {
+    return '소고기 크림 파스타'
+  }
+
+  if (proteinName === '닭가슴살' && fatNames.includes('파마산치즈')) {
+    return '닭가슴살 파마산 파스타'
+  }
+
+  if (proteinName === '소고기' && fatNames.includes('파마산치즈')) {
+    return '소고기 파마산 파스타'
+  }
+
+  if (proteinName === '연어' && fatNames.includes('모짜렐라치즈')) {
+    return '연어 치즈 파스타'
+  }
   if (proteinName === '소고기') return '소고기 단백질 파스타'
   if (proteinName === '참치') return '참치 단백질 파스타'
   if (proteinName === '연어') return '연어 단백질 파스타'
