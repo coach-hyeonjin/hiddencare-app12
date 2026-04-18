@@ -2085,26 +2085,34 @@ const getMealMenuTitleByItems = (items = [], slot = '') => {
   const dairyItem = rows.find((item) => String(item?.category_major || '').trim() === 'dairy')
   const fruitItem = rows.find((item) => String(item?.category_major || '').trim() === 'fruit')
   const vegetableItem = rows.find((item) => String(item?.category_major || '').trim() === 'vegetable')
+  const fatItem = rows.find((item) => String(item?.category_major || '').trim() === 'fat')
 
   const carbName = getMealItemDisplayName(carbItem)
   const proteinName = getMealItemDisplayName(proteinItem)
   const dairyName = getMealItemDisplayName(dairyItem)
   const fruitName = getMealItemDisplayName(fruitItem)
+  const fatName = getMealItemDisplayName(fatItem)
 
   const isSnackSlot = ['간식', '오전간식', '운동후', '야식'].includes(slot)
 
   if (isSnackSlot) {
+    if (dairyName && fruitName && fatName) return `${dairyName} + ${fruitName} + ${fatName} 간식`
     if (dairyName && fruitName) return `${dairyName} + ${fruitName} 간식`
+    if (proteinName && fruitName && fatName) return `${proteinName} + ${fruitName} + ${fatName} 간식`
     if (proteinName && fruitName) return `${proteinName} + ${fruitName} 간식`
+    if (proteinName && fatName) return `${proteinName} + ${fatName} 간식`
     if (proteinName) return `${proteinName} 간식`
     if (dairyName) return `${dairyName} 간식`
   }
 
   if (proteinName && carbName) {
+    if (fatName && vegetableItem) return `${proteinName} + ${carbName} + ${fatName} + 채소식`
+    if (fatName) return `${proteinName} + ${carbName} + ${fatName} 식사`
     if (vegetableItem) return `${proteinName} + ${carbName} + 채소식`
     return `${proteinName} + ${carbName} 식사`
   }
 
+  if (proteinName && fatName) return `${proteinName} + ${fatName} 식사`
   if (proteinName) return `${proteinName} 단백질 식사`
   if (carbName) return `${carbName} 탄수화물 식사`
 
@@ -2119,7 +2127,7 @@ const buildMealMenuLabel = (items = [], slot = '') => {
   if (!composition) return title
   return `${title} (${composition})`
 }
-
+  
 const buildMealGuideTextFromItems = ({ items = [], slot = '', mealType = 'normal', targetKcal = 0 }) => {
   const composition = buildMealCompositionText(items)
 
@@ -4794,6 +4802,49 @@ if (currentMealType === 'alcohol') {
     })
 
     if (templateMeal) {
+            let templateItems = Array.isArray(templateMeal.items) ? [...templateMeal.items] : []
+      let templateSummary = sumMealItems(templateItems)
+
+      const currentFat = Number(templateSummary.fat_g || 0)
+      const fatGap = Math.max(0, Number(targetFat || 0) - currentFat)
+
+      if (fatGap >= 5) {
+        const fatCandidates = styleFilteredFoods.filter((food) => {
+          return String(food?.category_major || '').trim() === 'fat'
+        })
+
+        if (fatCandidates.length > 0) {
+          const fatFood = pickFood({
+            foods: fatCandidates,
+            preferredSet,
+            blockedSet,
+            categories: ['fat'],
+            goalType,
+            dateString,
+            slot,
+            offset: offset + 7,
+            usedIds: new Set(
+              templateItems.map((item) => item.food_id).filter(Boolean)
+            ),
+            recentUsedIds,
+            slotUsedNames,
+          })
+
+          if (fatFood) {
+            const fatGrams = calcPortionByMacro({
+              food: fatFood,
+              macroKey: 'fat_per_100g',
+              targetGrams: Math.max(5, fatGap),
+              fallbackGrams: fatFood.typical_portion_g || 15,
+              minGrams: 10,
+              maxGrams: 40,
+            })
+
+            templateItems.push(buildMealFoodItem(fatFood, fatGrams))
+            templateSummary = sumMealItems(templateItems)
+          }
+        }
+      }
       const nextUsedIds = [
         ...recentUsedIds,
         ...(templateMeal.items || []).map((item) => item.food_id).filter(Boolean),
@@ -4811,23 +4862,23 @@ if (currentMealType === 'alcohol') {
       const nextPreferredIncludedCount =
         preferredIncludedCount + (hasPreferredInMeal ? 1 : 0)
 
-      return {
-        items: templateMeal.items || [],
-        menu: buildMealMenuLabel(templateMeal.items || [], slot),
+            return {
+        items: templateItems,
+        menu: buildMealMenuLabel(templateItems, slot),
         guide_text:
           templateMeal.guide_text ||
           buildMealGuideTextFromItems({
-            items: templateMeal.items || [],
+            items: templateItems,
             slot,
             mealType: currentMealType,
             targetKcal,
           }),
         meal_detail_type: templateMeal.meal_detail_type || 'template',
-        kcal: Number(templateMeal.kcal || 0),
-        carbs_g: Number(templateMeal.carbs_g || 0),
-        protein_g: Number(templateMeal.protein_g || 0),
-        fat_g: Number(templateMeal.fat_g || 0),
-        sodium_mg: Number(templateMeal.sodium_mg || 0),
+        kcal: Number(templateSummary.kcal || 0),
+        carbs_g: Number(templateSummary.carbs_g || 0),
+        protein_g: Number(templateSummary.protein_g || 0),
+        fat_g: Number(templateSummary.fat_g || 0),
+        sodium_mg: Number(templateSummary.sodium_mg || 0),
         nextUsedIds,
         nextSlotUsedNames,
         nextPreferredIncludedCount,
