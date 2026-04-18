@@ -2128,6 +2128,42 @@ const buildMealCookingGuide = ({ items = [], slot = '', menuTitle = '' }) => {
   const mainFatName = fatNames[0] || ''
   const secondFatName = fatNames[1] || ''
 
+  if (structureType === 'pasta_meal') {
+    if (menuTitle.includes('알리오 올리오')) {
+      return [
+        '파스타면은 삶아서 물기를 뺀 뒤 준비',
+        proteinName ? `${proteinName}은 따로 익혀 메인 단백질로 준비` : '',
+        '올리브오일과 마늘 향을 살려 가볍게 볶은 뒤 면과 함께 섞어서 섭취',
+      ].filter(Boolean).join(' / ')
+    }
+
+    if (menuTitle.includes('오일 파스타')) {
+      return [
+        '파스타면은 삶아서 준비',
+        proteinName ? `${proteinName}은 먼저 익혀서 준비` : '',
+        '오일 베이스로 가볍게 볶아 파스타 형태로 섭취',
+      ].filter(Boolean).join(' / ')
+    }
+
+    if (menuTitle.includes('치즈 파스타')) {
+      return [
+        '파스타면은 삶아서 준비',
+        proteinName ? `${proteinName}은 먼저 익혀서 준비` : '',
+        '치즈는 과하지 않게 넣어 풍미만 보완하고 면과 함께 섞어서 섭취',
+      ].filter(Boolean).join(' / ')
+    }
+
+    if (menuTitle.includes('단백질 파스타')) {
+      return [
+        '파스타면은 삶아서 준비',
+        proteinName ? `${proteinName}은 익혀서 단백질 재료로 사용` : '',
+        '면과 단백질 재료를 함께 섞어 한 끼 식사 형태로 섭취',
+      ].filter(Boolean).join(' / ')
+    }
+
+    return '파스타면은 삶아서 준비하고, 단백질 재료와 함께 섞어 한 끼 식사 형태로 섭취'
+  }
+
   if (menuTitle.includes('덮밥')) {
     const parts = []
 
@@ -2247,15 +2283,18 @@ const buildMealCookingGuide = ({ items = [], slot = '', menuTitle = '' }) => {
 
 const getMealStructureType = (items = [], slot = '') => {
   const rows = Array.isArray(items) ? items : []
-  const names = rows.map((item) => String(item?.name || '').trim())
+  const names = rows.map((item) => normalizeMenuFoodName(String(item?.name || '').trim()))
+  const rawNames = rows.map((item) => String(item?.name || '').trim())
 
-  const hasRice = names.some((name) => name.includes('밥') || name.includes('덮밥'))
-  const hasBread = names.some((name) => name.includes('식빵') || name.includes('베이글') || name.includes('토스트'))
-  const hasOat = names.some((name) => name.includes('오트밀'))
-  const hasYogurt = names.some((name) => name.includes('요거트'))
-  const hasSalad = names.some((name) => name.includes('샐러드') || name.includes('채소'))
+  const hasPasta = rawNames.some((name) => name.includes('파스타')) || names.some((name) => name.includes('파스타'))
+  const hasRice = names.some((name) => name === '밥' || name.includes('덮밥'))
+  const hasBread = names.some((name) => name === '빵' || name.includes('토스트'))
+  const hasOat = names.some((name) => name === '오트밀')
+  const hasYogurt = names.some((name) => name === '그릭요거트')
+  const hasSalad = names.some((name) => name === '샐러드' || name.includes('채소'))
   const isSnackLike = ['간식', '오전간식', '야식'].includes(slot)
 
+  if (hasPasta) return 'pasta_meal'
   if (hasRice) return 'rice_meal'
   if (hasBread) return 'bread_meal'
   if (hasOat || hasYogurt) return 'bowl_meal'
@@ -2268,6 +2307,7 @@ const getMealStructureType = (items = [], slot = '') => {
 const getAllowedFatFoodNamesByStructure = (structureType = '') => {
     const map = {
     rice_meal: ['아보카도', '올리브오일', '아몬드', '호두', '치즈'],
+       pasta_meal: ['올리브오일', '치즈', '아보카도'],
     bread_meal: ['아보카도', '땅콩버터', '아몬드버터', '치즈'],
     bowl_meal: ['아몬드', '호두', '캐슈넛', '피스타치오', '땅콩버터', '아몬드버터'],
     salad_meal: ['아보카도', '올리브오일', '아몬드', '호두', '치즈'],
@@ -2350,7 +2390,81 @@ const getPrimaryMealItemsForNaming = (items = [], slot = '') => {
   }
 }
 
+const getPastaMenuTitle = ({
+  proteinName = '',
+  fatName = '',
+  secondFatName = '',
+}) => {
+  const fatNames = [fatName, secondFatName].filter(Boolean)
 
+  if (proteinName === '닭가슴살' && fatNames.includes('올리브오일')) {
+    return '닭가슴살 알리오 올리오'
+  }
+
+  if (proteinName === '연어' && fatNames.includes('올리브오일')) {
+    return '연어 오일 파스타'
+  }
+
+  if (proteinName === '닭가슴살' && fatNames.includes('치즈')) {
+    return '닭가슴살 치즈 파스타'
+  }
+
+  if (proteinName === '소고기') {
+    return '소고기 단백질 파스타'
+  }
+
+  if (proteinName === '참치' && fatNames.includes('올리브오일')) {
+    return '참치 오일 파스타'
+  }
+
+  if (proteinName === '연어') {
+    return '연어 단백질 파스타'
+  }
+
+  if (proteinName === '닭가슴살') {
+    return '닭가슴살 단백질 파스타'
+  }
+
+  return '맞춤 파스타'
+}
+
+const getMealReasonText = ({ menuTitle = '', slot = '' }) => {
+  if (menuTitle.includes('알리오 올리오')) {
+    return '과한 소스 없이 지방을 낮추고 깔끔하게 먹기 좋은 파스타입니다.'
+  }
+
+  if (menuTitle.includes('오일 파스타')) {
+    return '좋은 지방과 단백질을 함께 확보해 포만감과 에너지 유지에 유리한 파스타입니다.'
+  }
+
+  if (menuTitle.includes('치즈 파스타')) {
+    return '풍미와 만족감을 높이면서 단백질을 함께 확보하는 파스타입니다.'
+  }
+
+  if (menuTitle.includes('단백질 파스타')) {
+    return '파스타를 먹더라도 단백질 비중을 높여 한 끼 식사로 활용하기 좋은 구성입니다.'
+  }
+
+  if (menuTitle.includes('덮밥')) {
+    return '한 그릇 식사처럼 이해하기 쉬운 구조로 맞춘 식사입니다.'
+  }
+
+  if (menuTitle.includes('플레이트')) {
+    return '탄수·단백질·지방을 나눠 담아 조절하기 쉬운 식사입니다.'
+  }
+
+  if (menuTitle.includes('샐러드')) {
+    return '포만감과 지방 보완을 함께 고려한 샐러드형 식사입니다.'
+  }
+
+  if (menuTitle.includes('견과볼') || menuTitle.includes('그릭요거트') || menuTitle.includes('오트밀')) {
+    return '간식이나 가벼운 끼니로 소화 부담을 줄인 구성입니다.'
+  }
+
+  return slot === '간식' || slot === '오전간식' || slot === '야식'
+    ? '가볍게 섭취하면서도 필요한 영양을 보완하는 구성입니다.'
+    : '한 끼 식사로 이해하기 쉽고 실행하기 좋은 구성입니다.'
+}
   
 const getMealMenuTitleByItems = (items = [], slot = '') => {
   const rows = getMealPrimaryItems(items)
@@ -2376,6 +2490,14 @@ const getMealMenuTitleByItems = (items = [], slot = '') => {
   } = getPrimaryMealItemsForNaming(rows, slot)
 
   const snackLike = ['간식', '오전간식', '야식'].includes(slot)
+
+  if (structureType === 'pasta_meal') {
+    return getPastaMenuTitle({
+      proteinName,
+      fatName,
+      secondFatName,
+    })
+  }
 
   if (structureType === 'rice_meal') {
     if (fatName === '아보카도' && proteinName) return `${proteinName} 아보카도 덮밥`
@@ -2444,7 +2566,6 @@ const getMealMenuTitleByItems = (items = [], slot = '') => {
   const firstName = normalizeMenuFoodName(getMealItemDisplayName(rows[0]))
   return firstName ? `${firstName} 구성` : '맞춤 식사 구성'
 }
-
 const buildMealMenuLabel = (items = [], slot = '') => {
   const title = getMealMenuTitleByItems(items, slot)
   const composition = buildMealCompositionText(items)
@@ -2459,31 +2580,14 @@ const buildMealGuideTextFromItems = ({ items = [], slot = '', mealType = 'normal
   const fatDetailText = buildMealFatDetailText(items)
   const fatTotal = Math.round(getMealFatTotalFromFatItems(items))
   const cookingGuide = buildMealCookingGuide({ items, slot, menuTitle })
-
-  let description = `목표 열량 ${Math.round(Number(targetKcal || 0))}kcal 기준 식사`
-
-  if (mealType === 'general') {
-    description = '외식 시에도 이 구성과 비슷하게 맞추면 됩니다.'
-  } else if (mealType === 'free') {
-    description = '단백질 먼저 먹고, 과식하지 말고 다음 끼니에서 바로 복귀하세요.'
-  } else if (mealType === 'alcohol') {
-    description = '안주는 단백질 위주로, 튀김/면/밥 추가는 최소화하세요.'
-  } else if (menuTitle.includes('덮밥')) {
-    description = '한 그릇 식사처럼 이해하기 쉬운 구조로 맞춘 식사입니다.'
-  } else if (menuTitle.includes('플레이트')) {
-    description = '탄수·단백질·지방을 나눠 담아 조절하기 쉬운 식사입니다.'
-  } else if (menuTitle.includes('샐러드')) {
-    description = '포만감과 지방 보완을 함께 고려한 샐러드형 식사입니다.'
-  } else if (menuTitle.includes('견과볼') || menuTitle.includes('그릭요거트') || menuTitle.includes('오트밀')) {
-    description = '간식이나 가벼운 끼니로 소화 부담을 줄인 구성입니다.'
-  }
+  const reasonText = getMealReasonText({ menuTitle, slot })
 
   return [
     `섭취 방법: ${cookingGuide}`,
     composition ? `구성: ${composition}` : '',
     fatDetailText ? `지방 성분: ${fatDetailText}` : '',
     fatDetailText ? `지방 합계: 약 ${fatTotal}g` : '',
-    `설명: ${description}`,
+    `설명: ${reasonText}`,
   ].filter(Boolean).join('\n')
 }
 const handleMealPlanSave = async () => {
