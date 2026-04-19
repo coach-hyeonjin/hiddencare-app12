@@ -2895,17 +2895,11 @@ const buildMealMenuLabel = (items = [], slot = '') => {
   
 const buildMealGuideTextFromItems = ({ items = [], slot = '', mealType = 'normal', targetKcal = 0 }) => {
   const menuTitle = getMealMenuTitleByItems(items, slot)
-  const composition = buildMealCompositionText(items)
-  const fatDetailText = buildMealFatDetailText(items)
-  const fatTotal = Math.round(getMealFatTotalFromFatItems(items))
   const cookingGuide = buildMealCookingGuide({ items, slot, menuTitle })
   const reasonText = getMealReasonText({ menuTitle, slot })
 
   return [
     `섭취 방법: ${cookingGuide}`,
-    composition ? `구성: ${composition}` : '',
-    fatDetailText ? `지방 성분: ${fatDetailText}` : '',
-    fatDetailText ? `지방 합계: 약 ${fatTotal}g` : '',
     `설명: ${reasonText}`,
   ].filter(Boolean).join('\n')
 }
@@ -20535,23 +20529,21 @@ const filteredExercisesAdvanced = exercises.filter((exercise) => {
     </div>
   </div>
 
-  <div className="detail-box" style={{ marginTop: '10px' }}>
+ <div className="detail-box" style={{ marginTop: '10px' }}>
   <p>
     <strong>메뉴</strong> {meal.menu || '-'}
   </p>
 
- <div style={{ color: 'red', fontWeight: 700 }}>
-    테스트문구12345
-  </div>
-
-    
   {!isSpecialMeal ? (
     <>
       <p className="compact-text" style={{ marginTop: '8px', lineHeight: 1.7 }}>
         <strong>구성 재료</strong>
       </p>
 
-      <div className="compact-text" style={{ marginTop: '4px', whiteSpace: 'pre-line', lineHeight: 1.7 }}>
+      <div
+        className="compact-text"
+        style={{ marginTop: '4px', whiteSpace: 'pre-line', lineHeight: 1.7 }}
+      >
         {Array.isArray(meal.food_items) && meal.food_items.length > 0
           ? formatMealItemsWithRole(meal.food_items).join('\n')
           : '-'}
