@@ -1499,8 +1499,8 @@ const normalizedMealRiceMap = mealSlots.reduce((acc, slot) => {
 }, {})
   const riceGuide = getRiceGuide(usualRiceAmountG)
   
-  const sodiumLimitMg = 2000
-  const saturatedFatLimitG = Math.round((targetKcal * 0.1) / 9)
+  const sodiumLimitMg = Number(calculatedTargets.sodiumTargetMg || 2000)
+const saturatedFatLimitG = Math.round((targetKcal * 0.1) / 9)
 
   const calcPayload = {
     member_id: mealPlanForm.member_id,
@@ -1591,14 +1591,15 @@ const normalizedMealRiceMap = mealSlots.reduce((acc, slot) => {
 
   const calculationId = calcInsert?.id || null
 
-  setMealPlanForm((prev) => ({
-    ...prev,
-    meal_slots: mealSlots,
-    target_kcal: targetKcal,
-    target_protein_g: targetProtein,
-    target_fat_g: targetFat,
-    target_carbs_g: targetCarbs,
-  }))
+ setMealPlanForm((prev) => ({
+  ...prev,
+  meal_slots: mealSlots,
+  target_kcal: targetKcal,
+  target_protein_g: targetProtein,
+  target_fat_g: targetFat,
+  target_carbs_g: targetCarbs,
+  target_sodium_mg: sodiumLimitMg,
+}))
   const recommendation = buildPlanStyleRecommendation({
     mealPlanForm: {
       ...mealPlanForm,
@@ -1641,6 +1642,7 @@ const normalizedMealRiceMap = mealSlots.reduce((acc, slot) => {
         target_carbs_g: targetCarbs,
         target_protein_g: targetProtein,
         target_fat_g: targetFat,
+        target_sodium_mg: sodiumLimitMg,
         excluded_foods: normalizeCommaTextToArray(mealPlanForm.excluded_foods),
         preferred_foods: normalizeCommaTextToArray(mealPlanForm.preferred_foods),
         allergies: normalizeCommaTextToArray(mealPlanForm.allergies),
@@ -1940,7 +1942,63 @@ const calculateBmrFromHealth = ({ weight, height, age, sex, bodyFatPercent, skel
     bmr_source: 'weight_fallback',
   }
 }
+const calculateSodiumTargetByGoal = ({ goalType = '', mealPlanForm = {} }) => {
+  const junkFreq = Number(mealPlanForm?.junk_food_frequency_per_week || 0)
+  const deliveryFreq = Number(mealPlanForm?.delivery_food_frequency_per_week || 0)
+  const lateNightFreq = Number(mealPlanForm?.late_night_meal_frequency_per_week || 0)
+  const alcoholFreq = Number(mealPlanForm?.alcohol_frequency_per_week || 0)
 
+  const baseMap = {
+    diet: 1800,
+    recomposition: 2000,
+    maintenance: 2000,
+    muscle_gain: 2300,
+    bulk: 2500,
+  }
+
+  let sodiumTargetMg = Number(baseMap[goalType] || 2000)
+
+  const highSodiumLifestyleScore = junkFreq + deliveryFreq + lateNightFreq + alcoholFreq
+
+  if (goalType === 'diet' || goalType === 'recomposition') {
+    if (highSodiumLifestyleScore >= 5) sodiumTargetMg = Math.max(1600, sodiumTargetMg - 200)
+  }
+
+  if (goalType === 'muscle_gain' || goalType === 'bulk') {
+    if (highSodiumLifestyleScore === 0) sodiumTargetMg += 100
+  }
+
+  return Math.round(sodiumTargetMg)
+}
+
+const isHighSodiumFoodItem = (item = {}) => {
+  const name = String(
+    item?.food_name ||
+    item?.name ||
+    item?.display_name ||
+    item?.label ||
+    ''
+  ).trim()
+
+  const sodiumMg = Number(item?.sodium_mg || 0)
+  const sodiumPer100g = Number(item?.sodium_mg_per_100g || 0)
+
+  if (sodiumMg >= 300) return true
+  if (sodiumPer100g >= 500) return true
+
+  return (
+    name.includes('김치') ||
+    name.includes('장아찌') ||
+    name.includes('젓갈') ||
+    name.includes('햄') ||
+    name.includes('소시지') ||
+    name.includes('베이컨') ||
+    name.includes('국') ||
+    name.includes('찌개') ||
+    name.includes('라면') ||
+    name.includes('소스')
+  )
+}
 const calculateMealTargetsFromHealth = ({
   goalType,
   health,
@@ -2015,7 +2073,10 @@ const calculateMealTargetsFromHealth = ({
     0,
     roundToNearest((targetKcal - targetProtein * 4 - targetFat * 9) / 4, 5)
   )
-
+const sodiumTargetMg = calculateSodiumTargetByGoal({
+  goalType,
+  mealPlanForm,
+})
   return {
     weight,
     height,
@@ -2036,6 +2097,7 @@ const calculateMealTargetsFromHealth = ({
     proteinRule: `${goalType} 기준 체중 x ${proteinMultiplierMap[goalType] || 1.8}g`,
     fatRule: `${goalType} 기준 체중 x ${fatMultiplierMap[goalType] || 0.8}g`,
     carbRule: '총열량에서 단백질/지방 제외 후 탄수화물 배분',
+sodiumTargetMg,
   }
 }
 
@@ -2140,28 +2202,41 @@ const formatMealTargetSummary = (meal = {}) => {
   const targetCarbs = Number(meal?.target_carbs_g || 0)
   const targetProtein = Number(meal?.target_protein_g || 0)
   const targetFat = Number(meal?.target_fat_g || 0)
+  const targetSodium = Number(meal?.target_sodium_mg || 0)
 
-  if (!targetCarbs && !targetProtein && !targetFat) return ''
+  if (!targetCarbs && !targetProtein && !targetFat && !targetSodium) return ''
 
-  return `내 몸 기준 한 끼 목표: 탄수화물 ${targetCarbs}g · 단백질 ${targetProtein}g · 지방 ${targetFat}g`
+  return `내 몸 기준 한 끼 목표: 탄수화물 ${targetCarbs}g · 단백질 ${targetProtein}g · 지방 ${targetFat}g · 나트륨 ${targetSodium}mg`
 }
 
 const formatMealTargetDiffSummary = (meal = {}) => {
   const carbDiff = Number(meal?.carbs_g || 0) - Number(meal?.target_carbs_g || 0)
   const proteinDiff = Number(meal?.protein_g || 0) - Number(meal?.target_protein_g || 0)
   const fatDiff = Number(meal?.fat_g || 0) - Number(meal?.target_fat_g || 0)
+  const sodiumDiff = Number(meal?.sodium_mg || 0) - Number(meal?.target_sodium_mg || 0)
 
-  const formatDiff = (value) => `${value > 0 ? '+' : ''}${Math.round(value)}g`
+  const toStatusText = (label, value, unit = 'g') => {
+    const rounded = Math.round(value)
 
-  return `한 끼 목표 대비: 탄수화물 ${formatDiff(carbDiff)} · 단백질 ${formatDiff(proteinDiff)} · 지방 ${formatDiff(fatDiff)}`
+    if (rounded === 0) return `${label} 적정`
+    if (rounded < 0) return `${label} ${Math.abs(rounded)}${unit} 적음`
+    return `${label} ${rounded}${unit} 많음`
+  }
+
+  return `한 끼 목표 대비: ${[
+    toStatusText('탄수화물', carbDiff, 'g'),
+    toStatusText('단백질', proteinDiff, 'g'),
+    toStatusText('지방', fatDiff, 'g'),
+    toStatusText('나트륨', sodiumDiff, 'mg'),
+  ].join(' · ')}`
 }
-
   const formatMealFeedbackSummary = (meal = {}) => {
   const items = Array.isArray(meal?.food_items) ? meal.food_items : []
 
   const carbDiff = Number(meal?.carbs_g || 0) - Number(meal?.target_carbs_g || 0)
   const proteinDiff = Number(meal?.protein_g || 0) - Number(meal?.target_protein_g || 0)
   const fatDiff = Number(meal?.fat_g || 0) - Number(meal?.target_fat_g || 0)
+  const sodiumDiff = Number(meal?.sodium_mg || 0) - Number(meal?.target_sodium_mg || 0)
 
   const roleCounts = items.reduce(
     (acc, item) => {
@@ -2171,6 +2246,7 @@ const formatMealTargetDiffSummary = (meal = {}) => {
       if (role.includes('단백질')) acc.protein += 1
       if (role.includes('지방')) acc.fat += 1
       if (role.includes('채소')) acc.vegetable += 1
+      if (isHighSodiumFoodItem(item)) acc.highSodium += 1
 
       return acc
     },
@@ -2179,50 +2255,66 @@ const formatMealTargetDiffSummary = (meal = {}) => {
       protein: 0,
       fat: 0,
       vegetable: 0,
+      highSodium: 0,
     }
   )
 
   const reasons = []
   const suggestions = []
+  const calculationExplain = []
+
+  const carbMain = items.filter((item) => getMealItemRoleLabel(item).includes('탄수화물'))
+  const proteinMain = items.filter((item) => getMealItemRoleLabel(item).includes('단백질'))
+  const fatMain = items.filter((item) => getMealItemRoleLabel(item).includes('지방'))
+  const sodiumMain = items.filter((item) => isHighSodiumFoodItem(item))
+
+  if (carbMain.length > 0) {
+    calculationExplain.push(`탄수화물은 ${carbMain.map((item) => getMealItemDisplayName(item)).join(', ')} 중심으로 계산됩니다.`)
+  }
+  if (proteinMain.length > 0) {
+    calculationExplain.push(`단백질은 ${proteinMain.map((item) => getMealItemDisplayName(item)).join(', ')} 중심으로 계산됩니다.`)
+  }
+  if (fatMain.length > 0) {
+    calculationExplain.push(`지방은 ${fatMain.map((item) => getMealItemDisplayName(item)).join(', ')} 중심으로 계산됩니다.`)
+  }
+  if (sodiumMain.length > 0) {
+    calculationExplain.push(`나트륨은 ${sodiumMain.map((item) => getMealItemDisplayName(item)).join(', ')} 영향이 큰 편입니다.`)
+  }
 
   if (Math.round(carbDiff) < 0) {
-    if (roleCounts.carb === 0) {
-      reasons.push('탄수화물 재료가 거의 없어서 목표보다 부족합니다.')
-    } else {
-      reasons.push('탄수화물 재료는 들어가 있지만 전체 양이 목표보다 적습니다.')
-    }
-    suggestions.push(`밥이나 고구마를 ${Math.abs(Math.round(carbDiff))}g 안팎 보완해도 좋습니다.`)
+    reasons.push('탄수화물 재료는 들어가 있지만 전체 양이 목표보다 적게 계산됩니다.')
+    suggestions.push(`밥이나 고구마를 ${Math.abs(Math.round(carbDiff))}g 안팎 더 보완할 수 있습니다.`)
   } else if (Math.round(carbDiff) > 0) {
-    reasons.push('탄수화물 재료 비중이 높아 목표보다 조금 많습니다.')
-    suggestions.push('다음 끼니에서는 밥이나 빵 양을 조금 줄여 균형을 맞추면 좋습니다.')
+    reasons.push('탄수화물 재료 비중이 높아 목표보다 조금 많게 계산됩니다.')
+    suggestions.push('다음 끼니에서는 밥, 빵, 면류 양을 조금 줄여 균형을 맞추면 좋습니다.')
   }
 
   if (Math.round(proteinDiff) < 0) {
-    if (roleCounts.protein <= 1) {
-      reasons.push('단백질 재료 종류나 양이 적어서 목표보다 부족합니다.')
-    } else {
-      reasons.push('단백질 재료는 들어가 있지만 총량이 목표치보다 모자랍니다.')
-    }
-    suggestions.push(`닭가슴살, 연어, 소고기, 계란 등을 ${Math.abs(Math.round(proteinDiff))}g 안팎 더 보완해도 좋습니다.`)
+    reasons.push('단백질 재료 총량이 목표보다 적게 계산됩니다.')
+    suggestions.push(`닭가슴살, 연어, 소고기, 계란 등을 ${Math.abs(Math.round(proteinDiff))}g 안팎 더 보완할 수 있습니다.`)
   } else if (Math.round(proteinDiff) > 0) {
-    reasons.push('단백질 비중이 높아 목표보다 충분하거나 조금 많은 편입니다.')
-    suggestions.push('현재 식사는 단백질이 잘 들어가 있어 다음 끼니는 유지해도 좋습니다.')
+    reasons.push('단백질 비중이 높아 목표보다 충분하거나 조금 많게 계산됩니다.')
+    suggestions.push('현재 식사는 단백질이 충분한 편이라 다음 끼니는 유지해도 좋습니다.')
   }
 
   if (Math.round(fatDiff) < 0) {
-    if (roleCounts.fat === 0) {
-      reasons.push('지방 재료가 거의 없어 포만감 유지가 약할 수 있습니다.')
-    } else {
-      reasons.push('지방 재료는 들어가 있지만 목표치보다 조금 부족합니다.')
-    }
-    suggestions.push(`아보카도, 견과류, 치즈, 올리브오일 등을 ${Math.abs(Math.round(fatDiff))}g 안팎 보완하면 좋습니다.`)
+    reasons.push('지방 재료가 적거나 양이 작아 목표보다 적게 계산됩니다.')
+    suggestions.push(`아보카도, 견과류, 치즈, 올리브오일 등을 ${Math.abs(Math.round(fatDiff))}g 안팎 보완할 수 있습니다.`)
   } else if (Math.round(fatDiff) > 0) {
-    reasons.push('지방 재료 비중이 높아 목표보다 조금 많은 편입니다.')
+    reasons.push('지방 재료 비중이 높아 목표보다 조금 많게 계산됩니다.')
     suggestions.push('다음 끼니에서는 견과류, 치즈, 오일류 양을 조금 줄여도 좋습니다.')
   }
 
+  if (Math.round(sodiumDiff) > 0) {
+    reasons.push('김치, 소스, 가공 반찬 등으로 인해 나트륨이 목표보다 높게 계산됩니다.')
+    suggestions.push(`나트륨은 ${Math.round(sodiumDiff)}mg 정도 높은 편이라 김치, 국물, 소스 양을 줄이면 좋습니다.`)
+  } else if (Math.round(sodiumDiff) < 0) {
+    reasons.push('나트륨은 목표보다 낮거나 적정 범위로 계산됩니다.')
+    suggestions.push('현재 식사는 나트륨 관리 측면에서 무난한 편입니다.')
+  }
+
   if (!reasons.length) {
-    reasons.push('탄수화물, 단백질, 지방 구성이 전체적으로 목표에 가깝습니다.')
+    reasons.push('탄수화물, 단백질, 지방, 나트륨 구성이 전체적으로 목표에 가깝습니다.')
   }
 
   if (!suggestions.length) {
@@ -2240,23 +2332,27 @@ const formatMealTargetDiffSummary = (meal = {}) => {
     if (Math.round(carbDiff) > 0) 초과.push('탄수화물')
     if (Math.round(proteinDiff) > 0) 초과.push('단백질')
     if (Math.round(fatDiff) > 0) 초과.push('지방')
+    if (Math.round(sodiumDiff) > 0) 초과.push('나트륨')
 
     if (!부족.length && !초과.length) {
       return '현재 식사는 목표와 거의 맞아서 그대로 진행해도 좋습니다.'
     }
 
     if (부족.length && !초과.length) {
-      return `현재 식사는 ${부족.join(', ')} 보완이 필요해 보입니다. 다음 끼니에서 해당 재료를 조금 더 채워주세요.`
+      return `현재 식사는 ${부족.join(', ')} 보완이 필요한 편입니다. 다음 끼니에서 해당 재료를 조금 더 채워주세요.`
     }
 
     if (!부족.length && 초과.length) {
-      return `현재 식사는 ${초과.join(', ')} 비중이 조금 높습니다. 다음 끼니에서 양을 가볍게 조절하면 좋습니다.`
+      return `현재 식사는 ${초과.join(', ')} 비중이 높은 편입니다. 다음 끼니에서 양을 가볍게 조절하면 좋습니다.`
     }
 
-    return `현재 식사는 ${부족.join(', ')}은 보완이 필요하고, ${초과.join(', ')}은 조금 높아 다음 끼니에서 균형 조절이 필요합니다.`
+    return `현재 식사는 ${부족.join(', ')}은 보완이 필요하고, ${초과.join(', ')}은 조절이 필요합니다.`
   })()
 
   return [
+    '이 수치는 이렇게 계산돼요',
+    ...calculationExplain.map((text) => `- ${text}`),
+    '',
     '왜 이렇게 나왔나요?',
     ...reasons.map((text) => `- ${text}`),
     '',
@@ -7034,7 +7130,7 @@ const buildMealPlanDayRow = ({
   const baseCarbs = Number(mealPlanForm.target_carbs_g || 0)
   const baseProtein = Number(mealPlanForm.target_protein_g || 0)
   const baseFat = Number(mealPlanForm.target_fat_g || 0)
-
+const baseSodium = Number(mealPlanForm.target_sodium_mg || 0)
   const slotCount = Math.max(generationMealSlots.length, 1)
 
 let dayRecentUsedIds = []
@@ -7150,12 +7246,12 @@ if (
     const appliedRiceAmountG = isFixedHighRiceSlot
       ? Number(carbRow?.adjusted_rice_g || effectiveStartingRiceAmount || 0)
       : Number(carbRow?.adjusted_rice_g || 0)
-    const slotTarget = {
-      carbs_g: Number(carbRow?.carbs || 0),
-      protein_g: Math.round(adjustedDayPlan.protein / slotCount),
-      fat_g: Math.round(adjustedDayPlan.fat / slotCount),
-    }
-
+   const slotTarget = {
+  carbs_g: Number(carbRow?.carbs || 0),
+  protein_g: Math.round(adjustedDayPlan.protein / slotCount),
+  fat_g: Math.round(adjustedDayPlan.fat / slotCount),
+  sodium_mg: slotCount > 0 ? Math.round(baseSodium / slotCount) : 0,
+}
     const mealResult = getRotatingMealExample(
       mealPlanForm.goal_type,
       slot,
@@ -7250,8 +7346,9 @@ sodium_mg: Math.round(Number(actualMealMacros.sodium_mg || 0)),
       adjusted_rice_g: Number(carbRow?.adjusted_rice_g || 0),
       carb_distribution_reason: carbRow?.carb_distribution_reason || '',
       target_carbs_g: Number(slotTarget.carbs_g || 0),
-      target_protein_g: Number(slotTarget.protein_g || 0),
-      target_fat_g: Number(slotTarget.fat_g || 0),
+target_protein_g: Number(slotTarget.protein_g || 0),
+target_fat_g: Number(slotTarget.fat_g || 0),
+target_sodium_mg: Number(slotTarget.sodium_mg || 0),
   
     }
   })
@@ -7279,6 +7376,7 @@ const targetDayTotals = {
   carbs_g: Number(adjustedDayPlan?.carbs || mealPlanForm.target_carbs_g || 0),
   protein_g: Number(adjustedDayPlan?.protein || mealPlanForm.target_protein_g || 0),
   fat_g: Number(adjustedDayPlan?.fat || mealPlanForm.target_fat_g || 0),
+  sodium_mg: Number(mealPlanForm.target_sodium_mg || 0),
 }
 
 const kcalRatio =
