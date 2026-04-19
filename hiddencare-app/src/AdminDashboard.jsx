@@ -6823,6 +6823,55 @@ const formatMealMenuWithRice = ({
 
   return baseRice
 }
+const calculateMealMacros = (foodItems = []) => {
+  const rows = Array.isArray(foodItems) ? foodItems : []
+
+  return rows.reduce(
+    (acc, item) => {
+      const grams = Number(item?.grams || item?.amount_g || item?.weight_g || 0)
+
+      const directKcal = Number(item?.kcal || 0)
+      const directCarbs = Number(item?.carbs_g || 0)
+      const directProtein = Number(item?.protein_g || 0)
+      const directFat = Number(item?.fat_g || 0)
+      const directSodium = Number(item?.sodium_mg || 0)
+
+      const hasDirectMacros =
+        directKcal > 0 ||
+        directCarbs > 0 ||
+        directProtein > 0 ||
+        directFat > 0 ||
+        directSodium > 0
+
+      if (hasDirectMacros) {
+        acc.kcal += directKcal
+        acc.carbs_g += directCarbs
+        acc.protein_g += directProtein
+        acc.fat_g += directFat
+        acc.sodium_mg += directSodium
+        return acc
+      }
+
+      const ratio = grams / 100
+
+      acc.kcal += Number(item?.kcal_per_100g || 0) * ratio
+      acc.carbs_g += Number(item?.carbs_per_100g || 0) * ratio
+      acc.protein_g += Number(item?.protein_per_100g || 0) * ratio
+      acc.fat_g += Number(item?.fat_per_100g || 0) * ratio
+      acc.sodium_mg += Number(item?.sodium_mg_per_100g || 0) * ratio
+
+      return acc
+    },
+    {
+      kcal: 0,
+      carbs_g: 0,
+      protein_g: 0,
+      fat_g: 0,
+      sodium_mg: 0,
+    }
+  )
+}
+  
 const buildMealPlanDayRow = ({
   date,
   dayNumber,
@@ -7038,7 +7087,7 @@ if (
       adjustedRiceG: carbRow?.adjusted_rice_g,
       slotTarget,
     })
-      
+      const actualMealMacros = calculateMealMacros(adjustedFoodItems)
     return {
       slot,
       meal_style_type: mealStyleType,
@@ -7077,17 +7126,12 @@ if (
       }),
        
       alternatives,
-             food_items: adjustedFoodItems,
-      carbs_g: Number(slotTarget.carbs_g || 0),
-      protein_g: Number(mealResult?.protein_g || slotTarget.protein_g || 0),
-      fat_g: Number(mealResult?.fat_g || slotTarget.fat_g || 0),
-      kcal:
-        Math.round(
-          Number(slotTarget.carbs_g || 0) * 4 +
-          Number(mealResult?.protein_g || slotTarget.protein_g || 0) * 4 +
-          Number(mealResult?.fat_g || slotTarget.fat_g || 0) * 9
-        ),
-      sodium_mg: Number(mealResult?.sodium_mg || 0),
+            food_items: adjustedFoodItems,
+carbs_g: Math.round(Number(actualMealMacros.carbs_g || 0)),
+protein_g: Math.round(Number(actualMealMacros.protein_g || 0)),
+fat_g: Math.round(Number(actualMealMacros.fat_g || 0)),
+kcal: Math.round(Number(actualMealMacros.kcal || 0)),
+sodium_mg: Math.round(Number(actualMealMacros.sodium_mg || 0)),
       baseline_rice_g: Number(carbRow?.baseline_rice_g || 0),
       adjusted_rice_g: Number(carbRow?.adjusted_rice_g || 0),
       carb_distribution_reason: carbRow?.carb_distribution_reason || '',
