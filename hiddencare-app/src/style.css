@@ -22836,3 +22836,142 @@ textarea:focus {
     justify-content: flex-start;
   }
 }
+.member-home-check-card {
+  margin-top: 20px;
+  padding: 20px;
+  border-radius: 20px;
+  background: #ffffff;
+  border: 1px solid #e9edf3;
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.06);
+}
+
+.member-home-check-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.member-home-check-head h3 {
+  margin: 6px 0 4px;
+  font-size: 20px;
+}
+
+.member-home-check-sub {
+  margin: 0;
+  color: #667085;
+  font-size: 14px;
+}
+
+.member-home-check-progress {
+  min-width: 110px;
+  text-align: right;
+}
+
+.member-home-check-progress strong {
+  display: block;
+  font-size: 22px;
+}
+
+.member-home-check-progress span {
+  color: #667085;
+  font-size: 13px;
+}
+
+.member-home-check-bar {
+  width: 100%;
+  height: 10px;
+  border-radius: 999px;
+  background: #edf2f7;
+  overflow: hidden;
+  margin-bottom: 18px;
+}
+
+.member-home-check-fill {
+  height: 100%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #8b5cf6 0%, #6366f1 100%);
+  transition: width 0.25s ease;
+}
+
+.member-home-check-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.member-home-check-item {
+  border-radius: 16px;
+  padding: 16px;
+  border: 1px solid #e5e7eb;
+  background: #fafafa;
+}
+
+.member-home-check-item.done {
+  background: #f8fbff;
+  border-color: #dbeafe;
+}
+
+.member-home-check-item.pending {
+  background: #fffdf8;
+  border-color: #fde7b0;
+}
+
+.member-home-check-item-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+
+.member-home-check-item-label {
+  display: block;
+  font-size: 12px;
+  color: #667085;
+  margin-bottom: 4px;
+}
+
+.member-home-check-item-top strong {
+  font-size: 18px;
+}
+
+.member-home-check-status {
+  font-size: 12px;
+  padding: 6px 10px;
+  border-radius: 999px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.member-home-check-status.done {
+  background: #e0f2fe;
+  color: #0369a1;
+}
+
+.member-home-check-status.pending {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.member-home-check-desc {
+  margin: 0 0 14px;
+  color: #475467;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+@media (max-width: 768px) {
+  .member-home-check-head {
+    flex-direction: column;
+  }
+
+  .member-home-check-progress {
+    text-align: left;
+  }
+
+  .member-home-check-grid {
+    grid-template-columns: 1fr;
+  }
+}
