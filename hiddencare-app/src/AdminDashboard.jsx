@@ -1064,6 +1064,7 @@ const emptyMealPlanForm = {
   target_carbs_g: '',
   target_protein_g: '',
   target_fat_g: '',
+  target_sodium_mg: '',
   excluded_foods: '',
   preferred_foods: '',
   allergies: '',
@@ -1774,20 +1775,21 @@ const saturatedFatLimitG = Math.round((targetKcal * 0.1) / 9)
       preferredIncludedCount = Number(meal?.nextPreferredIncludedCount || preferredIncludedCount)
 
       dayMeals.push({
-        slot,
-       food_items: Array.isArray(meal?.items) ? meal.items : [],
-menu: meal?.menu || buildMealMenuLabel(meal?.items || [], slot),
-        guide_text: meal?.guide_text || '',
-        kcal: Number(meal?.kcal || 0),
-        carbs_g: Number(meal?.carbs_g || 0),
-        protein_g: Number(meal?.protein_g || 0),
-        fat_g: Number(meal?.fat_g || 0),
-        sodium_mg: Number(meal?.sodium_mg || 0),
-        target_kcal: Math.round(Number(adjusted.kcal || 0) / slotCount),
-        target_carbs_g: perMealCarbs,
-        target_protein_g: perMealProtein,
-        target_fat_g: perMealFat,
-      })
+  slot,
+  food_items: Array.isArray(meal?.items) ? meal.items : [],
+  menu: meal?.menu || buildMealMenuLabel(meal?.items || [], slot),
+  guide_text: meal?.guide_text || '',
+  kcal: Number(meal?.kcal || 0),
+  carbs_g: Number(meal?.carbs_g || 0),
+  protein_g: Number(meal?.protein_g || 0),
+  fat_g: Number(meal?.fat_g || 0),
+  sodium_mg: Number(meal?.sodium_mg || 0),
+  target_kcal: Math.round(Number(adjusted.kcal || 0) / slotCount),
+  target_carbs_g: perMealCarbs,
+  target_protein_g: perMealProtein,
+  target_fat_g: perMealFat,
+  target_sodium_mg: slotCount > 0 ? Math.round(sodiumLimitMg / slotCount) : 0,
+})
     }
 
     const totalKcal = dayMeals.reduce((sum, meal) => sum + Number(meal.kcal || 0), 0)
@@ -3154,6 +3156,7 @@ const handleMealPlanSave = async () => {
     target_carbs_g: Number(mealPlanForm.target_carbs_g || 0),
     target_protein_g: Number(mealPlanForm.target_protein_g || 0),
     target_fat_g: Number(mealPlanForm.target_fat_g || 0),
+    target_sodium_mg: Number(mealPlanForm.target_sodium_mg || 0),
     excluded_foods: normalizeCommaTextToArray(mealPlanForm.excluded_foods),
     preferred_foods: normalizeCommaTextToArray(mealPlanForm.preferred_foods),
     allergies: normalizeCommaTextToArray(mealPlanForm.allergies),
