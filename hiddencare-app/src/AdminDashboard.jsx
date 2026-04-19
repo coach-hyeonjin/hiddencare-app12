@@ -2070,6 +2070,91 @@ const buildMealCompositionText = (items = []) => {
     .filter(Boolean)
     .join(' + ')
 }
+  const getMealItemRoleLabel = (item = {}) => {
+  const major = String(item?.category_major || '').trim()
+  const normalizedName = normalizeMenuFoodName(
+    String(
+      item?.food_name ||
+      item?.name ||
+      item?.display_name ||
+      item?.label ||
+      ''
+    ).trim()
+  )
+
+  if (major === 'carb') return '탄수화물'
+  if (major === 'vegetable') return '채소'
+  if (major === 'fruit') return '과일'
+  if (major === 'protein') return '단백질'
+  if (major === 'fat') return '지방'
+  if (major === 'dairy') return '유제품'
+
+  if (['밥', '빵', '오트밀', '파스타'].includes(normalizedName)) return '탄수화물'
+  if (['닭가슴살', '닭다리살', '참치', '소고기'].includes(normalizedName)) return '단백질'
+  if (normalizedName === '연어') return '단백질+지방'
+  if (['아보카도', '올리브오일', '치즈', '파마산치즈', '모짜렐라치즈', '페스토', '크림소스', '토마토소스'].includes(normalizedName)) return '지방'
+  if (normalizedName === '샐러드') return '채소'
+
+  return '재료'
+}
+
+const formatMealItemsWithRole = (items = []) => {
+  const rows = Array.isArray(items) ? items : []
+
+  return rows
+    .map((item) => {
+      if (typeof item === 'string') return item
+
+      const name =
+        item.food_name ||
+        item.name ||
+        item.display_name ||
+        item.label ||
+        item.food ||
+        item.title ||
+        ''
+
+      const amount =
+        item.grams ??
+        item.amount_g ??
+        item.amount ??
+        item.serving_g ??
+        item.weight_g ??
+        item.quantity ??
+        ''
+
+      const role = getMealItemRoleLabel(item)
+
+      if (name && amount) return `- ${name} ${amount}g (${role})`
+      if (name) return `- ${name} (${role})`
+      return ''
+    })
+    .filter(Boolean)
+}
+
+const formatMealMacroSummary = (meal = {}) => {
+  return `한 끼 총 영양: ${meal.kcal || 0}kcal · 탄수화물 ${meal.carbs_g || 0}g · 단백질 ${meal.protein_g || 0}g · 지방 ${meal.fat_g || 0}g`
+}
+
+const formatMealTargetSummary = (meal = {}) => {
+  const targetCarbs = Number(meal?.target_carbs_g || 0)
+  const targetProtein = Number(meal?.target_protein_g || 0)
+  const targetFat = Number(meal?.target_fat_g || 0)
+
+  if (!targetCarbs && !targetProtein && !targetFat) return ''
+
+  return `내 몸 기준 한 끼 목표: 탄수화물 ${targetCarbs}g · 단백질 ${targetProtein}g · 지방 ${targetFat}g`
+}
+
+const formatMealTargetDiffSummary = (meal = {}) => {
+  const carbDiff = Number(meal?.carbs_g || 0) - Number(meal?.target_carbs_g || 0)
+  const proteinDiff = Number(meal?.protein_g || 0) - Number(meal?.target_protein_g || 0)
+  const fatDiff = Number(meal?.fat_g || 0) - Number(meal?.target_fat_g || 0)
+
+  const formatDiff = (value) => `${value > 0 ? '+' : ''}${Math.round(value)}g`
+
+  return `한 끼 목표 대비: 탄수화물 ${formatDiff(carbDiff)} · 단백질 ${formatDiff(proteinDiff)} · 지방 ${formatDiff(fatDiff)}`
+}
 const getMealFatItems = (items = []) => {
   const rows = Array.isArray(items) ? items : []
 
@@ -20451,61 +20536,56 @@ const filteredExercisesAdvanced = exercises.filter((exercise) => {
   </div>
 
   <div className="detail-box" style={{ marginTop: '10px' }}>
-    <p>
-      <strong>메뉴</strong> {meal.menu || '-'}
-    </p>
+  <p>
+    <strong>메뉴</strong> {meal.menu || '-'}
+  </p>
 
-    {!isSpecialMeal ? (
-      <p className="compact-text" style={{ marginTop: '6px' }}>
-        <strong>구성</strong>{' '}
-        {Array.isArray(meal.food_items) && meal.food_items.length > 0
-          ? meal.food_items
-              .map((item) => {
-                if (typeof item === 'string') return item
-
-                const name =
-                  item.food_name ||
-                  item.name ||
-                  item.display_name ||
-                  item.label ||
-                  item.food ||
-                  item.title ||
-                  ''
-
-                const amount =
-                  item.grams ??
-                  item.amount_g ??
-                  item.amount ??
-                  item.serving_g ??
-                  item.weight_g ??
-                  item.quantity ??
-                  ''
-
-                if (name && amount) return `${name} ${amount}g`
-                if (name) return name
-                return ''
-              })
-              .filter(Boolean)
-              .join(' / ')
-          : '-'}
+  {!isSpecialMeal ? (
+    <>
+      <p className="compact-text" style={{ marginTop: '8px', lineHeight: 1.7 }}>
+        <strong>구성 재료</strong>
       </p>
-    ) : null}
 
-    <p
-      className="compact-text"
-      style={{ marginTop: '6px', whiteSpace: 'pre-line', lineHeight: 1.6 }}
-    >
-      <strong>가이드</strong>{' '}
-      {meal.guide_text ||
-        (isSpecialMeal
-          ? '가이드 없음'
-          : '식사 목적에 맞게 메뉴와 양을 조절해서 진행하세요.')}
-    </p>
+      <div className="compact-text" style={{ marginTop: '4px', whiteSpace: 'pre-line', lineHeight: 1.7 }}>
+        {Array.isArray(meal.food_items) && meal.food_items.length > 0
+          ? formatMealItemsWithRole(meal.food_items).join('\n')
+          : '-'}
+      </div>
 
-    <div className="compact-text" style={{ marginTop: '10px' }}>
-      약 {meal.kcal || 0} kcal / 탄 {meal.carbs_g || 0} / 단 {meal.protein_g || 0} / 지 {meal.fat_g || 0}
-    </div>
-  </div>
+      <p className="compact-text" style={{ marginTop: '10px', lineHeight: 1.7 }}>
+        <strong>한 끼 총 영양</strong>
+      </p>
+      <div className="compact-text" style={{ marginTop: '4px', lineHeight: 1.7 }}>
+        {formatMealMacroSummary(meal)}
+      </div>
+
+      <p className="compact-text" style={{ marginTop: '10px', lineHeight: 1.7 }}>
+        <strong>내 몸 기준 한 끼 목표</strong>
+      </p>
+      <div className="compact-text" style={{ marginTop: '4px', lineHeight: 1.7 }}>
+        {formatMealTargetSummary(meal) || '한 끼 목표 정보 없음'}
+      </div>
+
+      <p className="compact-text" style={{ marginTop: '10px', lineHeight: 1.7 }}>
+        <strong>한 끼 목표 대비</strong>
+      </p>
+      <div className="compact-text" style={{ marginTop: '4px', lineHeight: 1.7 }}>
+        {formatMealTargetDiffSummary(meal)}
+      </div>
+    </>
+  ) : null}
+
+  <p
+    className="compact-text"
+    style={{ marginTop: '10px', whiteSpace: 'pre-line', lineHeight: 1.6 }}
+  >
+    <strong>가이드</strong>{' '}
+    {meal.guide_text ||
+      (isSpecialMeal
+        ? '가이드 없음'
+        : '식사 목적에 맞게 메뉴와 양을 조절해서 진행하세요.')}
+  </p>
+</div>
 </div>
                           </div>
                         )
