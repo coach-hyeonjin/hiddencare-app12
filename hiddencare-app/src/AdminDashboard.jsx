@@ -4141,63 +4141,67 @@ const loadMemberMealPlanProfile = async (memberId) => {
     member_id: data.member_id || '',
     goal_type: data.goal_type || 'diet',
     meals_per_day: Number(data.meals_per_day || 3),
-   meal_slots: getLifestyleMealSlots({
-  ...data,
-  meals_per_day: Number(data.meals_per_day || 3),
-}),
+    meal_slots: getLifestyleMealSlots({
+      ...data,
+      meals_per_day: Number(data.meals_per_day || 3),
+    }),
     activity_level: data.activity_level || 'light',
     training_days_per_week: Number(data.training_days_per_week || 3),
     training_time: data.training_time || 'evening',
     use_training_rest_split: !!data.use_training_rest_split,
+
     target_kcal: data.target_kcal || '',
     target_carbs_g: data.target_carbs_g || '',
     target_protein_g: data.target_protein_g || '',
     target_fat_g: data.target_fat_g || '',
+    target_sodium_mg: data.target_sodium_mg || '',
+
     excluded_foods: Array.isArray(data.excluded_foods) ? data.excluded_foods.join(', ') : '',
     preferred_foods: Array.isArray(data.preferred_foods) ? data.preferred_foods.join(', ') : '',
     allergies: Array.isArray(data.allergies) ? data.allergies.join(', ') : '',
     notes: data.notes || '',
-          diet_mode: data?.diet_mode || 'balanced',
-      adaptation_strategy: data?.adaptation_strategy || 'gradual',
-      current_meal_pattern: data?.current_meal_pattern || 'mixed',
-      snack_frequency_per_week: Number(data?.snack_frequency_per_week || 0),
-      bread_frequency_per_week: Number(data?.bread_frequency_per_week || 0),
-      junk_food_frequency_per_week: Number(data?.junk_food_frequency_per_week || 0),
-      delivery_food_frequency_per_week: Number(data?.delivery_food_frequency_per_week || 0),
-      late_night_meal_frequency_per_week: Number(data?.late_night_meal_frequency_per_week || 0),
-      allowed_general_meals_per_week: Number(data?.allowed_general_meals_per_week || 0),
-      allowed_free_meals_per_week: Number(data?.allowed_free_meals_per_week || 0),
-      allowed_snacks_per_week: Number(data?.allowed_snacks_per_week || 0),
-      allowed_bread_per_week: Number(data?.allowed_bread_per_week || 0),
-      allowed_dessert_per_week: Number(data?.allowed_dessert_per_week || 0),
-      meal_structure_mode: data?.meal_structure_mode || 'structured',
-          alcohol_frequency_per_week: Number(data?.alcohol_frequency_per_week || 0),
-      allowed_alcohol_per_week: Number(data?.allowed_alcohol_per_week || 0),
-          usual_rice_amount_g: Number(data?.usual_rice_amount_g || 300),
-      largest_meal_slot: data?.largest_meal_slot || '저녁',
-          meal_rice_map: (() => {
-  const lifestyleSlots = getLifestyleMealSlots({
-    ...data,
-    meals_per_day: Number(data?.meals_per_day || 3),
-  })
 
-  const fallbackValue = Number(data?.usual_rice_amount_g || 300)
-  const sourceMap =
-    data?.meal_rice_map && typeof data.meal_rice_map === 'object'
-      ? data.meal_rice_map
-      : {}
+    diet_mode: data?.diet_mode || 'balanced',
+    adaptation_strategy: data?.adaptation_strategy || 'gradual',
+    current_meal_pattern: data?.current_meal_pattern || 'mixed',
+    snack_frequency_per_week: Number(data?.snack_frequency_per_week || 0),
+    bread_frequency_per_week: Number(data?.bread_frequency_per_week || 0),
+    junk_food_frequency_per_week: Number(data?.junk_food_frequency_per_week || 0),
+    delivery_food_frequency_per_week: Number(data?.delivery_food_frequency_per_week || 0),
+    late_night_meal_frequency_per_week: Number(data?.late_night_meal_frequency_per_week || 0),
+    allowed_general_meals_per_week: Number(data?.allowed_general_meals_per_week || 0),
+    allowed_free_meals_per_week: Number(data?.allowed_free_meals_per_week || 0),
+    allowed_snacks_per_week: Number(data?.allowed_snacks_per_week || 0),
+    allowed_bread_per_week: Number(data?.allowed_bread_per_week || 0),
+    allowed_dessert_per_week: Number(data?.allowed_dessert_per_week || 0),
+    meal_structure_mode: data?.meal_structure_mode || 'structured',
+    alcohol_frequency_per_week: Number(data?.alcohol_frequency_per_week || 0),
+    allowed_alcohol_per_week: Number(data?.allowed_alcohol_per_week || 0),
+    usual_rice_amount_g: Number(data?.usual_rice_amount_g || 300),
+    largest_meal_slot: data?.largest_meal_slot || '저녁',
+    meal_rice_map: (() => {
+      const lifestyleSlots = getLifestyleMealSlots({
+        ...data,
+        meals_per_day: Number(data?.meals_per_day || 3),
+      })
 
-  return lifestyleSlots.reduce((acc, slot) => {
-    acc[slot] = Number(sourceMap?.[slot] ?? fallbackValue)
-    return acc
-  }, {})
-})(),
-      meal_start_mode: data?.meal_start_mode || 'current',
-      rice_amount_source: data?.rice_amount_source || 'preset',
-      usual_rice_amount_custom_g:
-        data?.rice_amount_source === 'custom'
-          ? String(data?.usual_rice_amount_g || '')
-          : '',
+      const fallbackValue = Number(data?.usual_rice_amount_g || 300)
+      const sourceMap =
+        data?.meal_rice_map && typeof data.meal_rice_map === 'object'
+          ? data.meal_rice_map
+          : {}
+
+      return lifestyleSlots.reduce((acc, slot) => {
+        acc[slot] = Number(sourceMap?.[slot] ?? fallbackValue)
+        return acc
+      }, {})
+    })(),
+    meal_start_mode: data?.meal_start_mode || 'current',
+    rice_amount_source: data?.rice_amount_source || 'preset',
+    usual_rice_amount_custom_g:
+      data?.rice_amount_source === 'custom'
+        ? String(data?.usual_rice_amount_g || '')
+        : '',
   })
 }
   
@@ -7131,9 +7135,15 @@ const buildMealPlanDayRow = ({
   }
 
   const baseCarbs = Number(mealPlanForm.target_carbs_g || 0)
-  const baseProtein = Number(mealPlanForm.target_protein_g || 0)
-  const baseFat = Number(mealPlanForm.target_fat_g || 0)
-const baseSodium = Number(mealPlanForm.target_sodium_mg || 0)
+const baseProtein = Number(mealPlanForm.target_protein_g || 0)
+const baseFat = Number(mealPlanForm.target_fat_g || 0)
+const baseSodium = Number(
+  mealPlanForm?.target_sodium_mg ||
+    calculateSodiumTargetByGoal({
+      goalType: mealPlanForm?.goal_type || 'diet',
+      mealPlanForm,
+    })
+)
   const slotCount = Math.max(generationMealSlots.length, 1)
 
 let dayRecentUsedIds = []
@@ -7483,6 +7493,24 @@ const handleMealPlanMonthGenerate = async () => {
     return
   }
 
+  const resolvedTargetSodiumMg = Number(
+    mealPlanForm.target_sodium_mg ||
+      calculateSodiumTargetByGoal({
+        goalType: mealPlanForm.goal_type || 'diet',
+        mealPlanForm,
+      })
+  )
+
+  if (!resolvedTargetSodiumMg) {
+    alert('나트륨 목표값 계산에 실패했습니다. 자동 계산을 다시 해주세요')
+    return
+  }
+
+  const generationMealPlanForm = {
+    ...mealPlanForm,
+    target_sodium_mg: resolvedTargetSodiumMg,
+  }
+
   let foods = Array.isArray(foodMaster) ? foodMaster : []
   if (!foods.length) {
     foods = await loadFoodMaster()
@@ -7501,35 +7529,52 @@ const handleMealPlanMonthGenerate = async () => {
   }
 
   const daysInMonth = new Date(year, month, 0).getDate()
-const generalMealDays = getRandomDays(daysInMonth, Number(mealPlanForm.allowed_general_meals_per_week || 0))
-const freeMealDays = getRandomDays(daysInMonth, Number(mealPlanForm.allowed_free_meals_per_week || 0))
-const snackDays = getRandomDays(daysInMonth, Number(mealPlanForm.allowed_snacks_per_week || 0))
-const alcoholDays = getRandomDays(daysInMonth, Number(mealPlanForm.allowed_alcohol_per_week || 0))
+  const generalMealDays = getRandomDays(
+    daysInMonth,
+    Number(generationMealPlanForm.allowed_general_meals_per_week || 0)
+  )
+  const freeMealDays = getRandomDays(
+    daysInMonth,
+    Number(generationMealPlanForm.allowed_free_meals_per_week || 0)
+  )
+  const snackDays = getRandomDays(
+    daysInMonth,
+    Number(generationMealPlanForm.allowed_snacks_per_week || 0)
+  )
+  const alcoholDays = getRandomDays(
+    daysInMonth,
+    Number(generationMealPlanForm.allowed_alcohol_per_week || 0)
+  )
 
- const alcoholDaySet = new Set(alcoholDays)
-const generalMealDaySet = new Set(generalMealDays)
-const freeMealDaySet = new Set(freeMealDays)
-  
-  const mealSlots = buildMealSlotsByCount(mealPlanForm.meals_per_day)
-  const trainingDays = Number(mealPlanForm.training_days_per_week || 3)
+  const alcoholDaySet = new Set(alcoholDays)
+  const generalMealDaySet = new Set(generalMealDays)
+  const freeMealDaySet = new Set(freeMealDays)
+
+  const mealSlots = buildMealSlotsByCount(generationMealPlanForm.meals_per_day)
+  const trainingDays = Number(generationMealPlanForm.training_days_per_week || 3)
+
   const planStyleKey =
     selectedPlanStyle ||
-    mealPlanForm.recommended_plan_style ||
+    generationMealPlanForm.recommended_plan_style ||
     mealPlanRecommendation?.recommended_key ||
     'mixed'
 
   const planStyleEngine = getPlanStyleEngine(planStyleKey)
   const adjustedTargetKcal = getAdjustedTargetKcalByPlanStyle(
-    Number(mealPlanForm.target_kcal || 0),
+    Number(generationMealPlanForm.target_kcal || 0),
     planStyleKey
   )
-  const { preferredSet, blockedSet } = getPreferredBlockedSet(mealPlanForm, foods)
+
+  const { preferredSet, blockedSet } = getPreferredBlockedSet(
+    generationMealPlanForm,
+    foods
+  )
 
   let latestCalculationId = null
   const { data: latestCalculation } = await supabase
     .from('member_nutrition_calculations')
     .select('id')
-    .eq('member_id', mealPlanForm.member_id)
+    .eq('member_id', generationMealPlanForm.member_id)
     .order('created_at', { ascending: false })
     .limit(1)
 
@@ -7538,59 +7583,61 @@ const freeMealDaySet = new Set(freeMealDays)
   }
 
   const rows = []
-const generationMealSlots = getLifestyleMealSlots(mealPlanForm)
+  const generationMealSlots = getLifestyleMealSlots(generationMealPlanForm)
+
   const normalizedHighRiceSlots = normalizeHighRiceSlots(
-    mealPlanForm.high_rice_slots,
+    generationMealPlanForm.high_rice_slots,
     generationMealSlots
   )
+
   for (let day = 1; day <= daysInMonth; day += 1) {
-  const date = `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`
+    const date = `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`
 
-  const row = buildMealPlanDayRow({
-    date,
-    dayNumber: day,
-    mealPlanForm,
-    foods,
-    preferredSet,
-    blockedSet,
-    generationMealSlots,
-    trainingDays,
-    planStyleEngine,
-    adjustedTargetKcal,
-    generalMealDaySet,
-    freeMealDaySet,
-    alcoholDaySet,
-    latestCalculationId,
-    currentAdminId,
+    const row = buildMealPlanDayRow({
+      date,
+      dayNumber: day,
+      mealPlanForm: generationMealPlanForm,
+      foods,
+      preferredSet,
+      blockedSet,
+      generationMealSlots,
+      trainingDays,
+      planStyleEngine,
+      adjustedTargetKcal,
+      generalMealDaySet,
+      freeMealDaySet,
+      alcoholDaySet,
+      latestCalculationId,
+      currentAdminId,
       usual_rice_amount_g:
-    mealPlanForm.rice_amount_source === 'custom'
-      ? Number(mealPlanForm.usual_rice_amount_custom_g || 0)
-      : Number(mealPlanForm.usual_rice_amount_g || 0),
+        generationMealPlanForm.rice_amount_source === 'custom'
+          ? Number(generationMealPlanForm.usual_rice_amount_custom_g || 0)
+          : Number(generationMealPlanForm.usual_rice_amount_g || 0),
+      largest_meal_slot: generationMealPlanForm.largest_meal_slot || '저녁',
+      high_rice_slots: normalizedHighRiceSlots,
+      meal_start_mode: generationMealPlanForm.meal_start_mode || 'current',
+    })
 
-  largest_meal_slot: mealPlanForm.largest_meal_slot || '저녁',
-       high_rice_slots: normalizedHighRiceSlots,
-  meal_start_mode: mealPlanForm.meal_start_mode || 'current',
-  })
-
-  rows.push(row)
-}
+    rows.push(row)
+  }
 
   const { error } = await supabase
     .from('member_meal_plans')
     .upsert(rows, { onConflict: 'member_id,plan_date' })
 
- if (error) {
-  console.error('월간 식단 생성 실패:', error)
-  alert(`월간 식단 생성 실패: ${error.message}`)
-  return
-}
+  if (error) {
+    console.error('월간 식단 생성 실패:', error)
+    alert(`월간 식단 생성 실패: ${error.message}`)
+    return
+  }
 
   const { error: profileVersionError } = await supabase
     .from('member_nutrition_profiles')
     .update({
       recommendation_version: 'v2_food_engine',
+      target_sodium_mg: resolvedTargetSodiumMg,
     })
-    .eq('member_id', mealPlanForm.member_id)
+    .eq('member_id', generationMealPlanForm.member_id)
 
   if (profileVersionError) {
     console.error('recommendation_version 업데이트 실패:', profileVersionError)
@@ -7599,7 +7646,7 @@ const generationMealSlots = getLifestyleMealSlots(mealPlanForm)
   const { data: planData, error: loadError } = await supabase
     .from('member_meal_plans')
     .select('*')
-    .eq('member_id', mealPlanForm.member_id)
+    .eq('member_id', generationMealPlanForm.member_id)
     .gte('plan_date', `${year}-${String(month).padStart(2, '0')}-01`)
     .lte('plan_date', `${year}-${String(month).padStart(2, '0')}-${String(daysInMonth).padStart(2, '0')}`)
     .order('plan_date', { ascending: true })
@@ -7609,6 +7656,11 @@ const generationMealSlots = getLifestyleMealSlots(mealPlanForm)
     alert('생성은 되었지만 목록 불러오기 실패')
     return
   }
+
+  setMealPlanForm((prev) => ({
+    ...prev,
+    target_sodium_mg: resolvedTargetSodiumMg,
+  }))
 
   setMemberMealPlans(planData || [])
   alert('월간 식단 생성 완료')
@@ -20456,10 +20508,11 @@ const filteredExercisesAdvanced = exercises.filter((exercise) => {
   <p><strong>자동 계산 결과</strong></p>
 
   <p>하루 목표 열량: {mealPlanForm.target_kcal || 0} kcal</p>
-  <p>탄수화물: {mealPlanForm.target_carbs_g || 0} g</p>
-  <p>단백질: {mealPlanForm.target_protein_g || 0} g</p>
-  <p>지방: {mealPlanForm.target_fat_g || 0} g</p>
-  <p>식사 슬롯: {(mealPlanForm.meal_slots || []).join(' / ')}</p>
+<p>탄수화물: {mealPlanForm.target_carbs_g || 0} g</p>
+<p>단백질: {mealPlanForm.target_protein_g || 0} g</p>
+<p>지방: {mealPlanForm.target_fat_g || 0} g</p>
+<p>나트륨: {mealPlanForm.target_sodium_mg || 0} mg</p>
+<p>식사 슬롯: {(mealPlanForm.meal_slots || []).join(' / ')}</p>
 
   {mealPlanRecommendation ? (
     <>
