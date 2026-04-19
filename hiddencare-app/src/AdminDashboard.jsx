@@ -20540,6 +20540,11 @@ const filteredExercisesAdvanced = exercises.filter((exercise) => {
     <strong>메뉴</strong> {meal.menu || '-'}
   </p>
 
+ <div style={{ color: 'red', fontWeight: 700 }}>
+    테스트문구12345
+  </div>
+
+    
   {!isSpecialMeal ? (
     <>
       <p className="compact-text" style={{ marginTop: '8px', lineHeight: 1.7 }}>
