@@ -20534,43 +20534,38 @@ const filteredExercisesAdvanced = exercises.filter((exercise) => {
     <strong>메뉴</strong> {meal.menu || '-'}
   </p>
 
-  {!isSpecialMeal ? (
-    <>
-      <p className="compact-text" style={{ marginTop: '8px', lineHeight: 1.7 }}>
-        <strong>구성 재료</strong>
-      </p>
+  <>
+    <p className="compact-text" style={{ marginTop: '8px', lineHeight: 1.7 }}>
+      <strong>구성 재료</strong>
+    </p>
 
-      <div
-        className="compact-text"
-        style={{ marginTop: '4px', whiteSpace: 'pre-line', lineHeight: 1.7 }}
-      >
-        {Array.isArray(meal.food_items) && meal.food_items.length > 0
-          ? formatMealItemsWithRole(meal.food_items).join('\n')
-          : '-'}
-      </div>
+    <div className="compact-text" style={{ marginTop: '4px', whiteSpace: 'pre-line', lineHeight: 1.7 }}>
+      {Array.isArray(meal.food_items) && meal.food_items.length > 0
+        ? formatMealItemsWithRole(meal.food_items).join('\n')
+        : '-'}
+    </div>
 
-      <p className="compact-text" style={{ marginTop: '10px', lineHeight: 1.7 }}>
-        <strong>한 끼 총 영양</strong>
-      </p>
-      <div className="compact-text" style={{ marginTop: '4px', lineHeight: 1.7 }}>
-        {formatMealMacroSummary(meal)}
-      </div>
+    <p className="compact-text" style={{ marginTop: '10px', lineHeight: 1.7 }}>
+      <strong>한 끼 총 영양</strong>
+    </p>
+    <div className="compact-text" style={{ marginTop: '4px', lineHeight: 1.7 }}>
+      {formatMealMacroSummary(meal)}
+    </div>
 
-      <p className="compact-text" style={{ marginTop: '10px', lineHeight: 1.7 }}>
-        <strong>내 몸 기준 한 끼 목표</strong>
-      </p>
-      <div className="compact-text" style={{ marginTop: '4px', lineHeight: 1.7 }}>
-        {formatMealTargetSummary(meal) || '한 끼 목표 정보 없음'}
-      </div>
+    <p className="compact-text" style={{ marginTop: '10px', lineHeight: 1.7 }}>
+      <strong>내 몸 기준 한 끼 목표</strong>
+    </p>
+    <div className="compact-text" style={{ marginTop: '4px', lineHeight: 1.7 }}>
+      {formatMealTargetSummary(meal) || '한 끼 목표 정보 없음'}
+    </div>
 
-      <p className="compact-text" style={{ marginTop: '10px', lineHeight: 1.7 }}>
-        <strong>한 끼 목표 대비</strong>
-      </p>
-      <div className="compact-text" style={{ marginTop: '4px', lineHeight: 1.7 }}>
-        {formatMealTargetDiffSummary(meal)}
-      </div>
-    </>
-  ) : null}
+    <p className="compact-text" style={{ marginTop: '10px', lineHeight: 1.7 }}>
+      <strong>한 끼 목표 대비</strong>
+    </p>
+    <div className="compact-text" style={{ marginTop: '4px', lineHeight: 1.7 }}>
+      {formatMealTargetDiffSummary(meal)}
+    </div>
+  </>
 
   <p
     className="compact-text"
