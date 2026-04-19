@@ -533,6 +533,79 @@ const calculatedRecommendedKcal = useMemo(() => {
     return Math.min(Math.round((used / total) * 100), 100)
   }, [memberInfo])
 
+const todayChecklist = useMemo(() => {
+  const today = new Date().toISOString().slice(0, 10)
+
+  const healthDone = Array.isArray(healthLogs) && healthLogs.length > 0
+
+  const workoutDone = Array.isArray(workouts)
+    && workouts.some((workout) => workout.workout_date === today)
+
+  const dietDone = Array.isArray(dietLogs)
+    && dietLogs.some((diet) => diet.log_date === today)
+
+  const plannerDone = Array.isArray(mealPlans)
+    && mealPlans.some((plan) => plan.plan_date === today)
+
+  const items = [
+    {
+      key: 'health',
+      title: '건강정보',
+      description: healthDone
+        ? '건강정보 입력이 완료되었습니다.'
+        : '건강정보를 기록하셨나요?',
+      done: healthDone,
+      buttonLabel: healthDone ? '확인하기' : '입력하기',
+      tab: '건강정보',
+    },
+    {
+      key: 'workout',
+      title: '개인운동입력',
+      description: workoutDone
+        ? '오늘 운동기록이 반영되었습니다.'
+        : '오늘 운동을 기록해보세요.',
+      done: workoutDone,
+      buttonLabel: workoutDone ? '확인하기' : '입력하기',
+      tab: '개인운동입력',
+    },
+    {
+      key: 'diet',
+      title: '식단',
+      description: dietDone
+        ? '오늘 식단기록이 반영되었습니다.'
+        : '오늘 식단을 기록해보세요.',
+      done: dietDone,
+      buttonLabel: dietDone ? '확인하기' : '입력하기',
+      tab: '식단',
+    },
+    {
+      key: 'planner',
+      title: '식단플래너',
+      description: plannerDone
+        ? '오늘 식단플래너가 준비되어 있습니다.'
+        : '오늘 식단플래너를 확인해보세요.',
+      done: plannerDone,
+      buttonLabel: '이동하기',
+      tab: '식단플래너',
+    },
+  ]
+
+  const completedCount = items.filter((item) => item.done).length
+  const totalCount = items.length
+  const percent = totalCount > 0
+    ? Math.round((completedCount / totalCount) * 100)
+    : 0
+
+  return {
+    today,
+    items,
+    completedCount,
+    totalCount,
+    percent,
+  }
+}, [healthLogs, workouts, dietLogs, mealPlans])
+
+  
   const filteredSchedules = useMemo(() => {
     return coachSchedules.filter((schedule) => getMonthKey(schedule.schedule_date) === scheduleMonth)
   }, [coachSchedules, scheduleMonth])
@@ -1435,6 +1508,11 @@ const toggleGrowthSection = (key) => {
     ...prev,
     [key]: !prev[key],
   }))
+}
+
+  const handleTodayChecklistMove = (tab) => {
+  setActiveTab(tab)
+  window.scrollTo({ top: 0, behavior: 'smooth' })
 }
  const loadMemberStats = async () => {
   try {
@@ -3324,7 +3402,61 @@ const filteredMemberAlerts = memberAlerts.filter((alert) =>
         </div>
       </div>
     </section>
+<section className="member-home-check-card">
+  <div className="member-home-check-head">
+    <div>
+      <div className="member-home-badge">TODAY CHECK</div>
+      <h3>오늘의 체크</h3>
+      <p className="member-home-check-sub">
+        오늘 해야 할 기록을 확인하고 바로 입력할 수 있어요.
+      </p>
+    </div>
 
+    <div className="member-home-check-progress">
+      <strong>
+        {todayChecklist.completedCount} / {todayChecklist.totalCount}
+      </strong>
+      <span>{todayChecklist.percent}% 완료</span>
+    </div>
+  </div>
+
+  <div className="member-home-check-bar">
+    <div
+      className="member-home-check-fill"
+      style={{ width: `${todayChecklist.percent}%` }}
+    />
+  </div>
+
+  <div className="member-home-check-grid">
+    {todayChecklist.items.map((item) => (
+      <div
+        key={item.key}
+        className={`member-home-check-item ${item.done ? 'done' : 'pending'}`}
+      >
+        <div className="member-home-check-item-top">
+          <div>
+            <span className="member-home-check-item-label">{item.title}</span>
+            <strong>{item.done ? '완료' : '미완료'}</strong>
+          </div>
+
+          <div className={`member-home-check-status ${item.done ? 'done' : 'pending'}`}>
+            {item.done ? '완료' : '작성 필요'}
+          </div>
+        </div>
+
+        <p className="member-home-check-desc">{item.description}</p>
+
+        <button
+          type="button"
+          className={item.done ? 'secondary-btn' : 'primary-btn'}
+          onClick={() => handleTodayChecklistMove(item.tab)}
+        >
+          {item.buttonLabel}
+        </button>
+      </div>
+    ))}
+  </div>
+</section>
     <section className="member-home-summary-grid">
       <div className="member-home-summary-card">
         <span>내 PT 횟수</span>
