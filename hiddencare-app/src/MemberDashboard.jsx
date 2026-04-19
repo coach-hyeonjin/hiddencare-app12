@@ -790,7 +790,40 @@ const getMealFoodItemAmount = (item) => {
 const getMealDisplaySummary = (meal) => {
   return meal?.menu || '-'
 }
-  
+ const getMealTargetSummary = (meal) => {
+  const targetCarbs = Number(meal?.target_carbs_g ?? 0)
+  const targetProtein = Number(meal?.target_protein_g ?? 0)
+  const targetFat = Number(meal?.target_fat_g ?? 0)
+  const targetSodium = Number(meal?.target_sodium_mg ?? 0)
+
+  if (!targetCarbs && !targetProtein && !targetFat && !targetSodium) {
+    return ''
+  }
+
+  return `한 끼 목표 · 탄 ${targetCarbs}g / 단 ${targetProtein}g / 지 ${targetFat}g / 나트륨 ${targetSodium}mg`
+}
+
+const getMealTargetDiffSummary = (meal) => {
+  const carbDiff = Number(meal?.carbs_g ?? 0) - Number(meal?.target_carbs_g ?? 0)
+  const proteinDiff = Number(meal?.protein_g ?? 0) - Number(meal?.target_protein_g ?? 0)
+  const fatDiff = Number(meal?.fat_g ?? 0) - Number(meal?.target_fat_g ?? 0)
+  const sodiumDiff = Number(meal?.sodium_mg ?? 0) - Number(meal?.target_sodium_mg ?? 0)
+
+  const toStatusText = (label, value, unit) => {
+    const rounded = Math.round(value)
+
+    if (rounded === 0) return `${label} 적정`
+    if (rounded < 0) return `${label} ${Math.abs(rounded)}${unit} 적음`
+    return `${label} ${rounded}${unit} 많음`
+  }
+
+  return `목표 대비 · ${[
+    toStatusText('탄', carbDiff, 'g'),
+    toStatusText('단', proteinDiff, 'g'),
+    toStatusText('지', fatDiff, 'g'),
+    toStatusText('나트륨', sodiumDiff, 'mg'),
+  ].join(' / ')}`
+} 
 
  const getTodayMealCoachComment = (plan, profile) => {
   const mealType = String(plan?.meal_type || 'normal')
@@ -5887,9 +5920,19 @@ const filteredMemberAlerts = memberAlerts.filter((alert) =>
                   시간: {meal.time || '-'}
                 </div>
 
-                <div className="compact-text">
-                  kcal {Number(meal.kcal || 0)} / 탄 {Number(meal.carbs_g || 0)}g / 단 {Number(meal.protein_g || 0)}g / 지 {Number(meal.fat_g || 0)}g
-                </div>
+               <div className="compact-text">
+  kcal {Number(meal.kcal || 0)} / 탄 {Number(meal.carbs_g || 0)}g / 단 {Number(meal.protein_g || 0)}g / 지 {Number(meal.fat_g || 0)}g
+</div>
+
+{getMealTargetSummary(meal) ? (
+  <div className="compact-text" style={{ marginTop: '6px', color: '#4f46e5', fontWeight: 600 }}>
+    {getMealTargetSummary(meal)}
+  </div>
+) : null}
+
+<div className="compact-text" style={{ marginTop: '4px', color: '#667085' }}>
+  {getMealTargetDiffSummary(meal)}
+</div>
 
                 {foodItems.length > 0 ? (
                   <div className="member-meal-food-item-list">
@@ -6171,6 +6214,22 @@ const filteredMemberAlerts = memberAlerts.filter((alert) =>
 
 <div className="compact-text" style={{ marginBottom: '8px' }}>
   kcal {Number(meal.kcal || 0)} / 탄 {Number(meal.carbs_g || 0)}g / 단 {Number(meal.protein_g || 0)}g / 지 {Number(meal.fat_g || 0)}g
+</div>
+
+{getMealTargetSummary(meal) ? (
+  <div
+    className="compact-text"
+    style={{ marginBottom: '8px', color: '#4f46e5', fontWeight: 600 }}
+  >
+    {getMealTargetSummary(meal)}
+  </div>
+) : null}
+
+<div
+  className="compact-text"
+  style={{ marginBottom: '10px', color: '#667085' }}
+>
+  {getMealTargetDiffSummary(meal)}
 </div>
 
 {getMealFoodItems(meal).length > 0 ? (
