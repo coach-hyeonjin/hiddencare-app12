@@ -2155,6 +2155,120 @@ const formatMealTargetDiffSummary = (meal = {}) => {
 
   return `한 끼 목표 대비: 탄수화물 ${formatDiff(carbDiff)} · 단백질 ${formatDiff(proteinDiff)} · 지방 ${formatDiff(fatDiff)}`
 }
+
+  const formatMealFeedbackSummary = (meal = {}) => {
+  const items = Array.isArray(meal?.food_items) ? meal.food_items : []
+
+  const carbDiff = Number(meal?.carbs_g || 0) - Number(meal?.target_carbs_g || 0)
+  const proteinDiff = Number(meal?.protein_g || 0) - Number(meal?.target_protein_g || 0)
+  const fatDiff = Number(meal?.fat_g || 0) - Number(meal?.target_fat_g || 0)
+
+  const roleCounts = items.reduce(
+    (acc, item) => {
+      const role = getMealItemRoleLabel(item)
+
+      if (role.includes('탄수화물')) acc.carb += 1
+      if (role.includes('단백질')) acc.protein += 1
+      if (role.includes('지방')) acc.fat += 1
+      if (role.includes('채소')) acc.vegetable += 1
+
+      return acc
+    },
+    {
+      carb: 0,
+      protein: 0,
+      fat: 0,
+      vegetable: 0,
+    }
+  )
+
+  const reasons = []
+  const suggestions = []
+
+  if (Math.round(carbDiff) < 0) {
+    if (roleCounts.carb === 0) {
+      reasons.push('탄수화물 재료가 거의 없어서 목표보다 부족합니다.')
+    } else {
+      reasons.push('탄수화물 재료는 들어가 있지만 전체 양이 목표보다 적습니다.')
+    }
+    suggestions.push(`밥이나 고구마를 ${Math.abs(Math.round(carbDiff))}g 안팎 보완해도 좋습니다.`)
+  } else if (Math.round(carbDiff) > 0) {
+    reasons.push('탄수화물 재료 비중이 높아 목표보다 조금 많습니다.')
+    suggestions.push('다음 끼니에서는 밥이나 빵 양을 조금 줄여 균형을 맞추면 좋습니다.')
+  }
+
+  if (Math.round(proteinDiff) < 0) {
+    if (roleCounts.protein <= 1) {
+      reasons.push('단백질 재료 종류나 양이 적어서 목표보다 부족합니다.')
+    } else {
+      reasons.push('단백질 재료는 들어가 있지만 총량이 목표치보다 모자랍니다.')
+    }
+    suggestions.push(`닭가슴살, 연어, 소고기, 계란 등을 ${Math.abs(Math.round(proteinDiff))}g 안팎 더 보완해도 좋습니다.`)
+  } else if (Math.round(proteinDiff) > 0) {
+    reasons.push('단백질 비중이 높아 목표보다 충분하거나 조금 많은 편입니다.')
+    suggestions.push('현재 식사는 단백질이 잘 들어가 있어 다음 끼니는 유지해도 좋습니다.')
+  }
+
+  if (Math.round(fatDiff) < 0) {
+    if (roleCounts.fat === 0) {
+      reasons.push('지방 재료가 거의 없어 포만감 유지가 약할 수 있습니다.')
+    } else {
+      reasons.push('지방 재료는 들어가 있지만 목표치보다 조금 부족합니다.')
+    }
+    suggestions.push(`아보카도, 견과류, 치즈, 올리브오일 등을 ${Math.abs(Math.round(fatDiff))}g 안팎 보완하면 좋습니다.`)
+  } else if (Math.round(fatDiff) > 0) {
+    reasons.push('지방 재료 비중이 높아 목표보다 조금 많은 편입니다.')
+    suggestions.push('다음 끼니에서는 견과류, 치즈, 오일류 양을 조금 줄여도 좋습니다.')
+  }
+
+  if (!reasons.length) {
+    reasons.push('탄수화물, 단백질, 지방 구성이 전체적으로 목표에 가깝습니다.')
+  }
+
+  if (!suggestions.length) {
+    suggestions.push('현재 식사 구성을 그대로 유지해도 좋습니다.')
+  }
+
+  const coachFeedback = (() => {
+    const 부족 = []
+    const 초과 = []
+
+    if (Math.round(carbDiff) < 0) 부족.push('탄수화물')
+    if (Math.round(proteinDiff) < 0) 부족.push('단백질')
+    if (Math.round(fatDiff) < 0) 부족.push('지방')
+
+    if (Math.round(carbDiff) > 0) 초과.push('탄수화물')
+    if (Math.round(proteinDiff) > 0) 초과.push('단백질')
+    if (Math.round(fatDiff) > 0) 초과.push('지방')
+
+    if (!부족.length && !초과.length) {
+      return '현재 식사는 목표와 거의 맞아서 그대로 진행해도 좋습니다.'
+    }
+
+    if (부족.length && !초과.length) {
+      return `현재 식사는 ${부족.join(', ')} 보완이 필요해 보입니다. 다음 끼니에서 해당 재료를 조금 더 채워주세요.`
+    }
+
+    if (!부족.length && 초과.length) {
+      return `현재 식사는 ${초과.join(', ')} 비중이 조금 높습니다. 다음 끼니에서 양을 가볍게 조절하면 좋습니다.`
+    }
+
+    return `현재 식사는 ${부족.join(', ')}은 보완이 필요하고, ${초과.join(', ')}은 조금 높아 다음 끼니에서 균형 조절이 필요합니다.`
+  })()
+
+  return [
+    '왜 이렇게 나왔나요?',
+    ...reasons.map((text) => `- ${text}`),
+    '',
+    '보완하면 좋아요',
+    ...suggestions.map((text) => `- ${text}`),
+    '',
+    '코치 피드백',
+    `- ${coachFeedback}`,
+  ].join('\n')
+}
+
+  
 const getMealFatItems = (items = []) => {
   const rows = Array.isArray(items) ? items : []
 
@@ -20609,6 +20723,15 @@ const filteredExercisesAdvanced = exercises.filter((exercise) => {
     <div className="compact-text" style={{ marginTop: '4px', lineHeight: 1.7 }}>
       {formatMealTargetDiffSummary(meal)}
     </div>
+    <p className="compact-text" style={{ marginTop: '10px', lineHeight: 1.7 }}>
+  <strong>식사 해석</strong>
+</p>
+<div
+  className="compact-text"
+  style={{ marginTop: '4px', lineHeight: 1.7, whiteSpace: 'pre-line' }}
+>
+  {formatMealFeedbackSummary(meal)}
+</div>
   </>
 
   <p
