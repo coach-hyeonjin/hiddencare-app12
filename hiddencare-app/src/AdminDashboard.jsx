@@ -12002,32 +12002,36 @@ const updateSetValue = (itemIndex, setIndex, field, value, subIndex = null) => {
 
   if (!workoutForm.id && workoutForm.workout_type === 'pt') {
     const xpResult = await applyMemberXp({
-      memberId: workoutForm.member_id,
-      sourceType: 'pt_workout',
-      sourceId: targetWorkoutId,
-      sourceDate: workoutForm.workout_date,
-      note: '관리자 PT 운동기록 저장',
-    })
+  memberId: workoutForm.member_id,
+  sourceType: 'pt_workout',
+  sourceId: targetWorkoutId,
+  sourceDate: workoutForm.workout_date,
+  note: '관리자 PT 운동기록 저장',
+})
 
-    if (!xpResult?.ok) {
-      setMessage(`운동 기록은 저장됐지만 XP 반영 실패: ${xpResult?.reason || 'unknown'}`)
-      return
-    }
+console.log('[workoutSave:xpResult:pt]', xpResult)
+
+if (!xpResult?.ok) {
+  setMessage(`운동 기록은 저장됐지만 XP 반영 실패: ${xpResult?.reason || 'unknown'}`)
+  return
+}
   }
 
   if (!workoutForm.id && workoutForm.workout_type === 'personal') {
     const xpResult = await applyMemberXp({
-      memberId: workoutForm.member_id,
-      sourceType: 'personal_workout',
-      sourceId: targetWorkoutId,
-      sourceDate: workoutForm.workout_date,
-      note: '관리자 개인운동기록 저장',
-    })
+  memberId: workoutForm.member_id,
+  sourceType: 'personal_workout',
+  sourceId: targetWorkoutId,
+  sourceDate: workoutForm.workout_date,
+  note: '관리자 개인운동기록 저장',
+})
 
-    if (!xpResult?.ok) {
-      setMessage(`운동 기록은 저장됐지만 XP 반영 실패: ${xpResult?.reason || 'unknown'}`)
-      return
-    }
+console.log('[workoutSave:xpResult:personal]', xpResult)
+
+if (!xpResult?.ok) {
+  setMessage(`운동 기록은 저장됐지만 XP 반영 실패: ${xpResult?.reason || 'unknown'}`)
+  return
+}
   }
 
   if (workoutForm.workout_type === 'pt') {
@@ -14069,12 +14073,20 @@ const applyMemberXp = async ({
   if (!memberId || !sourceType || !sourceDate) {
     return { ok: false, reason: 'missing_required' }
   }
-
+console.log('[applyMemberXp:start]', {
+  memberId,
+  sourceType,
+  sourceId,
+  sourceDate,
+  note,
+  forceXp,
+})
   const memberRow = members.find((item) => item.id === memberId)
   const adminId = memberRow?.admin_id || currentAdminId || null
   const gymId = memberRow?.gym_id || currentGymId || null
 
   const rule = memberXpSettings.find(
+    console.log('[applyMemberXp:rule]', rule)
     (item) => item.rule_code === sourceType && item.is_active !== false
   )
 
@@ -14132,7 +14144,15 @@ const applyMemberXp = async ({
       return { ok: false, reason: 'daily_limit_reached' }
     }
   }
-
+console.log('[applyMemberXp:insert_payload]', {
+  member_id: memberId,
+  admin_id: adminId,
+  gym_id: gymId,
+  source_type: sourceType,
+  source_id: normalizedSourceId,
+  source_date: sourceDate,
+  xp: xpValue,
+})
   const { error: insertLogError } = await supabase.from('member_xp_logs').insert({
     member_id: memberId,
     admin_id: adminId,
@@ -14148,9 +14168,10 @@ const applyMemberXp = async ({
   })
 
   if (insertLogError) {
-    console.error('member_xp_logs insert 실패:', insertLogError)
-    return { ok: false, reason: 'log_insert_failed', error: insertLogError }
-  }
+  console.error('[applyMemberXp:insert_failed]', insertLogError)
+  alert('XP 저장 실패: ' + insertLogError.message)
+  return { ok: false, reason: 'log_insert_failed', error: insertLogError }
+}
 
   const { data: currentLevelRow, error: levelFetchError } = await supabase
     .from('member_levels')
@@ -14202,6 +14223,12 @@ const applyMemberXp = async ({
 
   await loadMemberLevels()
   await loadMemberXpLogs()
+console.log('[applyMemberXp:success]', {
+  memberId,
+  sourceType,
+  sourceId: normalizedSourceId,
+  xpValue,
+})
 
   return { ok: true, xp: xpValue }
 }
