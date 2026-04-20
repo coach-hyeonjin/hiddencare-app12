@@ -14086,13 +14086,14 @@ console.log('[applyMemberXp:start]', {
   const gymId = memberRow?.gym_id || currentGymId || null
 
   const rule = memberXpSettings.find(
-    console.log('[applyMemberXp:rule]', rule)
-    (item) => item.rule_code === sourceType && item.is_active !== false
-  )
+  (item) => item.rule_code === sourceType && item.is_active !== false
+)
 
-  if (!rule && forceXp === null) {
-    return { ok: false, reason: 'rule_not_found' }
-  }
+console.log('[applyMemberXp:rule]', rule)
+
+if (!rule && forceXp === null) {
+  return { ok: false, reason: 'rule_not_found' }
+}
 
   const xpValue = forceXp !== null ? Number(forceXp || 0) : Number(rule?.xp || 0)
   if (xpValue <= 0) {
