@@ -11997,25 +11997,51 @@ const updateSetValue = (itemIndex, setIndex, field, value, subIndex = null) => {
 
   await loadWorkouts()
 
-  if (!workoutForm.id && workoutForm.workout_type === 'pt') {
-    await applyMemberXp({
-      memberId: workoutForm.member_id,
-      sourceType: 'pt_workout',
-      sourceId: targetWorkoutId,
-      sourceDate: workoutForm.workout_date,
-      note: '관리자 PT 운동기록 저장',
-    })
-  }
+ if (!workoutForm.id && workoutForm.workout_type === 'pt') {
+  const xpResult = await applyMemberXp({
+    memberId: workoutForm.member_id,
+    sourceType: 'pt_workout',
+    sourceId: targetWorkoutId,
+    sourceDate: workoutForm.workout_date,
+    note: '관리자 PT 운동기록 저장',
+  })
 
-  if (!workoutForm.id && workoutForm.workout_type === 'personal') {
-    await applyMemberXp({
-      memberId: workoutForm.member_id,
-      sourceType: 'personal_workout',
-      sourceId: targetWorkoutId,
-      sourceDate: workoutForm.workout_date,
-      note: '관리자 개인운동기록 저장',
-    })
+  console.log('PT 운동 XP 결과:', xpResult)
+  console.log('PT 운동 저장 직후 값:', {
+    memberId: workoutForm.member_id,
+    targetWorkoutId,
+    workoutDate: workoutForm.workout_date,
+    workoutType: workoutForm.workout_type,
+  })
+
+  if (!xpResult?.ok) {
+    setMessage(`운동 기록은 저장됐지만 XP 반영 실패: ${xpResult?.reason || 'unknown'}`)
+    return
   }
+}
+
+if (!workoutForm.id && workoutForm.workout_type === 'personal') {
+  const xpResult = await applyMemberXp({
+    memberId: workoutForm.member_id,
+    sourceType: 'personal_workout',
+    sourceId: targetWorkoutId,
+    sourceDate: workoutForm.workout_date,
+    note: '관리자 개인운동기록 저장',
+  })
+
+  console.log('개인운동 XP 결과:', xpResult)
+  console.log('개인운동 저장 직후 값:', {
+    memberId: workoutForm.member_id,
+    targetWorkoutId,
+    workoutDate: workoutForm.workout_date,
+    workoutType: workoutForm.workout_type,
+  })
+
+  if (!xpResult?.ok) {
+    setMessage(`운동 기록은 저장됐지만 XP 반영 실패: ${xpResult?.reason || 'unknown'}`)
+    return
+  }
+}
 
   if (workoutForm.workout_type === 'pt') {
     const { data: freshWorkouts } = await supabase
@@ -14009,7 +14035,15 @@ const applyMemberXp = async ({
   const gymId = memberRow?.gym_id || currentGymId || null
 
   const rule = memberXpSettings.find((item) => item.rule_code === sourceType && item.is_active !== false)
-
+console.log('applyMemberXp debug:', {
+  memberId,
+  sourceType,
+  sourceId,
+  sourceDate,
+  currentAdminId,
+  memberXpSettings,
+  matchedRule: rule,
+})
   if (!rule && forceXp === null) {
     return { ok: false, reason: 'rule_not_found' }
   }
