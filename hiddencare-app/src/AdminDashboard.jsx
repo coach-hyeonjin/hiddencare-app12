@@ -14100,7 +14100,20 @@ const normalizedSourceId =
     note,
     is_valid: true,
   })
-
+console.log('🔥 member_xp_logs insert error:', insertLogError)
+console.log('🔥 member_xp_logs insert payload:', {
+  member_id: memberId,
+  admin_id: adminId,
+  gym_id: gymId,
+  source_type: sourceType,
+  source_id: normalizedSourceId,
+  source_date: sourceDate,
+  week_key: weekKey,
+  month_key: monthKey,
+  xp: xpValue,
+  note,
+  is_valid: true,
+})
   if (insertLogError) {
     console.error('member_xp_logs insert 실패:', insertLogError)
     return { ok: false, reason: 'log_insert_failed', error: insertLogError }
@@ -14111,7 +14124,8 @@ const normalizedSourceId =
     .select('*')
     .eq('member_id', memberId)
     .maybeSingle()
-
+console.log('🔥 member_levels fetch error:', levelFetchError)
+console.log('🔥 currentLevelRow:', currentLevelRow)
   if (levelFetchError) {
     console.error('member_levels 조회 실패:', levelFetchError)
     return { ok: false, reason: 'level_fetch_failed', error: levelFetchError }
@@ -14148,7 +14162,22 @@ level_name: matchedLevel?.level_name || currentLevelRow?.level_name || '히든 �
       },
       { onConflict: 'member_id' },
     )
-
+console.log('🔥 member_levels upsert error:', levelUpdateError)
+console.log('🔥 member_levels upsert payload:', {
+  member_id: memberId,
+  admin_id: adminId,
+  gym_id: gymId,
+  total_xp: nextTotalXp,
+  weekly_score: nextWeeklyScore,
+  monthly_score: nextMonthlyScore,
+  level_no: Number(matchedLevel?.level_no || currentLevelRow?.level_no || 1),
+  level_key: matchedLevel?.level_key || currentLevelRow?.level_key || 'hidden_green_1',
+  level_name: matchedLevel?.level_name || currentLevelRow?.level_name || '히든 그린 Ⅰ',
+  streak_days: Number(currentLevelRow?.streak_days || 0),
+  last_activity_date: sourceDate,
+  last_xp_applied_at: new Date().toISOString(),
+  updated_at: new Date().toISOString(),
+})
   if (levelUpdateError) {
     console.error('member_levels 업데이트 실패:', levelUpdateError)
     return { ok: false, reason: 'level_update_failed', error: levelUpdateError }
