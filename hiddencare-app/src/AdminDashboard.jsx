@@ -12090,26 +12090,35 @@ const updateSetValue = (itemIndex, setIndex, field, value, subIndex = null) => {
   setActiveTab('기록작성')
 }
 
-  const handleWorkoutDelete = async (workout) => {
-    if (!window.confirm('이 운동 기록을 삭제할까요?')) return
+ const handleWorkoutDelete = async (workout) => {
+  if (!window.confirm('이 운동 기록을 삭제할까요?')) return
 
-    await supabase.from('workouts').delete().eq('id', workout.id)
-    await loadWorkouts()
+  const { error } = await supabase.from('workouts').delete().eq('id', workout.id)
 
-    if (workout.workout_type === 'pt') {
-      const { data: freshWorkouts } = await supabase
-        .from('workouts')
-        .select('*')
-        .eq('member_id', workout.member_id)
-
-      const freshPtCount = (freshWorkouts || []).filter((item) => item.workout_type === 'pt').length
-
-      await supabase.from('members').update({ used_sessions: freshPtCount }).eq('id', workout.member_id)
-      await loadMembers()
-    }
-
-    setMessage('운동 기록이 삭제되었습니다.')
+  if (error) {
+    setMessage(`운동 기록 삭제 실패: ${error.message}`)
+    return
   }
+
+  await loadWorkouts()
+  await recalcMemberLevelFromLogs(workout.member_id)
+  await loadMemberLevels()
+  await loadMemberXpLogs()
+
+  if (workout.workout_type === 'pt') {
+    const { data: freshWorkouts } = await supabase
+      .from('workouts')
+      .select('*')
+      .eq('member_id', workout.member_id)
+
+    const freshPtCount = (freshWorkouts || []).filter((item) => item.workout_type === 'pt').length
+
+    await supabase.from('members').update({ used_sessions: freshPtCount }).eq('id', workout.member_id)
+    await loadMembers()
+  }
+
+  setMessage('운동 기록이 삭제되었습니다.')
+}
 
   const handleBrandSubmit = async (e) => {
   e.preventDefault()
@@ -14010,20 +14019,26 @@ const applyMemberXp = async ({
 
   const weekKey = getWeekKey(sourceDate)
   const monthKey = String(sourceDate).slice(0, 7)
+const UUID_REGEX =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
 
-  if (sourceId) {
-    const { data: existingLog } = await supabase
-      .from('member_xp_logs')
-      .select('id')
-      .eq('member_id', memberId)
-      .eq('source_type', sourceType)
-      .eq('source_id', sourceId)
-      .maybeSingle()
+const normalizedSourceId =
+  typeof sourceId === 'string' && UUID_REGEX.test(sourceId) ? sourceId : null
+ 
 
-    if (existingLog?.id) {
-      return { ok: false, reason: 'already_exists' }
-    }
+  if (normalizedSourceId) {
+  const { data: existingLog } = await supabase
+    .from('member_xp_logs')
+    .select('id')
+    .eq('member_id', memberId)
+    .eq('source_type', sourceType)
+    .eq('source_id', normalizedSourceId)
+    .maybeSingle()
+
+  if (existingLog?.id) {
+    return { ok: false, reason: 'already_exists' }
   }
+}
 
   if (rule && Number(rule.daily_limit || 0) > 0) {
     const { count } = await supabase
@@ -14043,7 +14058,7 @@ const applyMemberXp = async ({
     admin_id: adminId,
     gym_id: gymId,
     source_type: sourceType,
-    source_id: sourceId || null,
+   source_id: normalizedSourceId,
     source_date: sourceDate,
     week_key: weekKey,
     month_key: monthKey,
@@ -14664,13 +14679,13 @@ const rebuildSalesXpByMonth = async (targetMonth) => {
     }
 
     if (streakCount >= 3) {
-      await applyMemberXp({
-        memberId,
-        sourceType: 'streak_bonus',
-        sourceId: `streak-${memberId}-${uniqueDates[i]}`,
-        sourceDate: uniqueDates[i],
-        note: `연속활동 보너스 재정산 (${streakCount}일 연속)`,
-      })
+     await applyMemberXp({
+  memberId,
+  sourceType: 'streak_bonus',
+  sourceId: null,
+  sourceDate: uniqueDates[i],
+  note: `연속활동 보너스 재정산 (${streakCount}일 연속) / streak-${memberId}-${uniqueDates[i]}`,
+})
     }
   }
 
@@ -14685,13 +14700,13 @@ const rebuildSalesXpByMonth = async (targetMonth) => {
   for (const [weekKey, dates] of Object.entries(weekMap)) {
     const weekDates = [...new Set(dates)].sort()
     if (weekDates.length >= 3) {
-      await applyMemberXp({
-        memberId,
-        sourceType: 'weekly_bonus',
-        sourceId: `weekly-${memberId}-${weekKey}`,
-        sourceDate: weekDates[weekDates.length - 1],
-        note: `주간 꾸준함 보너스 재정산 (${weekDates.length}일 활동)`,
-      })
+     await applyMemberXp({
+  memberId,
+  sourceType: 'weekly_bonus',
+  sourceId: null,
+  sourceDate: weekDates[weekDates.length - 1],
+  note: `주간 꾸준함 보너스 재정산 (${weekDates.length}일 활동) / weekly-${memberId}-${weekKey}`,
+})
     }
   }
 
