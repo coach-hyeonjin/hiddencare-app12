@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { supabase } from './supabase'
 import logo from './assets/logo.png'
 
+
 const TABS = [
   '회원',
   '회원상세',
