@@ -12109,20 +12109,22 @@ const handleWorkoutDelete = async (workout) => {
   if (!window.confirm('이 운동 기록을 삭제할까요?')) return
 
   try {
-    // 1) 운동 원본 삭제 전에 연결된 운동 XP 로그 먼저 삭제
-    // admin_id 조건을 일부러 넣지 않음
-    // 이유: 예전 데이터/다른 관리자 저장 로그가 남아 있어도 source_id 기준으로 같이 정리하기 위함
-    const { error: xpDeleteError } = await supabase
-      .from('member_xp_logs')
-      .delete()
-      .eq('member_id', workout.member_id)
-      .eq('source_id', workout.id)
-      .in('source_type', ['pt_workout', 'personal_workout'])
+    const workoutId = workout?.id ? String(workout.id) : null
 
-    if (xpDeleteError) {
-      console.error('운동 XP 로그 삭제 실패:', xpDeleteError)
-      setMessage(`운동 XP 로그 삭제 실패: ${xpDeleteError.message}`)
-      return
+    // 1) 연결된 운동 XP 로그 먼저 직접 삭제
+    if (workoutId) {
+      const { error: xpDeleteError } = await supabase
+        .from('member_xp_logs')
+        .delete()
+        .eq('member_id', workout.member_id)
+        .eq('source_id', workoutId)
+        .in('source_type', ['pt_workout', 'personal_workout'])
+
+      if (xpDeleteError) {
+        console.error('운동 XP 로그 삭제 실패:', xpDeleteError)
+        setMessage(`운동 XP 로그 삭제 실패: ${xpDeleteError.message}`)
+        return
+      }
     }
 
     // 2) 운동 원본 삭제
@@ -12137,10 +12139,10 @@ const handleWorkoutDelete = async (workout) => {
       return
     }
 
-    // 3) 혹시 남아 있는 주간/연속/식단/매출 보너스까지 포함해서 회원 XP 재정산
+    // 3) 회원 XP 전체 재정산
     await forceRefreshSingleMemberXp(workout.member_id)
 
-    // 4) PT 사용횟수 재계산
+    // 4) PT 사용 횟수 재계산
     if (workout.workout_type === 'pt') {
       const { data: freshWorkouts, error: freshWorkoutsError } = await supabase
         .from('workouts')
@@ -12175,7 +12177,7 @@ const handleWorkoutDelete = async (workout) => {
     await loadMemberLevels()
     await loadMemberXpLogs()
 
-    setMessage('운동 기록과 연결된 운동 XP가 삭제되었고, 회원 XP를 다시 계산했습니다.')
+    setMessage('운동 기록 삭제 후 운동 XP까지 포함해 다시 계산했습니다.')
   } catch (error) {
     console.error('운동 기록 삭제 처리 실패:', error)
     setMessage(`운동 기록 삭제 처리 실패: ${error.message}`)
@@ -14088,14 +14090,14 @@ const applyMemberXp = async ({
   const weekKey = getWeekKey(sourceDate)
   const monthKey = String(sourceDate).slice(0, 7)
 
-  const UUID_REGEX =
-    /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
-
+  // 기존처럼 UUID만 허용하지 말고, 값이 있으면 문자열로 그대로 저장
   const normalizedSourceId =
-    typeof sourceId === 'string' && UUID_REGEX.test(sourceId) ? sourceId : null
+    sourceId === undefined || sourceId === null || sourceId === ''
+      ? null
+      : String(sourceId)
 
   if (normalizedSourceId) {
-    const { data: existingLog } = await supabase
+    const { data: existingLog, error: existingLogError } = await supabase
       .from('member_xp_logs')
       .select('id')
       .eq('member_id', memberId)
@@ -14103,18 +14105,28 @@ const applyMemberXp = async ({
       .eq('source_id', normalizedSourceId)
       .maybeSingle()
 
+    if (existingLogError) {
+      console.error('기존 XP 로그 중복 확인 실패:', existingLogError)
+      return { ok: false, reason: 'existing_log_check_failed', error: existingLogError }
+    }
+
     if (existingLog?.id) {
       return { ok: false, reason: 'already_exists' }
     }
   }
 
   if (rule && Number(rule.daily_limit || 0) > 0) {
-    const { count } = await supabase
+    const { count, error: dailyLimitError } = await supabase
       .from('member_xp_logs')
       .select('*', { count: 'exact', head: true })
       .eq('member_id', memberId)
       .eq('source_type', sourceType)
       .eq('source_date', sourceDate)
+
+    if (dailyLimitError) {
+      console.error('daily_limit 확인 실패:', dailyLimitError)
+      return { ok: false, reason: 'daily_limit_check_failed', error: dailyLimitError }
+    }
 
     if (Number(count || 0) >= Number(rule.daily_limit || 0)) {
       return { ok: false, reason: 'daily_limit_reached' }
@@ -14173,10 +14185,8 @@ const applyMemberXp = async ({
         weekly_score: nextWeeklyScore,
         monthly_score: nextMonthlyScore,
         level_no: Number(matchedLevel?.level_no || currentLevelRow?.level_no || 1),
-        level_key:
-          matchedLevel?.level_key || currentLevelRow?.level_key || 'hidden_green_1',
-        level_name:
-          matchedLevel?.level_name || currentLevelRow?.level_name || '히든 그린 Ⅰ',
+        level_key: matchedLevel?.level_key || currentLevelRow?.level_key || 'hidden_green_1',
+        level_name: matchedLevel?.level_name || currentLevelRow?.level_name || '히든 그린 Ⅰ',
         streak_days: Number(currentLevelRow?.streak_days || 0),
         last_activity_date: sourceDate,
         last_xp_applied_at: new Date().toISOString(),
