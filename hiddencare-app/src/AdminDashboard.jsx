@@ -22519,7 +22519,7 @@ const filteredExercisesAdvanced = exercises.filter((exercise) => {
     <button
       type="button"
       className="danger-btn"
-      onClick={() => hardResetSingleMemberXp(selectedXpMemberId)}
+     onClick={() => recalcMemberLevelFromLogs(selectedXpMemberId)}
       disabled={!selectedXpMemberId}
     >
       선택 회원 XP 완전초기화
