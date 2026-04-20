@@ -14614,11 +14614,13 @@ const rebuildMemberXp = async (memberId) => {
   if (!memberId || !currentAdminId) {
     return { ok: false, reason: 'memberId_or_admin_missing' }
   }
+console.log('[rebuildMemberXp] delete start:', memberId)
 
   const { error: deleteXpError } = await supabase
   .from('member_xp_logs')
   .delete()
   .eq('member_id', memberId)
+console.log('[rebuildMemberXp] delete result:', deleteXpError)
 
   if (deleteXpError) {
     throw deleteXpError
@@ -14675,30 +14677,37 @@ const rebuildMemberXp = async (memberId) => {
   if (workoutError) {
     throw workoutError
   }
-
+console.log('[rebuildMemberXp] workoutRows:', workoutRows)
+  
+  
   for (const workout of workoutRows || []) {
-    if (!workout.id || !workout.workout_date) continue
+  if (!workout) continue
+  if (!workout.id) continue
+  if (!workout.workout_date) continue
+  if (!workout.workout_type) continue
 
-    if (workout.workout_type === 'pt') {
-      await applyMemberXp({
-        memberId,
-        sourceType: 'pt_workout',
-        sourceId: workout.id,
-        sourceDate: workout.workout_date,
-        note: '관리자 PT 운동기록 재정산',
-      })
-    }
-
-    if (workout.workout_type === 'personal') {
-      await applyMemberXp({
-        memberId,
-        sourceType: 'personal_workout',
-        sourceId: workout.id,
-        sourceDate: workout.workout_date,
-        note: '관리자 개인운동기록 재정산',
-      })
-    }
+  if (workout.workout_type === 'pt') {
+    await applyMemberXp({
+      memberId,
+      sourceType: 'pt_workout',
+      sourceId: workout.id,
+      sourceDate: workout.workout_date,
+      note: '관리자 PT 운동기록 재정산',
+    })
+    continue
   }
+
+  if (workout.workout_type === 'personal') {
+    await applyMemberXp({
+      memberId,
+      sourceType: 'personal_workout',
+      sourceId: workout.id,
+      sourceDate: workout.workout_date,
+      note: '관리자 개인운동기록 재정산',
+    })
+    continue
+  }
+}
 
   const { data: dietRows, error: dietError } = await supabase
     .from('diet_logs')
