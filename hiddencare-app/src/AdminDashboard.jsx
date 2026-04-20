@@ -12190,7 +12190,7 @@ const handleWorkoutDelete = async (workout) => {
     }
 
     // 3) 회원 XP 전체 재계산
-    await forceRefreshSingleMemberXp(workout.member_id)
+    await recalcMemberLevelFromLogs(workout.member_id)
 
     // 4) PT 사용횟수 재계산
     if (workout.workout_type === 'pt') {
