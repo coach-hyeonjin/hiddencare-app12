@@ -12108,42 +12108,78 @@ const updateSetValue = (itemIndex, setIndex, field, value, subIndex = null) => {
 const handleWorkoutDelete = async (workout) => {
   if (!window.confirm('이 운동 기록을 삭제할까요?')) return
 
-  const { error } = await supabase
-    .from('workouts')
-    .delete()
-    .eq('id', workout.id)
-
-  if (error) {
-    console.error('운동 기록 삭제 실패:', error)
-    setMessage(`운동 기록 삭제 실패: ${error.message}`)
-    return
-  }
-
-  await forceRefreshSingleMemberXp(workout.member_id)
-
-  await loadWorkouts()
-  await loadMemberLevels()
-  await loadMemberXpLogs()
-
-  if (workout.workout_type === 'pt') {
-    const { data: freshWorkouts } = await supabase
-      .from('workouts')
-      .select('*')
+  try {
+    // 1) 운동 원본 삭제 전에 연결된 운동 XP 로그 먼저 삭제
+    // admin_id 조건을 일부러 넣지 않음
+    // 이유: 예전 데이터/다른 관리자 저장 로그가 남아 있어도 source_id 기준으로 같이 정리하기 위함
+    const { error: xpDeleteError } = await supabase
+      .from('member_xp_logs')
+      .delete()
       .eq('member_id', workout.member_id)
+      .eq('source_id', workout.id)
+      .in('source_type', ['pt_workout', 'personal_workout'])
 
-    const freshPtCount = (freshWorkouts || []).filter(
-      (item) => item.workout_type === 'pt'
-    ).length
+    if (xpDeleteError) {
+      console.error('운동 XP 로그 삭제 실패:', xpDeleteError)
+      setMessage(`운동 XP 로그 삭제 실패: ${xpDeleteError.message}`)
+      return
+    }
 
-    await supabase
-      .from('members')
-      .update({ used_sessions: freshPtCount })
-      .eq('id', workout.member_id)
+    // 2) 운동 원본 삭제
+    const { error: workoutDeleteError } = await supabase
+      .from('workouts')
+      .delete()
+      .eq('id', workout.id)
 
+    if (workoutDeleteError) {
+      console.error('운동 기록 삭제 실패:', workoutDeleteError)
+      setMessage(`운동 기록 삭제 실패: ${workoutDeleteError.message}`)
+      return
+    }
+
+    // 3) 혹시 남아 있는 주간/연속/식단/매출 보너스까지 포함해서 회원 XP 재정산
+    await forceRefreshSingleMemberXp(workout.member_id)
+
+    // 4) PT 사용횟수 재계산
+    if (workout.workout_type === 'pt') {
+      const { data: freshWorkouts, error: freshWorkoutsError } = await supabase
+        .from('workouts')
+        .select('*')
+        .eq('member_id', workout.member_id)
+
+      if (freshWorkoutsError) {
+        console.error('삭제 후 운동 재조회 실패:', freshWorkoutsError)
+        setMessage(`삭제 후 운동 재조회 실패: ${freshWorkoutsError.message}`)
+        return
+      }
+
+      const freshPtCount = (freshWorkouts || []).filter(
+        (item) => item.workout_type === 'pt'
+      ).length
+
+      const { error: memberUpdateError } = await supabase
+        .from('members')
+        .update({ used_sessions: freshPtCount })
+        .eq('id', workout.member_id)
+
+      if (memberUpdateError) {
+        console.error('회원 사용횟수 갱신 실패:', memberUpdateError)
+        setMessage(`회원 사용횟수 갱신 실패: ${memberUpdateError.message}`)
+        return
+      }
+    }
+
+    // 5) 화면 갱신
+    await loadWorkouts()
     await loadMembers()
-  }
+    await loadMemberLevels()
+    await loadMemberXpLogs()
 
-  setMessage('운동 기록 삭제 후 회원 XP를 다시 계산했습니다.')
+    setMessage('운동 기록과 연결된 운동 XP가 삭제되었고, 회원 XP를 다시 계산했습니다.')
+  } catch (error) {
+    console.error('운동 기록 삭제 처리 실패:', error)
+    setMessage(`운동 기록 삭제 처리 실패: ${error.message}`)
+  }
 }
 
   const handleBrandSubmit = async (e) => {
