@@ -12115,7 +12115,7 @@ const handleWorkoutDelete = async (workout) => {
   try {
     const workoutId = workout?.id ? String(workout.id) : null
 
-    // 1) 연결된 운동 XP 로그 먼저 직접 삭제
+    // 1) 연결된 운동 XP 로그 먼저 삭제
     if (workoutId) {
       const { error: xpDeleteError } = await supabase
         .from('member_xp_logs')
@@ -12143,10 +12143,10 @@ const handleWorkoutDelete = async (workout) => {
       return
     }
 
-    // 3) 회원 XP 전체 재정산
+    // 3) 회원 XP 전체 재계산
     await forceRefreshSingleMemberXp(workout.member_id)
 
-    // 4) PT 사용 횟수 재계산
+    // 4) PT 사용횟수 재계산
     if (workout.workout_type === 'pt') {
       const { data: freshWorkouts, error: freshWorkoutsError } = await supabase
         .from('workouts')
@@ -12181,7 +12181,7 @@ const handleWorkoutDelete = async (workout) => {
     await loadMemberLevels()
     await loadMemberXpLogs()
 
-    setMessage('운동 기록 삭제 후 운동 XP까지 포함해 다시 계산했습니다.')
+    setMessage('운동 기록 삭제 후 회원 XP를 다시 계산했습니다.')
   } catch (error) {
     console.error('운동 기록 삭제 처리 실패:', error)
     setMessage(`운동 기록 삭제 처리 실패: ${error.message}`)
@@ -12376,11 +12376,68 @@ const handleDeleteAllExercises = async () => {
   }
 
   const handleDietDelete = async (dietId) => {
-    if (!window.confirm('식단 기록을 삭제할까요?')) return
-    await supabase.from('diet_logs').delete().eq('id', dietId)
+  if (!window.confirm('식단 기록을 삭제할까요?')) return
+
+  try {
+    // 1) 삭제할 식단 원본 먼저 조회
+    const { data: dietRow, error: fetchDietError } = await supabase
+      .from('diet_logs')
+      .select('*')
+      .eq('id', dietId)
+      .maybeSingle()
+
+    if (fetchDietError) {
+      console.error('식단 기록 조회 실패:', fetchDietError)
+      setMessage(`식단 기록 조회 실패: ${fetchDietError.message}`)
+      return
+    }
+
+    if (!dietRow) {
+      setMessage('이미 삭제되었거나 존재하지 않는 식단 기록입니다.')
+      await loadDietLogs()
+      return
+    }
+
+    // 2) 연결된 식단 XP 로그 먼저 삭제
+    const { error: xpDeleteError } = await supabase
+      .from('member_xp_logs')
+      .delete()
+      .eq('member_id', dietRow.member_id)
+      .eq('source_id', dietId)
+      .eq('source_type', 'diet_log')
+
+    if (xpDeleteError) {
+      console.error('식단 XP 로그 삭제 실패:', xpDeleteError)
+      setMessage(`식단 XP 로그 삭제 실패: ${xpDeleteError.message}`)
+      return
+    }
+
+    // 3) 식단 원본 삭제
+    const { error: dietDeleteError } = await supabase
+      .from('diet_logs')
+      .delete()
+      .eq('id', dietId)
+
+    if (dietDeleteError) {
+      console.error('식단 기록 삭제 실패:', dietDeleteError)
+      setMessage(`식단 기록 삭제 실패: ${dietDeleteError.message}`)
+      return
+    }
+
+    // 4) 해당 회원 XP 전체 재계산
+    await forceRefreshSingleMemberXp(dietRow.member_id)
+
+    // 5) 화면 갱신
     await loadDietLogs()
-    setMessage('식단 기록이 삭제되었습니다.')
+    await loadMemberLevels()
+    await loadMemberXpLogs()
+
+    setMessage('식단 기록 삭제 후 회원 XP를 다시 계산했습니다.')
+  } catch (error) {
+    console.error('식단 기록 삭제 처리 실패:', error)
+    setMessage(`식단 기록 삭제 처리 실패: ${error.message}`)
   }
+}
 
   const handleManualSave = async () => {
     const payload = {
