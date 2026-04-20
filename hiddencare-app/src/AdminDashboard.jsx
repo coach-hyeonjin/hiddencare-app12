@@ -11880,7 +11880,7 @@ const updateSetValue = (itemIndex, setIndex, field, value, subIndex = null) => {
   })
 }
 
-  const handleWorkoutSubmit = async (e) => {
+ const handleWorkoutSubmit = async (e) => {
   e.preventDefault()
 
   if (!workoutForm.member_id) {
@@ -11892,25 +11892,23 @@ const updateSetValue = (itemIndex, setIndex, field, value, subIndex = null) => {
 
   const cleanedItems = workoutForm.items
     .filter((item) => {
-      if (item.entry_type === 'pain_only') {
-        return false
-      }
-
+      if (item.entry_type === 'pain_only') return false
       if (item.entry_type === 'cardio') {
         return (item.performed_name || item.equipment_name_snapshot || '').trim()
       }
-
       if (item.entry_type === 'care') {
         return (item.performed_name || item.equipment_name_snapshot || '').trim()
       }
-
       if (item.entry_type === 'stretching') {
         return (item.performed_name || item.equipment_name_snapshot || '').trim()
       }
-
       if (item.training_method === 'superset') {
         return (item.sub_exercises || []).some(
-          (sub) => (sub.performed_name || sub.exercise_name_snapshot || sub.equipment_name_snapshot || '').trim(),
+          (sub) =>
+            (sub.performed_name ||
+              sub.exercise_name_snapshot ||
+              sub.equipment_name_snapshot ||
+              '').trim()
         )
       }
 
@@ -11950,7 +11948,11 @@ const updateSetValue = (itemIndex, setIndex, field, value, subIndex = null) => {
           : [],
     }))
 
-  if (cleanedItems.length === 0 && !(workoutForm.pain_enabled && (workoutForm.pain_logs || []).length > 0) && !hasPainOnlyItem) {
+  if (
+    cleanedItems.length === 0 &&
+    !(workoutForm.pain_enabled && (workoutForm.pain_logs || []).length > 0) &&
+    !hasPainOnlyItem
+  ) {
     setMessage('최소 1개의 운동 또는 통증기록을 입력해주세요.')
     return
   }
@@ -11962,7 +11964,7 @@ const updateSetValue = (itemIndex, setIndex, field, value, subIndex = null) => {
     good: workoutForm.good?.trim() || '',
     improve: workoutForm.improve?.trim() || '',
     pain_enabled: !!workoutForm.pain_enabled,
-    pain_logs: workoutForm.pain_enabled ? (workoutForm.pain_logs || []) : [],
+    pain_logs: workoutForm.pain_enabled ? workoutForm.pain_logs || [] : [],
     created_by: profile?.id || null,
     admin_id: currentAdminId || null,
     gym_id: currentGymId || null,
@@ -11997,51 +11999,35 @@ const updateSetValue = (itemIndex, setIndex, field, value, subIndex = null) => {
 
   await loadWorkouts()
 
- if (!workoutForm.id && workoutForm.workout_type === 'pt') {
-  const xpResult = await applyMemberXp({
-    memberId: workoutForm.member_id,
-    sourceType: 'pt_workout',
-    sourceId: targetWorkoutId,
-    sourceDate: workoutForm.workout_date,
-    note: '관리자 PT 운동기록 저장',
-  })
+  if (!workoutForm.id && workoutForm.workout_type === 'pt') {
+    const xpResult = await applyMemberXp({
+      memberId: workoutForm.member_id,
+      sourceType: 'pt_workout',
+      sourceId: targetWorkoutId,
+      sourceDate: workoutForm.workout_date,
+      note: '관리자 PT 운동기록 저장',
+    })
 
-  console.log('PT 운동 XP 결과:', xpResult)
-  console.log('PT 운동 저장 직후 값:', {
-    memberId: workoutForm.member_id,
-    targetWorkoutId,
-    workoutDate: workoutForm.workout_date,
-    workoutType: workoutForm.workout_type,
-  })
-
-  if (!xpResult?.ok) {
-    setMessage(`운동 기록은 저장됐지만 XP 반영 실패: ${xpResult?.reason || 'unknown'}`)
-    return
+    if (!xpResult?.ok) {
+      setMessage(`운동 기록은 저장됐지만 XP 반영 실패: ${xpResult?.reason || 'unknown'}`)
+      return
+    }
   }
-}
 
-if (!workoutForm.id && workoutForm.workout_type === 'personal') {
-  const xpResult = await applyMemberXp({
-    memberId: workoutForm.member_id,
-    sourceType: 'personal_workout',
-    sourceId: targetWorkoutId,
-    sourceDate: workoutForm.workout_date,
-    note: '관리자 개인운동기록 저장',
-  })
+  if (!workoutForm.id && workoutForm.workout_type === 'personal') {
+    const xpResult = await applyMemberXp({
+      memberId: workoutForm.member_id,
+      sourceType: 'personal_workout',
+      sourceId: targetWorkoutId,
+      sourceDate: workoutForm.workout_date,
+      note: '관리자 개인운동기록 저장',
+    })
 
-  console.log('개인운동 XP 결과:', xpResult)
-  console.log('개인운동 저장 직후 값:', {
-    memberId: workoutForm.member_id,
-    targetWorkoutId,
-    workoutDate: workoutForm.workout_date,
-    workoutType: workoutForm.workout_type,
-  })
-
-  if (!xpResult?.ok) {
-    setMessage(`운동 기록은 저장됐지만 XP 반영 실패: ${xpResult?.reason || 'unknown'}`)
-    return
+    if (!xpResult?.ok) {
+      setMessage(`운동 기록은 저장됐지만 XP 반영 실패: ${xpResult?.reason || 'unknown'}`)
+      return
+    }
   }
-}
 
   if (workoutForm.workout_type === 'pt') {
     const { data: freshWorkouts } = await supabase
@@ -12049,7 +12035,9 @@ if (!workoutForm.id && workoutForm.workout_type === 'personal') {
       .select('*')
       .eq('member_id', workoutForm.member_id)
 
-    const freshPtCount = (freshWorkouts || []).filter((workout) => workout.workout_type === 'pt').length
+    const freshPtCount = (freshWorkouts || []).filter(
+      (workout) => workout.workout_type === 'pt'
+    ).length
 
     await supabase
       .from('members')
@@ -12116,7 +12104,7 @@ if (!workoutForm.id && workoutForm.workout_type === 'personal') {
   setActiveTab('기록작성')
 }
 
- const handleWorkoutDelete = async (workout) => {
+const handleWorkoutDelete = async (workout) => {
   if (!window.confirm('이 운동 기록을 삭제할까요?')) return
 
   const { error } = await supabase.from('workouts').delete().eq('id', workout.id)
@@ -12137,9 +12125,15 @@ if (!workoutForm.id && workoutForm.workout_type === 'personal') {
       .select('*')
       .eq('member_id', workout.member_id)
 
-    const freshPtCount = (freshWorkouts || []).filter((item) => item.workout_type === 'pt').length
+    const freshPtCount = (freshWorkouts || []).filter(
+      (item) => item.workout_type === 'pt'
+    ).length
 
-    await supabase.from('members').update({ used_sessions: freshPtCount }).eq('id', workout.member_id)
+    await supabase
+      .from('members')
+      .update({ used_sessions: freshPtCount })
+      .eq('id', workout.member_id)
+
     await loadMembers()
   }
 
@@ -14028,51 +14022,49 @@ const applyMemberXp = async ({
   note = '',
   forceXp = null,
 }) => {
-  if (!memberId || !sourceType || !sourceDate) return { ok: false, reason: 'missing_required' }
+  if (!memberId || !sourceType || !sourceDate) {
+    return { ok: false, reason: 'missing_required' }
+  }
 
   const memberRow = members.find((item) => item.id === memberId)
   const adminId = memberRow?.admin_id || currentAdminId || null
   const gymId = memberRow?.gym_id || currentGymId || null
 
-  const rule = memberXpSettings.find((item) => item.rule_code === sourceType && item.is_active !== false)
-console.log('applyMemberXp debug:', {
-  memberId,
-  sourceType,
-  sourceId,
-  sourceDate,
-  currentAdminId,
-  memberXpSettings,
-  matchedRule: rule,
-})
+  const rule = memberXpSettings.find(
+    (item) => item.rule_code === sourceType && item.is_active !== false
+  )
+
   if (!rule && forceXp === null) {
     return { ok: false, reason: 'rule_not_found' }
   }
 
   const xpValue = forceXp !== null ? Number(forceXp || 0) : Number(rule?.xp || 0)
-  if (xpValue <= 0) return { ok: false, reason: 'invalid_xp' }
+  if (xpValue <= 0) {
+    return { ok: false, reason: 'invalid_xp' }
+  }
 
   const weekKey = getWeekKey(sourceDate)
   const monthKey = String(sourceDate).slice(0, 7)
-const UUID_REGEX =
-  /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
 
-const normalizedSourceId =
-  typeof sourceId === 'string' && UUID_REGEX.test(sourceId) ? sourceId : null
- 
+  const UUID_REGEX =
+    /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
+
+  const normalizedSourceId =
+    typeof sourceId === 'string' && UUID_REGEX.test(sourceId) ? sourceId : null
 
   if (normalizedSourceId) {
-  const { data: existingLog } = await supabase
-    .from('member_xp_logs')
-    .select('id')
-    .eq('member_id', memberId)
-    .eq('source_type', sourceType)
-    .eq('source_id', normalizedSourceId)
-    .maybeSingle()
+    const { data: existingLog } = await supabase
+      .from('member_xp_logs')
+      .select('id')
+      .eq('member_id', memberId)
+      .eq('source_type', sourceType)
+      .eq('source_id', normalizedSourceId)
+      .maybeSingle()
 
-  if (existingLog?.id) {
-    return { ok: false, reason: 'already_exists' }
+    if (existingLog?.id) {
+      return { ok: false, reason: 'already_exists' }
+    }
   }
-}
 
   if (rule && Number(rule.daily_limit || 0) > 0) {
     const { count } = await supabase
@@ -14092,7 +14084,7 @@ const normalizedSourceId =
     admin_id: adminId,
     gym_id: gymId,
     source_type: sourceType,
-   source_id: normalizedSourceId,
+    source_id: normalizedSourceId,
     source_date: sourceDate,
     week_key: weekKey,
     month_key: monthKey,
@@ -14100,20 +14092,7 @@ const normalizedSourceId =
     note,
     is_valid: true,
   })
-console.log('🔥 member_xp_logs insert error:', insertLogError)
-console.log('🔥 member_xp_logs insert payload:', {
-  member_id: memberId,
-  admin_id: adminId,
-  gym_id: gymId,
-  source_type: sourceType,
-  source_id: normalizedSourceId,
-  source_date: sourceDate,
-  week_key: weekKey,
-  month_key: monthKey,
-  xp: xpValue,
-  note,
-  is_valid: true,
-})
+
   if (insertLogError) {
     console.error('member_xp_logs insert 실패:', insertLogError)
     return { ok: false, reason: 'log_insert_failed', error: insertLogError }
@@ -14124,8 +14103,7 @@ console.log('🔥 member_xp_logs insert payload:', {
     .select('*')
     .eq('member_id', memberId)
     .maybeSingle()
-console.log('🔥 member_levels fetch error:', levelFetchError)
-console.log('🔥 currentLevelRow:', currentLevelRow)
+
   if (levelFetchError) {
     console.error('member_levels 조회 실패:', levelFetchError)
     return { ok: false, reason: 'level_fetch_failed', error: levelFetchError }
@@ -14153,8 +14131,10 @@ console.log('🔥 currentLevelRow:', currentLevelRow)
         weekly_score: nextWeeklyScore,
         monthly_score: nextMonthlyScore,
         level_no: Number(matchedLevel?.level_no || currentLevelRow?.level_no || 1),
-        level_key: matchedLevel?.level_key || currentLevelRow?.level_key || 'hidden_green_1',
-level_name: matchedLevel?.level_name || currentLevelRow?.level_name || '히든 그린 Ⅰ',
+        level_key:
+          matchedLevel?.level_key || currentLevelRow?.level_key || 'hidden_green_1',
+        level_name:
+          matchedLevel?.level_name || currentLevelRow?.level_name || '히든 그린 Ⅰ',
         streak_days: Number(currentLevelRow?.streak_days || 0),
         last_activity_date: sourceDate,
         last_xp_applied_at: new Date().toISOString(),
@@ -14162,22 +14142,7 @@ level_name: matchedLevel?.level_name || currentLevelRow?.level_name || '히든 �
       },
       { onConflict: 'member_id' },
     )
-console.log('🔥 member_levels upsert error:', levelUpdateError)
-console.log('🔥 member_levels upsert payload:', {
-  member_id: memberId,
-  admin_id: adminId,
-  gym_id: gymId,
-  total_xp: nextTotalXp,
-  weekly_score: nextWeeklyScore,
-  monthly_score: nextMonthlyScore,
-  level_no: Number(matchedLevel?.level_no || currentLevelRow?.level_no || 1),
-  level_key: matchedLevel?.level_key || currentLevelRow?.level_key || 'hidden_green_1',
-  level_name: matchedLevel?.level_name || currentLevelRow?.level_name || '히든 그린 Ⅰ',
-  streak_days: Number(currentLevelRow?.streak_days || 0),
-  last_activity_date: sourceDate,
-  last_xp_applied_at: new Date().toISOString(),
-  updated_at: new Date().toISOString(),
-})
+
   if (levelUpdateError) {
     console.error('member_levels 업데이트 실패:', levelUpdateError)
     return { ok: false, reason: 'level_update_failed', error: levelUpdateError }
