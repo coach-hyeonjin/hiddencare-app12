@@ -14602,11 +14602,10 @@ const rebuildSalesXpByMonth = async (targetMonth) => {
 
   // 1) 기존 XP 로그 삭제
   const { error: deleteXpError } = await supabase
-    .from('member_xp_logs')
-    .delete()
-    .eq('member_id', memberId)
-    .eq('admin_id', currentAdminId)
-    .in('source_type', targetXpTypes)
+  .from('member_xp_logs')
+  .delete()
+  .eq('member_id', memberId)
+  .in('source_type', targetXpTypes)
 
   if (deleteXpError) {
     console.error('회원 XP 로그 삭제 실패:', deleteXpError)
