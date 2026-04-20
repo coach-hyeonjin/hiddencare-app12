@@ -12001,38 +12001,66 @@ const updateSetValue = (itemIndex, setIndex, field, value, subIndex = null) => {
   await loadWorkouts()
 
   if (!workoutForm.id && workoutForm.workout_type === 'pt') {
-    const xpResult = await applyMemberXp({
-  memberId: workoutForm.member_id,
-  sourceType: 'pt_workout',
-  sourceId: targetWorkoutId,
-  sourceDate: workoutForm.workout_date,
-  note: '관리자 PT 운동기록 저장',
-})
+  // 같은 날짜 PT XP 찌꺼기 먼저 정리
+  const { error: cleanupPtXpError } = await supabase
+    .from('member_xp_logs')
+    .delete()
+    .eq('member_id', workoutForm.member_id)
+    .eq('source_type', 'pt_workout')
+    .eq('source_date', workoutForm.workout_date)
 
-console.log('[workoutSave:xpResult:pt]', xpResult)
-
-if (!xpResult?.ok) {
-  setMessage(`운동 기록은 저장됐지만 XP 반영 실패: ${xpResult?.reason || 'unknown'}`)
-  return
-}
+  if (cleanupPtXpError) {
+    console.error('PT XP 사전정리 실패:', cleanupPtXpError)
+    setMessage(`PT XP 사전정리 실패: ${cleanupPtXpError.message}`)
+    return
   }
 
-  if (!workoutForm.id && workoutForm.workout_type === 'personal') {
-    const xpResult = await applyMemberXp({
-  memberId: workoutForm.member_id,
-  sourceType: 'personal_workout',
-  sourceId: targetWorkoutId,
-  sourceDate: workoutForm.workout_date,
-  note: '관리자 개인운동기록 저장',
-})
+  const xpResult = await applyMemberXp({
+    memberId: workoutForm.member_id,
+    sourceType: 'pt_workout',
+    sourceId: targetWorkoutId,
+    sourceDate: workoutForm.workout_date,
+    note: '관리자 PT 운동기록 저장',
+  })
 
-console.log('[workoutSave:xpResult:personal]', xpResult)
+  console.log('[workoutSave:xpResult:pt]', xpResult)
 
-if (!xpResult?.ok) {
-  setMessage(`운동 기록은 저장됐지만 XP 반영 실패: ${xpResult?.reason || 'unknown'}`)
-  return
-}
+  if (!xpResult?.ok) {
+    setMessage(`운동 기록은 저장됐지만 XP 반영 실패: ${xpResult?.reason || 'unknown'}`)
+    return
   }
+}
+
+ if (!workoutForm.id && workoutForm.workout_type === 'personal') {
+  // 같은 날짜 개인운동 XP 찌꺼기 먼저 정리
+  const { error: cleanupPersonalXpError } = await supabase
+    .from('member_xp_logs')
+    .delete()
+    .eq('member_id', workoutForm.member_id)
+    .eq('source_type', 'personal_workout')
+    .eq('source_date', workoutForm.workout_date)
+
+  if (cleanupPersonalXpError) {
+    console.error('개인운동 XP 사전정리 실패:', cleanupPersonalXpError)
+    setMessage(`개인운동 XP 사전정리 실패: ${cleanupPersonalXpError.message}`)
+    return
+  }
+
+  const xpResult = await applyMemberXp({
+    memberId: workoutForm.member_id,
+    sourceType: 'personal_workout',
+    sourceId: targetWorkoutId,
+    sourceDate: workoutForm.workout_date,
+    note: '관리자 개인운동기록 저장',
+  })
+
+  console.log('[workoutSave:xpResult:personal]', xpResult)
+
+  if (!xpResult?.ok) {
+    setMessage(`운동 기록은 저장됐지만 XP 반영 실패: ${xpResult?.reason || 'unknown'}`)
+    return
+  }
+}
 
   if (workoutForm.workout_type === 'pt') {
     const { data: freshWorkouts } = await supabase
