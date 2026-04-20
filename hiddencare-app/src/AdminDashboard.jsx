@@ -12471,7 +12471,7 @@ const handleDeleteAllExercises = async () => {
     }
 
     // 4) 해당 회원 XP 전체 재계산
-    await forceRefreshSingleMemberXp(dietRow.member_id)
+    await recalcMemberLevelFromLogs(dietRow.member_id)
 
     // 5) 화면 갱신
     await loadDietLogs()
