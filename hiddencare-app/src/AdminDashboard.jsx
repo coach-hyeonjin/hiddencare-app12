@@ -12014,13 +12014,14 @@ const updateSetValue = (itemIndex, setIndex, field, value, subIndex = null) => {
 
   setMessage(workoutForm.id ? '운동 기록이 수정되었습니다.' : '운동 기록이 저장되었습니다.')
   resetWorkoutForm()
-}
-await Promise.all([
+   await Promise.all([
   loadWorkouts(),
   loadMembers(),
   loadMemberLevels(),
   loadMemberXpLogs(),
 ])
+}
+
   const handleWorkoutEdit = (workout) => {
   const items = workoutItemsMap[workout.id] || []
 
