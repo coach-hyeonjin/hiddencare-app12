@@ -10758,6 +10758,7 @@ const loadMemberXpLogs = async () => {
     .from('member_xp_logs')
     .select('*')
     .eq('admin_id', currentAdminId)
+    .eq('is_valid', true)
     .order('created_at', { ascending: false })
 
   if (error) {
@@ -12115,15 +12116,16 @@ const handleWorkoutDelete = async (workout) => {
         : null
 
   if (xpSourceType) {
-    const { error: xpLogDeleteError } = await supabase
+    const { error: xpDeleteError } = await supabase
       .from('member_xp_logs')
-      .update({ is_valid: false })
+      .delete()
       .eq('member_id', workout.member_id)
-      .eq('source_type', xpSourceType)
       .eq('source_id', workout.id)
+      .eq('source_type', xpSourceType)
 
-    if (xpLogDeleteError) {
-      setMessage(`운동 XP 로그 비활성화 실패: ${xpLogDeleteError.message}`)
+    if (xpDeleteError) {
+      console.error('운동 XP 로그 삭제 실패:', xpDeleteError)
+      setMessage(`운동 XP 로그 삭제 실패: ${xpDeleteError.message}`)
       return
     }
   }
@@ -12134,6 +12136,7 @@ const handleWorkoutDelete = async (workout) => {
     .eq('id', workout.id)
 
   if (error) {
+    console.error('운동 기록 삭제 실패:', error)
     setMessage(`운동 기록 삭제 실패: ${error.message}`)
     return
   }
