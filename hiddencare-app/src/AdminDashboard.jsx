@@ -14615,24 +14615,10 @@ const rebuildMemberXp = async (memberId) => {
     return { ok: false, reason: 'memberId_or_admin_missing' }
   }
 
-  const targetXpTypes = [
-    'pt_workout',
-    'personal_workout',
-    'diet_log',
-    'streak_bonus',
-    'weekly_bonus',
-    'sale_bonus_10',
-    'sale_bonus_20',
-    'sale_bonus_30',
-    'sale_bonus_50',
-    'sale_diamond_bonus',
-  ]
-
   const { error: deleteXpError } = await supabase
-    .from('member_xp_logs')
-    .delete()
-    .eq('member_id', memberId)
-    .in('source_type', targetXpTypes)
+  .from('member_xp_logs')
+  .delete()
+  .eq('member_id', memberId)
 
   if (deleteXpError) {
     throw deleteXpError
