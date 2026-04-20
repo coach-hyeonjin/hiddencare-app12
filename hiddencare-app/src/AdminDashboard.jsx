@@ -12001,90 +12001,26 @@ const updateSetValue = (itemIndex, setIndex, field, value, subIndex = null) => {
 
   await loadWorkouts()
 
-  if (!workoutForm.id && workoutForm.workout_type === 'pt') {
-  // 같은 날짜 PT XP 찌꺼기 먼저 정리
-  const { error: cleanupPtXpError } = await supabase
-    .from('member_xp_logs')
-    .delete()
-    .eq('member_id', workoutForm.member_id)
-    .eq('source_type', 'pt_workout')
-    .eq('source_date', workoutForm.workout_date)
+ if (!workoutForm.id) {
+  const rebuildResult = await rebuildMemberXp(workoutForm.member_id)
 
-  if (cleanupPtXpError) {
-    console.error('PT XP 사전정리 실패:', cleanupPtXpError)
-    setMessage(`PT XP 사전정리 실패: ${cleanupPtXpError.message}`)
-    return
-  }
-
-  const xpResult = await applyMemberXp({
-    memberId: workoutForm.member_id,
-    sourceType: 'pt_workout',
-    sourceId: targetWorkoutId,
-    sourceDate: workoutForm.workout_date,
-    note: '관리자 PT 운동기록 저장',
-  })
-
-  console.log('[workoutSave:xpResult:pt]', xpResult)
-
-  if (!xpResult?.ok) {
-    setMessage(`운동 기록은 저장됐지만 XP 반영 실패: ${xpResult?.reason || 'unknown'}`)
+  if (!rebuildResult?.ok) {
+    setMessage(`운동 기록은 저장됐지만 XP 재계산 실패: ${rebuildResult?.reason || 'unknown'}`)
     return
   }
 }
 
- if (!workoutForm.id && workoutForm.workout_type === 'personal') {
-  // 같은 날짜 개인운동 XP 찌꺼기 먼저 정리
-  const { error: cleanupPersonalXpError } = await supabase
-    .from('member_xp_logs')
-    .delete()
-    .eq('member_id', workoutForm.member_id)
-    .eq('source_type', 'personal_workout')
-    .eq('source_date', workoutForm.workout_date)
-
-  if (cleanupPersonalXpError) {
-    console.error('개인운동 XP 사전정리 실패:', cleanupPersonalXpError)
-    setMessage(`개인운동 XP 사전정리 실패: ${cleanupPersonalXpError.message}`)
-    return
-  }
-
-  const xpResult = await applyMemberXp({
-    memberId: workoutForm.member_id,
-    sourceType: 'personal_workout',
-    sourceId: targetWorkoutId,
-    sourceDate: workoutForm.workout_date,
-    note: '관리자 개인운동기록 저장',
-  })
-
-  console.log('[workoutSave:xpResult:personal]', xpResult)
-
-  if (!xpResult?.ok) {
-    setMessage(`운동 기록은 저장됐지만 XP 반영 실패: ${xpResult?.reason || 'unknown'}`)
-    return
-  }
-}
-
-  if (workoutForm.workout_type === 'pt') {
-    const { data: freshWorkouts } = await supabase
-      .from('workouts')
-      .select('*')
-      .eq('member_id', workoutForm.member_id)
-
-    const freshPtCount = (freshWorkouts || []).filter(
-      (workout) => workout.workout_type === 'pt'
-    ).length
-
-    await supabase
-      .from('members')
-      .update({ used_sessions: freshPtCount })
-      .eq('id', workoutForm.member_id)
-
-    await loadMembers()
-  }
+  
 
   setMessage(workoutForm.id ? '운동 기록이 수정되었습니다.' : '운동 기록이 저장되었습니다.')
   resetWorkoutForm()
 }
-
+await Promise.all([
+  loadWorkouts(),
+  loadMembers(),
+  loadMemberLevels(),
+  loadMemberXpLogs(),
+])
   const handleWorkoutEdit = (workout) => {
   const items = workoutItemsMap[workout.id] || []
 
@@ -12142,92 +12078,25 @@ const handleWorkoutDelete = async (workout) => {
   if (!window.confirm('이 운동 기록을 삭제할까요?')) return
 
   try {
-    const workoutId = workout?.id ? String(workout.id) : null
-    const xpSourceType =
-      workout.workout_type === 'pt' ? 'pt_workout' : 'personal_workout'
-
-    // 1) 연결된 운동 XP 로그 삭제
-    // 1-1. source_id 기준 삭제
-    if (workoutId) {
-      const { error: xpDeleteBySourceError } = await supabase
-        .from('member_xp_logs')
-        .delete()
-        .eq('member_id', workout.member_id)
-        .eq('source_id', workoutId)
-        .eq('source_type', xpSourceType)
-
-      if (xpDeleteBySourceError) {
-        console.error('운동 XP 로그(source_id) 삭제 실패:', xpDeleteBySourceError)
-        setMessage(`운동 XP 로그 삭제 실패: ${xpDeleteBySourceError.message}`)
-        return
-      }
-    }
-
-    // 1-2. 같은 날짜의 찌꺼기 로그까지 정리
-    const { error: xpDeleteByDateError } = await supabase
-      .from('member_xp_logs')
-      .delete()
-      .eq('member_id', workout.member_id)
-      .eq('source_type', xpSourceType)
-      .eq('source_date', workout.workout_date)
-
-    if (xpDeleteByDateError) {
-      console.error('운동 XP 로그(source_date) 삭제 실패:', xpDeleteByDateError)
-      setMessage(`운동 XP 로그 날짜 기준 삭제 실패: ${xpDeleteByDateError.message}`)
-      return
-    }
-
-    // 2) 운동 원본 삭제
     const { error: workoutDeleteError } = await supabase
       .from('workouts')
       .delete()
       .eq('id', workout.id)
 
     if (workoutDeleteError) {
-      console.error('운동 기록 삭제 실패:', workoutDeleteError)
-      setMessage(`운동 기록 삭제 실패: ${workoutDeleteError.message}`)
-      return
+      throw workoutDeleteError
     }
 
-    // 3) 회원 XP 전체 재계산
-    await recalcMemberLevelFromLogs(workout.member_id)
+    await rebuildMemberXp(workout.member_id)
 
-    // 4) PT 사용횟수 재계산
-    if (workout.workout_type === 'pt') {
-      const { data: freshWorkouts, error: freshWorkoutsError } = await supabase
-        .from('workouts')
-        .select('*')
-        .eq('member_id', workout.member_id)
+    await Promise.all([
+      loadWorkouts(),
+      loadMembers(),
+      loadMemberLevels(),
+      loadMemberXpLogs(),
+    ])
 
-      if (freshWorkoutsError) {
-        console.error('삭제 후 운동 재조회 실패:', freshWorkoutsError)
-        setMessage(`삭제 후 운동 재조회 실패: ${freshWorkoutsError.message}`)
-        return
-      }
-
-      const freshPtCount = (freshWorkouts || []).filter(
-        (item) => item.workout_type === 'pt'
-      ).length
-
-      const { error: memberUpdateError } = await supabase
-        .from('members')
-        .update({ used_sessions: freshPtCount })
-        .eq('id', workout.member_id)
-
-      if (memberUpdateError) {
-        console.error('회원 사용횟수 갱신 실패:', memberUpdateError)
-        setMessage(`회원 사용횟수 갱신 실패: ${memberUpdateError.message}`)
-        return
-      }
-    }
-
-    // 5) 화면 갱신
-    await loadWorkouts()
-    await loadMembers()
-    await loadMemberLevels()
-    await loadMemberXpLogs()
-
-    setMessage('운동 기록 삭제 후 회원 XP를 다시 계산했습니다.')
+    setMessage('운동 기록 삭제 및 회원 XP 재계산이 완료되었습니다.')
   } catch (error) {
     console.error('운동 기록 삭제 처리 실패:', error)
     setMessage(`운동 기록 삭제 처리 실패: ${error.message}`)
@@ -12425,7 +12294,6 @@ const handleDeleteAllExercises = async () => {
   if (!window.confirm('식단 기록을 삭제할까요?')) return
 
   try {
-    // 1) 삭제할 식단 원본 먼저 조회
     const { data: dietRow, error: fetchDietError } = await supabase
       .from('diet_logs')
       .select('*')
@@ -12433,9 +12301,7 @@ const handleDeleteAllExercises = async () => {
       .maybeSingle()
 
     if (fetchDietError) {
-      console.error('식단 기록 조회 실패:', fetchDietError)
-      setMessage(`식단 기록 조회 실패: ${fetchDietError.message}`)
-      return
+      throw fetchDietError
     }
 
     if (!dietRow) {
@@ -12444,41 +12310,25 @@ const handleDeleteAllExercises = async () => {
       return
     }
 
-    // 2) 연결된 식단 XP 로그 먼저 삭제
-    const { error: xpDeleteError } = await supabase
-      .from('member_xp_logs')
-      .delete()
-      .eq('member_id', dietRow.member_id)
-      .eq('source_id', dietId)
-      .eq('source_type', 'diet_log')
-
-    if (xpDeleteError) {
-      console.error('식단 XP 로그 삭제 실패:', xpDeleteError)
-      setMessage(`식단 XP 로그 삭제 실패: ${xpDeleteError.message}`)
-      return
-    }
-
-    // 3) 식단 원본 삭제
     const { error: dietDeleteError } = await supabase
       .from('diet_logs')
       .delete()
       .eq('id', dietId)
 
     if (dietDeleteError) {
-      console.error('식단 기록 삭제 실패:', dietDeleteError)
-      setMessage(`식단 기록 삭제 실패: ${dietDeleteError.message}`)
-      return
+      throw dietDeleteError
     }
 
-    // 4) 해당 회원 XP 전체 재계산
-    await recalcMemberLevelFromLogs(dietRow.member_id)
+    await rebuildMemberXp(dietRow.member_id)
 
-    // 5) 화면 갱신
-    await loadDietLogs()
-    await loadMemberLevels()
-    await loadMemberXpLogs()
+    await Promise.all([
+      loadDietLogs(),
+      loadMembers(),
+      loadMemberLevels(),
+      loadMemberXpLogs(),
+    ])
 
-    setMessage('식단 기록 삭제 후 회원 XP를 다시 계산했습니다.')
+    setMessage('식단 기록 삭제 및 회원 XP 재계산이 완료되었습니다.')
   } catch (error) {
     console.error('식단 기록 삭제 처리 실패:', error)
     setMessage(`식단 기록 삭제 처리 실패: ${error.message}`)
@@ -14726,7 +14576,43 @@ const rebuildSalesXpByMonth = async (targetMonth) => {
   }
 }
   const forceRefreshSingleMemberXp = async (memberId) => {
-  if (!memberId || !currentAdminId) return
+  return handleRebuildSingleMemberXp(memberId)
+}
+
+const forceRefreshAllMembersXp = async () => {
+  return handleRebuildAllMembersXp()
+}
+  
+const refreshMemberUsedSessions = async (memberId) => {
+  if (!memberId) return
+
+  const { data: freshWorkouts, error: freshWorkoutsError } = await supabase
+    .from('workouts')
+    .select('id, workout_type')
+    .eq('member_id', memberId)
+
+  if (freshWorkoutsError) {
+    throw freshWorkoutsError
+  }
+
+  const freshPtCount = (freshWorkouts || []).filter(
+    (item) => item.workout_type === 'pt'
+  ).length
+
+  const { error: memberUpdateError } = await supabase
+    .from('members')
+    .update({ used_sessions: freshPtCount })
+    .eq('id', memberId)
+
+  if (memberUpdateError) {
+    throw memberUpdateError
+  }
+}
+
+const rebuildMemberXp = async (memberId) => {
+  if (!memberId || !currentAdminId) {
+    return { ok: false, reason: 'memberId_or_admin_missing' }
+  }
 
   const targetXpTypes = [
     'pt_workout',
@@ -14741,20 +14627,16 @@ const rebuildSalesXpByMonth = async (targetMonth) => {
     'sale_diamond_bonus',
   ]
 
-  // 1) 기존 XP 로그 삭제
   const { error: deleteXpError } = await supabase
-  .from('member_xp_logs')
-  .delete()
-  .eq('member_id', memberId)
-  .in('source_type', targetXpTypes)
+    .from('member_xp_logs')
+    .delete()
+    .eq('member_id', memberId)
+    .in('source_type', targetXpTypes)
 
   if (deleteXpError) {
-    console.error('회원 XP 로그 삭제 실패:', deleteXpError)
-    setMessage(`회원 XP 로그 삭제 실패: ${deleteXpError.message}`)
-    return
+    throw deleteXpError
   }
 
-  // 2) 매출 재조회 후 XP 재적립
   const { data: salesRows, error: salesError } = await supabase
     .from('sales_records')
     .select('*')
@@ -14763,9 +14645,7 @@ const rebuildSalesXpByMonth = async (targetMonth) => {
     .order('sale_date', { ascending: true })
 
   if (salesError) {
-    console.error('회원 매출 재조회 실패:', salesError)
-    setMessage(`회원 매출 재조회 실패: ${salesError.message}`)
-    return
+    throw salesError
   }
 
   for (const sale of salesRows || []) {
@@ -14798,7 +14678,6 @@ const rebuildSalesXpByMonth = async (targetMonth) => {
     }
   }
 
-  // 3) 운동기록 재조회 후 XP 재적립 (PT + 개인운동)
   const { data: workoutRows, error: workoutError } = await supabase
     .from('workouts')
     .select('*')
@@ -14807,9 +14686,7 @@ const rebuildSalesXpByMonth = async (targetMonth) => {
     .order('workout_date', { ascending: true })
 
   if (workoutError) {
-    console.error('회원 운동기록 재조회 실패:', workoutError)
-    setMessage(`회원 운동기록 재조회 실패: ${workoutError.message}`)
-    return
+    throw workoutError
   }
 
   for (const workout of workoutRows || []) {
@@ -14836,7 +14713,6 @@ const rebuildSalesXpByMonth = async (targetMonth) => {
     }
   }
 
-  // 4) 식단기록 재조회 후 XP 재적립
   const { data: dietRows, error: dietError } = await supabase
     .from('diet_logs')
     .select('*')
@@ -14845,9 +14721,7 @@ const rebuildSalesXpByMonth = async (targetMonth) => {
     .order('created_at', { ascending: true })
 
   if (dietError) {
-    console.error('회원 식단기록 재조회 실패:', dietError)
-    setMessage(`회원 식단기록 재조회 실패: ${dietError.message}`)
-    return
+    throw dietError
   }
 
   for (const diet of dietRows || []) {
@@ -14863,7 +14737,6 @@ const rebuildSalesXpByMonth = async (targetMonth) => {
     })
   }
 
-  // 5) 연속활동 보너스 / 주간 꾸준함 보너스 재계산
   const allActivityDates = [
     ...(workoutRows || []).map((row) => row.workout_date).filter(Boolean),
     ...(dietRows || []).map((row) => row.log_date || row.created_at?.slice(0, 10)).filter(Boolean),
@@ -14871,7 +14744,6 @@ const rebuildSalesXpByMonth = async (targetMonth) => {
 
   const uniqueDates = [...new Set(allActivityDates)].sort()
 
-  // 연속활동 보너스: 3일 연속 달성일에 1회 지급
   let streakCount = 1
   for (let i = 0; i < uniqueDates.length; i += 1) {
     if (i === 0) {
@@ -14889,17 +14761,16 @@ const rebuildSalesXpByMonth = async (targetMonth) => {
     }
 
     if (streakCount >= 3) {
-     await applyMemberXp({
-  memberId,
-  sourceType: 'streak_bonus',
-  sourceId: null,
-  sourceDate: uniqueDates[i],
-  note: `연속활동 보너스 재정산 (${streakCount}일 연속) / streak-${memberId}-${uniqueDates[i]}`,
-})
+      await applyMemberXp({
+        memberId,
+        sourceType: 'streak_bonus',
+        sourceId: null,
+        sourceDate: uniqueDates[i],
+        note: `연속활동 보너스 재정산 (${streakCount}일 연속) / streak-${memberId}-${uniqueDates[i]}`,
+      })
     }
   }
 
-  // 주간 꾸준함 보너스: 같은 주에 활동일 3일 이상이면 1회 지급
   const weekMap = {}
   for (const date of uniqueDates) {
     const weekKey = getWeekKey(date)
@@ -14910,44 +14781,101 @@ const rebuildSalesXpByMonth = async (targetMonth) => {
   for (const [weekKey, dates] of Object.entries(weekMap)) {
     const weekDates = [...new Set(dates)].sort()
     if (weekDates.length >= 3) {
-     await applyMemberXp({
-  memberId,
-  sourceType: 'weekly_bonus',
-  sourceId: null,
-  sourceDate: weekDates[weekDates.length - 1],
-  note: `주간 꾸준함 보너스 재정산 (${weekDates.length}일 활동) / weekly-${memberId}-${weekKey}`,
-})
+      await applyMemberXp({
+        memberId,
+        sourceType: 'weekly_bonus',
+        sourceId: null,
+        sourceDate: weekDates[weekDates.length - 1],
+        note: `주간 꾸준함 보너스 재정산 (${weekDates.length}일 활동) / weekly-${memberId}-${weekKey}`,
+      })
     }
   }
 
-  // 6) 레벨 재계산
   await recalcMemberLevelFromLogs(memberId)
+  await refreshMemberUsedSessions(memberId)
 
-  // 7) UI 갱신
-  await loadMemberLevels()
-  await loadMemberXpLogs()
-
-  setMessage('선택 회원 XP 재계산 완료')
+  return { ok: true }
 }
-  const forceRefreshAllMembersXp = async () => {
-  if (!currentAdminId) return
+
+const handleRebuildSingleMemberXp = async (memberId) => {
+  if (!memberId) {
+    setMessage('회원을 먼저 선택해주세요.')
+    return
+  }
+
+  try {
+    setMessage('선택 회원 XP 재계산 중입니다...')
+
+    await rebuildMemberXp(memberId)
+
+    await Promise.all([
+      loadMembers(),
+      loadMemberLevels(),
+      loadMemberXpLogs(),
+      loadWorkouts(),
+      loadDietLogs(),
+    ])
+
+    setMessage('선택 회원 XP 재계산 완료')
+  } catch (error) {
+    console.error('선택 회원 XP 재계산 실패:', error)
+    setMessage(`선택 회원 XP 재계산 실패: ${error.message}`)
+  }
+}
+
+const handleResetSingleMemberXp = async (memberId) => {
+  if (!memberId) {
+    setMessage('회원을 먼저 선택해주세요.')
+    return
+  }
 
   const ok = window.confirm(
-    '전체 회원 XP를 현재 기준으로 다시 계산할까요?\n기존 운동/식단/보너스/매출 XP를 지우고 다시 적립합니다.'
+    '선택 회원 XP를 완전초기화 후 현재 원본 기준으로 다시 계산할까요?'
   )
   if (!ok) return
 
-  setMessage('전체 회원 XP 재계산 중입니다...')
+  try {
+    setMessage('선택 회원 XP 완전초기화 중입니다...')
+
+    await rebuildMemberXp(memberId)
+
+    await Promise.all([
+      loadMembers(),
+      loadMemberLevels(),
+      loadMemberXpLogs(),
+      loadWorkouts(),
+      loadDietLogs(),
+    ])
+
+    setMessage('선택 회원 XP 완전초기화 완료')
+  } catch (error) {
+    console.error('선택 회원 XP 완전초기화 실패:', error)
+    setMessage(`선택 회원 XP 완전초기화 실패: ${error.message}`)
+  }
+}
+
+const handleRebuildAllMembersXp = async () => {
+  const ok = window.confirm(
+    '전체 회원 XP를 현재 원본 기준으로 다시 계산할까요?\n기존 XP 로그를 지우고 다시 적립합니다.'
+  )
+  if (!ok) return
 
   try {
+    setMessage('전체 회원 XP 재계산 중입니다...')
+
     const memberIds = [...new Set(members.map((member) => member.id).filter(Boolean))]
 
     for (const memberId of memberIds) {
-      await forceRefreshSingleMemberXp(memberId)
+      await rebuildMemberXp(memberId)
     }
 
-    await loadMemberLevels()
-    await loadMemberXpLogs()
+    await Promise.all([
+      loadMembers(),
+      loadMemberLevels(),
+      loadMemberXpLogs(),
+      loadWorkouts(),
+      loadDietLogs(),
+    ])
 
     setMessage('전체 회원 XP 재계산 완료')
   } catch (error) {
@@ -14955,6 +14883,7 @@ const rebuildSalesXpByMonth = async (targetMonth) => {
     setMessage(`전체 회원 XP 재계산 실패: ${error.message}`)
   }
 }
+  
   const handleManagerActionEdit = (log) => {
   setEditingManagerActionId(log.id)
 
@@ -22502,28 +22431,30 @@ const filteredExercisesAdvanced = exercises.filter((exercise) => {
     </div>
 
     <button
-      type="button"
-      className="secondary-btn"
-      onClick={() => forceRefreshSingleMemberXp(selectedXpMemberId)}
-      disabled={!selectedXpMemberId}
-    >
-      선택 회원 XP 재계산
-    </button>
+  type="button"
+  className="secondary-btn"
+  onClick={() => handleRebuildSingleMemberXp(selectedXpMemberId)}
+  disabled={!selectedXpMemberId}
+>
+  선택 회원 XP 재계산
+</button>
+
 <button
   type="button"
   className="secondary-btn"
-  onClick={forceRefreshAllMembersXp}
+  onClick={handleRebuildAllMembersXp}
 >
   전체 회원 XP 재계산
 </button>
-    <button
-      type="button"
-      className="danger-btn"
-     onClick={() => recalcMemberLevelFromLogs(selectedXpMemberId)}
-      disabled={!selectedXpMemberId}
-    >
-      선택 회원 XP 완전초기화
-    </button>
+
+<button
+  type="button"
+  className="danger-btn"
+  onClick={() => handleResetSingleMemberXp(selectedXpMemberId)}
+  disabled={!selectedXpMemberId}
+>
+  선택 회원 XP 완전초기화
+</button>
   </div>
 </div>
 
