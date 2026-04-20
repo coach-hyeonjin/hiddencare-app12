@@ -12107,15 +12107,39 @@ const updateSetValue = (itemIndex, setIndex, field, value, subIndex = null) => {
 const handleWorkoutDelete = async (workout) => {
   if (!window.confirm('이 운동 기록을 삭제할까요?')) return
 
-  const { error } = await supabase.from('workouts').delete().eq('id', workout.id)
+  const xpSourceType =
+    workout.workout_type === 'pt'
+      ? 'pt_workout'
+      : workout.workout_type === 'personal'
+        ? 'personal_workout'
+        : null
+
+  if (xpSourceType) {
+    const { error: xpLogDeleteError } = await supabase
+      .from('member_xp_logs')
+      .update({ is_valid: false })
+      .eq('member_id', workout.member_id)
+      .eq('source_type', xpSourceType)
+      .eq('source_id', workout.id)
+
+    if (xpLogDeleteError) {
+      setMessage(`운동 XP 로그 비활성화 실패: ${xpLogDeleteError.message}`)
+      return
+    }
+  }
+
+  const { error } = await supabase
+    .from('workouts')
+    .delete()
+    .eq('id', workout.id)
 
   if (error) {
     setMessage(`운동 기록 삭제 실패: ${error.message}`)
     return
   }
 
-  await loadWorkouts()
   await recalcMemberLevelFromLogs(workout.member_id)
+  await loadWorkouts()
   await loadMemberLevels()
   await loadMemberXpLogs()
 
@@ -12137,7 +12161,7 @@ const handleWorkoutDelete = async (workout) => {
     await loadMembers()
   }
 
-  setMessage('운동 기록이 삭제되었습니다.')
+  setMessage('운동 기록과 연결된 XP가 삭제되었습니다.')
 }
 
   const handleBrandSubmit = async (e) => {
