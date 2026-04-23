@@ -22413,24 +22413,34 @@ const filteredExercisesAdvanced = exercises.filter((exercise) => {
     </div>
 
     <div
-      style={{
-        display: 'flex',
-        gap: '10px',
-        marginBottom: '18px',
-        flexWrap: 'wrap',
+  style={{
+    display: 'flex',
+    gap: '10px',
+    marginBottom: '18px',
+    flexWrap: 'wrap',
+  }}
+>
+  {[
+    { label: '코치 대시보드', tab: '운영대시보드' },
+    { label: '회의 관리', tab: '업무관리' },
+    { label: '1:1 면담', tab: '업무관리' },
+    { label: '업무 관리', tab: '업무관리' },
+  ].map((item) => (
+    <button
+      key={item.label}
+      type="button"
+      className={item.label === '업무 관리' ? 'primary-btn' : 'secondary-btn'}
+      style={{ minWidth: '120px' }}
+      onClick={() => {
+        if (item.label === '코치 대시보드') {
+          setActiveTab('운영대시보드')
+        }
       }}
     >
-      {['코치 대시보드', '회의 관리', '1:1 면담', '업무 관리'].map((label) => (
-        <button
-          key={label}
-          type="button"
-          className={label === '업무 관리' ? 'primary-btn' : 'secondary-btn'}
-          style={{ minWidth: '120px' }}
-        >
-          {label}
-        </button>
-      ))}
-    </div>
+      {item.label}
+    </button>
+  ))}
+</div>
 
     <div
       style={{
