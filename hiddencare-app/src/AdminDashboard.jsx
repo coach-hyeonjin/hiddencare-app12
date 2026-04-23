@@ -14,6 +14,7 @@ const TABS = [
   '활동랭킹',
   '회원레벨설정',
   '운영대시보드',
+  '업무관리',
   '코치관리',
   '리포트',
   '나만의 매니저',
@@ -893,6 +894,197 @@ const TRAINER_LEVELS = [
 
   { key: 'director', name: '대표 트레이너', minXp: 2700, description: '창업을 시도하거나 팀/브랜드를 이끌 준비가 된 단계입니다.' },
 ]
+const OPS_TASK_CATEGORIES = ['상담', '식단', '코치관리', '시설관리', '운영']
+const OPS_TASK_PRIORITIES = ['긴급', '일반']
+const OPS_TASK_STATUSES = ['대기', '진행중', '완료']
+const OPS_CHECKLIST_TYPES = ['오픈', '마감', '점검']
+const OPS_WEEKDAY_LABELS = ['일', '월', '화', '수', '목', '금', '토']
+
+const getTodayDateString = () => new Date().toISOString().slice(0, 10)
+
+const createEmptyOpsTask = () => ({
+  id: Date.now() + Math.random(),
+  title: '',
+  category: '운영',
+  priority: '일반',
+  due_date: getTodayDateString(),
+  status: '대기',
+  completed: false,
+  notes: '',
+  source: 'manual',
+  weekday: OPS_WEEKDAY_LABELS[new Date().getDay()],
+})
+
+const createEmptyFacilityTask = () => ({
+  id: Date.now() + Math.random(),
+  title: '',
+  type: '기구 수리',
+  priority: '일반',
+  status: '대기',
+  due_date: '',
+  note: '',
+})
+
+const createEmptyIdeaItem = () => ({
+  id: Date.now() + Math.random(),
+  title: '',
+  note: '',
+})
+
+const createEmptyChecklistItem = () => ({
+  id: Date.now() + Math.random(),
+  title: '',
+  type: '오픈',
+  checked: false,
+})
+
+const createEmptyCoachCareItem = () => ({
+  id: Date.now() + Math.random(),
+  coach_name: '',
+  condition_note: '',
+  burnout: '보통',
+  fatigue: 3,
+  class_load: 3,
+})
+
+const createEmptyInterviewLinkItem = () => ({
+  id: Date.now() + Math.random(),
+  coach_name: '',
+  need_interview: true,
+  interview_note: '',
+  follow_up: '',
+})
+
+const createEmptyMeetingItem = () => ({
+  id: Date.now() + Math.random(),
+  title: '',
+  problem: '',
+  cause: '',
+  ideas: '',
+  decision: '',
+  action_title: '',
+  action_due_date: getTodayDateString(),
+  action_category: '운영',
+  action_priority: '일반',
+})
+
+const createEmptyOpsRecord = (type = 'today') => ({
+  id: Date.now() + Math.random(),
+  type,
+  title: '',
+  what_done: '',
+  problem: '',
+  improve: '',
+  reflection: '',
+  created_at: new Date().toISOString(),
+})
+
+const toDateOnly = (value) => {
+  if (!value) return ''
+  return String(value).slice(0, 10)
+}
+
+const getDiffDaysFromToday = (dateString) => {
+  if (!dateString) return null
+  const today = new Date()
+  const due = new Date(dateString)
+  today.setHours(0, 0, 0, 0)
+  due.setHours(0, 0, 0, 0)
+  return Math.floor((due.getTime() - today.getTime()) / (1000 * 60 * 60 * 24))
+}
+
+const getTaskWeekday = (dateString) => {
+  if (!dateString) return '-'
+  const date = new Date(dateString)
+  return OPS_WEEKDAY_LABELS[date.getDay()]
+}
+
+const getTaskAutoState = (task) => {
+  if (!task || task.completed || task.status === '완료') return '완료'
+  const diff = getDiffDaysFromToday(task.due_date)
+
+  if (diff !== null && diff < 0) return '기간 초과'
+  if (diff !== null && diff <= 3) return '마감 임박'
+  if (diff === 0) return '오늘 할 일'
+  return '미완료'
+}
+
+const getCompletionRate = (tasks = []) => {
+  if (!tasks.length) return 0
+  const doneCount = tasks.filter((task) => task.completed || task.status === '완료').length
+  return Math.round((doneCount / tasks.length) * 100)
+}
+
+const buildOpsCsvRows = ({
+  tasks = [],
+  facilityTasks = [],
+  meetingItems = [],
+}) => {
+  return [
+    ['구분', '제목', '카테고리', '우선순위', '상태', '마감일', '비고'],
+    ...tasks.map((task) => [
+      '업무',
+      task.title || '',
+      task.category || '',
+      task.priority || '',
+      task.status || '',
+      task.due_date || '',
+      task.notes || '',
+    ]),
+    ...facilityTasks.map((item) => [
+      '시설요청',
+      item.title || '',
+      item.type || '',
+      item.priority || '',
+      item.status || '',
+      item.due_date || '',
+      item.note || '',
+    ]),
+    ...meetingItems.map((meeting) => [
+      '회의',
+      meeting.title || '',
+      '회의연결',
+      meeting.action_priority || '',
+      meeting.action_title ? '실행업무생성가능' : '대기',
+      meeting.action_due_date || '',
+      meeting.decision || '',
+    ]),
+  ]
+}
+
+const buildOpsReportText = ({
+  tasks = [],
+  facilityTasks = [],
+  meetingItems = [],
+  records = [],
+}) => {
+  const overdue = tasks.filter((task) => getTaskAutoState(task) === '기간 초과').length
+  const urgent = tasks.filter((task) => getTaskAutoState(task) === '마감 임박').length
+  const incomplete = tasks.filter((task) => !task.completed && task.status !== '완료').length
+
+  const recentRecords = records.slice(0, 5)
+
+  return [
+    '업무 관리 보고서',
+    '',
+    `[업무 요약]`,
+    `전체 업무: ${tasks.length}건`,
+    `미완료: ${incomplete}건`,
+    `마감 임박: ${urgent}건`,
+    `기간 초과: ${overdue}건`,
+    `완료율: ${getCompletionRate(tasks)}%`,
+    '',
+    `[시설 요청]`,
+    ...facilityTasks.map((item) => `- ${item.title} / ${item.type} / ${item.status}`),
+    '',
+    `[회의 요약]`,
+    ...meetingItems.map((item) => `- ${item.title} / 결정: ${item.decision || '-'}`),
+    '',
+    `[최근 기록]`,
+    ...recentRecords.map((item) => `- ${item.title} / ${item.what_done || '-'}`),
+  ].join('\n')
+}
+
 export default function AdminDashboard({ profile, currentAdminId, currentGymId, onLogout }) {
   const [activeTab, setActiveTab] = useState('회원')
   const [loading, setLoading] = useState(true)
@@ -1420,9 +1612,278 @@ const [selectedXpMemberId, setSelectedXpMemberId] = useState('')
     status: 'done',
   })
 const [editingManagerActionId, setEditingManagerActionId] = useState(null)
+const todayTasks = useMemo(
+  () => opsTasks.filter((task) => getTaskAutoState(task) === '오늘 할 일'),
+  [opsTasks]
+)
 
+const urgentTasks = useMemo(
+  () => opsTasks.filter((task) => getTaskAutoState(task) === '마감 임박'),
+  [opsTasks]
+)
 
+const overdueTasks = useMemo(
+  () => opsTasks.filter((task) => getTaskAutoState(task) === '기간 초과'),
+  [opsTasks]
+)
 
+const incompleteTasks = useMemo(
+  () => opsTasks.filter((task) => getTaskAutoState(task) === '미완료' || getTaskAutoState(task) === '오늘 할 일' || getTaskAutoState(task) === '마감 임박'),
+  [opsTasks]
+)
+
+const completionRate = useMemo(() => getCompletionRate(opsTasks), [opsTasks])
+
+const weekdayTasks = useMemo(() => {
+  return opsTasks.filter((task) => getTaskWeekday(task.due_date) === taskWeekdayFilter)
+}, [opsTasks, taskWeekdayFilter])
+
+const waitingTasks = useMemo(() => opsTasks.filter((task) => task.status === '대기'), [opsTasks])
+const doingTasks = useMemo(() => opsTasks.filter((task) => task.status === '진행중'), [opsTasks])
+const doneTasks = useMemo(() => opsTasks.filter((task) => task.status === '완료'), [opsTasks])
+
+const todayRecords = useMemo(() => opsRecords.filter((item) => item.type === 'today'), [opsRecords])
+const weeklyRecords = useMemo(() => opsRecords.filter((item) => item.type === 'weekly'), [opsRecords])
+const monthlyRecords = useMemo(() => opsRecords.filter((item) => item.type === 'monthly'), [opsRecords])
+const [opsTaskForm, setOpsTaskForm] = useState(createEmptyOpsTask)
+const [opsTasks, setOpsTasks] = useState([
+  {
+    id: 1,
+    title: '회원 상담 예약 확인',
+    category: '상담',
+    priority: '긴급',
+    due_date: getTodayDateString(),
+    status: '대기',
+    completed: false,
+    notes: '오늘 오전 우선 체크',
+    source: 'manual',
+    weekday: getTaskWeekday(getTodayDateString()),
+  },
+  {
+    id: 2,
+    title: '러닝머신 점검 요청 정리',
+    category: '시설관리',
+    priority: '일반',
+    due_date: getTodayDateString(),
+    status: '진행중',
+    completed: false,
+    notes: '기사 연락 필요',
+    source: 'facility',
+    weekday: getTaskWeekday(getTodayDateString()),
+  },
+])
+
+const [facilityTaskForm, setFacilityTaskForm] = useState(createEmptyFacilityTask)
+const [facilityTasks, setFacilityTasks] = useState([
+  {
+    id: 101,
+    title: '러닝머신 고장',
+    type: '기구 수리',
+    priority: '긴급',
+    status: '대기',
+    due_date: '',
+    note: '속도 조절 불량',
+  },
+])
+
+const [ideaForm, setIdeaForm] = useState(createEmptyIdeaItem)
+const [ideaItems, setIdeaItems] = useState([
+  { id: 201, title: '회원 후기 기반 운영 개선안', note: '후기 문구 템플릿 만들기' },
+])
+
+const [checklistForm, setChecklistForm] = useState(createEmptyChecklistItem)
+const [checklistItems, setChecklistItems] = useState([
+  { id: 301, title: '오픈 전 시설 점검', type: '오픈', checked: false },
+  { id: 302, title: '마감 청소 체크', type: '마감', checked: false },
+])
+
+const [coachCareForm, setCoachCareForm] = useState(createEmptyCoachCareItem)
+const [coachCareItems, setCoachCareItems] = useState([])
+
+const [interviewForm, setInterviewForm] = useState(createEmptyInterviewLinkItem)
+const [interviewItems, setInterviewItems] = useState([])
+
+const [meetingForm, setMeetingForm] = useState(createEmptyMeetingItem)
+const [meetingItems, setMeetingItems] = useState([])
+
+const [todayRecordForm, setTodayRecordForm] = useState(createEmptyOpsRecord('today'))
+const [weeklyRecordForm, setWeeklyRecordForm] = useState(createEmptyOpsRecord('weekly'))
+const [monthlyRecordForm, setMonthlyRecordForm] = useState(createEmptyOpsRecord('monthly'))
+const [opsRecords, setOpsRecords] = useState([])
+
+const [taskWeekdayFilter, setTaskWeekdayFilter] = useState(OPS_WEEKDAY_LABELS[new Date().getDay()])
+const handleAddOpsTask = () => {
+  if (!opsTaskForm.title.trim()) return
+
+  const nextTask = {
+    ...opsTaskForm,
+    id: Date.now(),
+    completed: false,
+    weekday: getTaskWeekday(opsTaskForm.due_date),
+  }
+
+  setOpsTasks((prev) => [nextTask, ...prev])
+  setOpsTaskForm(createEmptyOpsTask())
+}
+
+const handleToggleOpsTaskComplete = (taskId) => {
+  setOpsTasks((prev) =>
+    prev.map((task) =>
+      task.id === taskId
+        ? {
+            ...task,
+            completed: !task.completed,
+            status: !task.completed ? '완료' : '대기',
+          }
+        : task
+    )
+  )
+}
+
+const handleChangeOpsTaskStatus = (taskId, nextStatus) => {
+  setOpsTasks((prev) =>
+    prev.map((task) =>
+      task.id === taskId
+        ? {
+            ...task,
+            status: nextStatus,
+            completed: nextStatus === '완료',
+          }
+        : task
+    )
+  )
+}
+
+const handleDeleteOpsTask = (taskId) => {
+  setOpsTasks((prev) => prev.filter((task) => task.id !== taskId))
+}
+
+const handleAddFacilityTask = () => {
+  if (!facilityTaskForm.title.trim()) return
+  setFacilityTasks((prev) => [{ ...facilityTaskForm, id: Date.now() }, ...prev])
+  setFacilityTaskForm(createEmptyFacilityTask())
+}
+
+const handleMoveIdeaToTask = (idea) => {
+  const nextTask = {
+    id: Date.now(),
+    title: idea.title,
+    category: '운영',
+    priority: '일반',
+    due_date: getTodayDateString(),
+    status: '대기',
+    completed: false,
+    notes: idea.note || '',
+    source: 'idea',
+    weekday: getTaskWeekday(getTodayDateString()),
+  }
+
+  setOpsTasks((prev) => [nextTask, ...prev])
+  setIdeaItems((prev) => prev.filter((item) => item.id !== idea.id))
+}
+
+const handleAddIdea = () => {
+  if (!ideaForm.title.trim()) return
+  setIdeaItems((prev) => [{ ...ideaForm, id: Date.now() }, ...prev])
+  setIdeaForm(createEmptyIdeaItem())
+}
+
+const handleAddChecklist = () => {
+  if (!checklistForm.title.trim()) return
+  setChecklistItems((prev) => [{ ...checklistForm, id: Date.now() }, ...prev])
+  setChecklistForm(createEmptyChecklistItem())
+}
+
+const handleToggleChecklist = (checkId) => {
+  setChecklistItems((prev) =>
+    prev.map((item) =>
+      item.id === checkId ? { ...item, checked: !item.checked } : item
+    )
+  )
+}
+
+const handleAddCoachCare = () => {
+  if (!coachCareForm.coach_name.trim()) return
+  setCoachCareItems((prev) => [{ ...coachCareForm, id: Date.now() }, ...prev])
+  setCoachCareForm(createEmptyCoachCareItem())
+}
+
+const handleAddInterviewLink = () => {
+  if (!interviewForm.coach_name.trim()) return
+  setInterviewItems((prev) => [{ ...interviewForm, id: Date.now() }, ...prev])
+  setInterviewForm(createEmptyInterviewLinkItem())
+}
+
+const handleAddMeetingItem = () => {
+  if (!meetingForm.title.trim()) return
+  setMeetingItems((prev) => [{ ...meetingForm, id: Date.now() }, ...prev])
+  setMeetingForm(createEmptyMeetingItem())
+}
+
+const handleCreateTaskFromMeeting = (meeting) => {
+  if (!meeting.action_title.trim()) return
+
+  const nextTask = {
+    id: Date.now(),
+    title: meeting.action_title,
+    category: meeting.action_category || '운영',
+    priority: meeting.action_priority || '일반',
+    due_date: meeting.action_due_date || getTodayDateString(),
+    status: '대기',
+    completed: false,
+    notes: `회의결정사항: ${meeting.decision || '-'}`,
+    source: 'meeting',
+    weekday: getTaskWeekday(meeting.action_due_date || getTodayDateString()),
+  }
+
+  setOpsTasks((prev) => [nextTask, ...prev])
+}
+
+const handleSaveOpsRecord = (recordForm, type, resetFn) => {
+  if (!recordForm.title.trim()) return
+
+  setOpsRecords((prev) => [
+    {
+      ...recordForm,
+      id: Date.now(),
+      type,
+      created_at: new Date().toISOString(),
+    },
+    ...prev,
+  ])
+
+  resetFn(createEmptyOpsRecord(type))
+}
+
+const handleDownloadOpsCsv = () => {
+  downloadCsv(
+    `ops_management_${getTodayDateString()}.csv`,
+    buildOpsCsvRows({
+      tasks: opsTasks,
+      facilityTasks,
+      meetingItems,
+    })
+  )
+}
+
+const handleDownloadOpsReport = () => {
+  const reportText = buildOpsReportText({
+    tasks: opsTasks,
+    facilityTasks,
+    meetingItems,
+    records: opsRecords,
+  })
+
+  const blob = new Blob([reportText], { type: 'text/plain;charset=utf-8' })
+  const url = URL.createObjectURL(blob)
+  const link = document.createElement('a')
+  link.href = url
+  link.setAttribute('download', `ops_report_${getTodayDateString()}.txt`)
+  document.body.appendChild(link)
+  link.click()
+  document.body.removeChild(link)
+  URL.revokeObjectURL(url)
+}
 const handleMealPlanGenerate = async () => {
   const member = members.find((m) => m.id === mealPlanForm.member_id)
 
@@ -21920,6 +22381,968 @@ const filteredExercisesAdvanced = exercises.filter((exercise) => {
     </div>
   </div>
 )}
+
+{activeTab === '업무관리' && (
+  <div className="admin-section premium-dashboard-page">
+    <div className="dashboard-hero">
+      <div className="dashboard-hero-left">
+        <div className="dashboard-hero-badge">OPERATIONS MANAGEMENT</div>
+        <h2>업무 관리</h2>
+        <p className="dashboard-hero-text">
+          생각 → 기록 → 정리 → 실행 → 체크 → 회고 → 회의 연결까지
+          한 화면에서 운영 흐름으로 묶어 관리하는 탭입니다.
+        </p>
+      </div>
+
+      <div className="dashboard-hero-right">
+        <div className="dashboard-hero-mini">
+          <span>오늘 할 일</span>
+          <strong>{todayTasks.length}건</strong>
+          <p>오늘 바로 처리할 항목</p>
+        </div>
+
+        <div className="dashboard-hero-mini">
+          <span>마감 임박</span>
+          <strong>{urgentTasks.length}건</strong>
+          <p>3일 이내 마감</p>
+        </div>
+
+        <div className="dashboard-hero-mini">
+          <span>기간 초과</span>
+          <strong>{overdueTasks.length}건</strong>
+          <p>즉시 확인 필요</p>
+        </div>
+
+        <div className="dashboard-hero-mini">
+          <span>완료율</span>
+          <strong>{completionRate}%</strong>
+          <p>전체 업무 기준</p>
+        </div>
+      </div>
+    </div>
+
+    <section className="dashboard-panel-card" style={{ marginBottom: '16px' }}>
+      <div className="section-head">
+        <div>
+          <h3>보고 / 다운로드</h3>
+          <p className="sub-text">업무 리스트, 시설 요청, 회의 요약을 바로 저장합니다.</p>
+        </div>
+
+        <div className="inline-actions wrap">
+          <button type="button" className="secondary-btn" onClick={handleDownloadOpsCsv}>
+            CSV 다운로드
+          </button>
+          <button type="button" className="secondary-btn" onClick={handleDownloadOpsReport}>
+            A4 보고서 생성
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <div className="dashboard-kpi-grid">
+      <div className="dashboard-kpi-card kpi-blue">
+        <span>오늘 할 일</span>
+        <strong>{todayTasks.length}</strong>
+        <div className="compact-text">오늘 기준 자동 분류</div>
+      </div>
+
+      <div className="dashboard-kpi-card kpi-amber">
+        <span>마감 임박</span>
+        <strong>{urgentTasks.length}</strong>
+        <div className="compact-text">3일 이내</div>
+      </div>
+
+      <div className="dashboard-kpi-card kpi-red">
+        <span>기간 초과</span>
+        <strong>{overdueTasks.length}</strong>
+        <div className="compact-text">초과 업무</div>
+      </div>
+
+      <div className="dashboard-kpi-card kpi-green">
+        <span>완료율</span>
+        <strong>{completionRate}%</strong>
+        <div className="compact-text">전체 업무 완료율</div>
+      </div>
+    </div>
+
+    <div className="dashboard-main-grid" style={{ alignItems: 'start' }}>
+      <section className="dashboard-panel-card">
+        <div className="dashboard-panel-head">
+          <div>
+            <div className="dashboard-panel-label">TODAY / WEEKDAY</div>
+            <h3>오늘 할 일 / 요일 정리</h3>
+            <p className="sub-text">요일 기준으로 하루 집중 업무를 정리합니다.</p>
+          </div>
+        </div>
+
+        <div className="stack-gap">
+          <div className="grid-2">
+            <label className="field">
+              <span>업무명</span>
+              <input
+                value={opsTaskForm.title}
+                onChange={(e) => setOpsTaskForm((prev) => ({ ...prev, title: e.target.value }))}
+                placeholder="예: 회원 상담 정리"
+              />
+            </label>
+
+            <label className="field">
+              <span>카테고리</span>
+              <select
+                value={opsTaskForm.category}
+                onChange={(e) => setOpsTaskForm((prev) => ({ ...prev, category: e.target.value }))}
+              >
+                {OPS_TASK_CATEGORIES.map((item) => (
+                  <option key={item} value={item}>{item}</option>
+                ))}
+              </select>
+            </label>
+          </div>
+
+          <div className="grid-2">
+            <label className="field">
+              <span>우선순위</span>
+              <select
+                value={opsTaskForm.priority}
+                onChange={(e) => setOpsTaskForm((prev) => ({ ...prev, priority: e.target.value }))}
+              >
+                {OPS_TASK_PRIORITIES.map((item) => (
+                  <option key={item} value={item}>{item}</option>
+                ))}
+              </select>
+            </label>
+
+            <label className="field">
+              <span>마감일</span>
+              <input
+                type="date"
+                value={opsTaskForm.due_date}
+                onChange={(e) => setOpsTaskForm((prev) => ({ ...prev, due_date: e.target.value }))}
+              />
+            </label>
+          </div>
+
+          <label className="field">
+            <span>메모</span>
+            <textarea
+              rows="3"
+              value={opsTaskForm.notes}
+              onChange={(e) => setOpsTaskForm((prev) => ({ ...prev, notes: e.target.value }))}
+            />
+          </label>
+
+          <div className="inline-actions wrap">
+            <button type="button" className="primary-btn" onClick={handleAddOpsTask}>
+              할 일 추가
+            </button>
+          </div>
+
+          <div className="inline-actions wrap">
+            {OPS_WEEKDAY_LABELS.map((day) => (
+              <button
+                key={day}
+                type="button"
+                className="secondary-btn"
+                onClick={() => setTaskWeekdayFilter(day)}
+              >
+                {day}
+              </button>
+            ))}
+          </div>
+
+          <div className="list-stack">
+            {weekdayTasks.length === 0 ? (
+              <div className="workout-list-empty">선택한 요일의 업무가 없습니다.</div>
+            ) : (
+              weekdayTasks.map((task) => (
+                <div key={task.id} className="dashboard-list-row">
+                  <div>
+                    <strong>{task.title}</strong>
+                    <div className="compact-text">
+                      {task.category} / {task.priority} / {task.due_date || '-'} / 자동상태 {getTaskAutoState(task)}
+                    </div>
+                  </div>
+                  <div className="inline-actions wrap">
+                    <button
+                      type="button"
+                      className="secondary-btn"
+                      onClick={() => handleToggleOpsTaskComplete(task.id)}
+                    >
+                      {task.completed ? '완료취소' : '완료체크'}
+                    </button>
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+        </div>
+      </section>
+
+      <section className="dashboard-panel-card">
+        <div className="dashboard-panel-head">
+          <div>
+            <div className="dashboard-panel-label">KANBAN FLOW</div>
+            <h3>중앙 업무 흐름</h3>
+            <p className="sub-text">대기 / 진행중 / 완료 흐름으로 관리합니다.</p>
+          </div>
+        </div>
+
+        <div className="dashboard-main-grid">
+          <div className="sub-card">
+            <h4>대기</h4>
+            <div className="list-stack">
+              {waitingTasks.map((task) => (
+                <div key={task.id} className="list-card">
+                  <div className="list-card-top">
+                    <strong>{task.title}</strong>
+                    <span className={`pill ${task.priority === '긴급' ? 'pill-red' : 'pill-amber'}`}>
+                      {task.priority}
+                    </span>
+                  </div>
+                  <div className="compact-text">{task.category} / {task.due_date || '-'}</div>
+                  <div className="inline-actions wrap">
+                    <button type="button" className="secondary-btn" onClick={() => handleChangeOpsTaskStatus(task.id, '진행중')}>
+                      진행중으로
+                    </button>
+                    <button type="button" className="danger-btn" onClick={() => handleDeleteOpsTask(task.id)}>
+                      삭제
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="sub-card">
+            <h4>진행중</h4>
+            <div className="list-stack">
+              {doingTasks.map((task) => (
+                <div key={task.id} className="list-card">
+                  <div className="list-card-top">
+                    <strong>{task.title}</strong>
+                    <span className="pill pill-blue">{task.category}</span>
+                  </div>
+                  <div className="compact-text">{task.notes || '-'}</div>
+                  <div className="inline-actions wrap">
+                    <button type="button" className="secondary-btn" onClick={() => handleChangeOpsTaskStatus(task.id, '대기')}>
+                      대기로
+                    </button>
+                    <button type="button" className="secondary-btn" onClick={() => handleChangeOpsTaskStatus(task.id, '완료')}>
+                      완료로
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="sub-card">
+            <h4>완료</h4>
+            <div className="list-stack">
+              {doneTasks.map((task) => (
+                <div key={task.id} className="list-card">
+                  <div className="list-card-top">
+                    <strong>{task.title}</strong>
+                    <span className="pill pill-green">완료</span>
+                  </div>
+                  <div className="compact-text">{task.category} / {task.due_date || '-'}</div>
+                  <div className="inline-actions wrap">
+                    <button type="button" className="secondary-btn" onClick={() => handleChangeOpsTaskStatus(task.id, '대기')}>
+                      다시 대기
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section className="dashboard-panel-card">
+        <div className="dashboard-panel-head">
+          <div>
+            <div className="dashboard-panel-label">RISK</div>
+            <h3>위험 관리</h3>
+            <p className="sub-text">임박 / 초과 업무를 우선 확인합니다.</p>
+          </div>
+        </div>
+
+        <div className="list-stack">
+          <div className="sub-card">
+            <h4>마감 임박</h4>
+            {urgentTasks.length === 0 ? (
+              <div className="workout-list-empty">임박 업무가 없습니다.</div>
+            ) : (
+              urgentTasks.map((task) => (
+                <div key={task.id} className="dashboard-list-row dashboard-list-row-warn">
+                  <div>
+                    <strong>{task.title}</strong>
+                    <div className="compact-text">{task.due_date} / {task.category}</div>
+                  </div>
+                  <span className="pill pill-amber">{task.priority}</span>
+                </div>
+              ))
+            )}
+          </div>
+
+          <div className="sub-card">
+            <h4>기간 초과</h4>
+            {overdueTasks.length === 0 ? (
+              <div className="workout-list-empty">초과 업무가 없습니다.</div>
+            ) : (
+              overdueTasks.map((task) => (
+                <div key={task.id} className="dashboard-list-row dashboard-list-row-danger">
+                  <div>
+                    <strong>{task.title}</strong>
+                    <div className="compact-text">{task.due_date} / {task.category}</div>
+                  </div>
+                  <span className="pill pill-red">초과</span>
+                </div>
+              ))
+            )}
+          </div>
+
+          <div className="sub-card">
+            <h4>시설 요청 현황</h4>
+            {facilityTasks.length === 0 ? (
+              <div className="workout-list-empty">시설 요청이 없습니다.</div>
+            ) : (
+              facilityTasks.map((item) => (
+                <div key={item.id} className="dashboard-list-row">
+                  <div>
+                    <strong>{item.title}</strong>
+                    <div className="compact-text">{item.type} / {item.note || '-'}</div>
+                  </div>
+                  <span className={`pill ${item.priority === '긴급' ? 'pill-red' : 'pill-blue'}`}>
+                    {item.priority}
+                  </span>
+                </div>
+              ))
+            )}
+          </div>
+        </div>
+      </section>
+    </div>
+
+    <div className="dashboard-main-grid">
+      <section className="dashboard-panel-card">
+        <div className="dashboard-panel-head">
+          <div>
+            <div className="dashboard-panel-label">FACILITY</div>
+            <h3>시설 관리 통합</h3>
+          </div>
+        </div>
+
+        <div className="stack-gap">
+          <div className="grid-2">
+            <label className="field">
+              <span>요청 내용</span>
+              <input
+                value={facilityTaskForm.title}
+                onChange={(e) => setFacilityTaskForm((prev) => ({ ...prev, title: e.target.value }))}
+                placeholder="예: 거울 추가 요청"
+              />
+            </label>
+
+            <label className="field">
+              <span>분류</span>
+              <select
+                value={facilityTaskForm.type}
+                onChange={(e) => setFacilityTaskForm((prev) => ({ ...prev, type: e.target.value }))}
+              >
+                <option value="기구 수리">기구 수리</option>
+                <option value="시설 개선">시설 개선</option>
+                <option value="회원 요청">회원 요청</option>
+              </select>
+            </label>
+          </div>
+
+          <div className="grid-2">
+            <label className="field">
+              <span>우선순위</span>
+              <select
+                value={facilityTaskForm.priority}
+                onChange={(e) => setFacilityTaskForm((prev) => ({ ...prev, priority: e.target.value }))}
+              >
+                {OPS_TASK_PRIORITIES.map((item) => (
+                  <option key={item} value={item}>{item}</option>
+                ))}
+              </select>
+            </label>
+
+            <label className="field">
+              <span>상태</span>
+              <select
+                value={facilityTaskForm.status}
+                onChange={(e) => setFacilityTaskForm((prev) => ({ ...prev, status: e.target.value }))}
+              >
+                {OPS_TASK_STATUSES.map((item) => (
+                  <option key={item} value={item}>{item}</option>
+                ))}
+              </select>
+            </label>
+          </div>
+
+          <label className="field">
+            <span>비고</span>
+            <textarea
+              rows="3"
+              value={facilityTaskForm.note}
+              onChange={(e) => setFacilityTaskForm((prev) => ({ ...prev, note: e.target.value }))}
+            />
+          </label>
+
+          <button type="button" className="primary-btn" onClick={handleAddFacilityTask}>
+            시설 요청 추가
+          </button>
+        </div>
+      </section>
+
+      <section className="dashboard-panel-card">
+        <div className="dashboard-panel-head">
+          <div>
+            <div className="dashboard-panel-label">IDEAS</div>
+            <h3>아이디어 정리</h3>
+          </div>
+        </div>
+
+        <div className="stack-gap">
+          <label className="field">
+            <span>아이디어 제목</span>
+            <input
+              value={ideaForm.title}
+              onChange={(e) => setIdeaForm((prev) => ({ ...prev, title: e.target.value }))}
+            />
+          </label>
+
+          <label className="field">
+            <span>메모</span>
+            <textarea
+              rows="3"
+              value={ideaForm.note}
+              onChange={(e) => setIdeaForm((prev) => ({ ...prev, note: e.target.value }))}
+            />
+          </label>
+
+          <button type="button" className="primary-btn" onClick={handleAddIdea}>
+            아이디어 저장
+          </button>
+
+          <div className="list-stack">
+            {ideaItems.map((item) => (
+              <div key={item.id} className="list-card">
+                <div className="list-card-top">
+                  <strong>{item.title}</strong>
+                  <span className="pill pill-violet">보류 아이디어</span>
+                </div>
+                <div className="compact-text">{item.note || '-'}</div>
+                <div className="inline-actions wrap">
+                  <button type="button" className="secondary-btn" onClick={() => handleMoveIdeaToTask(item)}>
+                    할 일로 이동
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+    </div>
+
+    <div className="dashboard-main-grid">
+      <section className="dashboard-panel-card">
+        <div className="dashboard-panel-head">
+          <div>
+            <div className="dashboard-panel-label">CHECKLIST</div>
+            <h3>반복 체크리스트</h3>
+          </div>
+        </div>
+
+        <div className="stack-gap">
+          <div className="grid-2">
+            <label className="field">
+              <span>체크리스트 항목</span>
+              <input
+                value={checklistForm.title}
+                onChange={(e) => setChecklistForm((prev) => ({ ...prev, title: e.target.value }))}
+              />
+            </label>
+
+            <label className="field">
+              <span>유형</span>
+              <select
+                value={checklistForm.type}
+                onChange={(e) => setChecklistForm((prev) => ({ ...prev, type: e.target.value }))}
+              >
+                {OPS_CHECKLIST_TYPES.map((item) => (
+                  <option key={item} value={item}>{item}</option>
+                ))}
+              </select>
+            </label>
+          </div>
+
+          <button type="button" className="primary-btn" onClick={handleAddChecklist}>
+            체크리스트 추가
+          </button>
+
+          <div className="list-stack">
+            {checklistItems.map((item) => (
+              <div key={item.id} className="dashboard-list-row">
+                <div>
+                  <strong>{item.title}</strong>
+                  <div className="compact-text">{item.type}</div>
+                </div>
+                <label className="checkbox-line">
+                  <input
+                    type="checkbox"
+                    checked={item.checked}
+                    onChange={() => handleToggleChecklist(item.id)}
+                  />
+                  <span>{item.checked ? '완료' : '미완료'}</span>
+                </label>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      <section className="dashboard-panel-card">
+        <div className="dashboard-panel-head">
+          <div>
+            <div className="dashboard-panel-label">COACH CARE</div>
+            <h3>코치 관리 연결</h3>
+          </div>
+        </div>
+
+        <div className="stack-gap">
+          <div className="grid-2">
+            <label className="field">
+              <span>코치명</span>
+              <input
+                value={coachCareForm.coach_name}
+                onChange={(e) => setCoachCareForm((prev) => ({ ...prev, coach_name: e.target.value }))}
+              />
+            </label>
+
+            <label className="field">
+              <span>번아웃 여부</span>
+              <select
+                value={coachCareForm.burnout}
+                onChange={(e) => setCoachCareForm((prev) => ({ ...prev, burnout: e.target.value }))}
+              >
+                <option value="낮음">낮음</option>
+                <option value="보통">보통</option>
+                <option value="주의">주의</option>
+                <option value="위험">위험</option>
+              </select>
+            </label>
+          </div>
+
+          <div className="grid-2">
+            <label className="field">
+              <span>피로도 (1~5)</span>
+              <input
+                type="number"
+                min="1"
+                max="5"
+                value={coachCareForm.fatigue}
+                onChange={(e) => setCoachCareForm((prev) => ({ ...prev, fatigue: e.target.value }))}
+              />
+            </label>
+
+            <label className="field">
+              <span>수업 부담 (1~5)</span>
+              <input
+                type="number"
+                min="1"
+                max="5"
+                value={coachCareForm.class_load}
+                onChange={(e) => setCoachCareForm((prev) => ({ ...prev, class_load: e.target.value }))}
+              />
+            </label>
+          </div>
+
+          <label className="field">
+            <span>컨디션 기록</span>
+            <textarea
+              rows="3"
+              value={coachCareForm.condition_note}
+              onChange={(e) => setCoachCareForm((prev) => ({ ...prev, condition_note: e.target.value }))}
+            />
+          </label>
+
+          <button type="button" className="primary-btn" onClick={handleAddCoachCare}>
+            코치 상태 기록
+          </button>
+
+          <div className="list-stack">
+            {coachCareItems.map((item) => (
+              <div key={item.id} className="list-card">
+                <div className="list-card-top">
+                  <strong>{item.coach_name}</strong>
+                  <span className={`pill ${item.burnout === '위험' ? 'pill-red' : item.burnout === '주의' ? 'pill-amber' : 'pill-green'}`}>
+                    {item.burnout}
+                  </span>
+                </div>
+                <div className="compact-text">
+                  피로도 {item.fatigue} / 수업부담 {item.class_load}
+                </div>
+                <div className="compact-text">{item.condition_note || '-'}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      <section className="dashboard-panel-card">
+        <div className="dashboard-panel-head">
+          <div>
+            <div className="dashboard-panel-label">1:1 LINK</div>
+            <h3>1:1 면담 연결</h3>
+          </div>
+        </div>
+
+        <div className="stack-gap">
+          <label className="field">
+            <span>대상 코치</span>
+            <input
+              value={interviewForm.coach_name}
+              onChange={(e) => setInterviewForm((prev) => ({ ...prev, coach_name: e.target.value }))}
+            />
+          </label>
+
+          <label className="field">
+            <span>면담 내용 기록</span>
+            <textarea
+              rows="3"
+              value={interviewForm.interview_note}
+              onChange={(e) => setInterviewForm((prev) => ({ ...prev, interview_note: e.target.value }))}
+            />
+          </label>
+
+          <label className="field">
+            <span>후속 조치</span>
+            <textarea
+              rows="3"
+              value={interviewForm.follow_up}
+              onChange={(e) => setInterviewForm((prev) => ({ ...prev, follow_up: e.target.value }))}
+            />
+          </label>
+
+          <button type="button" className="primary-btn" onClick={handleAddInterviewLink}>
+            면담 필요 리스트 추가
+          </button>
+
+          <div className="list-stack">
+            {interviewItems.map((item) => (
+              <div key={item.id} className="list-card">
+                <div className="list-card-top">
+                  <strong>{item.coach_name}</strong>
+                  <span className="pill pill-amber">면담 필요</span>
+                </div>
+                <div className="compact-text">면담: {item.interview_note || '-'}</div>
+                <div className="compact-text">후속: {item.follow_up || '-'}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+    </div>
+
+    <div className="dashboard-main-grid">
+      <section className="dashboard-panel-card">
+        <div className="dashboard-panel-head">
+          <div>
+            <div className="dashboard-panel-label">MEETING FLOW</div>
+            <h3>회의 시스템</h3>
+            <p className="sub-text">문제 공유 → 원인 분석 → 해결 아이디어 → 결정 사항 → 실행 업무 생성</p>
+          </div>
+        </div>
+
+        <div className="stack-gap">
+          <label className="field">
+            <span>회의 제목</span>
+            <input
+              value={meetingForm.title}
+              onChange={(e) => setMeetingForm((prev) => ({ ...prev, title: e.target.value }))}
+            />
+          </label>
+
+          <label className="field">
+            <span>1. 문제 공유</span>
+            <textarea
+              rows="3"
+              value={meetingForm.problem}
+              onChange={(e) => setMeetingForm((prev) => ({ ...prev, problem: e.target.value }))}
+            />
+          </label>
+
+          <label className="field">
+            <span>2. 원인 분석</span>
+            <textarea
+              rows="3"
+              value={meetingForm.cause}
+              onChange={(e) => setMeetingForm((prev) => ({ ...prev, cause: e.target.value }))}
+            />
+          </label>
+
+          <label className="field">
+            <span>3. 해결 아이디어</span>
+            <textarea
+              rows="3"
+              value={meetingForm.ideas}
+              onChange={(e) => setMeetingForm((prev) => ({ ...prev, ideas: e.target.value }))}
+            />
+          </label>
+
+          <label className="field">
+            <span>4. 결정 사항</span>
+            <textarea
+              rows="3"
+              value={meetingForm.decision}
+              onChange={(e) => setMeetingForm((prev) => ({ ...prev, decision: e.target.value }))}
+            />
+          </label>
+
+          <div className="grid-2">
+            <label className="field">
+              <span>5. 실행 업무명</span>
+              <input
+                value={meetingForm.action_title}
+                onChange={(e) => setMeetingForm((prev) => ({ ...prev, action_title: e.target.value }))}
+              />
+            </label>
+
+            <label className="field">
+              <span>실행 마감일</span>
+              <input
+                type="date"
+                value={meetingForm.action_due_date}
+                onChange={(e) => setMeetingForm((prev) => ({ ...prev, action_due_date: e.target.value }))}
+              />
+            </label>
+          </div>
+
+          <div className="grid-2">
+            <label className="field">
+              <span>실행 카테고리</span>
+              <select
+                value={meetingForm.action_category}
+                onChange={(e) => setMeetingForm((prev) => ({ ...prev, action_category: e.target.value }))}
+              >
+                {OPS_TASK_CATEGORIES.map((item) => (
+                  <option key={item} value={item}>{item}</option>
+                ))}
+              </select>
+            </label>
+
+            <label className="field">
+              <span>우선순위</span>
+              <select
+                value={meetingForm.action_priority}
+                onChange={(e) => setMeetingForm((prev) => ({ ...prev, action_priority: e.target.value }))}
+              >
+                {OPS_TASK_PRIORITIES.map((item) => (
+                  <option key={item} value={item}>{item}</option>
+                ))}
+              </select>
+            </label>
+          </div>
+
+          <div className="inline-actions wrap">
+            <button type="button" className="primary-btn" onClick={handleAddMeetingItem}>
+              회의 기록 저장
+            </button>
+          </div>
+
+          <div className="list-stack">
+            {meetingItems.map((item) => (
+              <div key={item.id} className="list-card">
+                <div className="list-card-top">
+                  <strong>{item.title}</strong>
+                  <span className="pill pill-violet">회의</span>
+                </div>
+                <div className="compact-text">문제: {item.problem || '-'}</div>
+                <div className="compact-text">원인: {item.cause || '-'}</div>
+                <div className="compact-text">아이디어: {item.ideas || '-'}</div>
+                <div className="compact-text">결정: {item.decision || '-'}</div>
+                <div className="inline-actions wrap">
+                  <button type="button" className="secondary-btn" onClick={() => handleCreateTaskFromMeeting(item)}>
+                    실행 업무 생성
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+    </div>
+
+    <div className="dashboard-main-grid">
+      <section className="dashboard-panel-card">
+        <div className="dashboard-panel-head">
+          <div>
+            <div className="dashboard-panel-label">RECORDS</div>
+            <h3>기록 시스템</h3>
+          </div>
+        </div>
+
+        <div className="dashboard-main-grid">
+          <div className="sub-card">
+            <h4>오늘 기록</h4>
+
+            <label className="field">
+              <span>제목</span>
+              <input
+                value={todayRecordForm.title}
+                onChange={(e) => setTodayRecordForm((prev) => ({ ...prev, title: e.target.value }))}
+              />
+            </label>
+
+            <label className="field">
+              <span>무엇을 했는지</span>
+              <textarea
+                rows="2"
+                value={todayRecordForm.what_done}
+                onChange={(e) => setTodayRecordForm((prev) => ({ ...prev, what_done: e.target.value }))}
+              />
+            </label>
+
+            <label className="field">
+              <span>문제</span>
+              <textarea
+                rows="2"
+                value={todayRecordForm.problem}
+                onChange={(e) => setTodayRecordForm((prev) => ({ ...prev, problem: e.target.value }))}
+              />
+            </label>
+
+            <label className="field">
+              <span>개선 / 느낀 점</span>
+              <textarea
+                rows="2"
+                value={todayRecordForm.improve}
+                onChange={(e) => setTodayRecordForm((prev) => ({ ...prev, improve: e.target.value }))}
+              />
+            </label>
+
+            <button
+              type="button"
+              className="primary-btn"
+              onClick={() => handleSaveOpsRecord(todayRecordForm, 'today', setTodayRecordForm)}
+            >
+              오늘 기록 저장
+            </button>
+
+            <div className="list-stack">
+              {todayRecords.map((item) => (
+                <div key={item.id} className="list-card">
+                  <strong>{item.title}</strong>
+                  <div className="compact-text">{item.what_done || '-'}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="sub-card">
+            <h4>주간 기록</h4>
+
+            <label className="field">
+              <span>제목</span>
+              <input
+                value={weeklyRecordForm.title}
+                onChange={(e) => setWeeklyRecordForm((prev) => ({ ...prev, title: e.target.value }))}
+              />
+            </label>
+
+            <label className="field">
+              <span>무엇을 했는지</span>
+              <textarea
+                rows="2"
+                value={weeklyRecordForm.what_done}
+                onChange={(e) => setWeeklyRecordForm((prev) => ({ ...prev, what_done: e.target.value }))}
+              />
+            </label>
+
+            <label className="field">
+              <span>문제 / 개선 / 느낀 점</span>
+              <textarea
+                rows="3"
+                value={weeklyRecordForm.problem}
+                onChange={(e) => setWeeklyRecordForm((prev) => ({ ...prev, problem: e.target.value }))}
+              />
+            </label>
+
+            <button
+              type="button"
+              className="primary-btn"
+              onClick={() => handleSaveOpsRecord(weeklyRecordForm, 'weekly', setWeeklyRecordForm)}
+            >
+              주간 기록 저장
+            </button>
+
+            <div className="list-stack">
+              {weeklyRecords.map((item) => (
+                <div key={item.id} className="list-card">
+                  <strong>{item.title}</strong>
+                  <div className="compact-text">{item.what_done || '-'}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="sub-card">
+            <h4>월간 기록</h4>
+
+            <label className="field">
+              <span>제목</span>
+              <input
+                value={monthlyRecordForm.title}
+                onChange={(e) => setMonthlyRecordForm((prev) => ({ ...prev, title: e.target.value }))}
+              />
+            </label>
+
+            <label className="field">
+              <span>무엇을 했는지</span>
+              <textarea
+                rows="2"
+                value={monthlyRecordForm.what_done}
+                onChange={(e) => setMonthlyRecordForm((prev) => ({ ...prev, what_done: e.target.value }))}
+              />
+            </label>
+
+            <label className="field">
+              <span>문제 / 개선 / 느낀 점</span>
+              <textarea
+                rows="3"
+                value={monthlyRecordForm.problem}
+                onChange={(e) => setMonthlyRecordForm((prev) => ({ ...prev, problem: e.target.value }))}
+              />
+            </label>
+
+            <button
+              type="button"
+              className="primary-btn"
+              onClick={() => handleSaveOpsRecord(monthlyRecordForm, 'monthly', setMonthlyRecordForm)}
+            >
+              월간 기록 저장
+            </button>
+
+            <div className="list-stack">
+              {monthlyRecords.map((item) => (
+                <div key={item.id} className="list-card">
+                  <strong>{item.title}</strong>
+                  <div className="compact-text">{item.what_done || '-'}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
+  </div>
+)}
+
+      
 {activeTab === '활동랭킹' && (
   <div className="activity-ranking-page">
     <section className="activity-ranking-hero">
