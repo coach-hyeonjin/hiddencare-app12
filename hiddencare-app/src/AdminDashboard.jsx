@@ -24622,7 +24622,7 @@ gap: '16px',
           <div>
             <div className="dashboard-panel-label">MEETING FLOW</div>
             <h3>회의 관리</h3>
-            <p className="sub-text">문제 공유 → 원인 분석 → 해결 아이디어 → 결정 → 실행 업무 생성</p>
+            <p className="sub-text">전일/금일/월간 매출 점검 → 회원 흐름 확인 → 운영 이슈 정리 → 결정 → 실행 업무 생성</p>
           </div>
         </div>
 
@@ -24644,60 +24644,77 @@ gap: '16px',
               />
             </label>
 
-            <label className="field">
-              <span>문제 공유</span>
-              <textarea
-                rows="3"
-                value={meetingForm.problem}
-                onChange={(e) => setMeetingForm((prev) => ({ ...prev, problem: e.target.value }))}
-              />
-            </label>
+           <label className="field">
+  <span>전일 실매출 / 금일 예정 매출</span>
+  <textarea
+    rows="3"
+    value={meetingForm.problem}
+    onChange={(e) => setMeetingForm((prev) => ({ ...prev, problem: e.target.value }))}
+    placeholder={`예:
+전일 실매출: 0원
+금일 예정 매출: 0원
+이번달 잔여 확정 매출: 0원
+다음달 예정 매출: 0원`}
+  />
+</label>
 
-            <label className="field">
-              <span>원인 분석</span>
-              <textarea
-                rows="3"
-                value={meetingForm.cause}
-                onChange={(e) => setMeetingForm((prev) => ({ ...prev, cause: e.target.value }))}
-              />
-            </label>
+<label className="field">
+  <span>회원 흐름 / 재등록 / 보류 회원</span>
+  <textarea
+    rows="3"
+    value={meetingForm.cause}
+    onChange={(e) => setMeetingForm((prev) => ({ ...prev, cause: e.target.value }))}
+    placeholder={`예:
+재등록 예정 회원:
+보류 회원:
+체험 예정 회원:
+장기 미방문 회원:`}
+  />
+</label>
 
-            <label className="field">
-              <span>해결 아이디어</span>
-              <textarea
-                rows="3"
-                value={meetingForm.ideas}
-                onChange={(e) => setMeetingForm((prev) => ({ ...prev, ideas: e.target.value }))}
-              />
-            </label>
+<label className="field">
+  <span>운영 이슈 / 코치 / 시설 / 현장 체크</span>
+  <textarea
+    rows="3"
+    value={meetingForm.ideas}
+    onChange={(e) => setMeetingForm((prev) => ({ ...prev, ideas: e.target.value }))}
+    placeholder={`예:
+코치 이슈:
+시설 이슈:
+회원 컴플레인:
+오늘 현장 체크:`}
+  />
+</label>
 
-            <label className="field">
-              <span>결정 사항</span>
-              <textarea
-                rows="3"
-                value={meetingForm.decision}
-                onChange={(e) => setMeetingForm((prev) => ({ ...prev, decision: e.target.value }))}
-              />
-            </label>
+<label className="field">
+  <span>결정 사항 / 오늘 운영 방향</span>
+  <textarea
+    rows="3"
+    value={meetingForm.decision}
+    onChange={(e) => setMeetingForm((prev) => ({ ...prev, decision: e.target.value }))}
+    placeholder="오늘 바로 반영할 결정 사항, 우선순위, 체크 포인트를 적으세요."
+  />
+</label>
 
-            <div className="grid-2">
-              <label className="field">
-                <span>실행 업무명</span>
-                <input
-                  value={meetingForm.action_title}
-                  onChange={(e) => setMeetingForm((prev) => ({ ...prev, action_title: e.target.value }))}
-                />
-              </label>
+<div className="grid-2">
+  <label className="field">
+    <span>오늘 실행 업무</span>
+    <input
+      value={meetingForm.action_title}
+      onChange={(e) => setMeetingForm((prev) => ({ ...prev, action_title: e.target.value }))}
+      placeholder="예: 재등록 보류 회원 연락"
+    />
+  </label>
 
-              <label className="field">
-                <span>실행 마감일</span>
-                <input
-                  type="date"
-                  value={meetingForm.action_due_date}
-                  onChange={(e) => setMeetingForm((prev) => ({ ...prev, action_due_date: e.target.value }))}
-                />
-              </label>
-            </div>
+  <label className="field">
+    <span>실행 마감일</span>
+    <input
+      type="date"
+      value={meetingForm.action_due_date}
+      onChange={(e) => setMeetingForm((prev) => ({ ...prev, action_due_date: e.target.value }))}
+    />
+  </label>
+</div>
 
             <button type="button" className="primary-btn" onClick={handleAddMeetingItem}>
               회의 기록 저장
@@ -24740,10 +24757,10 @@ gap: '16px',
                     <span className="pill pill-violet">회의</span>
                   </div>
 
-                  <div className="compact-text">문제: {item.problem || '-'}</div>
-                  <div className="compact-text">원인: {item.cause || '-'}</div>
-                  <div className="compact-text">아이디어: {item.ideas || '-'}</div>
-                  <div className="compact-text">결정: {item.decision || '-'}</div>
+                 <div className="compact-text">매출 체크: {item.problem || '-'}</div>
+<div className="compact-text">회원 흐름: {item.cause || '-'}</div>
+<div className="compact-text">운영 이슈: {item.ideas || '-'}</div>
+<div className="compact-text">결정 사항: {item.decision || '-'}</div>
 
                   <div className="inline-actions wrap">
                     <button
