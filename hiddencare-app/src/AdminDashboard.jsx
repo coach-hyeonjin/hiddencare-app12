@@ -1612,39 +1612,7 @@ const [selectedXpMemberId, setSelectedXpMemberId] = useState('')
     status: 'done',
   })
 const [editingManagerActionId, setEditingManagerActionId] = useState(null)
-const todayTasks = useMemo(
-  () => opsTasks.filter((task) => getTaskAutoState(task) === '오늘 할 일'),
-  [opsTasks]
-)
 
-const urgentTasks = useMemo(
-  () => opsTasks.filter((task) => getTaskAutoState(task) === '마감 임박'),
-  [opsTasks]
-)
-
-const overdueTasks = useMemo(
-  () => opsTasks.filter((task) => getTaskAutoState(task) === '기간 초과'),
-  [opsTasks]
-)
-
-const incompleteTasks = useMemo(
-  () => opsTasks.filter((task) => getTaskAutoState(task) === '미완료' || getTaskAutoState(task) === '오늘 할 일' || getTaskAutoState(task) === '마감 임박'),
-  [opsTasks]
-)
-
-const completionRate = useMemo(() => getCompletionRate(opsTasks), [opsTasks])
-
-const weekdayTasks = useMemo(() => {
-  return opsTasks.filter((task) => getTaskWeekday(task.due_date) === taskWeekdayFilter)
-}, [opsTasks, taskWeekdayFilter])
-
-const waitingTasks = useMemo(() => opsTasks.filter((task) => task.status === '대기'), [opsTasks])
-const doingTasks = useMemo(() => opsTasks.filter((task) => task.status === '진행중'), [opsTasks])
-const doneTasks = useMemo(() => opsTasks.filter((task) => task.status === '완료'), [opsTasks])
-
-const todayRecords = useMemo(() => opsRecords.filter((item) => item.type === 'today'), [opsRecords])
-const weeklyRecords = useMemo(() => opsRecords.filter((item) => item.type === 'weekly'), [opsRecords])
-const monthlyRecords = useMemo(() => opsRecords.filter((item) => item.type === 'monthly'), [opsRecords])
 const [opsTaskForm, setOpsTaskForm] = useState(createEmptyOpsTask)
 const [opsTasks, setOpsTasks] = useState([
   {
@@ -1712,6 +1680,39 @@ const [monthlyRecordForm, setMonthlyRecordForm] = useState(createEmptyOpsRecord(
 const [opsRecords, setOpsRecords] = useState([])
 
 const [taskWeekdayFilter, setTaskWeekdayFilter] = useState(OPS_WEEKDAY_LABELS[new Date().getDay()])
+  const todayTasks = useMemo(
+  () => opsTasks.filter((task) => getTaskAutoState(task) === '오늘 할 일'),
+  [opsTasks]
+)
+
+const urgentTasks = useMemo(
+  () => opsTasks.filter((task) => getTaskAutoState(task) === '마감 임박'),
+  [opsTasks]
+)
+
+const overdueTasks = useMemo(
+  () => opsTasks.filter((task) => getTaskAutoState(task) === '기간 초과'),
+  [opsTasks]
+)
+
+const incompleteTasks = useMemo(
+  () => opsTasks.filter((task) => getTaskAutoState(task) === '미완료' || getTaskAutoState(task) === '오늘 할 일' || getTaskAutoState(task) === '마감 임박'),
+  [opsTasks]
+)
+
+const completionRate = useMemo(() => getCompletionRate(opsTasks), [opsTasks])
+
+const weekdayTasks = useMemo(() => {
+  return opsTasks.filter((task) => getTaskWeekday(task.due_date) === taskWeekdayFilter)
+}, [opsTasks, taskWeekdayFilter])
+
+const waitingTasks = useMemo(() => opsTasks.filter((task) => task.status === '대기'), [opsTasks])
+const doingTasks = useMemo(() => opsTasks.filter((task) => task.status === '진행중'), [opsTasks])
+const doneTasks = useMemo(() => opsTasks.filter((task) => task.status === '완료'), [opsTasks])
+
+const todayRecords = useMemo(() => opsRecords.filter((item) => item.type === 'today'), [opsRecords])
+const weeklyRecords = useMemo(() => opsRecords.filter((item) => item.type === 'weekly'), [opsRecords])
+const monthlyRecords = useMemo(() => opsRecords.filter((item) => item.type === 'monthly'), [opsRecords])
 const handleAddOpsTask = () => {
   if (!opsTaskForm.title.trim()) return
 
