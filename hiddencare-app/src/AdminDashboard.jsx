@@ -1650,7 +1650,34 @@ const selectedOpsTask = useMemo(
 const [opsViewTab, setOpsViewTab] = useState('dashboard')
 const [opsAuxTab, setOpsAuxTab] = useState('records')
 const [opsRecordTab, setOpsRecordTab] = useState('today')
+const [opsTaskSearch, setOpsTaskSearch] = useState('')
+const [opsTaskDateFilter, setOpsTaskDateFilter] = useState('')
+const [opsTaskOpenColumns, setOpsTaskOpenColumns] = useState({
+  waiting: true,
+  doing: true,
+  done: false,
+})
+const [opsTaskVisibleCount, setOpsTaskVisibleCount] = useState({
+  waiting: 5,
+  doing: 5,
+  done: 5,
+})
 
+const [opsRiskOpen, setOpsRiskOpen] = useState({
+  urgent: true,
+  overdue: false,
+  facility: false,
+})
+const [opsRiskSearch, setOpsRiskSearch] = useState({
+  urgent: '',
+  overdue: '',
+  facility: '',
+})
+
+const [opsHistorySearch, setOpsHistorySearch] = useState('')
+const [opsHistoryDateFrom, setOpsHistoryDateFrom] = useState('')
+const [opsHistoryDateTo, setOpsHistoryDateTo] = useState('')
+const [opsHistoryType, setOpsHistoryType] = useState('all')
 const loadOpsManagementData = async () => {
   if (!currentAdminId) return
 
@@ -1772,7 +1799,242 @@ const doneTasks = useMemo(() => opsTasks.filter((task) => task.status === '완�
 const todayRecords = useMemo(() => opsRecords.filter((item) => item.type === 'today'), [opsRecords])
 const weeklyRecords = useMemo(() => opsRecords.filter((item) => item.type === 'weekly'), [opsRecords])
 const monthlyRecords = useMemo(() => opsRecords.filter((item) => item.type === 'monthly'), [opsRecords])
+const toSafeArray = (value) => (Array.isArray(value) ? value : [])
 
+const toDateOnly = (value) => {
+  if (!value) return ''
+  const date = new Date(value)
+  if (Number.isNaN(date.getTime())) return ''
+  const local = new Date(date.getTime() - date.getTimezoneOffset() * 60000)
+  return local.toISOString().slice(0, 10)
+}
+
+const getOpsItemTitle = (item) =>
+  item?.title ||
+  item?.task ||
+  item?.name ||
+  item?.subject ||
+  item?.category ||
+  '제목 없음'
+
+const getOpsItemSummary = (item) =>
+  item?.content ||
+  item?.what_done ||
+  item?.notes ||
+  item?.note ||
+  item?.problem ||
+  item?.description ||
+  item?.summary ||
+  ''
+
+const getOpsItemDate = (item) =>
+  item?.date ||
+  item?.created_at ||
+  item?.updated_at ||
+  item?.completed_at ||
+  item?.deadline ||
+  item?.due_date ||
+  ''
+
+const getOpsTaskDeadline = (item) =>
+  item?.deadline || item?.due_date || item?.date || ''
+
+const includesKeyword = (item, keyword) => {
+  if (!keyword) return true
+  const q = keyword.trim().toLowerCase()
+  const target = [
+    getOpsItemTitle(item),
+    getOpsItemSummary(item),
+    item?.category,
+    item?.priority,
+    item?.status,
+    item?.assignee,
+  ]
+    .filter(Boolean)
+    .join(' ')
+    .toLowerCase()
+
+  return target.includes(q)
+}
+
+const matchesSingleDate = (item, dateValue) => {
+  if (!dateValue) return true
+  return toDateOnly(getOpsItemDate(item)) === dateValue
+}
+
+const matchesDateRange = (item, from, to) => {
+  const itemDate = toDateOnly(getOpsItemDate(item))
+  if (!itemDate) return false
+  if (from && itemDate < from) return false
+  if (to && itemDate > to) return false
+  return true
+}
+
+const toggleOpsTaskColumn = (key) => {
+  setOpsTaskOpenColumns((prev) => ({
+    ...prev,
+    [key]: !prev[key],
+  }))
+}
+
+const toggleOpsRiskSection = (key) => {
+  setOpsRiskOpen((prev) => ({
+    ...prev,
+    [key]: !prev[key],
+  }))
+}
+
+const handleOpsHistoryEdit = (item) => {
+  if (item?.historyType === 'completed-task') {
+    setSelectedOpsTaskId(item.id)
+    setOpsViewTab('dashboard')
+    return
+  }
+
+  handleEditOpsRecord(item.raw)
+}
+
+const handleOpsHistoryDelete = async (item) => {
+  const ok = window.confirm('이 항목을 삭제하시겠습니까?')
+  if (!ok) return
+
+  if (item?.historyType === 'completed-task') {
+    await handleDeleteOpsTask(item.id)
+    return
+  }
+
+  await handleDeleteOpsRecord(item.id)
+}
+
+const filteredWaitingTasks = useMemo(() => {
+  return toSafeArray(waitingTasks).filter(
+    (item) => includesKeyword(item, opsTaskSearch) && matchesSingleDate(item, opsTaskDateFilter)
+  )
+}, [waitingTasks, opsTaskSearch, opsTaskDateFilter])
+
+const filteredDoingTasks = useMemo(() => {
+  return toSafeArray(doingTasks).filter(
+    (item) => includesKeyword(item, opsTaskSearch) && matchesSingleDate(item, opsTaskDateFilter)
+  )
+}, [doingTasks, opsTaskSearch, opsTaskDateFilter])
+
+const filteredDoneTasks = useMemo(() => {
+  return toSafeArray(doneTasks).filter(
+    (item) => includesKeyword(item, opsTaskSearch) && matchesSingleDate(item, opsTaskDateFilter)
+  )
+}, [doneTasks, opsTaskSearch, opsTaskDateFilter])
+
+const visibleWaitingTasks = useMemo(() => {
+  return filteredWaitingTasks.slice(0, opsTaskVisibleCount.waiting)
+}, [filteredWaitingTasks, opsTaskVisibleCount.waiting])
+
+const visibleDoingTasks = useMemo(() => {
+  return filteredDoingTasks.slice(0, opsTaskVisibleCount.doing)
+}, [filteredDoingTasks, opsTaskVisibleCount.doing])
+
+const visibleDoneTasks = useMemo(() => {
+  return filteredDoneTasks.slice(0, opsTaskVisibleCount.done)
+}, [filteredDoneTasks, opsTaskVisibleCount.done])
+
+const filteredUrgentTasks = useMemo(() => {
+  return toSafeArray(urgentTasks).filter((item) =>
+    includesKeyword(item, opsRiskSearch.urgent)
+  )
+}, [urgentTasks, opsRiskSearch.urgent])
+
+const filteredOverdueTasks = useMemo(() => {
+  return toSafeArray(overdueTasks).filter((item) =>
+    includesKeyword(item, opsRiskSearch.overdue)
+  )
+}, [overdueTasks, opsRiskSearch.overdue])
+
+const filteredFacilityTasks = useMemo(() => {
+  return toSafeArray(facilityTasks).filter((item) =>
+    includesKeyword(item, opsRiskSearch.facility)
+  )
+}, [facilityTasks, opsRiskSearch.facility])
+
+const completedTaskHistory = useMemo(() => {
+  return toSafeArray(doneTasks).map((item) => ({
+    id: item?.id,
+    raw: item,
+    historyType: 'completed-task',
+    title: getOpsItemTitle(item),
+    summary: getOpsItemSummary(item),
+    date: toDateOnly(item?.updated_at || item?.created_at || getOpsTaskDeadline(item)),
+    category: item?.category || '-',
+    priority: item?.priority || '-',
+    deadline: getOpsTaskDeadline(item) || '-',
+    status: '완료',
+    memo: getOpsItemSummary(item),
+  }))
+}, [doneTasks])
+
+const mergedOpsHistory = useMemo(() => {
+  const today = toSafeArray(todayRecords).map((item) => ({
+    id: item?.id,
+    raw: item,
+    historyType: 'today',
+    title: getOpsItemTitle(item),
+    summary: getOpsItemSummary(item),
+    date: toDateOnly(getOpsItemDate(item)),
+    category: '-',
+    priority: '-',
+    deadline: '-',
+    status: '기록',
+    memo: getOpsItemSummary(item),
+  }))
+
+  const weekly = toSafeArray(weeklyRecords).map((item) => ({
+    id: item?.id,
+    raw: item,
+    historyType: 'weekly',
+    title: getOpsItemTitle(item),
+    summary: getOpsItemSummary(item),
+    date: toDateOnly(getOpsItemDate(item)),
+    category: '-',
+    priority: '-',
+    deadline: '-',
+    status: '기록',
+    memo: getOpsItemSummary(item),
+  }))
+
+  const monthly = toSafeArray(monthlyRecords).map((item) => ({
+    id: item?.id,
+    raw: item,
+    historyType: 'monthly',
+    title: getOpsItemTitle(item),
+    summary: getOpsItemSummary(item),
+    date: toDateOnly(getOpsItemDate(item)),
+    category: '-',
+    priority: '-',
+    deadline: '-',
+    status: '기록',
+    memo: getOpsItemSummary(item),
+  }))
+
+  return [...today, ...weekly, ...monthly, ...completedTaskHistory]
+    .filter((item) => {
+      if (opsHistoryType === 'all') return true
+      return item.historyType === opsHistoryType
+    })
+    .filter((item) => includesKeyword(item, opsHistorySearch))
+    .filter((item) => matchesDateRange(item, opsHistoryDateFrom, opsHistoryDateTo))
+    .sort((a, b) => {
+      const aTime = new Date(a.date || '1970-01-01').getTime()
+      const bTime = new Date(b.date || '1970-01-01').getTime()
+      return bTime - aTime
+    })
+}, [
+  todayRecords,
+  weeklyRecords,
+  monthlyRecords,
+  completedTaskHistory,
+  opsHistoryType,
+  opsHistorySearch,
+  opsHistoryDateFrom,
+  opsHistoryDateTo,
+])
 const handleAddOpsTask = async () => {
   if (!opsTaskForm.title.trim() || !currentAdminId) return
 
@@ -22939,326 +23201,525 @@ const filteredExercisesAdvanced = exercises.filter((exercise) => {
     </section>
 
     <section className="dashboard-panel-card ops-kanban-section">
-      <div className="dashboard-panel-head">
-        <div>
-          <div className="dashboard-panel-label">KANBAN BOARD</div>
-          <h3>업무 칸반 보드</h3>
-          <p className="sub-text">대기 / 진행중 / 완료 흐름을 한눈에 보고, 선택한 업무 상세는 아래에서 확인합니다.</p>
-        </div>
-      </div>
-
-      <div className="ops-kanban-columns">
-        <div className="ops-kanban-column-card">
-          <div className="ops-kanban-column-head">
-            <h4>대기</h4>
-            <span>{waitingTasks.length}</span>
-          </div>
-
-          <div className="list-stack">
-            {waitingTasks.length === 0 ? (
-              <div className="workout-list-empty">대기 업무 없음</div>
-            ) : (
-              waitingTasks.map((task) => (
-                <div
-                  key={task.id}
-                  className={`ops-kanban-item ${selectedOpsTask?.id === task.id ? 'active' : ''}`}
-                  onClick={() => setSelectedOpsTaskId(task.id)}
-                >
-                  <div className="ops-kanban-item-top">
-                    <strong>{task.title}</strong>
-                    <span className={`pill ${task.priority === '긴급' ? 'pill-red' : 'pill-amber'}`}>
-                      {task.priority}
-                    </span>
-                  </div>
-
-                  <div className="ops-kanban-meta">
-                    <span>{task.category}</span>
-                    <span>{task.due_date || '-'}</span>
-                  </div>
-
-                  <div className="inline-actions wrap">
-                    <button
-                      type="button"
-                      className="secondary-btn"
-                      onClick={(e) => {
-                        e.stopPropagation()
-                        handleChangeOpsTaskStatus(task.id, '진행중')
-                      }}
-                    >
-                      진행중
-                    </button>
-                    <button
-                      type="button"
-                      className="danger-btn"
-                      onClick={(e) => {
-                        e.stopPropagation()
-                        handleDeleteOpsTask(task.id)
-                      }}
-                    >
-                      삭제
-                    </button>
-                  </div>
-                </div>
-              ))
-            )}
-          </div>
-        </div>
-
-        <div className="ops-kanban-column-card">
-          <div className="ops-kanban-column-head">
-            <h4>진행중</h4>
-            <span>{doingTasks.length}</span>
-          </div>
-
-          <div className="list-stack">
-            {doingTasks.length === 0 ? (
-              <div className="workout-list-empty">진행중 업무 없음</div>
-            ) : (
-              doingTasks.map((task) => (
-                <div
-                  key={task.id}
-                  className={`ops-kanban-item ${selectedOpsTask?.id === task.id ? 'active' : ''}`}
-                  onClick={() => setSelectedOpsTaskId(task.id)}
-                >
-                  <div className="ops-kanban-item-top">
-                    <strong>{task.title}</strong>
-                    <span className="pill pill-blue">{task.category}</span>
-                  </div>
-
-                  <div className="ops-kanban-meta">
-                    <span>{task.notes || '메모 없음'}</span>
-                  </div>
-
-                  <div className="inline-actions wrap">
-                    <button
-                      type="button"
-                      className="secondary-btn"
-                      onClick={(e) => {
-                        e.stopPropagation()
-                        handleChangeOpsTaskStatus(task.id, '완료')
-                      }}
-                    >
-                      완료
-                    </button>
-                    <button
-                      type="button"
-                      className="secondary-btn"
-                      onClick={(e) => {
-                        e.stopPropagation()
-                        handleChangeOpsTaskStatus(task.id, '대기')
-                      }}
-                    >
-                      대기
-                    </button>
-                    <button
-                      type="button"
-                      className="danger-btn"
-                      onClick={(e) => {
-                        e.stopPropagation()
-                        handleDeleteOpsTask(task.id)
-                      }}
-                    >
-                      삭제
-                    </button>
-                  </div>
-                </div>
-              ))
-            )}
-          </div>
-        </div>
-
-        <div className="ops-kanban-column-card">
-          <div className="ops-kanban-column-head">
-            <h4>완료</h4>
-            <span>{doneTasks.length}</span>
-          </div>
-
-          <div className="list-stack">
-            {doneTasks.length === 0 ? (
-              <div className="workout-list-empty">완료 업무 없음</div>
-            ) : (
-              doneTasks.map((task) => (
-                <div
-                  key={task.id}
-                  className={`ops-kanban-item ${selectedOpsTask?.id === task.id ? 'active' : ''}`}
-                  onClick={() => setSelectedOpsTaskId(task.id)}
-                >
-                  <div className="ops-kanban-item-top">
-                    <strong>{task.title}</strong>
-                    <span className="pill pill-green">완료</span>
-                  </div>
-
-                  <div className="ops-kanban-meta">
-                    <span>{task.category}</span>
-                    <span>{task.due_date || '-'}</span>
-                  </div>
-
-                  <div className="inline-actions wrap">
-                    <button
-                      type="button"
-                      className="secondary-btn"
-                      onClick={(e) => {
-                        e.stopPropagation()
-                        handleChangeOpsTaskStatus(task.id, '대기')
-                      }}
-                    >
-                      다시 대기
-                    </button>
-                    <button
-                      type="button"
-                      className="danger-btn"
-                      onClick={(e) => {
-                        e.stopPropagation()
-                        handleDeleteOpsTask(task.id)
-                      }}
-                    >
-                      삭제
-                    </button>
-                  </div>
-                </div>
-              ))
-            )}
-          </div>
-        </div>
-      </div>
-
-      <div className="ops-kanban-detail-card">
-        <div className="ops-kanban-detail-head">
-          <h4>업무 상세</h4>
-          {selectedOpsTask && <span className="pill pill-blue">{selectedOpsTask.status}</span>}
-        </div>
-
-        {!selectedOpsTask ? (
-          <div className="workout-list-empty">카드를 클릭하면 아래에서 상세를 볼 수 있습니다.</div>
-        ) : (
-          <div className="ops-kanban-detail-body">
-            <div className="ops-kanban-detail-main">
-              <strong>{selectedOpsTask.title}</strong>
-
-              <div className="ops-kanban-detail-grid">
-                <div>
-                  <span>카테고리</span>
-                  <strong>{selectedOpsTask.category}</strong>
-                </div>
-                <div>
-                  <span>우선순위</span>
-                  <strong>{selectedOpsTask.priority}</strong>
-                </div>
-                <div>
-                  <span>마감일</span>
-                  <strong>{selectedOpsTask.due_date || '-'}</strong>
-                </div>
-                <div>
-                  <span>상태</span>
-                  <strong>{selectedOpsTask.status}</strong>
-                </div>
-              </div>
-
-              <div className="ops-kanban-note-box">
-                {selectedOpsTask.notes || '메모 없음'}
-              </div>
-            </div>
-
-            <div className="ops-kanban-detail-actions">
-              <button
-                type="button"
-                className="secondary-btn"
-                onClick={() => handleChangeOpsTaskStatus(selectedOpsTask.id, '대기')}
-              >
-                대기
-              </button>
-              <button
-                type="button"
-                className="secondary-btn"
-                onClick={() => handleChangeOpsTaskStatus(selectedOpsTask.id, '진행중')}
-              >
-                진행중
-              </button>
-              <button
-                type="button"
-                className="secondary-btn"
-                onClick={() => handleChangeOpsTaskStatus(selectedOpsTask.id, '완료')}
-              >
-                완료
-              </button>
-              <button
-                type="button"
-                className="danger-btn"
-                onClick={() => handleDeleteOpsTask(selectedOpsTask.id)}
-              >
-                삭제
-              </button>
-            </div>
-          </div>
-        )}
-      </div>
-    </section>
+  <div className="dashboard-panel-head">
+    <div>
+      <div className="dashboard-panel-label">KANBAN BOARD</div>
+      <h3>업무 칸반 보드</h3>
+      <p className="sub-text">검색 / 날짜 / 접기 / 더보기로 긴 업무목록을 정리합니다.</p>
+    </div>
   </div>
 
-  <section className="dashboard-panel-card ops-risk-section">
-    <div className="dashboard-panel-head">
-      <div>
-        <div className="dashboard-panel-label">RISK</div>
-        <h3>위험 관리</h3>
-        <p className="sub-text">임박 / 초과 / 시설 요청을 모아 봅니다.</p>
-      </div>
+  <div className="ops-filter-bar">
+    <input
+      type="text"
+      className="ops-filter-input"
+      placeholder="업무 제목, 메모, 카테고리 검색"
+      value={opsTaskSearch}
+      onChange={(e) => setOpsTaskSearch(e.target.value)}
+    />
+
+    <input
+      type="date"
+      className="ops-filter-date"
+      value={opsTaskDateFilter}
+      onChange={(e) => setOpsTaskDateFilter(e.target.value)}
+    />
+
+    <button
+      type="button"
+      className="secondary-btn"
+      onClick={() => {
+        setOpsTaskSearch('')
+        setOpsTaskDateFilter('')
+      }}
+    >
+      초기화
+    </button>
+  </div>
+
+  <div className="ops-kanban-columns">
+    <div className="ops-kanban-column-card">
+      <button
+        type="button"
+        className="ops-kanban-column-head ops-collapse-head"
+        onClick={() => toggleOpsTaskColumn('waiting')}
+      >
+        <h4>대기</h4>
+        <span>{filteredWaitingTasks.length}</span>
+      </button>
+
+      {opsTaskOpenColumns.waiting && (
+        <div className="list-stack">
+          {visibleWaitingTasks.length === 0 ? (
+            <div className="workout-list-empty">대기 업무 없음</div>
+          ) : (
+            visibleWaitingTasks.map((task) => (
+              <div
+                key={task.id}
+                className={`ops-kanban-item ${selectedOpsTask?.id === task.id ? 'active' : ''}`}
+                onClick={() => setSelectedOpsTaskId(task.id)}
+              >
+                <div className="ops-kanban-item-top">
+                  <strong>{task.title}</strong>
+                  <span className={`pill ${task.priority === '긴급' ? 'pill-red' : 'pill-amber'}`}>
+                    {task.priority}
+                  </span>
+                </div>
+
+                <div className="ops-kanban-meta">
+                  <span>{task.category}</span>
+                  <span>{task.due_date || '-'}</span>
+                </div>
+
+                <div className="compact-text">{task.notes || '메모 없음'}</div>
+
+                <div className="inline-actions wrap">
+                  <button
+                    type="button"
+                    className="secondary-btn"
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      handleChangeOpsTaskStatus(task.id, '진행중')
+                    }}
+                  >
+                    진행중
+                  </button>
+                  <button
+                    type="button"
+                    className="danger-btn"
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      handleDeleteOpsTask(task.id)
+                    }}
+                  >
+                    삭제
+                  </button>
+                </div>
+              </div>
+            ))
+          )}
+
+          {filteredWaitingTasks.length > opsTaskVisibleCount.waiting && (
+            <button
+              type="button"
+              className="secondary-btn"
+              onClick={() =>
+                setOpsTaskVisibleCount((prev) => ({
+                  ...prev,
+                  waiting: prev.waiting + 5,
+                }))
+              }
+            >
+              더보기
+            </button>
+          )}
+        </div>
+      )}
     </div>
 
-    <div className="ops-risk-grid">
-      <div className="sub-card">
-        <h4>마감 임박</h4>
-        {urgentTasks.length === 0 ? (
-          <div className="workout-list-empty">임박 업무 없음</div>
-        ) : (
-          urgentTasks.map((task) => (
-            <div key={task.id} className="dashboard-list-row dashboard-list-row-warn">
-              <div>
-                <strong>{task.title}</strong>
-                <div className="compact-text">{task.due_date || '-'} / {task.category}</div>
-              </div>
-              <span className="pill pill-amber">{task.priority}</span>
-            </div>
-          ))
-        )}
-      </div>
+    <div className="ops-kanban-column-card">
+      <button
+        type="button"
+        className="ops-kanban-column-head ops-collapse-head"
+        onClick={() => toggleOpsTaskColumn('doing')}
+      >
+        <h4>진행중</h4>
+        <span>{filteredDoingTasks.length}</span>
+      </button>
 
-      <div className="sub-card">
-        <h4>기간 초과</h4>
-        {overdueTasks.length === 0 ? (
-          <div className="workout-list-empty">초과 업무 없음</div>
-        ) : (
-          overdueTasks.map((task) => (
-            <div key={task.id} className="dashboard-list-row dashboard-list-row-danger">
-              <div>
-                <strong>{task.title}</strong>
-                <div className="compact-text">{task.due_date || '-'} / {task.category}</div>
-              </div>
-              <span className="pill pill-red">초과</span>
-            </div>
-          ))
-        )}
-      </div>
+      {opsTaskOpenColumns.doing && (
+        <div className="list-stack">
+          {visibleDoingTasks.length === 0 ? (
+            <div className="workout-list-empty">진행중 업무 없음</div>
+          ) : (
+            visibleDoingTasks.map((task) => (
+              <div
+                key={task.id}
+                className={`ops-kanban-item ${selectedOpsTask?.id === task.id ? 'active' : ''}`}
+                onClick={() => setSelectedOpsTaskId(task.id)}
+              >
+                <div className="ops-kanban-item-top">
+                  <strong>{task.title}</strong>
+                  <span className="pill pill-blue">{task.category}</span>
+                </div>
 
-      <div className="sub-card">
-        <h4>시설 요청 현황</h4>
-        {facilityTasks.length === 0 ? (
-          <div className="workout-list-empty">시설 요청이 없습니다.</div>
-        ) : (
-          facilityTasks.map((item) => (
-            <div key={item.id} className="dashboard-list-row">
-              <div>
+                <div className="ops-kanban-meta">
+                  <span>{task.notes || '메모 없음'}</span>
+                </div>
+
+                <div className="inline-actions wrap">
+                  <button
+                    type="button"
+                    className="secondary-btn"
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      handleChangeOpsTaskStatus(task.id, '완료')
+                    }}
+                  >
+                    완료
+                  </button>
+                  <button
+                    type="button"
+                    className="secondary-btn"
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      handleChangeOpsTaskStatus(task.id, '대기')
+                    }}
+                  >
+                    대기
+                  </button>
+                  <button
+                    type="button"
+                    className="danger-btn"
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      handleDeleteOpsTask(task.id)
+                    }}
+                  >
+                    삭제
+                  </button>
+                </div>
+              </div>
+            ))
+          )}
+
+          {filteredDoingTasks.length > opsTaskVisibleCount.doing && (
+            <button
+              type="button"
+              className="secondary-btn"
+              onClick={() =>
+                setOpsTaskVisibleCount((prev) => ({
+                  ...prev,
+                  doing: prev.doing + 5,
+                }))
+              }
+            >
+              더보기
+            </button>
+          )}
+        </div>
+      )}
+    </div>
+
+    <div className="ops-kanban-column-card">
+      <button
+        type="button"
+        className="ops-kanban-column-head ops-collapse-head"
+        onClick={() => toggleOpsTaskColumn('done')}
+      >
+        <h4>완료</h4>
+        <span>{filteredDoneTasks.length}</span>
+      </button>
+
+      {opsTaskOpenColumns.done && (
+        <div className="list-stack">
+          {visibleDoneTasks.length === 0 ? (
+            <div className="workout-list-empty">완료 업무 없음</div>
+          ) : (
+            visibleDoneTasks.map((task) => (
+              <div
+                key={task.id}
+                className={`ops-kanban-item ${selectedOpsTask?.id === task.id ? 'active' : ''}`}
+                onClick={() => setSelectedOpsTaskId(task.id)}
+              >
+                <div className="ops-kanban-item-top">
+                  <strong>{task.title}</strong>
+                  <span className="pill pill-green">완료</span>
+                </div>
+
+                <div className="ops-kanban-meta">
+                  <span>{task.category}</span>
+                  <span>{task.due_date || '-'}</span>
+                </div>
+
+                <div className="compact-text">{task.notes || '메모 없음'}</div>
+
+                <div className="inline-actions wrap">
+                  <button
+                    type="button"
+                    className="secondary-btn"
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      handleChangeOpsTaskStatus(task.id, '대기')
+                    }}
+                  >
+                    다시 대기
+                  </button>
+                  <button
+                    type="button"
+                    className="danger-btn"
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      handleDeleteOpsTask(task.id)
+                    }}
+                  >
+                    삭제
+                  </button>
+                </div>
+              </div>
+            ))
+          )}
+
+          {filteredDoneTasks.length > opsTaskVisibleCount.done && (
+            <button
+              type="button"
+              className="secondary-btn"
+              onClick={() =>
+                setOpsTaskVisibleCount((prev) => ({
+                  ...prev,
+                  done: prev.done + 5,
+                }))
+              }
+            >
+              더보기
+            </button>
+          )}
+        </div>
+      )}
+    </div>
+  </div>
+
+  <div className="ops-kanban-detail-card">
+    <div className="ops-kanban-detail-head">
+      <h4>업무 상세</h4>
+      {selectedOpsTask && <span className="pill pill-blue">{selectedOpsTask.status}</span>}
+    </div>
+
+    {!selectedOpsTask ? (
+      <div className="workout-list-empty">카드를 클릭하면 아래에서 상세를 볼 수 있습니다.</div>
+    ) : (
+      <div className="ops-kanban-detail-body">
+        <div className="ops-kanban-detail-main">
+          <strong>{selectedOpsTask.title}</strong>
+
+          <div className="ops-kanban-detail-grid">
+            <div>
+              <span>카테고리</span>
+              <strong>{selectedOpsTask.category}</strong>
+            </div>
+            <div>
+              <span>우선순위</span>
+              <strong>{selectedOpsTask.priority}</strong>
+            </div>
+            <div>
+              <span>마감일</span>
+              <strong>{selectedOpsTask.due_date || '-'}</strong>
+            </div>
+            <div>
+              <span>상태</span>
+              <strong>{selectedOpsTask.status}</strong>
+            </div>
+          </div>
+
+          <div className="ops-kanban-note-box">
+            {selectedOpsTask.notes || '메모 없음'}
+          </div>
+        </div>
+
+        <div className="ops-kanban-detail-actions">
+          <button
+            type="button"
+            className="secondary-btn"
+            onClick={() => handleChangeOpsTaskStatus(selectedOpsTask.id, '대기')}
+          >
+            대기
+          </button>
+          <button
+            type="button"
+            className="secondary-btn"
+            onClick={() => handleChangeOpsTaskStatus(selectedOpsTask.id, '진행중')}
+          >
+            진행중
+          </button>
+          <button
+            type="button"
+            className="secondary-btn"
+            onClick={() => handleChangeOpsTaskStatus(selectedOpsTask.id, '완료')}
+          >
+            완료
+          </button>
+          <button
+            type="button"
+            className="danger-btn"
+            onClick={() => handleDeleteOpsTask(selectedOpsTask.id)}
+          >
+            삭제
+          </button>
+        </div>
+      </div>
+    )}
+  </div>
+
+  <div className="sub-card ops-completed-history-card">
+    <div className="list-card-top">
+      <h4>완료 업무 히스토리</h4>
+      <span className="pill pill-green">{completedTaskHistory.length}</span>
+    </div>
+
+    <div className="list-stack">
+      {completedTaskHistory.length === 0 ? (
+        <div className="workout-list-empty">완료 업무 히스토리가 없습니다.</div>
+      ) : (
+        completedTaskHistory
+          .filter((item) => includesKeyword(item, opsTaskSearch))
+          .filter((item) => matchesSingleDate(item, opsTaskDateFilter))
+          .slice(0, 10)
+          .map((item) => (
+            <div key={item.id} className="list-card">
+              <div className="list-card-top">
                 <strong>{item.title}</strong>
-                <div className="compact-text">{item.type} / {item.note || '-'}</div>
+                <span className="pill pill-green">완료</span>
               </div>
-              <span className={`pill ${item.priority === '긴급' ? 'pill-red' : 'pill-amber'}`}>
-                {item.priority}
-              </span>
+              <div className="compact-text">
+                {item.category} / {item.priority} / 마감 {item.deadline}
+              </div>
+              <div className="compact-text">{item.memo || '-'}</div>
             </div>
           ))
-        )}
-      </div>
+      )}
     </div>
-  </section>
+  </div>
+</section>
+
+<section className="dashboard-panel-card ops-risk-section">
+  <div className="dashboard-panel-head">
+    <div>
+      <div className="dashboard-panel-label">RISK</div>
+      <h3>위험 관리</h3>
+      <p className="sub-text">임박 / 초과 / 시설 요청을 검색형 접기 구조로 봅니다.</p>
+    </div>
+  </div>
+
+  <div className="ops-risk-grid ops-risk-accordion">
+    <div className="sub-card">
+      <button
+        type="button"
+        className="ops-collapse-head"
+        onClick={() => toggleOpsRiskSection('urgent')}
+      >
+        <h4>마감 임박</h4>
+        <span>{filteredUrgentTasks.length}</span>
+      </button>
+
+      {opsRiskOpen.urgent && (
+        <>
+          <input
+            className="ops-filter-input"
+            placeholder="마감 임박 검색"
+            value={opsRiskSearch.urgent}
+            onChange={(e) =>
+              setOpsRiskSearch((prev) => ({ ...prev, urgent: e.target.value }))
+            }
+          />
+
+          <div className="list-stack" style={{ marginTop: '12px' }}>
+            {filteredUrgentTasks.length === 0 ? (
+              <div className="workout-list-empty">임박 업무 없음</div>
+            ) : (
+              filteredUrgentTasks.map((task) => (
+                <div key={task.id} className="dashboard-list-row dashboard-list-row-warn">
+                  <div>
+                    <strong>{task.title}</strong>
+                    <div className="compact-text">
+                      {task.due_date || '-'} / {task.category}
+                    </div>
+                  </div>
+                  <span className="pill pill-amber">{task.priority}</span>
+                </div>
+              ))
+            )}
+          </div>
+        </>
+      )}
+    </div>
+
+    <div className="sub-card">
+      <button
+        type="button"
+        className="ops-collapse-head"
+        onClick={() => toggleOpsRiskSection('overdue')}
+      >
+        <h4>기간 초과</h4>
+        <span>{filteredOverdueTasks.length}</span>
+      </button>
+
+      {opsRiskOpen.overdue && (
+        <>
+          <input
+            className="ops-filter-input"
+            placeholder="기간 초과 검색"
+            value={opsRiskSearch.overdue}
+            onChange={(e) =>
+              setOpsRiskSearch((prev) => ({ ...prev, overdue: e.target.value }))
+            }
+          />
+
+          <div className="list-stack" style={{ marginTop: '12px' }}>
+            {filteredOverdueTasks.length === 0 ? (
+              <div className="workout-list-empty">초과 업무 없음</div>
+            ) : (
+              filteredOverdueTasks.map((task) => (
+                <div key={task.id} className="dashboard-list-row dashboard-list-row-danger">
+                  <div>
+                    <strong>{task.title}</strong>
+                    <div className="compact-text">
+                      {task.due_date || '-'} / {task.category}
+                    </div>
+                  </div>
+                  <span className="pill pill-red">초과</span>
+                </div>
+              ))
+            )}
+          </div>
+        </>
+      )}
+    </div>
+
+    <div className="sub-card">
+      <button
+        type="button"
+        className="ops-collapse-head"
+        onClick={() => toggleOpsRiskSection('facility')}
+      >
+        <h4>시설 요청 현황</h4>
+        <span>{filteredFacilityTasks.length}</span>
+      </button>
+
+      {opsRiskOpen.facility && (
+        <>
+          <input
+            className="ops-filter-input"
+            placeholder="시설 요청 검색"
+            value={opsRiskSearch.facility}
+            onChange={(e) =>
+              setOpsRiskSearch((prev) => ({ ...prev, facility: e.target.value }))
+            }
+          />
+
+          <div className="list-stack" style={{ marginTop: '12px' }}>
+            {filteredFacilityTasks.length === 0 ? (
+              <div className="workout-list-empty">시설 요청이 없습니다.</div>
+            ) : (
+              filteredFacilityTasks.map((item) => (
+                <div key={item.id} className="dashboard-list-row">
+                  <div>
+                    <strong>{item.title}</strong>
+                    <div className="compact-text">
+                      {item.type} / {item.note || '-'}
+                    </div>
+                  </div>
+                  <span className={`pill ${item.priority === '긴급' ? 'pill-red' : 'pill-amber'}`}>
+                    {item.priority}
+                  </span>
+                </div>
+              ))
+            )}
+          </div>
+        </>
+      )}
+    </div>
+  </div>
+</section>
 </div>
         <section className="dashboard-panel-card" style={{ marginBottom: '20px' }}>
           <div className="dashboard-panel-head">
@@ -23527,259 +23988,359 @@ gap: '16px',
           )}
 
           {opsAuxTab === 'records' && (
-            <div className="sub-card">
-              <div className="inline-actions wrap" style={{ marginBottom: '14px' }}>
-                {[
-                  { label: '오늘 기록', value: 'today' },
-                  { label: '주간 기록', value: 'weekly' },
-                  { label: '월간 기록', value: 'monthly' },
-                ].map((item) => (
-                  <button
-                    key={item.value}
-                    type="button"
-                    className={opsRecordTab === item.value ? 'primary-btn' : 'secondary-btn'}
-                    onClick={() => setOpsRecordTab(item.value)}
-                  >
-                    {item.label}
-                  </button>
-                ))}
+  <div className="sub-card">
+    <div className="inline-actions wrap" style={{ marginBottom: '14px' }}>
+      {[
+        { label: '오늘 기록', value: 'today' },
+        { label: '주간 기록', value: 'weekly' },
+        { label: '월간 기록', value: 'monthly' },
+      ].map((item) => (
+        <button
+          key={item.value}
+          type="button"
+          className={opsRecordTab === item.value ? 'primary-btn' : 'secondary-btn'}
+          onClick={() => setOpsRecordTab(item.value)}
+        >
+          {item.label}
+        </button>
+      ))}
+    </div>
+
+    {opsRecordTab === 'today' && (
+      <div
+        style={{
+          display: 'grid',
+          gridTemplateColumns: '0.95fr 1.25fr',
+          gap: '16px',
+        }}
+      >
+        <div className="sub-card">
+          <h4>오늘 기록 입력</h4>
+          <label className="field">
+            <span>제목</span>
+            <input
+              value={todayRecordForm.title}
+              onChange={(e) => setTodayRecordForm((prev) => ({ ...prev, title: e.target.value }))}
+            />
+          </label>
+          <label className="field">
+            <span>무엇을 했는지</span>
+            <textarea
+              rows="3"
+              value={todayRecordForm.what_done}
+              onChange={(e) => setTodayRecordForm((prev) => ({ ...prev, what_done: e.target.value }))}
+            />
+          </label>
+          <label className="field">
+            <span>문제 / 개선</span>
+            <textarea
+              rows="3"
+              value={todayRecordForm.problem}
+              onChange={(e) => setTodayRecordForm((prev) => ({ ...prev, problem: e.target.value }))}
+            />
+          </label>
+          <button
+            type="button"
+            className="primary-btn"
+            onClick={() => handleSaveOpsRecord(todayRecordForm, 'today', setTodayRecordForm)}
+          >
+            오늘 기록 저장
+          </button>
+        </div>
+
+        <div className="sub-card">
+          <h4>오늘 기록 목록</h4>
+          <div className="list-stack">
+            {todayRecords.length === 0 ? (
+              <div className="workout-list-empty">오늘 기록 내역이 없습니다.</div>
+            ) : (
+              todayRecords.map((item) => (
+                <div key={item.id} className="list-card">
+                  <strong>{item.title}</strong>
+                  <div className="compact-text">{item.what_done || '-'}</div>
+                  <div className="compact-text">{item.problem || '-'}</div>
+                  <div className="inline-actions wrap">
+                    <button
+                      type="button"
+                      className="secondary-btn"
+                      onClick={() => handleEditOpsRecord(item)}
+                    >
+                      수정
+                    </button>
+                    <button
+                      type="button"
+                      className="danger-btn"
+                      onClick={() => handleDeleteOpsRecord(item.id)}
+                    >
+                      삭제
+                    </button>
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+        </div>
+      </div>
+    )}
+
+    {opsRecordTab === 'weekly' && (
+      <div
+        style={{
+          display: 'grid',
+          gridTemplateColumns: '0.95fr 1.25fr',
+          gap: '16px',
+        }}
+      >
+        <div className="sub-card">
+          <h4>주간 기록 입력</h4>
+          <label className="field">
+            <span>제목</span>
+            <input
+              value={weeklyRecordForm.title}
+              onChange={(e) => setWeeklyRecordForm((prev) => ({ ...prev, title: e.target.value }))}
+            />
+          </label>
+          <label className="field">
+            <span>무엇을 했는지</span>
+            <textarea
+              rows="3"
+              value={weeklyRecordForm.what_done}
+              onChange={(e) => setWeeklyRecordForm((prev) => ({ ...prev, what_done: e.target.value }))}
+            />
+          </label>
+          <label className="field">
+            <span>문제 / 개선</span>
+            <textarea
+              rows="3"
+              value={weeklyRecordForm.problem}
+              onChange={(e) => setWeeklyRecordForm((prev) => ({ ...prev, problem: e.target.value }))}
+            />
+          </label>
+          <button
+            type="button"
+            className="primary-btn"
+            onClick={() => handleSaveOpsRecord(weeklyRecordForm, 'weekly', setWeeklyRecordForm)}
+          >
+            주간 기록 저장
+          </button>
+        </div>
+
+        <div className="sub-card">
+          <h4>주간 기록 목록</h4>
+          <div className="list-stack">
+            {weeklyRecords.length === 0 ? (
+              <div className="workout-list-empty">주간 기록 내역이 없습니다.</div>
+            ) : (
+              weeklyRecords.map((item) => (
+                <div key={item.id} className="list-card">
+                  <strong>{item.title}</strong>
+                  <div className="compact-text">{item.what_done || '-'}</div>
+                  <div className="compact-text">{item.problem || '-'}</div>
+                  <div className="inline-actions wrap">
+                    <button
+                      type="button"
+                      className="secondary-btn"
+                      onClick={() => handleEditOpsRecord(item)}
+                    >
+                      수정
+                    </button>
+                    <button
+                      type="button"
+                      className="danger-btn"
+                      onClick={() => handleDeleteOpsRecord(item.id)}
+                    >
+                      삭제
+                    </button>
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+        </div>
+      </div>
+    )}
+
+    {opsRecordTab === 'monthly' && (
+      <div
+        style={{
+          display: 'grid',
+          gridTemplateColumns: '0.95fr 1.25fr',
+          gap: '16px',
+        }}
+      >
+        <div className="sub-card">
+          <h4>월간 기록 입력</h4>
+          <label className="field">
+            <span>제목</span>
+            <input
+              value={monthlyRecordForm.title}
+              onChange={(e) => setMonthlyRecordForm((prev) => ({ ...prev, title: e.target.value }))}
+            />
+          </label>
+          <label className="field">
+            <span>무엇을 했는지</span>
+            <textarea
+              rows="3"
+              value={monthlyRecordForm.what_done}
+              onChange={(e) => setMonthlyRecordForm((prev) => ({ ...prev, what_done: e.target.value }))}
+            />
+          </label>
+          <label className="field">
+            <span>문제 / 개선</span>
+            <textarea
+              rows="3"
+              value={monthlyRecordForm.problem}
+              onChange={(e) => setMonthlyRecordForm((prev) => ({ ...prev, problem: e.target.value }))}
+            />
+          </label>
+          <button
+            type="button"
+            className="primary-btn"
+            onClick={() => handleSaveOpsRecord(monthlyRecordForm, 'monthly', setMonthlyRecordForm)}
+          >
+            월간 기록 저장
+          </button>
+        </div>
+
+        <div className="sub-card">
+          <h4>월간 기록 목록</h4>
+          <div className="list-stack">
+            {monthlyRecords.length === 0 ? (
+              <div className="workout-list-empty">월간 기록 내역이 없습니다.</div>
+            ) : (
+              monthlyRecords.map((item) => (
+                <div key={item.id} className="list-card">
+                  <strong>{item.title}</strong>
+                  <div className="compact-text">{item.what_done || '-'}</div>
+                  <div className="compact-text">{item.problem || '-'}</div>
+                  <div className="inline-actions wrap">
+                    <button
+                      type="button"
+                      className="secondary-btn"
+                      onClick={() => handleEditOpsRecord(item)}
+                    >
+                      수정
+                    </button>
+                    <button
+                      type="button"
+                      className="danger-btn"
+                      onClick={() => handleDeleteOpsRecord(item.id)}
+                    >
+                      삭제
+                    </button>
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+        </div>
+      </div>
+    )}
+
+    <div className="sub-card ops-integrated-history" style={{ marginTop: '16px' }}>
+      <div className="list-card-top" style={{ marginBottom: '12px' }}>
+        <div>
+          <h4>통합 기록 조회</h4>
+          <div className="compact-text">
+            오늘 / 주간 / 월간 / 완료 업무 히스토리를 한 번에 검색
+          </div>
+        </div>
+        <span className="pill pill-blue">{mergedOpsHistory.length}</span>
+      </div>
+
+      <div className="ops-history-filter-row">
+        <input
+          className="ops-filter-input"
+          placeholder="제목, 내용, 메모 검색"
+          value={opsHistorySearch}
+          onChange={(e) => setOpsHistorySearch(e.target.value)}
+        />
+
+        <select
+          className="ops-filter-select"
+          value={opsHistoryType}
+          onChange={(e) => setOpsHistoryType(e.target.value)}
+        >
+          <option value="all">전체 유형</option>
+          <option value="today">오늘 기록</option>
+          <option value="weekly">주간 기록</option>
+          <option value="monthly">월간 기록</option>
+          <option value="completed-task">완료 업무</option>
+        </select>
+
+        <input
+          type="date"
+          className="ops-filter-date"
+          value={opsHistoryDateFrom}
+          onChange={(e) => setOpsHistoryDateFrom(e.target.value)}
+        />
+
+        <input
+          type="date"
+          className="ops-filter-date"
+          value={opsHistoryDateTo}
+          onChange={(e) => setOpsHistoryDateTo(e.target.value)}
+        />
+
+        <button
+          type="button"
+          className="secondary-btn"
+          onClick={() => {
+            setOpsHistorySearch('')
+            setOpsHistoryType('all')
+            setOpsHistoryDateFrom('')
+            setOpsHistoryDateTo('')
+          }}
+        >
+          초기화
+        </button>
+      </div>
+
+      <div className="list-stack" style={{ marginTop: '14px' }}>
+        {mergedOpsHistory.length === 0 ? (
+          <div className="workout-list-empty">조건에 맞는 기록이 없습니다.</div>
+        ) : (
+          mergedOpsHistory.map((item) => (
+            <div key={`${item.historyType}-${item.id}`} className="list-card">
+              <div className="list-card-top">
+                <strong>{item.title}</strong>
+                <div className="inline-actions wrap">
+                  <span className="pill pill-blue">{item.historyType}</span>
+                  <span className="pill">{item.date || '-'}</span>
+                </div>
               </div>
 
-              {opsRecordTab === 'today' && (
-                <div
-                  style={{
-                    display: 'grid',
-                    gridTemplateColumns: '0.95fr 1.25fr',
-gap: '16px',
-                  }}
-                >
-                  <div className="sub-card">
-                    <h4>오늘 기록 입력</h4>
-                    <label className="field">
-                      <span>제목</span>
-                      <input
-                        value={todayRecordForm.title}
-                        onChange={(e) => setTodayRecordForm((prev) => ({ ...prev, title: e.target.value }))}
-                      />
-                    </label>
-                    <label className="field">
-                      <span>무엇을 했는지</span>
-                      <textarea
-                        rows="3"
-                        value={todayRecordForm.what_done}
-                        onChange={(e) => setTodayRecordForm((prev) => ({ ...prev, what_done: e.target.value }))}
-                      />
-                    </label>
-                    <label className="field">
-                      <span>문제 / 개선</span>
-                      <textarea
-                        rows="3"
-                        value={todayRecordForm.problem}
-                        onChange={(e) => setTodayRecordForm((prev) => ({ ...prev, problem: e.target.value }))}
-                      />
-                    </label>
-                    <button
-                      type="button"
-                      className="primary-btn"
-                      onClick={() => handleSaveOpsRecord(todayRecordForm, 'today', setTodayRecordForm)}
-                    >
-                      오늘 기록 저장
-                    </button>
-                  </div>
-
-                  <div className="sub-card">
-                    <h4>오늘 기록 목록</h4>
-                    <div className="list-stack">
-                      {todayRecords.length === 0 ? (
-                        <div className="workout-list-empty">오늘 기록 내역이 없습니다.</div>
-                      ) : (
-                        todayRecords.map((item) => (
-                          <div key={item.id} className="list-card">
-                            <strong>{item.title}</strong>
-                            <div className="compact-text">{item.what_done || '-'}</div>
-                            <div className="compact-text">{item.problem || '-'}</div>
-                            <div className="inline-actions wrap">
-                              <button
-                                type="button"
-                                className="secondary-btn"
-                                onClick={() => handleEditOpsRecord(item)}
-                              >
-                                수정
-                              </button>
-                              <button
-                                type="button"
-                                className="danger-btn"
-                                onClick={() => handleDeleteOpsRecord(item.id)}
-                              >
-                                삭제
-                              </button>
-                            </div>
-                          </div>
-                        ))
-                      )}
-                    </div>
-                  </div>
+              {item.historyType === 'completed-task' ? (
+                <div className="compact-text">
+                  카테고리 {item.category} / 우선순위 {item.priority} / 마감 {item.deadline} / 상태 완료
                 </div>
-              )}
+              ) : null}
 
-              {opsRecordTab === 'weekly' && (
-                <div
-                  style={{
-                    display: 'grid',
-                    gridTemplateColumns: '0.95fr 1.25fr',
-gap: '16px',
-                  }}
+              <div className="compact-text">{item.summary || '-'}</div>
+
+              <div className="inline-actions wrap">
+                <button
+                  type="button"
+                  className="secondary-btn"
+                  onClick={() => handleOpsHistoryEdit(item)}
                 >
-                  <div className="sub-card">
-                    <h4>주간 기록 입력</h4>
-                    <label className="field">
-                      <span>제목</span>
-                      <input
-                        value={weeklyRecordForm.title}
-                        onChange={(e) => setWeeklyRecordForm((prev) => ({ ...prev, title: e.target.value }))}
-                      />
-                    </label>
-                    <label className="field">
-                      <span>무엇을 했는지</span>
-                      <textarea
-                        rows="3"
-                        value={weeklyRecordForm.what_done}
-                        onChange={(e) => setWeeklyRecordForm((prev) => ({ ...prev, what_done: e.target.value }))}
-                      />
-                    </label>
-                    <label className="field">
-                      <span>문제 / 개선</span>
-                      <textarea
-                        rows="3"
-                        value={weeklyRecordForm.problem}
-                        onChange={(e) => setWeeklyRecordForm((prev) => ({ ...prev, problem: e.target.value }))}
-                      />
-                    </label>
-                    <button
-                      type="button"
-                      className="primary-btn"
-                      onClick={() => handleSaveOpsRecord(weeklyRecordForm, 'weekly', setWeeklyRecordForm)}
-                    >
-                      주간 기록 저장
-                    </button>
-                  </div>
-
-                  <div className="sub-card">
-                    <h4>주간 기록 목록</h4>
-                    <div className="list-stack">
-                      {weeklyRecords.length === 0 ? (
-                        <div className="workout-list-empty">주간 기록 내역이 없습니다.</div>
-                      ) : (
-                        weeklyRecords.map((item) => (
-                          <div key={item.id} className="list-card">
-                            <strong>{item.title}</strong>
-                            <div className="compact-text">{item.what_done || '-'}</div>
-                            <div className="compact-text">{item.problem || '-'}</div>
-                            <div className="inline-actions wrap">
-                              <button
-                                type="button"
-                                className="secondary-btn"
-                                onClick={() => handleEditOpsRecord(item)}
-                              >
-                                수정
-                              </button>
-                              <button
-                                type="button"
-                                className="danger-btn"
-                                onClick={() => handleDeleteOpsRecord(item.id)}
-                              >
-                                삭제
-                              </button>
-                            </div>
-                          </div>
-                        ))
-                      )}
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {opsRecordTab === 'monthly' && (
-                <div
-                  style={{
-                    display: 'grid',
-                    gridTemplateColumns: '0.95fr 1.25fr',
-gap: '16px',
-                  }}
+                  수정
+                </button>
+                <button
+                  type="button"
+                  className="danger-btn"
+                  onClick={() => handleOpsHistoryDelete(item)}
                 >
-                  <div className="sub-card">
-                    <h4>월간 기록 입력</h4>
-                    <label className="field">
-                      <span>제목</span>
-                      <input
-                        value={monthlyRecordForm.title}
-                        onChange={(e) => setMonthlyRecordForm((prev) => ({ ...prev, title: e.target.value }))}
-                      />
-                    </label>
-                    <label className="field">
-                      <span>무엇을 했는지</span>
-                      <textarea
-                        rows="3"
-                        value={monthlyRecordForm.what_done}
-                        onChange={(e) => setMonthlyRecordForm((prev) => ({ ...prev, what_done: e.target.value }))}
-                      />
-                    </label>
-                    <label className="field">
-                      <span>문제 / 개선</span>
-                      <textarea
-                        rows="3"
-                        value={monthlyRecordForm.problem}
-                        onChange={(e) => setMonthlyRecordForm((prev) => ({ ...prev, problem: e.target.value }))}
-                      />
-                    </label>
-                    <button
-                      type="button"
-                      className="primary-btn"
-                      onClick={() => handleSaveOpsRecord(monthlyRecordForm, 'monthly', setMonthlyRecordForm)}
-                    >
-                      월간 기록 저장
-                    </button>
-                  </div>
-
-                  <div className="sub-card">
-                    <h4>월간 기록 목록</h4>
-                    <div className="list-stack">
-                      {monthlyRecords.length === 0 ? (
-                        <div className="workout-list-empty">월간 기록 내역이 없습니다.</div>
-                      ) : (
-                        monthlyRecords.map((item) => (
-                          <div key={item.id} className="list-card">
-                            <strong>{item.title}</strong>
-                            <div className="compact-text">{item.what_done || '-'}</div>
-                            <div className="compact-text">{item.problem || '-'}</div>
-                            <div className="inline-actions wrap">
-                              <button
-                                type="button"
-                                className="secondary-btn"
-                                onClick={() => handleEditOpsRecord(item)}
-                              >
-                                수정
-                              </button>
-                              <button
-                                type="button"
-                                className="danger-btn"
-                                onClick={() => handleDeleteOpsRecord(item.id)}
-                              >
-                                삭제
-                              </button>
-                            </div>
-                          </div>
-                        ))
-                      )}
-                    </div>
-                  </div>
-                </div>
-              )}
+                  삭제
+                </button>
+              </div>
             </div>
-          )}
-        </section>
-      </>
-    )}
+          ))
+        )}
+      </div>
+    </div>
+  </div>
+)}
 
     {opsViewTab === 'coach' && (
       <section className="dashboard-panel-card">
