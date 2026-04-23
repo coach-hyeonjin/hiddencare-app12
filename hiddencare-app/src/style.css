@@ -23299,3 +23299,70 @@ textarea:focus {
   grid-template-columns: 1fr 1fr;
   gap: 12px;
 }
+.meeting-section-box {
+  margin-top: 12px;
+  padding: 12px;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  background: #fafbfc;
+}
+
+.meeting-section-title {
+  font-size: 13px;
+  font-weight: 700;
+  color: #374151;
+  margin-bottom: 10px;
+}
+
+.meeting-checklist-box {
+  margin-top: 12px;
+}
+
+.meeting-checklist-table {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.meeting-checklist-head,
+.meeting-checklist-row {
+  display: grid;
+  grid-template-columns: 1.4fr 80px 1fr;
+  gap: 10px;
+  align-items: center;
+}
+
+.meeting-checklist-head {
+  font-size: 12px;
+  font-weight: 700;
+  color: #6b7280;
+  padding: 0 4px;
+}
+
+.meeting-checklist-row {
+  padding: 8px;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  background: #fff;
+}
+
+.meeting-checklist-label {
+  font-size: 13px;
+  color: #111827;
+}
+
+.meeting-checklist-check {
+  display: flex;
+  justify-content: center;
+}
+
+.meeting-checklist-note input {
+  width: 100%;
+  min-height: 36px;
+  padding: 0 10px;
+  border: 1px solid #d8dee8;
+  border-radius: 8px;
+  background: #fff;
+  font-size: 13px;
+  box-sizing: border-box;
+}
