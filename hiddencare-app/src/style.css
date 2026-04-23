@@ -23188,3 +23188,82 @@ textarea:focus {
   gap: 16px;
   align-items: start;
 }
+.ops-filter-bar,
+.ops-history-filter-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+  margin-bottom: 14px;
+}
+
+.ops-filter-input,
+.ops-filter-select,
+.ops-filter-date {
+  min-height: 38px;
+  padding: 0 12px;
+  border: 1px solid #d8dee8;
+  border-radius: 10px;
+  background: #fff;
+  font-size: 14px;
+}
+
+.ops-filter-input {
+  flex: 1 1 220px;
+  min-width: 220px;
+}
+
+.ops-filter-select,
+.ops-filter-date {
+  flex: 0 0 auto;
+}
+
+.ops-collapse-head {
+  width: 100%;
+  border: none;
+  background: transparent;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  cursor: pointer;
+  padding: 0;
+  text-align: left;
+}
+
+.ops-collapse-head h4 {
+  margin: 0;
+}
+
+.ops-completed-history-card {
+  margin-top: 18px;
+}
+
+.ops-integrated-history {
+  border: 1px solid #eef2f7;
+}
+
+.ops-risk-accordion .sub-card {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.ops-risk-accordion .ops-filter-input {
+  width: 100%;
+}
+
+@media (max-width: 1024px) {
+  .ops-history-filter-row,
+  .ops-filter-bar {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .ops-filter-input,
+  .ops-filter-select,
+  .ops-filter-date {
+    width: 100%;
+    min-width: 0;
+  }
+}
