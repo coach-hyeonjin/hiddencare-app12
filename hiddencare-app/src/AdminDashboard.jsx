@@ -1632,6 +1632,12 @@ const [interviewForm, setInterviewForm] = useState(createEmptyInterviewLinkItem)
 const [interviewItems, setInterviewItems] = useState([])
 
 const [meetingForm, setMeetingForm] = useState(createEmptyMeetingItem)
+  const [meetingSales, setMeetingSales] = useState({
+  yesterday: '',
+  today: '',
+  thisMonth: '',
+  nextMonth: '',
+})
 const [meetingItems, setMeetingItems] = useState([])
 
 const [todayRecordForm, setTodayRecordForm] = useState(createEmptyOpsRecord('today'))
@@ -2405,7 +2411,12 @@ const handleAddMeetingItem = async () => {
     .insert({
       admin_id: currentAdminId,
       title: meetingForm.title,
-      problem: meetingForm.problem || '',
+     problem: `
+전일 매출: ${meetingSales.yesterday || 0}
+금일 예정: ${meetingSales.today || 0}
+이번달 잔여: ${meetingSales.thisMonth || 0}
+다음달 예정: ${meetingSales.nextMonth || 0}
+`,
       cause: meetingForm.cause || '',
       ideas: meetingForm.ideas || '',
       decision: meetingForm.decision || '',
@@ -2424,6 +2435,12 @@ const handleAddMeetingItem = async () => {
 
   setMeetingItems((prev) => [data, ...prev])
   setMeetingForm(createEmptyMeetingItem())
+  setMeetingSales({
+  yesterday: '',
+  today: '',
+  thisMonth: '',
+  nextMonth: '',
+})
 }
 
 const handleCreateTaskFromMeeting = async (meeting) => {
@@ -24644,19 +24661,51 @@ gap: '16px',
               />
             </label>
 
-           <label className="field">
-  <span>전일 실매출 / 금일 예정 매출</span>
-  <textarea
-    rows="3"
-    value={meetingForm.problem}
-    onChange={(e) => setMeetingForm((prev) => ({ ...prev, problem: e.target.value }))}
-    placeholder={`예:
-전일 실매출: 0원
-금일 예정 매출: 0원
-이번달 잔여 확정 매출: 0원
-다음달 예정 매출: 0원`}
-  />
-</label>
+          <div className="grid-2">
+  <label className="field">
+    <span>전일 실매출</span>
+    <input
+      value={meetingSales.yesterday}
+      onChange={(e) =>
+        setMeetingSales((prev) => ({ ...prev, yesterday: e.target.value }))
+      }
+      placeholder="예: 350000"
+    />
+  </label>
+
+  <label className="field">
+    <span>금일 예정 매출</span>
+    <input
+      value={meetingSales.today}
+      onChange={(e) =>
+        setMeetingSales((prev) => ({ ...prev, today: e.target.value }))
+      }
+      placeholder="예: 420000"
+    />
+  </label>
+
+  <label className="field">
+    <span>이번달 잔여 매출</span>
+    <input
+      value={meetingSales.thisMonth}
+      onChange={(e) =>
+        setMeetingSales((prev) => ({ ...prev, thisMonth: e.target.value }))
+      }
+      placeholder="예: 1800000"
+    />
+  </label>
+
+  <label className="field">
+    <span>다음달 예정 매출</span>
+    <input
+      value={meetingSales.nextMonth}
+      onChange={(e) =>
+        setMeetingSales((prev) => ({ ...prev, nextMonth: e.target.value }))
+      }
+      placeholder="예: 2500000"
+    />
+  </label>
+</div>
 
 <label className="field">
   <span>회원 흐름 / 재등록 / 보류 회원</span>
