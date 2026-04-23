@@ -1650,6 +1650,10 @@ const selectedOpsTask = useMemo(
 const [opsViewTab, setOpsViewTab] = useState('dashboard')
 const [opsAuxTab, setOpsAuxTab] = useState('records')
 const [opsRecordTab, setOpsRecordTab] = useState('today')
+
+  const [meetingSearch, setMeetingSearch] = useState('')
+const [meetingOpenGroups, setMeetingOpenGroups] = useState({})
+  
 const [opsTaskSearch, setOpsTaskSearch] = useState('')
 const [opsTaskDateFilter, setOpsTaskDateFilter] = useState('')
 const [opsTaskOpenColumns, setOpsTaskOpenColumns] = useState({
@@ -2035,6 +2039,67 @@ const mergedOpsHistory = useMemo(() => {
   opsHistoryDateFrom,
   opsHistoryDateTo,
 ])
+
+const getMeetingGroupLabel = (item) => {
+  const rawDate = item?.created_at || item?.updated_at || null
+  if (!rawDate) return '날짜 미확인'
+
+  const date = new Date(rawDate)
+  if (Number.isNaN(date.getTime())) return '날짜 미확인'
+
+  const yyyy = date.getFullYear()
+  const mm = String(date.getMonth() + 1).padStart(2, '0')
+  const dd = String(date.getDate()).padStart(2, '0')
+  const weekday = ['일', '월', '화', '수', '목', '금', '토'][date.getDay()]
+
+  return `${yyyy}-${mm}-${dd} (${weekday})`
+}
+
+const toggleMeetingGroup = (groupLabel) => {
+  setMeetingOpenGroups((prev) => ({
+    ...prev,
+    [groupLabel]: !prev[groupLabel],
+  }))
+}
+
+const filteredMeetingItems = useMemo(() => {
+  const keyword = meetingSearch.trim().toLowerCase()
+
+  if (!keyword) return meetingItems
+
+  return meetingItems.filter((item) => {
+    const searchable = [
+      item?.title,
+      item?.problem,
+      item?.cause,
+      item?.ideas,
+      item?.decision,
+      item?.action_title,
+    ]
+      .filter(Boolean)
+      .join(' ')
+      .toLowerCase()
+
+    return searchable.includes(keyword)
+  })
+}, [meetingItems, meetingSearch])
+
+const groupedMeetingItems = useMemo(() => {
+  const grouped = {}
+
+  filteredMeetingItems.forEach((item) => {
+    const label = getMeetingGroupLabel(item)
+    if (!grouped[label]) grouped[label] = []
+    grouped[label].push(item)
+  })
+
+  return Object.entries(grouped).sort((a, b) => {
+    const aTime = new Date(a[1][0]?.created_at || a[1][0]?.updated_at || 0).getTime()
+    const bTime = new Date(b[1][0]?.created_at || b[1][0]?.updated_at || 0).getTime()
+    return bTime - aTime
+  })
+}, [filteredMeetingItems])
+  
 const handleAddOpsTask = async () => {
   if (!opsTaskForm.title.trim() || !currentAdminId) return
 
@@ -24640,42 +24705,71 @@ gap: '16px',
           </div>
 
           <div className="sub-card">
-            <h4>회의 목록</h4>
-            <div className="list-stack">
-              {meetingItems.length === 0 ? (
-                <div className="workout-list-empty">등록된 회의 기록이 없습니다.</div>
-              ) : (
-                meetingItems.map((item) => (
-                  <div key={item.id} className="list-card">
-                    <div className="list-card-top">
-                      <strong>{item.title}</strong>
-                      <span className="pill pill-violet">회의</span>
-                    </div>
-                    <div className="compact-text">문제: {item.problem || '-'}</div>
-                    <div className="compact-text">원인: {item.cause || '-'}</div>
-                    <div className="compact-text">아이디어: {item.ideas || '-'}</div>
-                    <div className="compact-text">결정: {item.decision || '-'}</div>
-                    <div className="inline-actions wrap">
-                      <button
-                        type="button"
-                        className="secondary-btn"
-                        onClick={() => handleCreateTaskFromMeeting(item)}
-                      >
-                        실행 업무 생성
-                      </button>
-                      <button
-                        type="button"
-                        className="danger-btn"
-                        onClick={() => setMeetingItems((prev) => prev.filter((v) => v.id !== item.id))}
-                      >
-                        삭제
-                      </button>
-                    </div>
+  <h4>회의 목록</h4>
+
+  <input
+    type="text"
+    className="ops-filter-input"
+    placeholder="회의 제목, 문제, 원인, 아이디어, 결정사항 검색"
+    value={meetingSearch}
+    onChange={(e) => setMeetingSearch(e.target.value)}
+    style={{ marginBottom: '12px' }}
+  />
+
+  <div className="list-stack">
+    {groupedMeetingItems.length === 0 ? (
+      <div className="workout-list-empty">조건에 맞는 회의 기록이 없습니다.</div>
+    ) : (
+      groupedMeetingItems.map(([groupLabel, items]) => (
+        <div key={groupLabel} className="sub-card">
+          <button
+            type="button"
+            className="ops-collapse-head"
+            onClick={() => toggleMeetingGroup(groupLabel)}
+          >
+            <h4 style={{ margin: 0 }}>{groupLabel}</h4>
+            <span>{items.length}</span>
+          </button>
+
+          {meetingOpenGroups[groupLabel] !== false && (
+            <div className="list-stack" style={{ marginTop: '12px' }}>
+              {items.map((item) => (
+                <div key={item.id} className="list-card">
+                  <div className="list-card-top">
+                    <strong>{item.title}</strong>
+                    <span className="pill pill-violet">회의</span>
                   </div>
-                ))
-              )}
+
+                  <div className="compact-text">문제: {item.problem || '-'}</div>
+                  <div className="compact-text">원인: {item.cause || '-'}</div>
+                  <div className="compact-text">아이디어: {item.ideas || '-'}</div>
+                  <div className="compact-text">결정: {item.decision || '-'}</div>
+
+                  <div className="inline-actions wrap">
+                    <button
+                      type="button"
+                      className="secondary-btn"
+                      onClick={() => handleCreateTaskFromMeeting(item)}
+                    >
+                      실행 업무 생성
+                    </button>
+                    <button
+                      type="button"
+                      className="danger-btn"
+                      onClick={() => setMeetingItems((prev) => prev.filter((v) => v.id !== item.id))}
+                    >
+                      삭제
+                    </button>
+                  </div>
+                </div>
+              ))}
             </div>
-          </div>
+          )}
+        </div>
+      ))
+    )}
+  </div>
+</div>
         </div>
       </section>
     )}
