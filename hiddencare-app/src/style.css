@@ -23164,3 +23164,27 @@ textarea:focus {
     flex-wrap: wrap;
   }
 }
+.ops-main-layout {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  margin-bottom: 20px;
+}
+
+.ops-main-top {
+  display: grid;
+  grid-template-columns: 0.95fr 1.65fr;
+  gap: 18px;
+  align-items: start;
+}
+
+.ops-risk-section {
+  width: 100%;
+}
+
+.ops-risk-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px;
+  align-items: start;
+}
