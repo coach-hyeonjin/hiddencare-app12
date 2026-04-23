@@ -1680,6 +1680,11 @@ const [monthlyRecordForm, setMonthlyRecordForm] = useState(createEmptyOpsRecord(
 const [opsRecords, setOpsRecords] = useState([])
 
 const [taskWeekdayFilter, setTaskWeekdayFilter] = useState(OPS_WEEKDAY_LABELS[new Date().getDay()])
+  const [selectedOpsTaskId, setSelectedOpsTaskId] = useState(null)
+  const selectedOpsTask = useMemo(
+  () => opsTasks.find((task) => task.id === selectedOpsTaskId) || null,
+  [opsTasks, selectedOpsTaskId]
+)
   const [opsViewTab, setOpsViewTab] = useState('dashboard')
   const [opsAuxTab, setOpsAuxTab] = useState('records')
 const [opsRecordTab, setOpsRecordTab] = useState('today')
@@ -22670,170 +22675,171 @@ marginBottom: '20px',
             </div>
 
             <div
+  style={{
+    display: 'grid',
+    gridTemplateColumns: '1.6fr 0.9fr',
+    gap: '18px',
+    alignItems: 'start',
+  }}
+>
+  {/* 왼쪽: 칸반 */}
+  <div
+    style={{
+      display: 'grid',
+      gridTemplateColumns: 'repeat(3, minmax(0, 1fr))',
+      gap: '14px',
+    }}
+  >
+    {/* 대기 */}
+    <div className="sub-card">
+      <h4>대기</h4>
+      <div className="list-stack">
+        {waitingTasks.length === 0 ? (
+          <div className="workout-list-empty">대기 업무 없음</div>
+        ) : (
+          waitingTasks.map((task) => (
+            <div
+              key={task.id}
+              className="list-card"
+              onClick={() => setSelectedOpsTask(task)}
               style={{
-                display: 'grid',
-               gridTemplateColumns: 'repeat(3, minmax(0, 1fr))',
-gap: '14px',
-alignItems: 'start',
+                cursor: 'pointer',
+                border:
+                  selectedOpsTask?.id === task.id
+                    ? '2px solid #6c63ff'
+                    : undefined,
               }}
             >
-              <div className="sub-card">
-                <h4>대기</h4>
-                <div className="list-stack">
-                  {waitingTasks.length === 0 ? (
-                    <div className="workout-list-empty">대기 업무 없음</div>
-                  ) : (
-                    waitingTasks.map((task) => (
-                      <div key={task.id} className="list-card">
-                        <div className="list-card-top">
-                          <strong
-                            style={{
-                              wordBreak: 'keep-all',
-                              whiteSpace: 'normal',
-                              lineHeight: '1.4',
-                              display: 'block',
-                              flex: 1,
-                              minWidth: 0,
-                            }}
-                          >
-                            {task.title}
-                          </strong>
-                          <span className={`pill ${task.priority === '긴급' ? 'pill-red' : 'pill-amber'}`}>
-                            {task.priority}
-                          </span>
-                        </div>
-
-                        <div className="compact-text">{task.category}</div>
-                        <div className="compact-text">{task.due_date || '-'}</div>
-
-                        <div className="inline-actions wrap">
-                          <button
-                            type="button"
-                            className="secondary-btn"
-                            onClick={() => handleChangeOpsTaskStatus(task.id, '진행중')}
-                          >
-                            진행중
-                          </button>
-                          <button
-                            type="button"
-                            className="danger-btn"
-                            onClick={() => handleDeleteOpsTask(task.id)}
-                          >
-                            삭제
-                          </button>
-                        </div>
-                      </div>
-                    ))
-                  )}
-                </div>
-              </div>
-
-              <div className="sub-card">
-                <h4>진행중</h4>
-                <div className="list-stack">
-                  {doingTasks.length === 0 ? (
-                    <div className="workout-list-empty">진행중 업무 없음</div>
-                  ) : (
-                    doingTasks.map((task) => (
-                      <div key={task.id} className="list-card">
-                        <div className="list-card-top">
-                          <strong
-                            style={{
-                              wordBreak: 'keep-all',
-                              whiteSpace: 'normal',
-                              lineHeight: '1.4',
-                              display: 'block',
-                              flex: 1,
-                              minWidth: 0,
-                            }}
-                          >
-                            {task.title}
-                          </strong>
-                          <span className="pill pill-blue">{task.category}</span>
-                        </div>
-
-                        <div className="compact-text">{task.notes || '-'}</div>
-
-                        <div className="inline-actions wrap">
-                          <button
-                            type="button"
-                            className="secondary-btn"
-                            onClick={() => handleChangeOpsTaskStatus(task.id, '완료')}
-                          >
-                            완료
-                          </button>
-                          <button
-                            type="button"
-                            className="secondary-btn"
-                            onClick={() => handleChangeOpsTaskStatus(task.id, '대기')}
-                          >
-                            대기
-                          </button>
-                          <button
-                            type="button"
-                            className="danger-btn"
-                            onClick={() => handleDeleteOpsTask(task.id)}
-                          >
-                            삭제
-                          </button>
-                        </div>
-                      </div>
-                    ))
-                  )}
-                </div>
-              </div>
-
-              <div className="sub-card">
-                <h4>완료</h4>
-                <div className="list-stack">
-                  {doneTasks.length === 0 ? (
-                    <div className="workout-list-empty">완료 업무 없음</div>
-                  ) : (
-                    doneTasks.map((task) => (
-                      <div key={task.id} className="list-card">
-                        <div className="list-card-top">
-                          <strong
-                            style={{
-                              wordBreak: 'keep-all',
-                              whiteSpace: 'normal',
-                              lineHeight: '1.4',
-                              display: 'block',
-                              flex: 1,
-                              minWidth: 0,
-                            }}
-                          >
-                            {task.title}
-                          </strong>
-                          <span className="pill pill-green">완료</span>
-                        </div>
-
-                        <div className="compact-text">{task.category}</div>
-                        <div className="compact-text">{task.due_date || '-'}</div>
-
-                        <div className="inline-actions wrap">
-                          <button
-                            type="button"
-                            className="secondary-btn"
-                            onClick={() => handleChangeOpsTaskStatus(task.id, '대기')}
-                          >
-                            다시 대기
-                          </button>
-                          <button
-                            type="button"
-                            className="danger-btn"
-                            onClick={() => handleDeleteOpsTask(task.id)}
-                          >
-                            삭제
-                          </button>
-                        </div>
-                      </div>
-                    ))
-                  )}
-                </div>
-              </div>
+              <strong>{task.title}</strong>
+              <div className="compact-text">{task.category}</div>
+              <div className="compact-text">{task.due_date || '-'}</div>
             </div>
-          </section>
+          ))
+        )}
+      </div>
+    </div>
 
+    {/* 진행중 */}
+    <div className="sub-card">
+      <h4>진행중</h4>
+      <div className="list-stack">
+        {doingTasks.length === 0 ? (
+          <div className="workout-list-empty">진행중 업무 없음</div>
+        ) : (
+          doingTasks.map((task) => (
+            <div
+              key={task.id}
+              className="list-card"
+              onClick={() => setSelectedOpsTask(task)}
+              style={{
+                cursor: 'pointer',
+                border:
+                  selectedOpsTask?.id === task.id
+                    ? '2px solid #6c63ff'
+                    : undefined,
+              }}
+            >
+              <strong>{task.title}</strong>
+              <div className="compact-text">{task.notes || '-'}</div>
+            </div>
+          ))
+        )}
+      </div>
+    </div>
+
+    {/* 완료 */}
+    <div className="sub-card">
+      <h4>완료</h4>
+      <div className="list-stack">
+        {doneTasks.length === 0 ? (
+          <div className="workout-list-empty">완료 업무 없음</div>
+        ) : (
+          doneTasks.map((task) => (
+            <div
+              key={task.id}
+              className="list-card"
+              onClick={() => setSelectedOpsTask(task)}
+              style={{
+                cursor: 'pointer',
+                border:
+                  selectedOpsTask?.id === task.id
+                    ? '2px solid #6c63ff'
+                    : undefined,
+              }}
+            >
+              <strong>{task.title}</strong>
+              <div className="compact-text">{task.category}</div>
+            </div>
+          ))
+        )}
+      </div>
+    </div>
+  </div>
+
+  {/* 오른쪽 상세 */}
+  <div className="sub-card">
+    <h4>업무 상세</h4>
+
+    {!selectedOpsTask ? (
+      <div className="workout-list-empty">
+        카드를 클릭하면 상세가 표시됩니다
+      </div>
+    ) : (
+      <div className="stack-gap">
+        <strong style={{ fontSize: '16px' }}>
+          {selectedOpsTask.title}
+        </strong>
+
+        <div className="compact-text">
+          {selectedOpsTask.category} / {selectedOpsTask.priority}
+        </div>
+
+        <div className="compact-text">
+          마감일: {selectedOpsTask.due_date || '-'}
+        </div>
+
+        <div className="sub-card" style={{ padding: '10px' }}>
+          {selectedOpsTask.notes || '메모 없음'}
+        </div>
+
+        <div className="inline-actions wrap">
+          <button
+            className="secondary-btn"
+            onClick={() =>
+              handleChangeOpsTaskStatus(selectedOpsTask.id, '대기')
+            }
+          >
+            대기
+          </button>
+          <button
+            className="secondary-btn"
+            onClick={() =>
+              handleChangeOpsTaskStatus(selectedOpsTask.id, '진행중')
+            }
+          >
+            진행중
+          </button>
+          <button
+            className="secondary-btn"
+            onClick={() =>
+              handleChangeOpsTaskStatus(selectedOpsTask.id, '완료')
+            }
+          >
+            완료
+          </button>
+          <button
+            className="danger-btn"
+            onClick={() =>
+              handleDeleteOpsTask(selectedOpsTask.id)
+            }
+          >
+            삭제
+          </button>
+        </div>
+      </div>
+    )}
+  </div>
+</div>
           <section className="dashboard-panel-card">
             <div className="dashboard-panel-head">
               <div>
