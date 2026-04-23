@@ -22438,7 +22438,8 @@ const filteredExercisesAdvanced = exercises.filter((exercise) => {
     </button>
   ))}
 </div>
-   {opsViewTab === 'dashboard' && (
+{opsViewTab === 'dashboard' && (
+  <>
     <div
       style={{
         display: 'grid',
@@ -23221,8 +23222,8 @@ const filteredExercisesAdvanced = exercises.filter((exercise) => {
 </div>
         </div>
       </div>
-    </section>
-  </div>
+     </section>
+  </>
 )}
 {opsViewTab === 'coach' && (
   <section className="dashboard-panel-card">
