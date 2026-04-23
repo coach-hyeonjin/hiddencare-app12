@@ -1656,7 +1656,37 @@ const selectedOpsTask = useMemo(
 const [opsViewTab, setOpsViewTab] = useState('dashboard')
 const [opsAuxTab, setOpsAuxTab] = useState('records')
 const [opsRecordTab, setOpsRecordTab] = useState('today')
+const [meetingSales, setMeetingSales] = useState({
+  yesterday: '',
+  today: '',
+  thisMonth: '',
+  nextMonth: '',
+})
 
+const [meetingMemberFlow, setMeetingMemberFlow] = useState({
+  reRegister: '',
+  hold: '',
+  trial: '',
+  dormant: '',
+})
+
+const [meetingOpsIssues, setMeetingOpsIssues] = useState({
+  coach: '',
+  facility: '',
+  member: '',
+  field: '',
+})
+
+const [meetingDirection, setMeetingDirection] = useState('')
+
+const [meetingChecklistRows, setMeetingChecklistRows] = useState([
+  { id: 1, label: '전일 매출 확인', checked: false, note: '' },
+  { id: 2, label: '금일 예정 매출 확인', checked: false, note: '' },
+  { id: 3, label: '재등록 예정 회원 확인', checked: false, note: '' },
+  { id: 4, label: '보류 회원 확인', checked: false, note: '' },
+  { id: 5, label: '코치 운영 이슈 확인', checked: false, note: '' },
+  { id: 6, label: '시설/현장 이슈 확인', checked: false, note: '' },
+])
   const [meetingSearch, setMeetingSearch] = useState('')
 const [meetingOpenGroups, setMeetingOpenGroups] = useState({})
   
@@ -2105,7 +2135,42 @@ const groupedMeetingItems = useMemo(() => {
     return bTime - aTime
   })
 }, [filteredMeetingItems])
-  
+  const updateMeetingChecklistRow = (id, field, value) => {
+  setMeetingChecklistRows((prev) =>
+    prev.map((row) => (row.id === id ? { ...row, [field]: value } : row))
+  )
+}
+
+const buildMeetingMemberFlowText = () => {
+  return [
+    `재등록 예정 회원: ${meetingMemberFlow.reRegister || '-'}`,
+    `보류 회원: ${meetingMemberFlow.hold || '-'}`,
+    `체험 예정 회원: ${meetingMemberFlow.trial || '-'}`,
+    `장기 미방문 회원: ${meetingMemberFlow.dormant || '-'}`,
+  ].join('\n')
+}
+
+const buildMeetingOpsIssuesText = () => {
+  return [
+    `코치 이슈: ${meetingOpsIssues.coach || '-'}`,
+    `시설 이슈: ${meetingOpsIssues.facility || '-'}`,
+    `회원 이슈: ${meetingOpsIssues.member || '-'}`,
+    `현장 체크: ${meetingOpsIssues.field || '-'}`,
+  ].join('\n')
+}
+
+const buildMeetingDecisionText = () => {
+  const checklistText = meetingChecklistRows
+    .map((row) => `- [${row.checked ? 'Y' : 'N'}] ${row.label}${row.note ? ` (${row.note})` : ''}`)
+    .join('\n')
+
+  return [
+    `오늘 운영 방향: ${meetingDirection || '-'}`,
+    '',
+    `[체크리스트]`,
+    checklistText || '-',
+  ].join('\n')
+}
 const handleAddOpsTask = async () => {
   if (!opsTaskForm.title.trim() || !currentAdminId) return
 
@@ -2417,9 +2482,9 @@ const handleAddMeetingItem = async () => {
 이번달 잔여: ${meetingSales.thisMonth || 0}
 다음달 예정: ${meetingSales.nextMonth || 0}
 `,
-      cause: meetingForm.cause || '',
-      ideas: meetingForm.ideas || '',
-      decision: meetingForm.decision || '',
+     cause: buildMeetingMemberFlowText(),
+ideas: buildMeetingOpsIssuesText(),
+decision: buildMeetingDecisionText(),
       action_title: meetingForm.action_title || '',
       action_due_date: meetingForm.action_due_date || null,
       action_category: meetingForm.action_category || '운영',
@@ -2435,6 +2500,37 @@ const handleAddMeetingItem = async () => {
 
   setMeetingItems((prev) => [data, ...prev])
   setMeetingForm(createEmptyMeetingItem())
+  setMeetingSales({
+  yesterday: '',
+  today: '',
+  thisMonth: '',
+  nextMonth: '',
+})
+
+setMeetingMemberFlow({
+  reRegister: '',
+  hold: '',
+  trial: '',
+  dormant: '',
+})
+
+setMeetingOpsIssues({
+  coach: '',
+  facility: '',
+  member: '',
+  field: '',
+})
+
+setMeetingDirection('')
+
+setMeetingChecklistRows([
+  { id: 1, label: '전일 매출 확인', checked: false, note: '' },
+  { id: 2, label: '금일 예정 매출 확인', checked: false, note: '' },
+  { id: 3, label: '재등록 예정 회원 확인', checked: false, note: '' },
+  { id: 4, label: '보류 회원 확인', checked: false, note: '' },
+  { id: 5, label: '코치 운영 이슈 확인', checked: false, note: '' },
+  { id: 6, label: '시설/현장 이슈 확인', checked: false, note: '' },
+])
   setMeetingSales({
   yesterday: '',
   today: '',
@@ -24707,43 +24803,155 @@ gap: '16px',
   </label>
 </div>
 
-<label className="field">
-  <span>회원 흐름 / 재등록 / 보류 회원</span>
-  <textarea
-    rows="3"
-    value={meetingForm.cause}
-    onChange={(e) => setMeetingForm((prev) => ({ ...prev, cause: e.target.value }))}
-    placeholder={`예:
-재등록 예정 회원:
-보류 회원:
-체험 예정 회원:
-장기 미방문 회원:`}
-  />
-</label>
+<div className="meeting-section-box">
+  <div className="meeting-section-title">회원 흐름 / 재등록 / 보류 회원</div>
 
-<label className="field">
-  <span>운영 이슈 / 코치 / 시설 / 현장 체크</span>
-  <textarea
-    rows="3"
-    value={meetingForm.ideas}
-    onChange={(e) => setMeetingForm((prev) => ({ ...prev, ideas: e.target.value }))}
-    placeholder={`예:
-코치 이슈:
-시설 이슈:
-회원 컴플레인:
-오늘 현장 체크:`}
-  />
-</label>
+  <div className="grid-2">
+    <label className="field">
+      <span>재등록 예정 회원</span>
+      <input
+        value={meetingMemberFlow.reRegister}
+        onChange={(e) =>
+          setMeetingMemberFlow((prev) => ({ ...prev, reRegister: e.target.value }))
+        }
+        placeholder="예: 김OO, 박OO"
+      />
+    </label>
 
-<label className="field">
-  <span>결정 사항 / 오늘 운영 방향</span>
-  <textarea
-    rows="3"
-    value={meetingForm.decision}
-    onChange={(e) => setMeetingForm((prev) => ({ ...prev, decision: e.target.value }))}
-    placeholder="오늘 바로 반영할 결정 사항, 우선순위, 체크 포인트를 적으세요."
-  />
-</label>
+    <label className="field">
+      <span>보류 회원</span>
+      <input
+        value={meetingMemberFlow.hold}
+        onChange={(e) =>
+          setMeetingMemberFlow((prev) => ({ ...prev, hold: e.target.value }))
+        }
+        placeholder="예: 이OO, 최OO"
+      />
+    </label>
+
+    <label className="field">
+      <span>체험 예정 회원</span>
+      <input
+        value={meetingMemberFlow.trial}
+        onChange={(e) =>
+          setMeetingMemberFlow((prev) => ({ ...prev, trial: e.target.value }))
+        }
+        placeholder="예: 2명 / 홍OO"
+      />
+    </label>
+
+    <label className="field">
+      <span>장기 미방문 회원</span>
+      <input
+        value={meetingMemberFlow.dormant}
+        onChange={(e) =>
+          setMeetingMemberFlow((prev) => ({ ...prev, dormant: e.target.value }))
+        }
+        placeholder="예: 정OO, 한OO"
+      />
+    </label>
+  </div>
+</div>
+
+<div className="meeting-section-box">
+  <div className="meeting-section-title">운영 이슈 / 코치 / 시설 / 현장 체크</div>
+
+  <div className="grid-2">
+    <label className="field">
+      <span>코치 이슈</span>
+      <input
+        value={meetingOpsIssues.coach}
+        onChange={(e) =>
+          setMeetingOpsIssues((prev) => ({ ...prev, coach: e.target.value }))
+        }
+        placeholder="예: 스케줄 조정 필요"
+      />
+    </label>
+
+    <label className="field">
+      <span>시설 이슈</span>
+      <input
+        value={meetingOpsIssues.facility}
+        onChange={(e) =>
+          setMeetingOpsIssues((prev) => ({ ...prev, facility: e.target.value }))
+        }
+        placeholder="예: 러닝머신 점검"
+      />
+    </label>
+
+    <label className="field">
+      <span>회원 이슈</span>
+      <input
+        value={meetingOpsIssues.member}
+        onChange={(e) =>
+          setMeetingOpsIssues((prev) => ({ ...prev, member: e.target.value }))
+        }
+        placeholder="예: 컴플레인 / 상담 필요"
+      />
+    </label>
+
+    <label className="field">
+      <span>현장 체크</span>
+      <input
+        value={meetingOpsIssues.field}
+        onChange={(e) =>
+          setMeetingOpsIssues((prev) => ({ ...prev, field: e.target.value }))
+        }
+        placeholder="예: 청결 / 동선 / 분위기"
+      />
+    </label>
+  </div>
+</div>
+
+<div className="meeting-section-box">
+  <div className="meeting-section-title">결정 사항 / 오늘 운영 방향</div>
+
+  <label className="field">
+    <span>오늘 운영 방향</span>
+    <textarea
+      rows="3"
+      value={meetingDirection}
+      onChange={(e) => setMeetingDirection(e.target.value)}
+      placeholder="오늘 바로 반영할 결정 사항, 우선순위, 체크 포인트를 적으세요."
+    />
+  </label>
+
+  <div className="meeting-checklist-box">
+    <div className="meeting-section-title" style={{ marginBottom: '8px' }}>
+      체크리스트 표
+    </div>
+
+    <div className="meeting-checklist-table">
+      <div className="meeting-checklist-head">
+        <div>항목</div>
+        <div>완료</div>
+        <div>메모</div>
+      </div>
+
+      {meetingChecklistRows.map((row) => (
+        <div key={row.id} className="meeting-checklist-row">
+          <div className="meeting-checklist-label">{row.label}</div>
+
+          <div className="meeting-checklist-check">
+            <input
+              type="checkbox"
+              checked={row.checked}
+              onChange={(e) => updateMeetingChecklistRow(row.id, 'checked', e.target.checked)}
+            />
+          </div>
+
+          <div className="meeting-checklist-note">
+            <input
+              value={row.note}
+              onChange={(e) => updateMeetingChecklistRow(row.id, 'note', e.target.value)}
+              placeholder="메모"
+            />
+          </div>
+        </div>
+      ))}
+    </div>
+  </div>
+</div>
 
 <div className="grid-2">
   <label className="field">
