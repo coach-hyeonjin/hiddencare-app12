@@ -1686,6 +1686,7 @@ const [taskWeekdayFilter, setTaskWeekdayFilter] = useState(OPS_WEEKDAY_LABELS[ne
   [opsTasks, selectedOpsTaskId]
 )
   const [opsViewTab, setOpsViewTab] = useState('dashboard')
+  const [selectedOpsTask, setSelectedOpsTask] = useState(null)
   const [opsAuxTab, setOpsAuxTab] = useState('records')
 const [opsRecordTab, setOpsRecordTab] = useState('today')
   const todayTasks = useMemo(
