@@ -22384,109 +22384,116 @@ const filteredExercisesAdvanced = exercises.filter((exercise) => {
 )}
 
 {activeTab === '업무관리' && (
-  <div className="admin-section premium-dashboard-page">
-    <div className="dashboard-hero">
-      <div className="dashboard-hero-left">
-        <div className="dashboard-hero-badge">OPERATIONS MANAGEMENT</div>
-        <h2>업무 관리</h2>
-        <p className="dashboard-hero-text">
-          생각 → 기록 → 정리 → 실행 → 체크 → 회고 → 회의 연결까지
-          한 화면에서 운영 흐름으로 묶어 관리하는 탭입니다.
+  <div className="admin-section premium-dashboard-page" style={{ width: '100%' }}>
+    <div
+      style={{
+        display: 'flex',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        gap: '12px',
+        marginBottom: '18px',
+        flexWrap: 'wrap',
+      }}
+    >
+      <div>
+        <h2 style={{ margin: 0 }}>업무 관리</h2>
+        <p className="sub-text" style={{ marginTop: '6px' }}>
+          생각 → 기록 → 정리 → 실행 → 체크 → 회고 → 회의 연결까지 한 화면에서 관리합니다.
         </p>
       </div>
 
-      <div className="dashboard-hero-right">
-        <div className="dashboard-hero-mini">
-          <span>오늘 할 일</span>
-          <strong>{todayTasks.length}건</strong>
-          <p>오늘 바로 처리할 항목</p>
-        </div>
-
-        <div className="dashboard-hero-mini">
-          <span>마감 임박</span>
-          <strong>{urgentTasks.length}건</strong>
-          <p>3일 이내 마감</p>
-        </div>
-
-        <div className="dashboard-hero-mini">
-          <span>기간 초과</span>
-          <strong>{overdueTasks.length}건</strong>
-          <p>즉시 확인 필요</p>
-        </div>
-
-        <div className="dashboard-hero-mini">
-          <span>완료율</span>
-          <strong>{completionRate}%</strong>
-          <p>전체 업무 기준</p>
-        </div>
+      <div className="inline-actions wrap">
+        <button type="button" className="secondary-btn" onClick={handleDownloadOpsCsv}>
+          CSV 다운로드
+        </button>
+        <button type="button" className="secondary-btn" onClick={handleDownloadOpsReport}>
+          A4 보고서 생성
+        </button>
       </div>
     </div>
 
-    <section className="dashboard-panel-card" style={{ marginBottom: '16px' }}>
-      <div className="section-head">
-        <div>
-          <h3>보고 / 다운로드</h3>
-          <p className="sub-text">업무 리스트, 시설 요청, 회의 요약을 바로 저장합니다.</p>
-        </div>
+    <div
+      style={{
+        display: 'flex',
+        gap: '10px',
+        marginBottom: '18px',
+        flexWrap: 'wrap',
+      }}
+    >
+      {['코치 대시보드', '회의 관리', '1:1 면담', '업무 관리'].map((label) => (
+        <button
+          key={label}
+          type="button"
+          className={label === '업무 관리' ? 'primary-btn' : 'secondary-btn'}
+          style={{ minWidth: '120px' }}
+        >
+          {label}
+        </button>
+      ))}
+    </div>
 
-        <div className="inline-actions wrap">
-          <button type="button" className="secondary-btn" onClick={handleDownloadOpsCsv}>
-            CSV 다운로드
-          </button>
-          <button type="button" className="secondary-btn" onClick={handleDownloadOpsReport}>
-            A4 보고서 생성
-          </button>
-        </div>
-      </div>
-    </section>
-
-    <div className="dashboard-kpi-grid">
+    <div
+      style={{
+        display: 'grid',
+        gridTemplateColumns: 'repeat(4, minmax(0, 1fr))',
+        gap: '14px',
+        marginBottom: '18px',
+      }}
+    >
       <div className="dashboard-kpi-card kpi-blue">
         <span>오늘 할 일</span>
-        <strong>{todayTasks.length}</strong>
-        <div className="compact-text">오늘 기준 자동 분류</div>
+        <strong>{todayTasks.length}건</strong>
+        <div className="compact-text">오늘 바로 처리할 업무</div>
       </div>
 
       <div className="dashboard-kpi-card kpi-amber">
         <span>마감 임박</span>
-        <strong>{urgentTasks.length}</strong>
-        <div className="compact-text">3일 이내</div>
+        <strong>{urgentTasks.length}건</strong>
+        <div className="compact-text">3일 이내 마감</div>
       </div>
 
       <div className="dashboard-kpi-card kpi-red">
         <span>기간 초과</span>
-        <strong>{overdueTasks.length}</strong>
-        <div className="compact-text">초과 업무</div>
+        <strong>{overdueTasks.length}건</strong>
+        <div className="compact-text">즉시 확인 필요</div>
       </div>
 
       <div className="dashboard-kpi-card kpi-green">
-        <span>완료율</span>
+        <span>전체 완료율</span>
         <strong>{completionRate}%</strong>
-        <div className="compact-text">전체 업무 완료율</div>
+        <div className="compact-text">전체 업무 기준</div>
       </div>
     </div>
 
-    <div className="dashboard-main-grid" style={{ alignItems: 'start' }}>
+    <div
+      style={{
+        display: 'grid',
+        gridTemplateColumns: '1.05fr 2fr 1fr',
+        gap: '16px',
+        alignItems: 'start',
+        marginBottom: '18px',
+      }}
+    >
       <section className="dashboard-panel-card">
         <div className="dashboard-panel-head">
           <div>
-            <div className="dashboard-panel-label">TODAY / WEEKDAY</div>
-            <h3>오늘 할 일 / 요일 정리</h3>
-            <p className="sub-text">요일 기준으로 하루 집중 업무를 정리합니다.</p>
+            <div className="dashboard-panel-label">TODAY TASKS</div>
+            <h3>오늘 할 일 ({taskWeekdayFilter}요일)</h3>
+            <p className="sub-text">업무 추가와 요일 기준 정리를 함께 합니다.</p>
           </div>
         </div>
 
         <div className="stack-gap">
-          <div className="grid-2">
-            <label className="field">
-              <span>업무명</span>
-              <input
-                value={opsTaskForm.title}
-                onChange={(e) => setOpsTaskForm((prev) => ({ ...prev, title: e.target.value }))}
-                placeholder="예: 회원 상담 정리"
-              />
-            </label>
+          <label className="field">
+            <span>업무명</span>
+            <input
+              value={opsTaskForm.title}
+              onChange={(e) => setOpsTaskForm((prev) => ({ ...prev, title: e.target.value }))}
+              placeholder="예: 회원 회의 자료 준비"
+            />
+          </label>
 
+          <div className="grid-2">
             <label className="field">
               <span>카테고리</span>
               <select
@@ -22494,13 +22501,13 @@ const filteredExercisesAdvanced = exercises.filter((exercise) => {
                 onChange={(e) => setOpsTaskForm((prev) => ({ ...prev, category: e.target.value }))}
               >
                 {OPS_TASK_CATEGORIES.map((item) => (
-                  <option key={item} value={item}>{item}</option>
+                  <option key={item} value={item}>
+                    {item}
+                  </option>
                 ))}
               </select>
             </label>
-          </div>
 
-          <div className="grid-2">
             <label className="field">
               <span>우선순위</span>
               <select
@@ -22508,11 +22515,15 @@ const filteredExercisesAdvanced = exercises.filter((exercise) => {
                 onChange={(e) => setOpsTaskForm((prev) => ({ ...prev, priority: e.target.value }))}
               >
                 {OPS_TASK_PRIORITIES.map((item) => (
-                  <option key={item} value={item}>{item}</option>
+                  <option key={item} value={item}>
+                    {item}
+                  </option>
                 ))}
               </select>
             </label>
+          </div>
 
+          <div className="grid-2">
             <label className="field">
               <span>마감일</span>
               <input
@@ -22521,20 +22532,20 @@ const filteredExercisesAdvanced = exercises.filter((exercise) => {
                 onChange={(e) => setOpsTaskForm((prev) => ({ ...prev, due_date: e.target.value }))}
               />
             </label>
-          </div>
 
-          <label className="field">
-            <span>메모</span>
-            <textarea
-              rows="3"
-              value={opsTaskForm.notes}
-              onChange={(e) => setOpsTaskForm((prev) => ({ ...prev, notes: e.target.value }))}
-            />
-          </label>
+            <label className="field">
+              <span>메모</span>
+              <input
+                value={opsTaskForm.notes}
+                onChange={(e) => setOpsTaskForm((prev) => ({ ...prev, notes: e.target.value }))}
+                placeholder="간단 메모"
+              />
+            </label>
+          </div>
 
           <div className="inline-actions wrap">
             <button type="button" className="primary-btn" onClick={handleAddOpsTask}>
-              할 일 추가
+              + 추가
             </button>
           </div>
 
@@ -22560,16 +22571,17 @@ const filteredExercisesAdvanced = exercises.filter((exercise) => {
                   <div>
                     <strong>{task.title}</strong>
                     <div className="compact-text">
-                      {task.category} / {task.priority} / {task.due_date || '-'} / 자동상태 {getTaskAutoState(task)}
+                      {task.priority} / {task.category} / {task.due_date || '-'}
                     </div>
                   </div>
+
                   <div className="inline-actions wrap">
                     <button
                       type="button"
                       className="secondary-btn"
                       onClick={() => handleToggleOpsTaskComplete(task.id)}
                     >
-                      {task.completed ? '완료취소' : '완료체크'}
+                      {task.completed ? '취소' : '완료'}
                     </button>
                   </div>
                 </div>
@@ -22582,78 +22594,138 @@ const filteredExercisesAdvanced = exercises.filter((exercise) => {
       <section className="dashboard-panel-card">
         <div className="dashboard-panel-head">
           <div>
-            <div className="dashboard-panel-label">KANBAN FLOW</div>
-            <h3>중앙 업무 흐름</h3>
-            <p className="sub-text">대기 / 진행중 / 완료 흐름으로 관리합니다.</p>
+            <div className="dashboard-panel-label">KANBAN BOARD</div>
+            <h3>업무 칸반 보드</h3>
+            <p className="sub-text">대기 / 진행중 / 완료 흐름으로 한눈에 봅니다.</p>
           </div>
         </div>
 
-        <div className="dashboard-main-grid">
+        <div
+          style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(3, minmax(0, 1fr))',
+            gap: '12px',
+          }}
+        >
           <div className="sub-card">
             <h4>대기</h4>
             <div className="list-stack">
-              {waitingTasks.map((task) => (
-                <div key={task.id} className="list-card">
-                  <div className="list-card-top">
-                    <strong>{task.title}</strong>
-                    <span className={`pill ${task.priority === '긴급' ? 'pill-red' : 'pill-amber'}`}>
-                      {task.priority}
-                    </span>
+              {waitingTasks.length === 0 ? (
+                <div className="workout-list-empty">대기 업무 없음</div>
+              ) : (
+                waitingTasks.map((task) => (
+                  <div key={task.id} className="list-card">
+                    <div className="list-card-top">
+                      <strong>{task.title}</strong>
+                      <span className={`pill ${task.priority === '긴급' ? 'pill-red' : 'pill-amber'}`}>
+                        {task.priority}
+                      </span>
+                    </div>
+
+                    <div className="compact-text">{task.category}</div>
+                    <div className="compact-text">{task.due_date || '-'}</div>
+
+                    <div className="inline-actions wrap">
+                      <button
+                        type="button"
+                        className="secondary-btn"
+                        onClick={() => handleChangeOpsTaskStatus(task.id, '진행중')}
+                      >
+                        진행중
+                      </button>
+                      <button
+                        type="button"
+                        className="danger-btn"
+                        onClick={() => handleDeleteOpsTask(task.id)}
+                      >
+                        삭제
+                      </button>
+                    </div>
                   </div>
-                  <div className="compact-text">{task.category} / {task.due_date || '-'}</div>
-                  <div className="inline-actions wrap">
-                    <button type="button" className="secondary-btn" onClick={() => handleChangeOpsTaskStatus(task.id, '진행중')}>
-                      진행중으로
-                    </button>
-                    <button type="button" className="danger-btn" onClick={() => handleDeleteOpsTask(task.id)}>
-                      삭제
-                    </button>
-                  </div>
-                </div>
-              ))}
+                ))
+              )}
             </div>
           </div>
 
           <div className="sub-card">
             <h4>진행중</h4>
             <div className="list-stack">
-              {doingTasks.map((task) => (
-                <div key={task.id} className="list-card">
-                  <div className="list-card-top">
-                    <strong>{task.title}</strong>
-                    <span className="pill pill-blue">{task.category}</span>
+              {doingTasks.length === 0 ? (
+                <div className="workout-list-empty">진행중 업무 없음</div>
+              ) : (
+                doingTasks.map((task) => (
+                  <div key={task.id} className="list-card">
+                    <div className="list-card-top">
+                      <strong>{task.title}</strong>
+                      <span className="pill pill-blue">{task.category}</span>
+                    </div>
+
+                    <div className="compact-text">{task.notes || '-'}</div>
+
+                    <div className="inline-actions wrap">
+                      <button
+                        type="button"
+                        className="secondary-btn"
+                        onClick={() => handleChangeOpsTaskStatus(task.id, '완료')}
+                      >
+                        완료
+                      </button>
+                      <button
+                        type="button"
+                        className="secondary-btn"
+                        onClick={() => handleChangeOpsTaskStatus(task.id, '대기')}
+                      >
+                        대기
+                      </button>
+                      <button
+                        type="button"
+                        className="danger-btn"
+                        onClick={() => handleDeleteOpsTask(task.id)}
+                      >
+                        삭제
+                      </button>
+                    </div>
                   </div>
-                  <div className="compact-text">{task.notes || '-'}</div>
-                  <div className="inline-actions wrap">
-                    <button type="button" className="secondary-btn" onClick={() => handleChangeOpsTaskStatus(task.id, '대기')}>
-                      대기로
-                    </button>
-                    <button type="button" className="secondary-btn" onClick={() => handleChangeOpsTaskStatus(task.id, '완료')}>
-                      완료로
-                    </button>
-                  </div>
-                </div>
-              ))}
+                ))
+              )}
             </div>
           </div>
 
           <div className="sub-card">
             <h4>완료</h4>
             <div className="list-stack">
-              {doneTasks.map((task) => (
-                <div key={task.id} className="list-card">
-                  <div className="list-card-top">
-                    <strong>{task.title}</strong>
-                    <span className="pill pill-green">완료</span>
+              {doneTasks.length === 0 ? (
+                <div className="workout-list-empty">완료 업무 없음</div>
+              ) : (
+                doneTasks.map((task) => (
+                  <div key={task.id} className="list-card">
+                    <div className="list-card-top">
+                      <strong>{task.title}</strong>
+                      <span className="pill pill-green">완료</span>
+                    </div>
+
+                    <div className="compact-text">{task.category}</div>
+                    <div className="compact-text">{task.due_date || '-'}</div>
+
+                    <div className="inline-actions wrap">
+                      <button
+                        type="button"
+                        className="secondary-btn"
+                        onClick={() => handleChangeOpsTaskStatus(task.id, '대기')}
+                      >
+                        다시 대기
+                      </button>
+                      <button
+                        type="button"
+                        className="danger-btn"
+                        onClick={() => handleDeleteOpsTask(task.id)}
+                      >
+                        삭제
+                      </button>
+                    </div>
                   </div>
-                  <div className="compact-text">{task.category} / {task.due_date || '-'}</div>
-                  <div className="inline-actions wrap">
-                    <button type="button" className="secondary-btn" onClick={() => handleChangeOpsTaskStatus(task.id, '대기')}>
-                      다시 대기
-                    </button>
-                  </div>
-                </div>
-              ))}
+                ))
+              )}
             </div>
           </div>
         </div>
@@ -22664,7 +22736,7 @@ const filteredExercisesAdvanced = exercises.filter((exercise) => {
           <div>
             <div className="dashboard-panel-label">RISK</div>
             <h3>위험 관리</h3>
-            <p className="sub-text">임박 / 초과 업무를 우선 확인합니다.</p>
+            <p className="sub-text">임박 / 초과 / 시설 요청을 모아 봅니다.</p>
           </div>
         </div>
 
@@ -22672,13 +22744,13 @@ const filteredExercisesAdvanced = exercises.filter((exercise) => {
           <div className="sub-card">
             <h4>마감 임박</h4>
             {urgentTasks.length === 0 ? (
-              <div className="workout-list-empty">임박 업무가 없습니다.</div>
+              <div className="workout-list-empty">임박 업무 없음</div>
             ) : (
               urgentTasks.map((task) => (
                 <div key={task.id} className="dashboard-list-row dashboard-list-row-warn">
                   <div>
                     <strong>{task.title}</strong>
-                    <div className="compact-text">{task.due_date} / {task.category}</div>
+                    <div className="compact-text">{task.due_date || '-'} / {task.category}</div>
                   </div>
                   <span className="pill pill-amber">{task.priority}</span>
                 </div>
@@ -22689,13 +22761,13 @@ const filteredExercisesAdvanced = exercises.filter((exercise) => {
           <div className="sub-card">
             <h4>기간 초과</h4>
             {overdueTasks.length === 0 ? (
-              <div className="workout-list-empty">초과 업무가 없습니다.</div>
+              <div className="workout-list-empty">초과 업무 없음</div>
             ) : (
               overdueTasks.map((task) => (
                 <div key={task.id} className="dashboard-list-row dashboard-list-row-danger">
                   <div>
                     <strong>{task.title}</strong>
-                    <div className="compact-text">{task.due_date} / {task.category}</div>
+                    <div className="compact-text">{task.due_date || '-'} / {task.category}</div>
                   </div>
                   <span className="pill pill-red">초과</span>
                 </div>
@@ -22714,7 +22786,7 @@ const filteredExercisesAdvanced = exercises.filter((exercise) => {
                     <strong>{item.title}</strong>
                     <div className="compact-text">{item.type} / {item.note || '-'}</div>
                   </div>
-                  <span className={`pill ${item.priority === '긴급' ? 'pill-red' : 'pill-blue'}`}>
+                  <span className={`pill ${item.priority === '긴급' ? 'pill-red' : 'pill-amber'}`}>
                     {item.priority}
                   </span>
                 </div>
@@ -22725,89 +22797,27 @@ const filteredExercisesAdvanced = exercises.filter((exercise) => {
       </section>
     </div>
 
-    <div className="dashboard-main-grid">
-      <section className="dashboard-panel-card">
-        <div className="dashboard-panel-head">
-          <div>
-            <div className="dashboard-panel-label">FACILITY</div>
-            <h3>시설 관리 통합</h3>
-          </div>
-        </div>
-
-        <div className="stack-gap">
-          <div className="grid-2">
-            <label className="field">
-              <span>요청 내용</span>
-              <input
-                value={facilityTaskForm.title}
-                onChange={(e) => setFacilityTaskForm((prev) => ({ ...prev, title: e.target.value }))}
-                placeholder="예: 거울 추가 요청"
-              />
-            </label>
-
-            <label className="field">
-              <span>분류</span>
-              <select
-                value={facilityTaskForm.type}
-                onChange={(e) => setFacilityTaskForm((prev) => ({ ...prev, type: e.target.value }))}
-              >
-                <option value="기구 수리">기구 수리</option>
-                <option value="시설 개선">시설 개선</option>
-                <option value="회원 요청">회원 요청</option>
-              </select>
-            </label>
-          </div>
-
-          <div className="grid-2">
-            <label className="field">
-              <span>우선순위</span>
-              <select
-                value={facilityTaskForm.priority}
-                onChange={(e) => setFacilityTaskForm((prev) => ({ ...prev, priority: e.target.value }))}
-              >
-                {OPS_TASK_PRIORITIES.map((item) => (
-                  <option key={item} value={item}>{item}</option>
-                ))}
-              </select>
-            </label>
-
-            <label className="field">
-              <span>상태</span>
-              <select
-                value={facilityTaskForm.status}
-                onChange={(e) => setFacilityTaskForm((prev) => ({ ...prev, status: e.target.value }))}
-              >
-                {OPS_TASK_STATUSES.map((item) => (
-                  <option key={item} value={item}>{item}</option>
-                ))}
-              </select>
-            </label>
-          </div>
-
-          <label className="field">
-            <span>비고</span>
-            <textarea
-              rows="3"
-              value={facilityTaskForm.note}
-              onChange={(e) => setFacilityTaskForm((prev) => ({ ...prev, note: e.target.value }))}
-            />
-          </label>
-
-          <button type="button" className="primary-btn" onClick={handleAddFacilityTask}>
-            시설 요청 추가
-          </button>
-        </div>
-      </section>
-
+    <div
+      style={{
+        display: 'grid',
+        gridTemplateColumns: 'repeat(5, minmax(0, 1fr))',
+        gap: '14px',
+        marginBottom: '18px',
+      }}
+    >
       <section className="dashboard-panel-card">
         <div className="dashboard-panel-head">
           <div>
             <div className="dashboard-panel-label">IDEAS</div>
-            <h3>아이디어 정리</h3>
+            <h3>아이디어 노트</h3>
           </div>
         </div>
 
         <div className="stack-gap">
+          <div className="compact-text">
+            {ideaItems.length === 0 ? '아이디어 없음' : ideaItems.slice(0, 4).map((item) => `• ${item.title}`).join('\n')}
+          </div>
+
           <label className="field">
             <span>아이디어 제목</span>
             <input
@@ -22826,83 +22836,51 @@ const filteredExercisesAdvanced = exercises.filter((exercise) => {
           </label>
 
           <button type="button" className="primary-btn" onClick={handleAddIdea}>
-            아이디어 저장
+            + 아이디어 추가
           </button>
-
-          <div className="list-stack">
-            {ideaItems.map((item) => (
-              <div key={item.id} className="list-card">
-                <div className="list-card-top">
-                  <strong>{item.title}</strong>
-                  <span className="pill pill-violet">보류 아이디어</span>
-                </div>
-                <div className="compact-text">{item.note || '-'}</div>
-                <div className="inline-actions wrap">
-                  <button type="button" className="secondary-btn" onClick={() => handleMoveIdeaToTask(item)}>
-                    할 일로 이동
-                  </button>
-                </div>
-              </div>
-            ))}
-          </div>
         </div>
       </section>
-    </div>
 
-    <div className="dashboard-main-grid">
       <section className="dashboard-panel-card">
         <div className="dashboard-panel-head">
           <div>
             <div className="dashboard-panel-label">CHECKLIST</div>
-            <h3>반복 체크리스트</h3>
+            <h3>체크리스트</h3>
           </div>
         </div>
 
         <div className="stack-gap">
-          <div className="grid-2">
-            <label className="field">
-              <span>체크리스트 항목</span>
-              <input
-                value={checklistForm.title}
-                onChange={(e) => setChecklistForm((prev) => ({ ...prev, title: e.target.value }))}
-              />
-            </label>
-
-            <label className="field">
-              <span>유형</span>
-              <select
-                value={checklistForm.type}
-                onChange={(e) => setChecklistForm((prev) => ({ ...prev, type: e.target.value }))}
-              >
-                {OPS_CHECKLIST_TYPES.map((item) => (
-                  <option key={item} value={item}>{item}</option>
-                ))}
-              </select>
-            </label>
+          <div className="compact-text">
+            {checklistItems.length === 0
+              ? '체크리스트 없음'
+              : checklistItems.slice(0, 4).map((item) => `• ${item.title}`).join('\n')}
           </div>
+
+          <label className="field">
+            <span>항목</span>
+            <input
+              value={checklistForm.title}
+              onChange={(e) => setChecklistForm((prev) => ({ ...prev, title: e.target.value }))}
+            />
+          </label>
+
+          <label className="field">
+            <span>유형</span>
+            <select
+              value={checklistForm.type}
+              onChange={(e) => setChecklistForm((prev) => ({ ...prev, type: e.target.value }))}
+            >
+              {OPS_CHECKLIST_TYPES.map((item) => (
+                <option key={item} value={item}>
+                  {item}
+                </option>
+              ))}
+            </select>
+          </label>
 
           <button type="button" className="primary-btn" onClick={handleAddChecklist}>
-            체크리스트 추가
+            + 체크리스트 추가
           </button>
-
-          <div className="list-stack">
-            {checklistItems.map((item) => (
-              <div key={item.id} className="dashboard-list-row">
-                <div>
-                  <strong>{item.title}</strong>
-                  <div className="compact-text">{item.type}</div>
-                </div>
-                <label className="checkbox-line">
-                  <input
-                    type="checkbox"
-                    checked={item.checked}
-                    onChange={() => handleToggleChecklist(item.id)}
-                  />
-                  <span>{item.checked ? '완료' : '미완료'}</span>
-                </label>
-              </div>
-            ))}
-          </div>
         </div>
       </section>
 
@@ -22910,22 +22888,31 @@ const filteredExercisesAdvanced = exercises.filter((exercise) => {
         <div className="dashboard-panel-head">
           <div>
             <div className="dashboard-panel-label">COACH CARE</div>
-            <h3>코치 관리 연결</h3>
+            <h3>코치 관리</h3>
           </div>
         </div>
 
         <div className="stack-gap">
+          <div className="compact-text">
+            {coachCareItems.length === 0
+              ? '코치 기록 없음'
+              : coachCareItems
+                  .slice(0, 4)
+                  .map((item) => `• ${item.coach_name} / ${item.burnout}`)
+                  .join('\n')}
+          </div>
+
+          <label className="field">
+            <span>코치명</span>
+            <input
+              value={coachCareForm.coach_name}
+              onChange={(e) => setCoachCareForm((prev) => ({ ...prev, coach_name: e.target.value }))}
+            />
+          </label>
+
           <div className="grid-2">
             <label className="field">
-              <span>코치명</span>
-              <input
-                value={coachCareForm.coach_name}
-                onChange={(e) => setCoachCareForm((prev) => ({ ...prev, coach_name: e.target.value }))}
-              />
-            </label>
-
-            <label className="field">
-              <span>번아웃 여부</span>
+              <span>번아웃</span>
               <select
                 value={coachCareForm.burnout}
                 onChange={(e) => setCoachCareForm((prev) => ({ ...prev, burnout: e.target.value }))}
@@ -22936,11 +22923,9 @@ const filteredExercisesAdvanced = exercises.filter((exercise) => {
                 <option value="위험">위험</option>
               </select>
             </label>
-          </div>
 
-          <div className="grid-2">
             <label className="field">
-              <span>피로도 (1~5)</span>
+              <span>피로도</span>
               <input
                 type="number"
                 min="1"
@@ -22949,48 +22934,11 @@ const filteredExercisesAdvanced = exercises.filter((exercise) => {
                 onChange={(e) => setCoachCareForm((prev) => ({ ...prev, fatigue: e.target.value }))}
               />
             </label>
-
-            <label className="field">
-              <span>수업 부담 (1~5)</span>
-              <input
-                type="number"
-                min="1"
-                max="5"
-                value={coachCareForm.class_load}
-                onChange={(e) => setCoachCareForm((prev) => ({ ...prev, class_load: e.target.value }))}
-              />
-            </label>
           </div>
-
-          <label className="field">
-            <span>컨디션 기록</span>
-            <textarea
-              rows="3"
-              value={coachCareForm.condition_note}
-              onChange={(e) => setCoachCareForm((prev) => ({ ...prev, condition_note: e.target.value }))}
-            />
-          </label>
 
           <button type="button" className="primary-btn" onClick={handleAddCoachCare}>
-            코치 상태 기록
+            + 코치 기록
           </button>
-
-          <div className="list-stack">
-            {coachCareItems.map((item) => (
-              <div key={item.id} className="list-card">
-                <div className="list-card-top">
-                  <strong>{item.coach_name}</strong>
-                  <span className={`pill ${item.burnout === '위험' ? 'pill-red' : item.burnout === '주의' ? 'pill-amber' : 'pill-green'}`}>
-                    {item.burnout}
-                  </span>
-                </div>
-                <div className="compact-text">
-                  피로도 {item.fatigue} / 수업부담 {item.class_load}
-                </div>
-                <div className="compact-text">{item.condition_note || '-'}</div>
-              </div>
-            ))}
-          </div>
         </div>
       </section>
 
@@ -22998,11 +22946,20 @@ const filteredExercisesAdvanced = exercises.filter((exercise) => {
         <div className="dashboard-panel-head">
           <div>
             <div className="dashboard-panel-label">1:1 LINK</div>
-            <h3>1:1 면담 연결</h3>
+            <h3>1:1 면담 관리</h3>
           </div>
         </div>
 
         <div className="stack-gap">
+          <div className="compact-text">
+            {interviewItems.length === 0
+              ? '면담 리스트 없음'
+              : interviewItems
+                  .slice(0, 4)
+                  .map((item) => `• ${item.coach_name}`)
+                  .join('\n')}
+          </div>
+
           <label className="field">
             <span>대상 코치</span>
             <input
@@ -23012,7 +22969,7 @@ const filteredExercisesAdvanced = exercises.filter((exercise) => {
           </label>
 
           <label className="field">
-            <span>면담 내용 기록</span>
+            <span>면담 내용</span>
             <textarea
               rows="3"
               value={interviewForm.interview_note}
@@ -23020,46 +22977,30 @@ const filteredExercisesAdvanced = exercises.filter((exercise) => {
             />
           </label>
 
-          <label className="field">
-            <span>후속 조치</span>
-            <textarea
-              rows="3"
-              value={interviewForm.follow_up}
-              onChange={(e) => setInterviewForm((prev) => ({ ...prev, follow_up: e.target.value }))}
-            />
-          </label>
-
           <button type="button" className="primary-btn" onClick={handleAddInterviewLink}>
-            면담 필요 리스트 추가
+            + 면담 추가
           </button>
-
-          <div className="list-stack">
-            {interviewItems.map((item) => (
-              <div key={item.id} className="list-card">
-                <div className="list-card-top">
-                  <strong>{item.coach_name}</strong>
-                  <span className="pill pill-amber">면담 필요</span>
-                </div>
-                <div className="compact-text">면담: {item.interview_note || '-'}</div>
-                <div className="compact-text">후속: {item.follow_up || '-'}</div>
-              </div>
-            ))}
-          </div>
         </div>
       </section>
-    </div>
 
-    <div className="dashboard-main-grid">
       <section className="dashboard-panel-card">
         <div className="dashboard-panel-head">
           <div>
-            <div className="dashboard-panel-label">MEETING FLOW</div>
-            <h3>회의 시스템</h3>
-            <p className="sub-text">문제 공유 → 원인 분석 → 해결 아이디어 → 결정 사항 → 실행 업무 생성</p>
+            <div className="dashboard-panel-label">MEETING</div>
+            <h3>회의 관리</h3>
           </div>
         </div>
 
         <div className="stack-gap">
+          <div className="compact-text">
+            {meetingItems.length === 0
+              ? '회의 기록 없음'
+              : meetingItems
+                  .slice(0, 4)
+                  .map((item) => `• ${item.title}`)
+                  .join('\n')}
+          </div>
+
           <label className="field">
             <span>회의 제목</span>
             <input
@@ -23069,34 +23010,7 @@ const filteredExercisesAdvanced = exercises.filter((exercise) => {
           </label>
 
           <label className="field">
-            <span>1. 문제 공유</span>
-            <textarea
-              rows="3"
-              value={meetingForm.problem}
-              onChange={(e) => setMeetingForm((prev) => ({ ...prev, problem: e.target.value }))}
-            />
-          </label>
-
-          <label className="field">
-            <span>2. 원인 분석</span>
-            <textarea
-              rows="3"
-              value={meetingForm.cause}
-              onChange={(e) => setMeetingForm((prev) => ({ ...prev, cause: e.target.value }))}
-            />
-          </label>
-
-          <label className="field">
-            <span>3. 해결 아이디어</span>
-            <textarea
-              rows="3"
-              value={meetingForm.ideas}
-              onChange={(e) => setMeetingForm((prev) => ({ ...prev, ideas: e.target.value }))}
-            />
-          </label>
-
-          <label className="field">
-            <span>4. 결정 사항</span>
+            <span>결정 사항</span>
             <textarea
               rows="3"
               value={meetingForm.decision}
@@ -23104,242 +23018,131 @@ const filteredExercisesAdvanced = exercises.filter((exercise) => {
             />
           </label>
 
-          <div className="grid-2">
-            <label className="field">
-              <span>5. 실행 업무명</span>
-              <input
-                value={meetingForm.action_title}
-                onChange={(e) => setMeetingForm((prev) => ({ ...prev, action_title: e.target.value }))}
-              />
-            </label>
-
-            <label className="field">
-              <span>실행 마감일</span>
-              <input
-                type="date"
-                value={meetingForm.action_due_date}
-                onChange={(e) => setMeetingForm((prev) => ({ ...prev, action_due_date: e.target.value }))}
-              />
-            </label>
-          </div>
-
-          <div className="grid-2">
-            <label className="field">
-              <span>실행 카테고리</span>
-              <select
-                value={meetingForm.action_category}
-                onChange={(e) => setMeetingForm((prev) => ({ ...prev, action_category: e.target.value }))}
-              >
-                {OPS_TASK_CATEGORIES.map((item) => (
-                  <option key={item} value={item}>{item}</option>
-                ))}
-              </select>
-            </label>
-
-            <label className="field">
-              <span>우선순위</span>
-              <select
-                value={meetingForm.action_priority}
-                onChange={(e) => setMeetingForm((prev) => ({ ...prev, action_priority: e.target.value }))}
-              >
-                {OPS_TASK_PRIORITIES.map((item) => (
-                  <option key={item} value={item}>{item}</option>
-                ))}
-              </select>
-            </label>
-          </div>
-
-          <div className="inline-actions wrap">
-            <button type="button" className="primary-btn" onClick={handleAddMeetingItem}>
-              회의 기록 저장
-            </button>
-          </div>
-
-          <div className="list-stack">
-            {meetingItems.map((item) => (
-              <div key={item.id} className="list-card">
-                <div className="list-card-top">
-                  <strong>{item.title}</strong>
-                  <span className="pill pill-violet">회의</span>
-                </div>
-                <div className="compact-text">문제: {item.problem || '-'}</div>
-                <div className="compact-text">원인: {item.cause || '-'}</div>
-                <div className="compact-text">아이디어: {item.ideas || '-'}</div>
-                <div className="compact-text">결정: {item.decision || '-'}</div>
-                <div className="inline-actions wrap">
-                  <button type="button" className="secondary-btn" onClick={() => handleCreateTaskFromMeeting(item)}>
-                    실행 업무 생성
-                  </button>
-                </div>
-              </div>
-            ))}
-          </div>
+          <button type="button" className="primary-btn" onClick={handleAddMeetingItem}>
+            + 회의 추가
+          </button>
         </div>
       </section>
     </div>
 
-    <div className="dashboard-main-grid">
-      <section className="dashboard-panel-card">
-        <div className="dashboard-panel-head">
-          <div>
-            <div className="dashboard-panel-label">RECORDS</div>
-            <h3>기록 시스템</h3>
-          </div>
+    <section className="dashboard-panel-card">
+      <div className="dashboard-panel-head">
+        <div>
+          <div className="dashboard-panel-label">RECORDS</div>
+          <h3>기록 시스템</h3>
+        </div>
+      </div>
+
+      <div
+        style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(3, minmax(0, 1fr))',
+          gap: '14px',
+        }}
+      >
+        <div className="sub-card">
+          <h4>오늘 기록</h4>
+          <label className="field">
+            <span>제목</span>
+            <input
+              value={todayRecordForm.title}
+              onChange={(e) => setTodayRecordForm((prev) => ({ ...prev, title: e.target.value }))}
+            />
+          </label>
+          <label className="field">
+            <span>무엇을 했는지</span>
+            <textarea
+              rows="2"
+              value={todayRecordForm.what_done}
+              onChange={(e) => setTodayRecordForm((prev) => ({ ...prev, what_done: e.target.value }))}
+            />
+          </label>
+          <label className="field">
+            <span>문제 / 개선</span>
+            <textarea
+              rows="2"
+              value={todayRecordForm.problem}
+              onChange={(e) => setTodayRecordForm((prev) => ({ ...prev, problem: e.target.value }))}
+            />
+          </label>
+          <button
+            type="button"
+            className="primary-btn"
+            onClick={() => handleSaveOpsRecord(todayRecordForm, 'today', setTodayRecordForm)}
+          >
+            오늘 기록 저장
+          </button>
         </div>
 
-        <div className="dashboard-main-grid">
-          <div className="sub-card">
-            <h4>오늘 기록</h4>
-
-            <label className="field">
-              <span>제목</span>
-              <input
-                value={todayRecordForm.title}
-                onChange={(e) => setTodayRecordForm((prev) => ({ ...prev, title: e.target.value }))}
-              />
-            </label>
-
-            <label className="field">
-              <span>무엇을 했는지</span>
-              <textarea
-                rows="2"
-                value={todayRecordForm.what_done}
-                onChange={(e) => setTodayRecordForm((prev) => ({ ...prev, what_done: e.target.value }))}
-              />
-            </label>
-
-            <label className="field">
-              <span>문제</span>
-              <textarea
-                rows="2"
-                value={todayRecordForm.problem}
-                onChange={(e) => setTodayRecordForm((prev) => ({ ...prev, problem: e.target.value }))}
-              />
-            </label>
-
-            <label className="field">
-              <span>개선 / 느낀 점</span>
-              <textarea
-                rows="2"
-                value={todayRecordForm.improve}
-                onChange={(e) => setTodayRecordForm((prev) => ({ ...prev, improve: e.target.value }))}
-              />
-            </label>
-
-            <button
-              type="button"
-              className="primary-btn"
-              onClick={() => handleSaveOpsRecord(todayRecordForm, 'today', setTodayRecordForm)}
-            >
-              오늘 기록 저장
-            </button>
-
-            <div className="list-stack">
-              {todayRecords.map((item) => (
-                <div key={item.id} className="list-card">
-                  <strong>{item.title}</strong>
-                  <div className="compact-text">{item.what_done || '-'}</div>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          <div className="sub-card">
-            <h4>주간 기록</h4>
-
-            <label className="field">
-              <span>제목</span>
-              <input
-                value={weeklyRecordForm.title}
-                onChange={(e) => setWeeklyRecordForm((prev) => ({ ...prev, title: e.target.value }))}
-              />
-            </label>
-
-            <label className="field">
-              <span>무엇을 했는지</span>
-              <textarea
-                rows="2"
-                value={weeklyRecordForm.what_done}
-                onChange={(e) => setWeeklyRecordForm((prev) => ({ ...prev, what_done: e.target.value }))}
-              />
-            </label>
-
-            <label className="field">
-              <span>문제 / 개선 / 느낀 점</span>
-              <textarea
-                rows="3"
-                value={weeklyRecordForm.problem}
-                onChange={(e) => setWeeklyRecordForm((prev) => ({ ...prev, problem: e.target.value }))}
-              />
-            </label>
-
-            <button
-              type="button"
-              className="primary-btn"
-              onClick={() => handleSaveOpsRecord(weeklyRecordForm, 'weekly', setWeeklyRecordForm)}
-            >
-              주간 기록 저장
-            </button>
-
-            <div className="list-stack">
-              {weeklyRecords.map((item) => (
-                <div key={item.id} className="list-card">
-                  <strong>{item.title}</strong>
-                  <div className="compact-text">{item.what_done || '-'}</div>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          <div className="sub-card">
-            <h4>월간 기록</h4>
-
-            <label className="field">
-              <span>제목</span>
-              <input
-                value={monthlyRecordForm.title}
-                onChange={(e) => setMonthlyRecordForm((prev) => ({ ...prev, title: e.target.value }))}
-              />
-            </label>
-
-            <label className="field">
-              <span>무엇을 했는지</span>
-              <textarea
-                rows="2"
-                value={monthlyRecordForm.what_done}
-                onChange={(e) => setMonthlyRecordForm((prev) => ({ ...prev, what_done: e.target.value }))}
-              />
-            </label>
-
-            <label className="field">
-              <span>문제 / 개선 / 느낀 점</span>
-              <textarea
-                rows="3"
-                value={monthlyRecordForm.problem}
-                onChange={(e) => setMonthlyRecordForm((prev) => ({ ...prev, problem: e.target.value }))}
-              />
-            </label>
-
-            <button
-              type="button"
-              className="primary-btn"
-              onClick={() => handleSaveOpsRecord(monthlyRecordForm, 'monthly', setMonthlyRecordForm)}
-            >
-              월간 기록 저장
-            </button>
-
-            <div className="list-stack">
-              {monthlyRecords.map((item) => (
-                <div key={item.id} className="list-card">
-                  <strong>{item.title}</strong>
-                  <div className="compact-text">{item.what_done || '-'}</div>
-                </div>
-              ))}
-            </div>
-          </div>
+        <div className="sub-card">
+          <h4>주간 기록</h4>
+          <label className="field">
+            <span>제목</span>
+            <input
+              value={weeklyRecordForm.title}
+              onChange={(e) => setWeeklyRecordForm((prev) => ({ ...prev, title: e.target.value }))}
+            />
+          </label>
+          <label className="field">
+            <span>무엇을 했는지</span>
+            <textarea
+              rows="2"
+              value={weeklyRecordForm.what_done}
+              onChange={(e) => setWeeklyRecordForm((prev) => ({ ...prev, what_done: e.target.value }))}
+            />
+          </label>
+          <label className="field">
+            <span>문제 / 개선</span>
+            <textarea
+              rows="2"
+              value={weeklyRecordForm.problem}
+              onChange={(e) => setWeeklyRecordForm((prev) => ({ ...prev, problem: e.target.value }))}
+            />
+          </label>
+          <button
+            type="button"
+            className="primary-btn"
+            onClick={() => handleSaveOpsRecord(weeklyRecordForm, 'weekly', setWeeklyRecordForm)}
+          >
+            주간 기록 저장
+          </button>
         </div>
-      </section>
-    </div>
+
+        <div className="sub-card">
+          <h4>월간 기록</h4>
+          <label className="field">
+            <span>제목</span>
+            <input
+              value={monthlyRecordForm.title}
+              onChange={(e) => setMonthlyRecordForm((prev) => ({ ...prev, title: e.target.value }))}
+            />
+          </label>
+          <label className="field">
+            <span>무엇을 했는지</span>
+            <textarea
+              rows="2"
+              value={monthlyRecordForm.what_done}
+              onChange={(e) => setMonthlyRecordForm((prev) => ({ ...prev, what_done: e.target.value }))}
+            />
+          </label>
+          <label className="field">
+            <span>문제 / 개선</span>
+            <textarea
+              rows="2"
+              value={monthlyRecordForm.problem}
+              onChange={(e) => setMonthlyRecordForm((prev) => ({ ...prev, problem: e.target.value }))}
+            />
+          </label>
+          <button
+            type="button"
+            className="primary-btn"
+            onClick={() => handleSaveOpsRecord(monthlyRecordForm, 'monthly', setMonthlyRecordForm)}
+          >
+            월간 기록 저장
+          </button>
+        </div>
+      </div>
+    </section>
   </div>
 )}
 
