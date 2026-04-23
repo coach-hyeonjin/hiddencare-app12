@@ -22671,23 +22671,17 @@ marginBottom: '20px',
     <div>
       <div className="dashboard-panel-label">KANBAN BOARD</div>
       <h3>업무 칸반 보드</h3>
-      <p className="sub-text">카드는 가로형으로 보고, 클릭하면 오른쪽에서 상세를 확인합니다.</p>
+      <p className="sub-text">카드는 넓게 보고, 선택한 업무 상세는 아래에서 확인합니다.</p>
     </div>
   </div>
 
-  <div
-    style={{
-      display: 'grid',
-      gridTemplateColumns: '1.9fr 1fr',
-      gap: '18px',
-      alignItems: 'start',
-    }}
-  >
+  <div className="stack-gap">
     <div
       style={{
         display: 'grid',
         gridTemplateColumns: 'repeat(3, minmax(220px, 1fr))',
         gap: '14px',
+        alignItems: 'start',
       }}
     >
       <div className="sub-card">
@@ -22700,7 +22694,7 @@ marginBottom: '20px',
               <div
                 key={task.id}
                 className="list-card"
-                onClick={() => setSelectedOpsTask(task)}
+                onClick={() => setSelectedOpsTaskId(task.id)}
                 style={{
                   cursor: 'pointer',
                   border: selectedOpsTask?.id === task.id ? '2px solid #6c63ff' : undefined,
@@ -22768,7 +22762,7 @@ marginBottom: '20px',
               <div
                 key={task.id}
                 className="list-card"
-                onClick={() => setSelectedOpsTask(task)}
+                onClick={() => setSelectedOpsTaskId(task.id)}
                 style={{
                   cursor: 'pointer',
                   border: selectedOpsTask?.id === task.id ? '2px solid #6c63ff' : undefined,
@@ -22843,7 +22837,7 @@ marginBottom: '20px',
               <div
                 key={task.id}
                 className="list-card"
-                onClick={() => setSelectedOpsTask(task)}
+                onClick={() => setSelectedOpsTaskId(task.id)}
                 style={{
                   cursor: 'pointer',
                   border: selectedOpsTask?.id === task.id ? '2px solid #6c63ff' : undefined,
@@ -22904,26 +22898,40 @@ marginBottom: '20px',
       <h4>업무 상세</h4>
 
       {!selectedOpsTask ? (
-        <div className="workout-list-empty">카드를 클릭하면 오른쪽에서 상세를 볼 수 있습니다.</div>
+        <div className="workout-list-empty">카드를 클릭하면 아래에서 상세를 볼 수 있습니다.</div>
       ) : (
-        <div className="stack-gap">
-          <strong style={{ fontSize: '16px', lineHeight: '1.45' }}>
-            {selectedOpsTask.title}
-          </strong>
+        <div
+          style={{
+            display: 'grid',
+            gridTemplateColumns: '1.2fr 0.8fr',
+            gap: '16px',
+            alignItems: 'start',
+          }}
+        >
+          <div className="stack-gap">
+            <div>
+              <strong style={{ fontSize: '16px', lineHeight: '1.45' }}>
+                {selectedOpsTask.title}
+              </strong>
+              <div className="compact-text" style={{ marginTop: '6px' }}>
+                {selectedOpsTask.category} / {selectedOpsTask.priority}
+              </div>
+            </div>
 
-          <div className="compact-text">
-            {selectedOpsTask.category} / {selectedOpsTask.priority}
+            <div className="dashboard-list-row">
+              <span>마감일</span>
+              <strong>{selectedOpsTask.due_date || '-'}</strong>
+            </div>
+
+            <div>
+              <div className="compact-text" style={{ marginBottom: '6px' }}>메모</div>
+              <div className="sub-card" style={{ padding: '10px' }}>
+                {selectedOpsTask.notes || '메모 없음'}
+              </div>
+            </div>
           </div>
 
-          <div className="compact-text">
-            마감일: {selectedOpsTask.due_date || '-'}
-          </div>
-
-          <div className="sub-card" style={{ padding: '10px' }}>
-            {selectedOpsTask.notes || '메모 없음'}
-          </div>
-
-          <div className="inline-actions wrap">
+          <div className="stack-gap">
             <button
               type="button"
               className="secondary-btn"
@@ -22958,10 +22966,6 @@ marginBottom: '20px',
     </div>
   </div>
 </section>
-          <section className="dashboard-panel-card">
-            <div className="dashboard-panel-head">
-              <div>
-                <div className="dashboard-panel-label">RISK</div>
                 <h3>위험 관리</h3>
                 <p className="sub-text">임박 / 초과 / 시설 요청을 모아 봅니다.</p>
               </div>
