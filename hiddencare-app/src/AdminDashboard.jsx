@@ -24341,7 +24341,9 @@ gap: '16px',
     </div>
   </div>
 )}
-
+ </section>
+      </>
+    )}
     {opsViewTab === 'coach' && (
       <section className="dashboard-panel-card">
         <div className="dashboard-panel-head">
