@@ -23580,6 +23580,7 @@ const filteredExercisesAdvanced = exercises.filter((exercise) => {
     </div>
   </div>
 </section>
+  </div>
 
 <section className="dashboard-panel-card ops-risk-section">
   <div className="dashboard-panel-head">
