@@ -22666,304 +22666,261 @@ marginBottom: '20px',
             </div>
           </section>
 
-         <section className="dashboard-panel-card">
+        <section className="dashboard-panel-card ops-kanban-section">
   <div className="dashboard-panel-head">
     <div>
       <div className="dashboard-panel-label">KANBAN BOARD</div>
       <h3>업무 칸반 보드</h3>
-      <p className="sub-text">카드는 넓게 보고, 선택한 업무 상세는 아래에서 확인합니다.</p>
+      <p className="sub-text">대기 / 진행중 / 완료 흐름을 한눈에 보고, 선택한 업무 상세는 아래에서 확인합니다.</p>
     </div>
   </div>
 
-  <div className="stack-gap">
-    <div
-      style={{
-        display: 'grid',
-        gridTemplateColumns: 'repeat(3, minmax(220px, 1fr))',
-        gap: '14px',
-        alignItems: 'start',
-      }}
-    >
-      <div className="sub-card">
+  <div className="ops-kanban-columns">
+    <div className="ops-kanban-column-card">
+      <div className="ops-kanban-column-head">
         <h4>대기</h4>
-        <div className="list-stack">
-          {waitingTasks.length === 0 ? (
-            <div className="workout-list-empty">대기 업무 없음</div>
-          ) : (
-            waitingTasks.map((task) => (
-              <div
-                key={task.id}
-                className="list-card"
-                onClick={() => setSelectedOpsTaskId(task.id)}
-                style={{
-                  cursor: 'pointer',
-                  border: selectedOpsTask?.id === task.id ? '2px solid #6c63ff' : undefined,
-                  padding: '12px',
-                }}
-              >
-                <div className="list-card-top" style={{ alignItems: 'flex-start', gap: '8px' }}>
-                  <strong
-                    style={{
-                      wordBreak: 'keep-all',
-                      whiteSpace: 'normal',
-                      lineHeight: '1.45',
-                      display: 'block',
-                      flex: 1,
-                      minWidth: 0,
-                    }}
-                  >
-                    {task.title}
-                  </strong>
-                  <span className={`pill ${task.priority === '긴급' ? 'pill-red' : 'pill-amber'}`}>
-                    {task.priority}
-                  </span>
-                </div>
-
-                <div className="compact-text" style={{ marginTop: '6px' }}>
-                  {task.category}
-                </div>
-                <div className="compact-text">{task.due_date || '-'}</div>
-
-                <div className="inline-actions wrap" style={{ marginTop: '10px' }}>
-                  <button
-                    type="button"
-                    className="secondary-btn"
-                    onClick={(e) => {
-                      e.stopPropagation()
-                      handleChangeOpsTaskStatus(task.id, '진행중')
-                    }}
-                  >
-                    진행중
-                  </button>
-                  <button
-                    type="button"
-                    className="danger-btn"
-                    onClick={(e) => {
-                      e.stopPropagation()
-                      handleDeleteOpsTask(task.id)
-                    }}
-                  >
-                    삭제
-                  </button>
-                </div>
-              </div>
-            ))
-          )}
-        </div>
+        <span>{waitingTasks.length}</span>
       </div>
 
-      <div className="sub-card">
-        <h4>진행중</h4>
-        <div className="list-stack">
-          {doingTasks.length === 0 ? (
-            <div className="workout-list-empty">진행중 업무 없음</div>
-          ) : (
-            doingTasks.map((task) => (
-              <div
-                key={task.id}
-                className="list-card"
-                onClick={() => setSelectedOpsTaskId(task.id)}
-                style={{
-                  cursor: 'pointer',
-                  border: selectedOpsTask?.id === task.id ? '2px solid #6c63ff' : undefined,
-                  padding: '12px',
-                }}
-              >
-                <div className="list-card-top" style={{ alignItems: 'flex-start', gap: '8px' }}>
-                  <strong
-                    style={{
-                      wordBreak: 'keep-all',
-                      whiteSpace: 'normal',
-                      lineHeight: '1.45',
-                      display: 'block',
-                      flex: 1,
-                      minWidth: 0,
-                    }}
-                  >
-                    {task.title}
-                  </strong>
-                  <span className="pill pill-blue">{task.category}</span>
-                </div>
-
-                <div className="compact-text" style={{ marginTop: '6px' }}>
-                  {task.notes || '-'}
-                </div>
-
-                <div className="inline-actions wrap" style={{ marginTop: '10px' }}>
-                  <button
-                    type="button"
-                    className="secondary-btn"
-                    onClick={(e) => {
-                      e.stopPropagation()
-                      handleChangeOpsTaskStatus(task.id, '완료')
-                    }}
-                  >
-                    완료
-                  </button>
-                  <button
-                    type="button"
-                    className="secondary-btn"
-                    onClick={(e) => {
-                      e.stopPropagation()
-                      handleChangeOpsTaskStatus(task.id, '대기')
-                    }}
-                  >
-                    대기
-                  </button>
-                  <button
-                    type="button"
-                    className="danger-btn"
-                    onClick={(e) => {
-                      e.stopPropagation()
-                      handleDeleteOpsTask(task.id)
-                    }}
-                  >
-                    삭제
-                  </button>
-                </div>
+      <div className="list-stack">
+        {waitingTasks.length === 0 ? (
+          <div className="workout-list-empty">대기 업무 없음</div>
+        ) : (
+          waitingTasks.map((task) => (
+            <div
+              key={task.id}
+              className={`ops-kanban-item ${selectedOpsTask?.id === task.id ? 'active' : ''}`}
+              onClick={() => setSelectedOpsTaskId(task.id)}
+            >
+              <div className="ops-kanban-item-top">
+                <strong>{task.title}</strong>
+                <span className={`pill ${task.priority === '긴급' ? 'pill-red' : 'pill-amber'}`}>
+                  {task.priority}
+                </span>
               </div>
-            ))
-          )}
-        </div>
-      </div>
 
-      <div className="sub-card">
-        <h4>완료</h4>
-        <div className="list-stack">
-          {doneTasks.length === 0 ? (
-            <div className="workout-list-empty">완료 업무 없음</div>
-          ) : (
-            doneTasks.map((task) => (
-              <div
-                key={task.id}
-                className="list-card"
-                onClick={() => setSelectedOpsTaskId(task.id)}
-                style={{
-                  cursor: 'pointer',
-                  border: selectedOpsTask?.id === task.id ? '2px solid #6c63ff' : undefined,
-                  padding: '12px',
-                }}
-              >
-                <div className="list-card-top" style={{ alignItems: 'flex-start', gap: '8px' }}>
-                  <strong
-                    style={{
-                      wordBreak: 'keep-all',
-                      whiteSpace: 'normal',
-                      lineHeight: '1.45',
-                      display: 'block',
-                      flex: 1,
-                      minWidth: 0,
-                    }}
-                  >
-                    {task.title}
-                  </strong>
-                  <span className="pill pill-green">완료</span>
-                </div>
-
-                <div className="compact-text" style={{ marginTop: '6px' }}>
-                  {task.category}
-                </div>
-                <div className="compact-text">{task.due_date || '-'}</div>
-
-                <div className="inline-actions wrap" style={{ marginTop: '10px' }}>
-                  <button
-                    type="button"
-                    className="secondary-btn"
-                    onClick={(e) => {
-                      e.stopPropagation()
-                      handleChangeOpsTaskStatus(task.id, '대기')
-                    }}
-                  >
-                    다시 대기
-                  </button>
-                  <button
-                    type="button"
-                    className="danger-btn"
-                    onClick={(e) => {
-                      e.stopPropagation()
-                      handleDeleteOpsTask(task.id)
-                    }}
-                  >
-                    삭제
-                  </button>
-                </div>
+              <div className="ops-kanban-meta">
+                <span>{task.category}</span>
+                <span>{task.due_date || '-'}</span>
               </div>
-            ))
-          )}
-        </div>
+
+              <div className="inline-actions wrap">
+                <button
+                  type="button"
+                  className="secondary-btn"
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    handleChangeOpsTaskStatus(task.id, '진행중')
+                  }}
+                >
+                  진행중
+                </button>
+                <button
+                  type="button"
+                  className="danger-btn"
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    handleDeleteOpsTask(task.id)
+                  }}
+                >
+                  삭제
+                </button>
+              </div>
+            </div>
+          ))
+        )}
       </div>
     </div>
 
-    <div className="sub-card">
-      <h4>업무 상세</h4>
+    <div className="ops-kanban-column-card">
+      <div className="ops-kanban-column-head">
+        <h4>진행중</h4>
+        <span>{doingTasks.length}</span>
+      </div>
 
-      {!selectedOpsTask ? (
-        <div className="workout-list-empty">카드를 클릭하면 아래에서 상세를 볼 수 있습니다.</div>
-      ) : (
-        <div
-          style={{
-            display: 'grid',
-            gridTemplateColumns: '1.2fr 0.8fr',
-            gap: '16px',
-            alignItems: 'start',
-          }}
-        >
-          <div className="stack-gap">
-            <div>
-              <strong style={{ fontSize: '16px', lineHeight: '1.45' }}>
-                {selectedOpsTask.title}
-              </strong>
-              <div className="compact-text" style={{ marginTop: '6px' }}>
-                {selectedOpsTask.category} / {selectedOpsTask.priority}
+      <div className="list-stack">
+        {doingTasks.length === 0 ? (
+          <div className="workout-list-empty">진행중 업무 없음</div>
+        ) : (
+          doingTasks.map((task) => (
+            <div
+              key={task.id}
+              className={`ops-kanban-item ${selectedOpsTask?.id === task.id ? 'active' : ''}`}
+              onClick={() => setSelectedOpsTaskId(task.id)}
+            >
+              <div className="ops-kanban-item-top">
+                <strong>{task.title}</strong>
+                <span className="pill pill-blue">{task.category}</span>
+              </div>
+
+              <div className="ops-kanban-meta">
+                <span>{task.notes || '메모 없음'}</span>
+              </div>
+
+              <div className="inline-actions wrap">
+                <button
+                  type="button"
+                  className="secondary-btn"
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    handleChangeOpsTaskStatus(task.id, '완료')
+                  }}
+                >
+                  완료
+                </button>
+                <button
+                  type="button"
+                  className="secondary-btn"
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    handleChangeOpsTaskStatus(task.id, '대기')
+                  }}
+                >
+                  대기
+                </button>
+                <button
+                  type="button"
+                  className="danger-btn"
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    handleDeleteOpsTask(task.id)
+                  }}
+                >
+                  삭제
+                </button>
               </div>
             </div>
+          ))
+        )}
+      </div>
+    </div>
 
-            <div className="dashboard-list-row">
+    <div className="ops-kanban-column-card">
+      <div className="ops-kanban-column-head">
+        <h4>완료</h4>
+        <span>{doneTasks.length}</span>
+      </div>
+
+      <div className="list-stack">
+        {doneTasks.length === 0 ? (
+          <div className="workout-list-empty">완료 업무 없음</div>
+        ) : (
+          doneTasks.map((task) => (
+            <div
+              key={task.id}
+              className={`ops-kanban-item ${selectedOpsTask?.id === task.id ? 'active' : ''}`}
+              onClick={() => setSelectedOpsTaskId(task.id)}
+            >
+              <div className="ops-kanban-item-top">
+                <strong>{task.title}</strong>
+                <span className="pill pill-green">완료</span>
+              </div>
+
+              <div className="ops-kanban-meta">
+                <span>{task.category}</span>
+                <span>{task.due_date || '-'}</span>
+              </div>
+
+              <div className="inline-actions wrap">
+                <button
+                  type="button"
+                  className="secondary-btn"
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    handleChangeOpsTaskStatus(task.id, '대기')
+                  }}
+                >
+                  다시 대기
+                </button>
+                <button
+                  type="button"
+                  className="danger-btn"
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    handleDeleteOpsTask(task.id)
+                  }}
+                >
+                  삭제
+                </button>
+              </div>
+            </div>
+          ))
+        )}
+      </div>
+    </div>
+  </div>
+
+  <div className="ops-kanban-detail-card">
+    <div className="ops-kanban-detail-head">
+      <h4>업무 상세</h4>
+      {selectedOpsTask && (
+        <span className="pill pill-blue">{selectedOpsTask.status}</span>
+      )}
+    </div>
+
+    {!selectedOpsTask ? (
+      <div className="workout-list-empty">카드를 클릭하면 아래에서 상세를 볼 수 있습니다.</div>
+    ) : (
+      <div className="ops-kanban-detail-body">
+        <div className="ops-kanban-detail-main">
+          <strong>{selectedOpsTask.title}</strong>
+
+          <div className="ops-kanban-detail-grid">
+            <div>
+              <span>카테고리</span>
+              <strong>{selectedOpsTask.category}</strong>
+            </div>
+            <div>
+              <span>우선순위</span>
+              <strong>{selectedOpsTask.priority}</strong>
+            </div>
+            <div>
               <span>마감일</span>
               <strong>{selectedOpsTask.due_date || '-'}</strong>
             </div>
-
             <div>
-              <div className="compact-text" style={{ marginBottom: '6px' }}>메모</div>
-              <div className="sub-card" style={{ padding: '10px' }}>
-                {selectedOpsTask.notes || '메모 없음'}
-              </div>
+              <span>상태</span>
+              <strong>{selectedOpsTask.status}</strong>
             </div>
           </div>
 
-          <div className="stack-gap">
-            <button
-              type="button"
-              className="secondary-btn"
-              onClick={() => handleChangeOpsTaskStatus(selectedOpsTask.id, '대기')}
-            >
-              대기
-            </button>
-            <button
-              type="button"
-              className="secondary-btn"
-              onClick={() => handleChangeOpsTaskStatus(selectedOpsTask.id, '진행중')}
-            >
-              진행중
-            </button>
-            <button
-              type="button"
-              className="secondary-btn"
-              onClick={() => handleChangeOpsTaskStatus(selectedOpsTask.id, '완료')}
-            >
-              완료
-            </button>
-            <button
-              type="button"
-              className="danger-btn"
-              onClick={() => handleDeleteOpsTask(selectedOpsTask.id)}
-            >
-              삭제
-            </button>
+          <div className="ops-kanban-note-box">
+            {selectedOpsTask.notes || '메모 없음'}
           </div>
         </div>
-      )}
-    </div>
+
+        <div className="ops-kanban-detail-actions">
+          <button
+            type="button"
+            className="secondary-btn"
+            onClick={() => handleChangeOpsTaskStatus(selectedOpsTask.id, '대기')}
+          >
+            대기
+          </button>
+          <button
+            type="button"
+            className="secondary-btn"
+            onClick={() => handleChangeOpsTaskStatus(selectedOpsTask.id, '진행중')}
+          >
+            진행중
+          </button>
+          <button
+            type="button"
+            className="secondary-btn"
+            onClick={() => handleChangeOpsTaskStatus(selectedOpsTask.id, '완료')}
+          >
+            완료
+          </button>
+          <button
+            type="button"
+            className="danger-btn"
+            onClick={() => handleDeleteOpsTask(selectedOpsTask.id)}
+          >
+            삭제
+          </button>
+        </div>
+      </div>
+    )}
   </div>
 </section>
 
