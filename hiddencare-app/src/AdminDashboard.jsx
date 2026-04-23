@@ -22439,10 +22439,11 @@ const filteredExercisesAdvanced = exercises.filter((exercise) => {
     className="admin-section premium-dashboard-page"
     style={{
       width: '100%',
-      maxWidth: 'none',
-      minWidth: '1280px',
+      maxWidth: '100%',
+      minWidth: 0,
       paddingRight: '12px',
       boxSizing: 'border-box',
+      overflowX: 'hidden',
     }}
   >
     <div
@@ -22536,10 +22537,10 @@ const filteredExercisesAdvanced = exercises.filter((exercise) => {
         <div
           style={{
             display: 'grid',
-            gridTemplateColumns: 'minmax(320px, 1.1fr) minmax(520px, 1.7fr) minmax(300px, 1fr)',
-            gap: '18px',
-            alignItems: 'start',
-            marginBottom: '20px',
+           gridTemplateColumns: '1fr 1.4fr 0.9fr',
+gap: '16px',
+alignItems: 'start',
+marginBottom: '20px',
           }}
         >
           <section className="dashboard-panel-card">
@@ -22671,9 +22672,9 @@ const filteredExercisesAdvanced = exercises.filter((exercise) => {
             <div
               style={{
                 display: 'grid',
-                gridTemplateColumns: 'repeat(3, minmax(260px, 1fr))',
-                gap: '18px',
-                alignItems: 'start',
+               gridTemplateColumns: 'repeat(3, minmax(0, 1fr))',
+gap: '14px',
+alignItems: 'start',
               }}
             >
               <div className="sub-card">
@@ -22930,8 +22931,8 @@ const filteredExercisesAdvanced = exercises.filter((exercise) => {
             <div
               style={{
                 display: 'grid',
-                gridTemplateColumns: 'minmax(320px, 420px) 1fr',
-                gap: '18px',
+               gridTemplateColumns: '0.95fr 1.25fr',
+gap: '16px',
               }}
             >
               <div className="sub-card">
@@ -23000,8 +23001,8 @@ const filteredExercisesAdvanced = exercises.filter((exercise) => {
             <div
               style={{
                 display: 'grid',
-                gridTemplateColumns: 'minmax(320px, 420px) 1fr',
-                gap: '18px',
+               gridTemplateColumns: '0.95fr 1.25fr',
+gap: '16px',
               }}
             >
               <div className="sub-card">
@@ -23075,8 +23076,8 @@ const filteredExercisesAdvanced = exercises.filter((exercise) => {
             <div
               style={{
                 display: 'grid',
-                gridTemplateColumns: 'minmax(320px, 420px) 1fr',
-                gap: '18px',
+gridTemplateColumns: '0.95fr 1.25fr',
+gap: '16px',
               }}
             >
               <div className="sub-card">
@@ -23188,8 +23189,8 @@ const filteredExercisesAdvanced = exercises.filter((exercise) => {
                 <div
                   style={{
                     display: 'grid',
-                    gridTemplateColumns: 'minmax(320px, 420px) 1fr',
-                    gap: '18px',
+                    gridTemplateColumns: '0.95fr 1.25fr',
+gap: '16px',
                   }}
                 >
                   <div className="sub-card">
@@ -23265,8 +23266,8 @@ const filteredExercisesAdvanced = exercises.filter((exercise) => {
                 <div
                   style={{
                     display: 'grid',
-                    gridTemplateColumns: 'minmax(320px, 420px) 1fr',
-                    gap: '18px',
+                    gridTemplateColumns: '0.95fr 1.25fr',
+gap: '16px',
                   }}
                 >
                   <div className="sub-card">
@@ -23342,8 +23343,8 @@ const filteredExercisesAdvanced = exercises.filter((exercise) => {
                 <div
                   style={{
                     display: 'grid',
-                    gridTemplateColumns: 'minmax(320px, 420px) 1fr',
-                    gap: '18px',
+                    gridTemplateColumns: '0.95fr 1.25fr',
+gap: '16px',
                   }}
                 >
                   <div className="sub-card">
@@ -23433,8 +23434,8 @@ const filteredExercisesAdvanced = exercises.filter((exercise) => {
         <div
           style={{
             display: 'grid',
-            gridTemplateColumns: 'minmax(320px, 420px) 1fr',
-            gap: '18px',
+           gridTemplateColumns: '0.95fr 1.25fr',
+gap: '16px',
           }}
         >
           <div className="sub-card">
@@ -23556,8 +23557,8 @@ const filteredExercisesAdvanced = exercises.filter((exercise) => {
         <div
           style={{
             display: 'grid',
-            gridTemplateColumns: 'minmax(320px, 420px) 1fr',
-            gap: '18px',
+           gridTemplateColumns: '0.95fr 1.25fr',
+gap: '16px',
           }}
         >
           <div className="sub-card">
@@ -23639,8 +23640,8 @@ const filteredExercisesAdvanced = exercises.filter((exercise) => {
         <div
           style={{
             display: 'grid',
-            gridTemplateColumns: 'minmax(320px, 420px) 1fr',
-            gap: '18px',
+            gridTemplateColumns: '0.95fr 1.25fr',
+gap: '16px',
           }}
         >
           <div className="sub-card">
