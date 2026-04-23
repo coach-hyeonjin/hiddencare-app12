@@ -22670,14 +22670,14 @@ marginBottom: '20px',
     <div>
       <div className="dashboard-panel-label">KANBAN BOARD</div>
       <h3>업무 칸반 보드</h3>
-      <p className="sub-text">대기 / 진행중 / 완료 흐름을 보고, 오른쪽에서 상세를 확인합니다.</p>
+      <p className="sub-text">카드는 가로형으로 보고, 클릭하면 오른쪽에서 상세를 확인합니다.</p>
     </div>
   </div>
 
   <div
     style={{
       display: 'grid',
-      gridTemplateColumns: '1.6fr 0.9fr',
+      gridTemplateColumns: '1.9fr 1fr',
       gap: '18px',
       alignItems: 'start',
     }}
@@ -22685,7 +22685,7 @@ marginBottom: '20px',
     <div
       style={{
         display: 'grid',
-        gridTemplateColumns: 'repeat(3, minmax(0, 1fr))',
+        gridTemplateColumns: 'repeat(3, minmax(220px, 1fr))',
         gap: '14px',
       }}
     >
@@ -22703,12 +22703,33 @@ marginBottom: '20px',
                 style={{
                   cursor: 'pointer',
                   border: selectedOpsTask?.id === task.id ? '2px solid #6c63ff' : undefined,
+                  padding: '12px',
                 }}
               >
-                <strong>{task.title}</strong>
-                <div className="compact-text">{task.category}</div>
+                <div className="list-card-top" style={{ alignItems: 'flex-start', gap: '8px' }}>
+                  <strong
+                    style={{
+                      wordBreak: 'keep-all',
+                      whiteSpace: 'normal',
+                      lineHeight: '1.45',
+                      display: 'block',
+                      flex: 1,
+                      minWidth: 0,
+                    }}
+                  >
+                    {task.title}
+                  </strong>
+                  <span className={`pill ${task.priority === '긴급' ? 'pill-red' : 'pill-amber'}`}>
+                    {task.priority}
+                  </span>
+                </div>
+
+                <div className="compact-text" style={{ marginTop: '6px' }}>
+                  {task.category}
+                </div>
                 <div className="compact-text">{task.due_date || '-'}</div>
-                <div className="inline-actions wrap">
+
+                <div className="inline-actions wrap" style={{ marginTop: '10px' }}>
                   <button
                     type="button"
                     className="secondary-btn"
@@ -22750,11 +22771,30 @@ marginBottom: '20px',
                 style={{
                   cursor: 'pointer',
                   border: selectedOpsTask?.id === task.id ? '2px solid #6c63ff' : undefined,
+                  padding: '12px',
                 }}
               >
-                <strong>{task.title}</strong>
-                <div className="compact-text">{task.notes || '-'}</div>
-                <div className="inline-actions wrap">
+                <div className="list-card-top" style={{ alignItems: 'flex-start', gap: '8px' }}>
+                  <strong
+                    style={{
+                      wordBreak: 'keep-all',
+                      whiteSpace: 'normal',
+                      lineHeight: '1.45',
+                      display: 'block',
+                      flex: 1,
+                      minWidth: 0,
+                    }}
+                  >
+                    {task.title}
+                  </strong>
+                  <span className="pill pill-blue">{task.category}</span>
+                </div>
+
+                <div className="compact-text" style={{ marginTop: '6px' }}>
+                  {task.notes || '-'}
+                </div>
+
+                <div className="inline-actions wrap" style={{ marginTop: '10px' }}>
                   <button
                     type="button"
                     className="secondary-btn"
@@ -22806,11 +22846,31 @@ marginBottom: '20px',
                 style={{
                   cursor: 'pointer',
                   border: selectedOpsTask?.id === task.id ? '2px solid #6c63ff' : undefined,
+                  padding: '12px',
                 }}
               >
-                <strong>{task.title}</strong>
-                <div className="compact-text">{task.category}</div>
-                <div className="inline-actions wrap">
+                <div className="list-card-top" style={{ alignItems: 'flex-start', gap: '8px' }}>
+                  <strong
+                    style={{
+                      wordBreak: 'keep-all',
+                      whiteSpace: 'normal',
+                      lineHeight: '1.45',
+                      display: 'block',
+                      flex: 1,
+                      minWidth: 0,
+                    }}
+                  >
+                    {task.title}
+                  </strong>
+                  <span className="pill pill-green">완료</span>
+                </div>
+
+                <div className="compact-text" style={{ marginTop: '6px' }}>
+                  {task.category}
+                </div>
+                <div className="compact-text">{task.due_date || '-'}</div>
+
+                <div className="inline-actions wrap" style={{ marginTop: '10px' }}>
                   <button
                     type="button"
                     className="secondary-btn"
@@ -22843,10 +22903,12 @@ marginBottom: '20px',
       <h4>업무 상세</h4>
 
       {!selectedOpsTask ? (
-        <div className="workout-list-empty">카드를 클릭하면 상세가 표시됩니다.</div>
+        <div className="workout-list-empty">카드를 클릭하면 오른쪽에서 상세를 볼 수 있습니다.</div>
       ) : (
         <div className="stack-gap">
-          <strong style={{ fontSize: '16px' }}>{selectedOpsTask.title}</strong>
+          <strong style={{ fontSize: '16px', lineHeight: '1.45' }}>
+            {selectedOpsTask.title}
+          </strong>
 
           <div className="compact-text">
             {selectedOpsTask.category} / {selectedOpsTask.priority}
