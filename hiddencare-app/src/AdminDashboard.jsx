@@ -1614,56 +1614,16 @@ const [selectedXpMemberId, setSelectedXpMemberId] = useState('')
 const [editingManagerActionId, setEditingManagerActionId] = useState(null)
 
 const [opsTaskForm, setOpsTaskForm] = useState(createEmptyOpsTask)
-const [opsTasks, setOpsTasks] = useState([
-  {
-    id: 1,
-    title: '회원 상담 예약 확인',
-    category: '상담',
-    priority: '긴급',
-    due_date: getTodayDateString(),
-    status: '대기',
-    completed: false,
-    notes: '오늘 오전 우선 체크',
-    source: 'manual',
-    weekday: getTaskWeekday(getTodayDateString()),
-  },
-  {
-    id: 2,
-    title: '러닝머신 점검 요청 정리',
-    category: '시설관리',
-    priority: '일반',
-    due_date: getTodayDateString(),
-    status: '진행중',
-    completed: false,
-    notes: '기사 연락 필요',
-    source: 'facility',
-    weekday: getTaskWeekday(getTodayDateString()),
-  },
-])
+const [opsTasks, setOpsTasks] = useState([])
 
 const [facilityTaskForm, setFacilityTaskForm] = useState(createEmptyFacilityTask)
-const [facilityTasks, setFacilityTasks] = useState([
-  {
-    id: 101,
-    title: '러닝머신 고장',
-    type: '기구 수리',
-    priority: '긴급',
-    status: '대기',
-    due_date: '',
-    note: '속도 조절 불량',
-  },
-])
+const [facilityTasks, setFacilityTasks] = useState([])
 
 const [ideaForm, setIdeaForm] = useState(createEmptyIdeaItem)
-const [ideaItems, setIdeaItems] = useState([
-  { id: 201, title: '회원 후기 기반 운영 개선안', note: '후기 문구 템플릿 만들기' },
-])
+const [ideaItems, setIdeaItems] = useState([])
 
 const [checklistForm, setChecklistForm] = useState(createEmptyChecklistItem)
-const [checklistItems, setChecklistItems] = useState([
-  { id: 301, title: '오픈 전 시설 점검', type: '오픈', checked: false },
-  { id: 302, title: '마감 청소 체크', type: '마감', checked: false },
-])
+const [checklistItems, setChecklistItems] = useState([])
 
 const [coachCareForm, setCoachCareForm] = useState(createEmptyCoachCareItem)
 const [coachCareItems, setCoachCareItems] = useState([])
@@ -1680,16 +1640,100 @@ const [monthlyRecordForm, setMonthlyRecordForm] = useState(createEmptyOpsRecord(
 const [opsRecords, setOpsRecords] = useState([])
 
 const [taskWeekdayFilter, setTaskWeekdayFilter] = useState(OPS_WEEKDAY_LABELS[new Date().getDay()])
-  const [selectedOpsTaskId, setSelectedOpsTaskId] = useState(null)
-  const selectedOpsTask = useMemo(
+const [selectedOpsTaskId, setSelectedOpsTaskId] = useState(null)
+
+const selectedOpsTask = useMemo(
   () => opsTasks.find((task) => task.id === selectedOpsTaskId) || null,
   [opsTasks, selectedOpsTaskId]
 )
-  const [opsViewTab, setOpsViewTab] = useState('dashboard')
-  
-  const [opsAuxTab, setOpsAuxTab] = useState('records')
+
+const [opsViewTab, setOpsViewTab] = useState('dashboard')
+const [opsAuxTab, setOpsAuxTab] = useState('records')
 const [opsRecordTab, setOpsRecordTab] = useState('today')
-  const todayTasks = useMemo(
+
+const loadOpsManagementData = async () => {
+  if (!currentAdminId) return
+
+  const [
+    tasksRes,
+    facilityRes,
+    ideasRes,
+    checklistRes,
+    coachCareRes,
+    interviewRes,
+    meetingRes,
+    recordsRes,
+  ] = await Promise.all([
+    supabase
+      .from('ops_tasks')
+      .select('*')
+      .eq('admin_id', currentAdminId)
+      .order('created_at', { ascending: false }),
+    supabase
+      .from('ops_facility_tasks')
+      .select('*')
+      .eq('admin_id', currentAdminId)
+      .order('created_at', { ascending: false }),
+    supabase
+      .from('ops_ideas')
+      .select('*')
+      .eq('admin_id', currentAdminId)
+      .order('created_at', { ascending: false }),
+    supabase
+      .from('ops_checklists')
+      .select('*')
+      .eq('admin_id', currentAdminId)
+      .order('created_at', { ascending: false }),
+    supabase
+      .from('ops_coach_care')
+      .select('*')
+      .eq('admin_id', currentAdminId)
+      .order('created_at', { ascending: false }),
+    supabase
+      .from('ops_interviews')
+      .select('*')
+      .eq('admin_id', currentAdminId)
+      .order('created_at', { ascending: false }),
+    supabase
+      .from('ops_meetings')
+      .select('*')
+      .eq('admin_id', currentAdminId)
+      .order('created_at', { ascending: false }),
+    supabase
+      .from('ops_records')
+      .select('*')
+      .eq('admin_id', currentAdminId)
+      .order('created_at', { ascending: false }),
+  ])
+
+  if (tasksRes.error) console.error('ops_tasks load error:', tasksRes.error)
+  if (facilityRes.error) console.error('ops_facility_tasks load error:', facilityRes.error)
+  if (ideasRes.error) console.error('ops_ideas load error:', ideasRes.error)
+  if (checklistRes.error) console.error('ops_checklists load error:', checklistRes.error)
+  if (coachCareRes.error) console.error('ops_coach_care load error:', coachCareRes.error)
+  if (interviewRes.error) console.error('ops_interviews load error:', interviewRes.error)
+  if (meetingRes.error) console.error('ops_meetings load error:', meetingRes.error)
+  if (recordsRes.error) console.error('ops_records load error:', recordsRes.error)
+
+  setOpsTasks((tasksRes.data || []).map((task) => ({
+    ...task,
+    weekday: getTaskWeekday(task.due_date),
+  })))
+
+  setFacilityTasks(facilityRes.data || [])
+  setIdeaItems(ideasRes.data || [])
+  setChecklistItems(checklistRes.data || [])
+  setCoachCareItems(coachCareRes.data || [])
+  setInterviewItems(interviewRes.data || [])
+  setMeetingItems(meetingRes.data || [])
+  setOpsRecords(recordsRes.data || [])
+}
+
+useEffect(() => {
+  loadOpsManagementData()
+}, [currentAdminId])
+
+const todayTasks = useMemo(
   () => opsTasks.filter((task) => getTaskAutoState(task) === '오늘 할 일'),
   [opsTasks]
 )
@@ -1705,7 +1749,13 @@ const overdueTasks = useMemo(
 )
 
 const incompleteTasks = useMemo(
-  () => opsTasks.filter((task) => getTaskAutoState(task) === '미완료' || getTaskAutoState(task) === '오늘 할 일' || getTaskAutoState(task) === '마감 임박'),
+  () =>
+    opsTasks.filter(
+      (task) =>
+        getTaskAutoState(task) === '미완료' ||
+        getTaskAutoState(task) === '오늘 할 일' ||
+        getTaskAutoState(task) === '마감 임박'
+    ),
   [opsTasks]
 )
 
@@ -1722,61 +1772,149 @@ const doneTasks = useMemo(() => opsTasks.filter((task) => task.status === '완�
 const todayRecords = useMemo(() => opsRecords.filter((item) => item.type === 'today'), [opsRecords])
 const weeklyRecords = useMemo(() => opsRecords.filter((item) => item.type === 'weekly'), [opsRecords])
 const monthlyRecords = useMemo(() => opsRecords.filter((item) => item.type === 'monthly'), [opsRecords])
-const handleAddOpsTask = () => {
-  if (!opsTaskForm.title.trim()) return
 
-  const nextTask = {
-    ...opsTaskForm,
-    id: Date.now(),
+const handleAddOpsTask = async () => {
+  if (!opsTaskForm.title.trim() || !currentAdminId) return
+
+  const payload = {
+    admin_id: currentAdminId,
+    title: opsTaskForm.title,
+    category: opsTaskForm.category,
+    priority: opsTaskForm.priority,
+    due_date: opsTaskForm.due_date || null,
+    status: opsTaskForm.status || '대기',
     completed: false,
-    weekday: getTaskWeekday(opsTaskForm.due_date),
+    notes: opsTaskForm.notes || '',
+    source: opsTaskForm.source || 'manual',
   }
 
-  setOpsTasks((prev) => [nextTask, ...prev])
+  const { data, error } = await supabase
+    .from('ops_tasks')
+    .insert(payload)
+    .select('*')
+    .single()
+
+  if (error) {
+    console.error('handleAddOpsTask error:', error)
+    return
+  }
+
+  setOpsTasks((prev) => [
+    {
+      ...data,
+      weekday: getTaskWeekday(data.due_date),
+    },
+    ...prev,
+  ])
   setOpsTaskForm(createEmptyOpsTask())
 }
 
-const handleToggleOpsTaskComplete = (taskId) => {
+const handleToggleOpsTaskComplete = async (taskId) => {
+  const target = opsTasks.find((task) => task.id === taskId)
+  if (!target) return
+
+  const nextCompleted = !target.completed
+  const nextStatus = nextCompleted ? '완료' : '대기'
+
+  const { data, error } = await supabase
+    .from('ops_tasks')
+    .update({
+      completed: nextCompleted,
+      status: nextStatus,
+    })
+    .eq('id', taskId)
+    .select('*')
+    .single()
+
+  if (error) {
+    console.error('handleToggleOpsTaskComplete error:', error)
+    return
+  }
+
   setOpsTasks((prev) =>
     prev.map((task) =>
       task.id === taskId
-        ? {
-            ...task,
-            completed: !task.completed,
-            status: !task.completed ? '완료' : '대기',
-          }
+        ? { ...data, weekday: getTaskWeekday(data.due_date) }
         : task
     )
   )
 }
 
-const handleChangeOpsTaskStatus = (taskId, nextStatus) => {
+const handleChangeOpsTaskStatus = async (taskId, nextStatus) => {
+  const { data, error } = await supabase
+    .from('ops_tasks')
+    .update({
+      status: nextStatus,
+      completed: nextStatus === '완료',
+    })
+    .eq('id', taskId)
+    .select('*')
+    .single()
+
+  if (error) {
+    console.error('handleChangeOpsTaskStatus error:', error)
+    return
+  }
+
   setOpsTasks((prev) =>
     prev.map((task) =>
       task.id === taskId
-        ? {
-            ...task,
-            status: nextStatus,
-            completed: nextStatus === '완료',
-          }
+        ? { ...data, weekday: getTaskWeekday(data.due_date) }
         : task
     )
   )
 }
 
-const handleDeleteOpsTask = (taskId) => {
+const handleDeleteOpsTask = async (taskId) => {
+  const { error } = await supabase
+    .from('ops_tasks')
+    .delete()
+    .eq('id', taskId)
+
+  if (error) {
+    console.error('handleDeleteOpsTask error:', error)
+    return
+  }
+
   setOpsTasks((prev) => prev.filter((task) => task.id !== taskId))
+  if (selectedOpsTaskId === taskId) {
+    setSelectedOpsTaskId(null)
+  }
 }
 
-const handleAddFacilityTask = () => {
-  if (!facilityTaskForm.title.trim()) return
-  setFacilityTasks((prev) => [{ ...facilityTaskForm, id: Date.now() }, ...prev])
+const handleAddFacilityTask = async () => {
+  if (!facilityTaskForm.title.trim() || !currentAdminId) return
+
+  const payload = {
+    admin_id: currentAdminId,
+    title: facilityTaskForm.title,
+    type: facilityTaskForm.type,
+    priority: facilityTaskForm.priority,
+    status: facilityTaskForm.status || '대기',
+    due_date: facilityTaskForm.due_date || null,
+    note: facilityTaskForm.note || '',
+  }
+
+  const { data, error } = await supabase
+    .from('ops_facility_tasks')
+    .insert(payload)
+    .select('*')
+    .single()
+
+  if (error) {
+    console.error('handleAddFacilityTask error:', error)
+    return
+  }
+
+  setFacilityTasks((prev) => [data, ...prev])
   setFacilityTaskForm(createEmptyFacilityTask())
 }
 
-const handleMoveIdeaToTask = (idea) => {
-  const nextTask = {
-    id: Date.now(),
+const handleMoveIdeaToTask = async (idea) => {
+  if (!currentAdminId) return
+
+  const taskPayload = {
+    admin_id: currentAdminId,
     title: idea.title,
     category: '운영',
     priority: '일반',
@@ -1785,90 +1923,253 @@ const handleMoveIdeaToTask = (idea) => {
     completed: false,
     notes: idea.note || '',
     source: 'idea',
-    weekday: getTaskWeekday(getTodayDateString()),
   }
 
-  setOpsTasks((prev) => [nextTask, ...prev])
+  const { data: insertedTask, error: taskError } = await supabase
+    .from('ops_tasks')
+    .insert(taskPayload)
+    .select('*')
+    .single()
+
+  if (taskError) {
+    console.error('handleMoveIdeaToTask task insert error:', taskError)
+    return
+  }
+
+  const { error: ideaDeleteError } = await supabase
+    .from('ops_ideas')
+    .delete()
+    .eq('id', idea.id)
+
+  if (ideaDeleteError) {
+    console.error('handleMoveIdeaToTask idea delete error:', ideaDeleteError)
+    return
+  }
+
+  setOpsTasks((prev) => [
+    { ...insertedTask, weekday: getTaskWeekday(insertedTask.due_date) },
+    ...prev,
+  ])
   setIdeaItems((prev) => prev.filter((item) => item.id !== idea.id))
 }
 
-const handleAddIdea = () => {
-  if (!ideaForm.title.trim()) return
-  setIdeaItems((prev) => [{ ...ideaForm, id: Date.now() }, ...prev])
+const handleAddIdea = async () => {
+  if (!ideaForm.title.trim() || !currentAdminId) return
+
+  const { data, error } = await supabase
+    .from('ops_ideas')
+    .insert({
+      admin_id: currentAdminId,
+      title: ideaForm.title,
+      note: ideaForm.note || '',
+    })
+    .select('*')
+    .single()
+
+  if (error) {
+    console.error('handleAddIdea error:', error)
+    return
+  }
+
+  setIdeaItems((prev) => [data, ...prev])
   setIdeaForm(createEmptyIdeaItem())
 }
 
-const handleAddChecklist = () => {
-  if (!checklistForm.title.trim()) return
-  setChecklistItems((prev) => [{ ...checklistForm, id: Date.now() }, ...prev])
+const handleAddChecklist = async () => {
+  if (!checklistForm.title.trim() || !currentAdminId) return
+
+  const { data, error } = await supabase
+    .from('ops_checklists')
+    .insert({
+      admin_id: currentAdminId,
+      title: checklistForm.title,
+      type: checklistForm.type,
+      checked: false,
+    })
+    .select('*')
+    .single()
+
+  if (error) {
+    console.error('handleAddChecklist error:', error)
+    return
+  }
+
+  setChecklistItems((prev) => [data, ...prev])
   setChecklistForm(createEmptyChecklistItem())
 }
 
-const handleToggleChecklist = (checkId) => {
+const handleToggleChecklist = async (checkId) => {
+  const target = checklistItems.find((item) => item.id === checkId)
+  if (!target) return
+
+  const { data, error } = await supabase
+    .from('ops_checklists')
+    .update({
+      checked: !target.checked,
+    })
+    .eq('id', checkId)
+    .select('*')
+    .single()
+
+  if (error) {
+    console.error('handleToggleChecklist error:', error)
+    return
+  }
+
   setChecklistItems((prev) =>
-    prev.map((item) =>
-      item.id === checkId ? { ...item, checked: !item.checked } : item
-    )
+    prev.map((item) => (item.id === checkId ? data : item))
   )
 }
 
-const handleAddCoachCare = () => {
-  if (!coachCareForm.coach_name.trim()) return
-  setCoachCareItems((prev) => [{ ...coachCareForm, id: Date.now() }, ...prev])
+const handleAddCoachCare = async () => {
+  if (!coachCareForm.coach_name.trim() || !currentAdminId) return
+
+  const { data, error } = await supabase
+    .from('ops_coach_care')
+    .insert({
+      admin_id: currentAdminId,
+      coach_name: coachCareForm.coach_name,
+      condition_note: coachCareForm.condition_note || '',
+      burnout: coachCareForm.burnout || '보통',
+      fatigue: Number(coachCareForm.fatigue || 3),
+      class_load: Number(coachCareForm.class_load || 3),
+    })
+    .select('*')
+    .single()
+
+  if (error) {
+    console.error('handleAddCoachCare error:', error)
+    return
+  }
+
+  setCoachCareItems((prev) => [data, ...prev])
   setCoachCareForm(createEmptyCoachCareItem())
 }
 
-const handleAddInterviewLink = () => {
-  if (!interviewForm.coach_name.trim()) return
-  setInterviewItems((prev) => [{ ...interviewForm, id: Date.now() }, ...prev])
+const handleAddInterviewLink = async () => {
+  if (!interviewForm.coach_name.trim() || !currentAdminId) return
+
+  const { data, error } = await supabase
+    .from('ops_interviews')
+    .insert({
+      admin_id: currentAdminId,
+      coach_name: interviewForm.coach_name,
+      need_interview: true,
+      interview_note: interviewForm.interview_note || '',
+      follow_up: interviewForm.follow_up || '',
+    })
+    .select('*')
+    .single()
+
+  if (error) {
+    console.error('handleAddInterviewLink error:', error)
+    return
+  }
+
+  setInterviewItems((prev) => [data, ...prev])
   setInterviewForm(createEmptyInterviewLinkItem())
 }
 
-const handleAddMeetingItem = () => {
-  if (!meetingForm.title.trim()) return
-  setMeetingItems((prev) => [{ ...meetingForm, id: Date.now() }, ...prev])
+const handleAddMeetingItem = async () => {
+  if (!meetingForm.title.trim() || !currentAdminId) return
+
+  const { data, error } = await supabase
+    .from('ops_meetings')
+    .insert({
+      admin_id: currentAdminId,
+      title: meetingForm.title,
+      problem: meetingForm.problem || '',
+      cause: meetingForm.cause || '',
+      ideas: meetingForm.ideas || '',
+      decision: meetingForm.decision || '',
+      action_title: meetingForm.action_title || '',
+      action_due_date: meetingForm.action_due_date || null,
+      action_category: meetingForm.action_category || '운영',
+      action_priority: meetingForm.action_priority || '일반',
+    })
+    .select('*')
+    .single()
+
+  if (error) {
+    console.error('handleAddMeetingItem error:', error)
+    return
+  }
+
+  setMeetingItems((prev) => [data, ...prev])
   setMeetingForm(createEmptyMeetingItem())
 }
 
-const handleCreateTaskFromMeeting = (meeting) => {
-  if (!meeting.action_title.trim()) return
+const handleCreateTaskFromMeeting = async (meeting) => {
+  if (!meeting.action_title?.trim() || !currentAdminId) return
 
-  const nextTask = {
-    id: Date.now(),
-    title: meeting.action_title,
-    category: meeting.action_category || '운영',
-    priority: meeting.action_priority || '일반',
-    due_date: meeting.action_due_date || getTodayDateString(),
-    status: '대기',
-    completed: false,
-    notes: `회의결정사항: ${meeting.decision || '-'}`,
-    source: 'meeting',
-    weekday: getTaskWeekday(meeting.action_due_date || getTodayDateString()),
+  const { data, error } = await supabase
+    .from('ops_tasks')
+    .insert({
+      admin_id: currentAdminId,
+      title: meeting.action_title,
+      category: meeting.action_category || '운영',
+      priority: meeting.action_priority || '일반',
+      due_date: meeting.action_due_date || getTodayDateString(),
+      status: '대기',
+      completed: false,
+      notes: `회의결정사항: ${meeting.decision || '-'}`,
+      source: 'meeting',
+    })
+    .select('*')
+    .single()
+
+  if (error) {
+    console.error('handleCreateTaskFromMeeting error:', error)
+    return
   }
 
-  setOpsTasks((prev) => [nextTask, ...prev])
-}
-
-const handleSaveOpsRecord = (recordForm, type, resetFn) => {
-  if (!recordForm.title.trim()) return
-
-  setOpsRecords((prev) => [
-    {
-      ...recordForm,
-      id: Date.now(),
-      type,
-      created_at: new Date().toISOString(),
-    },
+  setOpsTasks((prev) => [
+    { ...data, weekday: getTaskWeekday(data.due_date) },
     ...prev,
   ])
+}
 
+const handleSaveOpsRecord = async (recordForm, type, resetFn) => {
+  if (!recordForm.title.trim() || !currentAdminId) return
+
+  const { data, error } = await supabase
+    .from('ops_records')
+    .insert({
+      admin_id: currentAdminId,
+      type,
+      title: recordForm.title,
+      what_done: recordForm.what_done || '',
+      problem: recordForm.problem || '',
+      improve: recordForm.improve || '',
+      reflection: recordForm.reflection || '',
+    })
+    .select('*')
+    .single()
+
+  if (error) {
+    console.error('handleSaveOpsRecord error:', error)
+    return
+  }
+
+  setOpsRecords((prev) => [data, ...prev])
   resetFn(createEmptyOpsRecord(type))
 }
-const handleDeleteOpsRecord = (recordId) => {
+
+const handleDeleteOpsRecord = async (recordId) => {
+  const { error } = await supabase
+    .from('ops_records')
+    .delete()
+    .eq('id', recordId)
+
+  if (error) {
+    console.error('handleDeleteOpsRecord error:', error)
+    return
+  }
+
   setOpsRecords((prev) => prev.filter((item) => item.id !== recordId))
 }
 
-const handleEditOpsRecord = (record) => {
+const handleEditOpsRecord = async (record) => {
   const nextValue = {
     ...record,
     id: undefined,
@@ -1910,9 +2211,20 @@ const handleEditOpsRecord = (record) => {
     setOpsRecordTab('monthly')
   }
 
+  const { error } = await supabase
+    .from('ops_records')
+    .delete()
+    .eq('id', record.id)
+
+  if (error) {
+    console.error('handleEditOpsRecord delete error:', error)
+    return
+  }
+
   setOpsRecords((prev) => prev.filter((item) => item.id !== record.id))
   setOpsAuxTab('records')
 }
+
 const handleDownloadOpsCsv = () => {
   downloadCsv(
     `ops_management_${getTodayDateString()}.csv`,
