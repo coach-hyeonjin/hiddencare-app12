@@ -22966,12 +22966,17 @@ marginBottom: '20px',
     </div>
   </div>
 </section>
-                <h3>위험 관리</h3>
-                <p className="sub-text">임박 / 초과 / 시설 요청을 모아 봅니다.</p>
-              </div>
-            </div>
 
-            <div className="list-stack">
+<section className="dashboard-panel-card">
+  <div className="dashboard-panel-head">
+    <div>
+      <div className="dashboard-panel-label">RISK</div>
+      <h3>위험 관리</h3>
+      <p className="sub-text">임박 / 초과 / 시설 요청을 모아 봅니다.</p>
+    </div>
+  </div>
+
+  <div className="list-stack">
               <div className="sub-card">
                 <h4>마감 임박</h4>
                 {urgentTasks.length === 0 ? (
