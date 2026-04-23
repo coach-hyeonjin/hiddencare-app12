@@ -1632,12 +1632,7 @@ const [interviewForm, setInterviewForm] = useState(createEmptyInterviewLinkItem)
 const [interviewItems, setInterviewItems] = useState([])
 
 const [meetingForm, setMeetingForm] = useState(createEmptyMeetingItem)
-  const [meetingSales, setMeetingSales] = useState({
-  yesterday: '',
-  today: '',
-  thisMonth: '',
-  nextMonth: '',
-})
+ 
 const [meetingItems, setMeetingItems] = useState([])
 
 const [todayRecordForm, setTodayRecordForm] = useState(createEmptyOpsRecord('today'))
