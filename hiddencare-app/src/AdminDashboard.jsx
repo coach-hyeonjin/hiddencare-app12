@@ -1680,6 +1680,7 @@ const [monthlyRecordForm, setMonthlyRecordForm] = useState(createEmptyOpsRecord(
 const [opsRecords, setOpsRecords] = useState([])
 
 const [taskWeekdayFilter, setTaskWeekdayFilter] = useState(OPS_WEEKDAY_LABELS[new Date().getDay()])
+  const [opsViewTab, setOpsViewTab] = useState('dashboard')
   const todayTasks = useMemo(
   () => opsTasks.filter((task) => getTaskAutoState(task) === '오늘 할 일'),
   [opsTasks]
@@ -22421,27 +22422,23 @@ const filteredExercisesAdvanced = exercises.filter((exercise) => {
   }}
 >
   {[
-    { label: '코치 대시보드', tab: '운영대시보드' },
-    { label: '회의 관리', tab: '업무관리' },
-    { label: '1:1 면담', tab: '업무관리' },
-    { label: '업무 관리', tab: '업무관리' },
+    { label: '코치 대시보드', value: 'coach' },
+    { label: '회의 관리', value: 'meeting' },
+    { label: '1:1 면담', value: 'interview' },
+    { label: '업무 관리', value: 'dashboard' },
   ].map((item) => (
     <button
       key={item.label}
       type="button"
-      className={item.label === '업무 관리' ? 'primary-btn' : 'secondary-btn'}
+      className={opsViewTab === item.value ? 'primary-btn' : 'secondary-btn'}
       style={{ minWidth: '120px' }}
-      onClick={() => {
-        if (item.label === '코치 대시보드') {
-          setActiveTab('운영대시보드')
-        }
-      }}
+      onClick={() => setOpsViewTab(item.value)}
     >
       {item.label}
     </button>
   ))}
 </div>
-
+   {opsViewTab === 'dashboard' && (
     <div
       style={{
         display: 'grid',
@@ -22610,13 +22607,14 @@ const filteredExercisesAdvanced = exercises.filter((exercise) => {
           </div>
         </div>
 
-        <div
-          style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(3, minmax(0, 1fr))',
-            gap: '12px',
-          }}
-        >
+      <div
+  style={{
+    display: 'grid',
+    gridTemplateColumns: 'repeat(3, minmax(220px, 1fr))',
+    gap: '16px',
+    alignItems: 'start',
+  }}
+>
           <div className="sub-card">
             <h4>대기</h4>
             <div className="list-stack">
@@ -22626,11 +22624,22 @@ const filteredExercisesAdvanced = exercises.filter((exercise) => {
                 waitingTasks.map((task) => (
                   <div key={task.id} className="list-card">
                     <div className="list-card-top">
-                      <strong>{task.title}</strong>
-                      <span className={`pill ${task.priority === '긴급' ? 'pill-red' : 'pill-amber'}`}>
-                        {task.priority}
-                      </span>
-                    </div>
+  <strong
+    style={{
+      wordBreak: 'keep-all',
+      whiteSpace: 'normal',
+      lineHeight: '1.4',
+      display: 'block',
+      flex: 1,
+      minWidth: 0,
+    }}
+  >
+    {task.title}
+  </strong>
+  <span className={`pill ${task.priority === '긴급' ? 'pill-red' : 'pill-amber'}`}>
+    {task.priority}
+  </span>
+</div>
 
                     <div className="compact-text">{task.category}</div>
                     <div className="compact-text">{task.due_date || '-'}</div>
@@ -22665,11 +22674,21 @@ const filteredExercisesAdvanced = exercises.filter((exercise) => {
               ) : (
                 doingTasks.map((task) => (
                   <div key={task.id} className="list-card">
-                    <div className="list-card-top">
-                      <strong>{task.title}</strong>
-                      <span className="pill pill-blue">{task.category}</span>
-                    </div>
-
+                   <div className="list-card-top">
+  <strong
+    style={{
+      wordBreak: 'keep-all',
+      whiteSpace: 'normal',
+      lineHeight: '1.4',
+      display: 'block',
+      flex: 1,
+      minWidth: 0,
+    }}
+  >
+    {task.title}
+  </strong>
+  <span className="pill pill-blue">{task.category}</span>
+</div>
                     <div className="compact-text">{task.notes || '-'}</div>
 
                     <div className="inline-actions wrap">
@@ -22709,10 +22728,21 @@ const filteredExercisesAdvanced = exercises.filter((exercise) => {
               ) : (
                 doneTasks.map((task) => (
                   <div key={task.id} className="list-card">
-                    <div className="list-card-top">
-                      <strong>{task.title}</strong>
-                      <span className="pill pill-green">완료</span>
-                    </div>
+                   <div className="list-card-top">
+  <strong
+    style={{
+      wordBreak: 'keep-all',
+      whiteSpace: 'normal',
+      lineHeight: '1.4',
+      display: 'block',
+      flex: 1,
+      minWidth: 0,
+    }}
+  >
+    {task.title}
+  </strong>
+  <span className="pill pill-green">완료</span>
+</div>
 
                     <div className="compact-text">{task.category}</div>
                     <div className="compact-text">{task.due_date || '-'}</div>
@@ -23082,6 +23112,19 @@ const filteredExercisesAdvanced = exercises.filter((exercise) => {
           >
             오늘 기록 저장
           </button>
+          <div className="list-stack" style={{ marginTop: '12px' }}>
+  {todayRecords.length === 0 ? (
+    <div className="workout-list-empty">오늘 기록 내역이 없습니다.</div>
+  ) : (
+    todayRecords.map((item) => (
+      <div key={item.id} className="list-card">
+        <strong>{item.title}</strong>
+        <div className="compact-text">{item.what_done || '-'}</div>
+        <div className="compact-text">{item.problem || '-'}</div>
+      </div>
+    ))
+  )}
+</div>
         </div>
 
         <div className="sub-card">
@@ -23116,6 +23159,19 @@ const filteredExercisesAdvanced = exercises.filter((exercise) => {
           >
             주간 기록 저장
           </button>
+          <div className="list-stack" style={{ marginTop: '12px' }}>
+  {weeklyRecords.length === 0 ? (
+    <div className="workout-list-empty">주간 기록 내역이 없습니다.</div>
+  ) : (
+    weeklyRecords.map((item) => (
+      <div key={item.id} className="list-card">
+        <strong>{item.title}</strong>
+        <div className="compact-text">{item.what_done || '-'}</div>
+        <div className="compact-text">{item.problem || '-'}</div>
+      </div>
+    ))
+  )}
+</div>
         </div>
 
         <div className="sub-card">
@@ -23150,13 +23206,337 @@ const filteredExercisesAdvanced = exercises.filter((exercise) => {
           >
             월간 기록 저장
           </button>
+          <div className="list-stack" style={{ marginTop: '12px' }}>
+  {monthlyRecords.length === 0 ? (
+    <div className="workout-list-empty">월간 기록 내역이 없습니다.</div>
+  ) : (
+    monthlyRecords.map((item) => (
+      <div key={item.id} className="list-card">
+        <strong>{item.title}</strong>
+        <div className="compact-text">{item.what_done || '-'}</div>
+        <div className="compact-text">{item.problem || '-'}</div>
+      </div>
+    ))
+  )}
+</div>
         </div>
       </div>
     </section>
   </div>
 )}
+{opsViewTab === 'coach' && (
+  <section className="dashboard-panel-card">
+    <div className="dashboard-panel-head">
+      <div>
+        <div className="dashboard-panel-label">COACH DASHBOARD</div>
+        <h3>코치 대시보드</h3>
+        <p className="sub-text">코치 상태, 번아웃, 피로도, 수업 부담을 한눈에 봅니다.</p>
+      </div>
+    </div>
 
-      
+    <div
+      style={{
+        display: 'grid',
+        gridTemplateColumns: '1fr 1.2fr',
+        gap: '16px',
+      }}
+    >
+      <div className="sub-card">
+        <h4>코치 상태 입력</h4>
+
+        <label className="field">
+          <span>코치명</span>
+          <input
+            value={coachCareForm.coach_name}
+            onChange={(e) => setCoachCareForm((prev) => ({ ...prev, coach_name: e.target.value }))}
+          />
+        </label>
+
+        <div className="grid-2">
+          <label className="field">
+            <span>번아웃 여부</span>
+            <select
+              value={coachCareForm.burnout}
+              onChange={(e) => setCoachCareForm((prev) => ({ ...prev, burnout: e.target.value }))}
+            >
+              <option value="낮음">낮음</option>
+              <option value="보통">보통</option>
+              <option value="주의">주의</option>
+              <option value="위험">위험</option>
+            </select>
+          </label>
+
+          <label className="field">
+            <span>피로도</span>
+            <input
+              type="number"
+              min="1"
+              max="5"
+              value={coachCareForm.fatigue}
+              onChange={(e) => setCoachCareForm((prev) => ({ ...prev, fatigue: e.target.value }))}
+            />
+          </label>
+        </div>
+
+        <label className="field">
+          <span>수업 부담</span>
+          <input
+            type="number"
+            min="1"
+            max="5"
+            value={coachCareForm.class_load}
+            onChange={(e) => setCoachCareForm((prev) => ({ ...prev, class_load: e.target.value }))}
+          />
+        </label>
+
+        <label className="field">
+          <span>컨디션 기록</span>
+          <textarea
+            rows="4"
+            value={coachCareForm.condition_note}
+            onChange={(e) => setCoachCareForm((prev) => ({ ...prev, condition_note: e.target.value }))}
+          />
+        </label>
+
+        <button type="button" className="primary-btn" onClick={handleAddCoachCare}>
+          코치 상태 기록
+        </button>
+      </div>
+
+      <div className="sub-card">
+        <h4>코치 상태 목록</h4>
+
+        <div className="list-stack">
+          {coachCareItems.length === 0 ? (
+            <div className="workout-list-empty">등록된 코치 상태 기록이 없습니다.</div>
+          ) : (
+            coachCareItems.map((item) => (
+              <div key={item.id} className="list-card">
+                <div className="list-card-top">
+                  <strong>{item.coach_name}</strong>
+                  <span
+                    className={`pill ${
+                      item.burnout === '위험'
+                        ? 'pill-red'
+                        : item.burnout === '주의'
+                        ? 'pill-amber'
+                        : 'pill-green'
+                    }`}
+                  >
+                    {item.burnout}
+                  </span>
+                </div>
+
+                <div className="compact-text">
+                  피로도 {item.fatigue} / 수업부담 {item.class_load}
+                </div>
+                <div className="compact-text">{item.condition_note || '-'}</div>
+              </div>
+            ))
+          )}
+        </div>
+      </div>
+    </div>
+  </section>
+)}
+      {opsViewTab === 'interview' && (
+  <section className="dashboard-panel-card">
+    <div className="dashboard-panel-head">
+      <div>
+        <div className="dashboard-panel-label">1:1 INTERVIEW</div>
+        <h3>1:1 면담 관리</h3>
+        <p className="sub-text">면담 필요 리스트, 면담 내용, 후속 조치를 관리합니다.</p>
+      </div>
+    </div>
+
+    <div
+      style={{
+        display: 'grid',
+        gridTemplateColumns: '1fr 1.2fr',
+        gap: '16px',
+      }}
+    >
+      <div className="sub-card">
+        <h4>면담 입력</h4>
+
+        <label className="field">
+          <span>대상 코치</span>
+          <input
+            value={interviewForm.coach_name}
+            onChange={(e) => setInterviewForm((prev) => ({ ...prev, coach_name: e.target.value }))}
+          />
+        </label>
+
+        <label className="field">
+          <span>면담 내용</span>
+          <textarea
+            rows="4"
+            value={interviewForm.interview_note}
+            onChange={(e) => setInterviewForm((prev) => ({ ...prev, interview_note: e.target.value }))}
+          />
+        </label>
+
+        <label className="field">
+          <span>후속 조치</span>
+          <textarea
+            rows="4"
+            value={interviewForm.follow_up}
+            onChange={(e) => setInterviewForm((prev) => ({ ...prev, follow_up: e.target.value }))}
+          />
+        </label>
+
+        <button type="button" className="primary-btn" onClick={handleAddInterviewLink}>
+          면담 필요 리스트 추가
+        </button>
+      </div>
+
+      <div className="sub-card">
+        <h4>면담 목록</h4>
+
+        <div className="list-stack">
+          {interviewItems.length === 0 ? (
+            <div className="workout-list-empty">등록된 면담 항목이 없습니다.</div>
+          ) : (
+            interviewItems.map((item) => (
+              <div key={item.id} className="list-card">
+                <div className="list-card-top">
+                  <strong>{item.coach_name}</strong>
+                  <span className="pill pill-amber">면담 필요</span>
+                </div>
+                <div className="compact-text">면담: {item.interview_note || '-'}</div>
+                <div className="compact-text">후속: {item.follow_up || '-'}</div>
+              </div>
+            ))
+          )}
+        </div>
+      </div>
+    </div>
+  </section>
+)}
+        {opsViewTab === 'meeting' && (
+  <section className="dashboard-panel-card">
+    <div className="dashboard-panel-head">
+      <div>
+        <div className="dashboard-panel-label">MEETING FLOW</div>
+        <h3>회의 관리</h3>
+        <p className="sub-text">문제 공유 → 원인 분석 → 해결 아이디어 → 결정 → 실행 업무 생성</p>
+      </div>
+    </div>
+
+    <div
+      style={{
+        display: 'grid',
+        gridTemplateColumns: '1fr 1.2fr',
+        gap: '16px',
+      }}
+    >
+      <div className="sub-card">
+        <h4>회의 입력</h4>
+
+        <label className="field">
+          <span>회의 제목</span>
+          <input
+            value={meetingForm.title}
+            onChange={(e) => setMeetingForm((prev) => ({ ...prev, title: e.target.value }))}
+          />
+        </label>
+
+        <label className="field">
+          <span>문제 공유</span>
+          <textarea
+            rows="3"
+            value={meetingForm.problem}
+            onChange={(e) => setMeetingForm((prev) => ({ ...prev, problem: e.target.value }))}
+          />
+        </label>
+
+        <label className="field">
+          <span>원인 분석</span>
+          <textarea
+            rows="3"
+            value={meetingForm.cause}
+            onChange={(e) => setMeetingForm((prev) => ({ ...prev, cause: e.target.value }))}
+          />
+        </label>
+
+        <label className="field">
+          <span>해결 아이디어</span>
+          <textarea
+            rows="3"
+            value={meetingForm.ideas}
+            onChange={(e) => setMeetingForm((prev) => ({ ...prev, ideas: e.target.value }))}
+          />
+        </label>
+
+        <label className="field">
+          <span>결정 사항</span>
+          <textarea
+            rows="3"
+            value={meetingForm.decision}
+            onChange={(e) => setMeetingForm((prev) => ({ ...prev, decision: e.target.value }))}
+          />
+        </label>
+
+        <div className="grid-2">
+          <label className="field">
+            <span>실행 업무명</span>
+            <input
+              value={meetingForm.action_title}
+              onChange={(e) => setMeetingForm((prev) => ({ ...prev, action_title: e.target.value }))}
+            />
+          </label>
+
+          <label className="field">
+            <span>실행 마감일</span>
+            <input
+              type="date"
+              value={meetingForm.action_due_date}
+              onChange={(e) => setMeetingForm((prev) => ({ ...prev, action_due_date: e.target.value }))}
+            />
+          </label>
+        </div>
+
+        <button type="button" className="primary-btn" onClick={handleAddMeetingItem}>
+          회의 기록 저장
+        </button>
+      </div>
+
+      <div className="sub-card">
+        <h4>회의 목록</h4>
+
+        <div className="list-stack">
+          {meetingItems.length === 0 ? (
+            <div className="workout-list-empty">등록된 회의 기록이 없습니다.</div>
+          ) : (
+            meetingItems.map((item) => (
+              <div key={item.id} className="list-card">
+                <div className="list-card-top">
+                  <strong>{item.title}</strong>
+                  <span className="pill pill-violet">회의</span>
+                </div>
+
+                <div className="compact-text">문제: {item.problem || '-'}</div>
+                <div className="compact-text">원인: {item.cause || '-'}</div>
+                <div className="compact-text">아이디어: {item.ideas || '-'}</div>
+                <div className="compact-text">결정: {item.decision || '-'}</div>
+
+                <div className="inline-actions wrap">
+                  <button
+                    type="button"
+                    className="secondary-btn"
+                    onClick={() => handleCreateTaskFromMeeting(item)}
+                  >
+                    실행 업무 생성
+                  </button>
+                </div>
+              </div>
+            ))
+          )}
+        </div>
+      </div>
+    </div>
+  </section>
+)}
 {activeTab === '활동랭킹' && (
   <div className="activity-ranking-page">
     <section className="activity-ranking-hero">
