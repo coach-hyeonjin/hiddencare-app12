@@ -23536,7 +23536,9 @@ const filteredExercisesAdvanced = exercises.filter((exercise) => {
         </div>
       </div>
     </div>
-  </section>
+   </section>
+)}
+  </div>
 )}
 {activeTab === '활동랭킹' && (
   <div className="activity-ranking-page">
