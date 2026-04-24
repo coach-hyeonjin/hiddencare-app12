@@ -25312,25 +25312,47 @@ gap: '16px',
             </button>
           </div>
 
-          <div className="meeting-detail-section">
-            <h5>매출 체크</h5>
-            <pre>{selectedMeetingItem.problem || '-'}</pre>
-          </div>
+         <div className="meeting-detail-kpi-grid">
+  <div className="meeting-kpi-card">
+    <span>매출 체크</span>
+    <strong>{selectedMeetingItem.problem ? '기록 있음' : '-'}</strong>
+  </div>
 
-          <div className="meeting-detail-section">
-            <h5>회원 흐름</h5>
-            <pre>{selectedMeetingItem.cause || '-'}</pre>
-          </div>
+  <div className="meeting-kpi-card">
+    <span>회원 흐름</span>
+    <strong>{selectedMeetingItem.cause ? '기록 있음' : '-'}</strong>
+  </div>
 
-          <div className="meeting-detail-section">
-            <h5>운영 이슈</h5>
-            <pre>{selectedMeetingItem.ideas || '-'}</pre>
-          </div>
+  <div className="meeting-kpi-card">
+    <span>운영 이슈</span>
+    <strong>{selectedMeetingItem.ideas ? '기록 있음' : '-'}</strong>
+  </div>
 
-          <div className="meeting-detail-section">
-            <h5>결정 사항</h5>
-            <pre>{selectedMeetingItem.decision || '-'}</pre>
-          </div>
+  <div className="meeting-kpi-card">
+    <span>결정 사항</span>
+    <strong>{selectedMeetingItem.decision ? '기록 있음' : '-'}</strong>
+  </div>
+</div>
+
+<div className="meeting-detail-report-card">
+  <div className="meeting-detail-report-title">매출 체크</div>
+  <pre>{selectedMeetingItem.problem || '-'}</pre>
+</div>
+
+<div className="meeting-detail-report-card">
+  <div className="meeting-detail-report-title">회원 흐름</div>
+  <pre>{selectedMeetingItem.cause || '-'}</pre>
+</div>
+
+<div className="meeting-detail-report-card">
+  <div className="meeting-detail-report-title">운영 이슈</div>
+  <pre>{selectedMeetingItem.ideas || '-'}</pre>
+</div>
+
+<div className="meeting-detail-report-card">
+  <div className="meeting-detail-report-title">결정 사항</div>
+  <pre>{selectedMeetingItem.decision || '-'}</pre>
+</div>
 
           {selectedMeetingItem.action_title ? (
             <div className="meeting-detail-section">
