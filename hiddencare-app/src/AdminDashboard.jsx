@@ -1651,26 +1651,24 @@ const selectedOpsTask = useMemo(
 const [opsViewTab, setOpsViewTab] = useState('dashboard')
 const [opsAuxTab, setOpsAuxTab] = useState('records')
 const [opsRecordTab, setOpsRecordTab] = useState('today')
-const [meetingSales, setMeetingSales] = useState({
-  yesterday: '',
-  today: '',
-  thisMonth: '',
-  nextMonth: '',
-})
-
-const [meetingMemberFlow, setMeetingMemberFlow] = useState({
-  reRegister: '',
-  hold: '',
-  trial: '',
-  dormant: '',
-})
-
-const [meetingOpsIssues, setMeetingOpsIssues] = useState({
-  coach: '',
-  facility: '',
-  member: '',
-  field: '',
-})
+const [meetingCoachReports, setMeetingCoachReports] = useState([
+  {
+    id: Date.now(),
+    coachName: '',
+    yesterdaySales: '',
+    todaySales: '',
+    thisMonthSales: '',
+    nextMonthSales: '',
+    reRegister: '',
+    hold: '',
+    trial: '',
+    dormant: '',
+    coachIssue: '',
+    memberIssue: '',
+    facilityIssue: '',
+    fieldCheck: '',
+  },
+])
 
 const [meetingDirection, setMeetingDirection] = useState('')
 
@@ -2135,23 +2133,81 @@ const groupedMeetingItems = useMemo(() => {
     prev.map((row) => (row.id === id ? { ...row, [field]: value } : row))
   )
 }
+const createEmptyMeetingCoachReport = () => ({
+  id: Date.now() + Math.random(),
+  coachName: '',
+  yesterdaySales: '',
+  todaySales: '',
+  thisMonthSales: '',
+  nextMonthSales: '',
+  reRegister: '',
+  hold: '',
+  trial: '',
+  dormant: '',
+  coachIssue: '',
+  memberIssue: '',
+  facilityIssue: '',
+  fieldCheck: '',
+})
+
+const updateMeetingCoachReport = (id, field, value) => {
+  setMeetingCoachReports((prev) =>
+    prev.map((report) =>
+      report.id === id ? { ...report, [field]: value } : report
+    )
+  )
+}
+
+const addMeetingCoachReport = () => {
+  setMeetingCoachReports((prev) => [...prev, createEmptyMeetingCoachReport()])
+}
+
+const removeMeetingCoachReport = (id) => {
+  setMeetingCoachReports((prev) =>
+    prev.length <= 1 ? prev : prev.filter((report) => report.id !== id)
+  )
+}
+
+const buildMeetingCoachSalesText = () => {
+  return meetingCoachReports
+    .map((report, index) =>
+      [
+        `[${report.coachName || `코치 ${index + 1}`}]`,
+        `전일 실매출: ${report.yesterdaySales || 0}`,
+        `금일 예정 매출: ${report.todaySales || 0}`,
+        `이번달 잔여 매출: ${report.thisMonthSales || 0}`,
+        `다음달 예정 매출: ${report.nextMonthSales || 0}`,
+      ].join('\n')
+    )
+    .join('\n\n')
+}
 
 const buildMeetingMemberFlowText = () => {
-  return [
-    `재등록 예정 회원: ${meetingMemberFlow.reRegister || '-'}`,
-    `보류 회원: ${meetingMemberFlow.hold || '-'}`,
-    `체험 예정 회원: ${meetingMemberFlow.trial || '-'}`,
-    `장기 미방문 회원: ${meetingMemberFlow.dormant || '-'}`,
-  ].join('\n')
+  return meetingCoachReports
+    .map((report, index) =>
+      [
+        `[${report.coachName || `코치 ${index + 1}`}]`,
+        `재등록 예정 회원: ${report.reRegister || '-'}`,
+        `보류 회원: ${report.hold || '-'}`,
+        `체험 예정 회원: ${report.trial || '-'}`,
+        `장기 미방문 회원: ${report.dormant || '-'}`,
+      ].join('\n')
+    )
+    .join('\n\n')
 }
 
 const buildMeetingOpsIssuesText = () => {
-  return [
-    `코치 이슈: ${meetingOpsIssues.coach || '-'}`,
-    `시설 이슈: ${meetingOpsIssues.facility || '-'}`,
-    `회원 이슈: ${meetingOpsIssues.member || '-'}`,
-    `현장 체크: ${meetingOpsIssues.field || '-'}`,
-  ].join('\n')
+  return meetingCoachReports
+    .map((report, index) =>
+      [
+        `[${report.coachName || `코치 ${index + 1}`}]`,
+        `코치 이슈: ${report.coachIssue || '-'}`,
+        `회원 이슈: ${report.memberIssue || '-'}`,
+        `시설 이슈: ${report.facilityIssue || '-'}`,
+        `현장 체크: ${report.fieldCheck || '-'}`,
+      ].join('\n')
+    )
+    .join('\n\n')
 }
 
 const buildMeetingDecisionText = () => {
@@ -2471,13 +2527,8 @@ const handleAddMeetingItem = async () => {
     .insert({
       admin_id: currentAdminId,
       title: meetingForm.title,
-     problem: `
-전일 매출: ${meetingSales.yesterday || 0}
-금일 예정: ${meetingSales.today || 0}
-이번달 잔여: ${meetingSales.thisMonth || 0}
-다음달 예정: ${meetingSales.nextMonth || 0}
-`,
-     cause: buildMeetingMemberFlowText(),
+    problem: buildMeetingCoachSalesText(),
+cause: buildMeetingMemberFlowText(),
 ideas: buildMeetingOpsIssuesText(),
 decision: buildMeetingDecisionText(),
       action_title: meetingForm.action_title || '',
@@ -2495,26 +2546,7 @@ decision: buildMeetingDecisionText(),
 
   setMeetingItems((prev) => [data, ...prev])
   setMeetingForm(createEmptyMeetingItem())
-  setMeetingSales({
-  yesterday: '',
-  today: '',
-  thisMonth: '',
-  nextMonth: '',
-})
-
-setMeetingMemberFlow({
-  reRegister: '',
-  hold: '',
-  trial: '',
-  dormant: '',
-})
-
-setMeetingOpsIssues({
-  coach: '',
-  facility: '',
-  member: '',
-  field: '',
-})
+ setMeetingCoachReports([createEmptyMeetingCoachReport()])
 
 setMeetingDirection('')
 
@@ -24752,150 +24784,188 @@ gap: '16px',
               />
             </label>
 
-          <div className="grid-2">
-  <label className="field">
-    <span>전일 실매출</span>
-    <input
-      value={meetingSales.yesterday}
-      onChange={(e) =>
-        setMeetingSales((prev) => ({ ...prev, yesterday: e.target.value }))
-      }
-      placeholder="예: 350000"
-    />
-  </label>
+         <div className="meeting-section-box">
+  <div className="meeting-section-title">코치별 매출 / 회원 흐름 / 운영 이슈 보고</div>
 
-  <label className="field">
-    <span>금일 예정 매출</span>
-    <input
-      value={meetingSales.today}
-      onChange={(e) =>
-        setMeetingSales((prev) => ({ ...prev, today: e.target.value }))
-      }
-      placeholder="예: 420000"
-    />
-  </label>
+  <div className="meeting-coach-report-list">
+    {meetingCoachReports.map((report, index) => (
+      <div key={report.id} className="meeting-coach-report-card">
+        <div className="meeting-coach-report-head">
+          <strong>코치 보고 {index + 1}</strong>
 
-  <label className="field">
-    <span>이번달 잔여 매출</span>
-    <input
-      value={meetingSales.thisMonth}
-      onChange={(e) =>
-        setMeetingSales((prev) => ({ ...prev, thisMonth: e.target.value }))
-      }
-      placeholder="예: 1800000"
-    />
-  </label>
+          <button
+            type="button"
+            className="danger-btn"
+            onClick={() => removeMeetingCoachReport(report.id)}
+            disabled={meetingCoachReports.length <= 1}
+          >
+            삭제
+          </button>
+        </div>
 
-  <label className="field">
-    <span>다음달 예정 매출</span>
-    <input
-      value={meetingSales.nextMonth}
-      onChange={(e) =>
-        setMeetingSales((prev) => ({ ...prev, nextMonth: e.target.value }))
-      }
-      placeholder="예: 2500000"
-    />
-  </label>
-</div>
+        <label className="field">
+          <span>코치명</span>
+          <input
+            value={report.coachName}
+            onChange={(e) =>
+              updateMeetingCoachReport(report.id, 'coachName', e.target.value)
+            }
+            placeholder="예: 임현진 코치"
+          />
+        </label>
 
-<div className="meeting-section-box">
-  <div className="meeting-section-title">회원 흐름 / 재등록 / 보류 회원</div>
+        <div className="meeting-section-title">매출 보고</div>
+        <div className="grid-2">
+          <label className="field">
+            <span>전일 실매출</span>
+            <input
+              value={report.yesterdaySales}
+              onChange={(e) =>
+                updateMeetingCoachReport(report.id, 'yesterdaySales', e.target.value)
+              }
+              placeholder="예: 350000"
+            />
+          </label>
 
-  <div className="grid-2">
-    <label className="field">
-      <span>재등록 예정 회원</span>
-      <input
-        value={meetingMemberFlow.reRegister}
-        onChange={(e) =>
-          setMeetingMemberFlow((prev) => ({ ...prev, reRegister: e.target.value }))
-        }
-        placeholder="예: 김OO, 박OO"
-      />
-    </label>
+          <label className="field">
+            <span>금일 예정 매출</span>
+            <input
+              value={report.todaySales}
+              onChange={(e) =>
+                updateMeetingCoachReport(report.id, 'todaySales', e.target.value)
+              }
+              placeholder="예: 420000"
+            />
+          </label>
 
-    <label className="field">
-      <span>보류 회원</span>
-      <input
-        value={meetingMemberFlow.hold}
-        onChange={(e) =>
-          setMeetingMemberFlow((prev) => ({ ...prev, hold: e.target.value }))
-        }
-        placeholder="예: 이OO, 최OO"
-      />
-    </label>
+          <label className="field">
+            <span>이번달 잔여 매출</span>
+            <input
+              value={report.thisMonthSales}
+              onChange={(e) =>
+                updateMeetingCoachReport(report.id, 'thisMonthSales', e.target.value)
+              }
+              placeholder="예: 1800000"
+            />
+          </label>
 
-    <label className="field">
-      <span>체험 예정 회원</span>
-      <input
-        value={meetingMemberFlow.trial}
-        onChange={(e) =>
-          setMeetingMemberFlow((prev) => ({ ...prev, trial: e.target.value }))
-        }
-        placeholder="예: 2명 / 홍OO"
-      />
-    </label>
+          <label className="field">
+            <span>다음달 예정 매출</span>
+            <input
+              value={report.nextMonthSales}
+              onChange={(e) =>
+                updateMeetingCoachReport(report.id, 'nextMonthSales', e.target.value)
+              }
+              placeholder="예: 2500000"
+            />
+          </label>
+        </div>
 
-    <label className="field">
-      <span>장기 미방문 회원</span>
-      <input
-        value={meetingMemberFlow.dormant}
-        onChange={(e) =>
-          setMeetingMemberFlow((prev) => ({ ...prev, dormant: e.target.value }))
-        }
-        placeholder="예: 정OO, 한OO"
-      />
-    </label>
+        <div className="meeting-section-title">회원 흐름</div>
+        <div className="grid-2">
+          <label className="field">
+            <span>재등록 예정 회원</span>
+            <input
+              value={report.reRegister}
+              onChange={(e) =>
+                updateMeetingCoachReport(report.id, 'reRegister', e.target.value)
+              }
+              placeholder="예: 김OO, 박OO"
+            />
+          </label>
+
+          <label className="field">
+            <span>보류 회원</span>
+            <input
+              value={report.hold}
+              onChange={(e) =>
+                updateMeetingCoachReport(report.id, 'hold', e.target.value)
+              }
+              placeholder="예: 이OO, 최OO"
+            />
+          </label>
+
+          <label className="field">
+            <span>체험 예정 회원</span>
+            <input
+              value={report.trial}
+              onChange={(e) =>
+                updateMeetingCoachReport(report.id, 'trial', e.target.value)
+              }
+              placeholder="예: 2명 / 홍OO"
+            />
+          </label>
+
+          <label className="field">
+            <span>장기 미방문 회원</span>
+            <input
+              value={report.dormant}
+              onChange={(e) =>
+                updateMeetingCoachReport(report.id, 'dormant', e.target.value)
+              }
+              placeholder="예: 정OO, 한OO"
+            />
+          </label>
+        </div>
+
+        <div className="meeting-section-title">운영 이슈</div>
+        <div className="grid-2">
+          <label className="field">
+            <span>코치 이슈</span>
+            <input
+              value={report.coachIssue}
+              onChange={(e) =>
+                updateMeetingCoachReport(report.id, 'coachIssue', e.target.value)
+              }
+              placeholder="예: 스케줄 조정 필요"
+            />
+          </label>
+
+          <label className="field">
+            <span>회원 이슈</span>
+            <input
+              value={report.memberIssue}
+              onChange={(e) =>
+                updateMeetingCoachReport(report.id, 'memberIssue', e.target.value)
+              }
+              placeholder="예: 상담 필요 / 컴플레인"
+            />
+          </label>
+
+          <label className="field">
+            <span>시설 이슈</span>
+            <input
+              value={report.facilityIssue}
+              onChange={(e) =>
+                updateMeetingCoachReport(report.id, 'facilityIssue', e.target.value)
+              }
+              placeholder="예: 기구 점검"
+            />
+          </label>
+
+          <label className="field">
+            <span>현장 체크</span>
+            <input
+              value={report.fieldCheck}
+              onChange={(e) =>
+                updateMeetingCoachReport(report.id, 'fieldCheck', e.target.value)
+              }
+              placeholder="예: 청결 / 동선 / 분위기"
+            />
+          </label>
+        </div>
+      </div>
+    ))}
   </div>
-</div>
 
-<div className="meeting-section-box">
-  <div className="meeting-section-title">운영 이슈 / 코치 / 시설 / 현장 체크</div>
-
-  <div className="grid-2">
-    <label className="field">
-      <span>코치 이슈</span>
-      <input
-        value={meetingOpsIssues.coach}
-        onChange={(e) =>
-          setMeetingOpsIssues((prev) => ({ ...prev, coach: e.target.value }))
-        }
-        placeholder="예: 스케줄 조정 필요"
-      />
-    </label>
-
-    <label className="field">
-      <span>시설 이슈</span>
-      <input
-        value={meetingOpsIssues.facility}
-        onChange={(e) =>
-          setMeetingOpsIssues((prev) => ({ ...prev, facility: e.target.value }))
-        }
-        placeholder="예: 러닝머신 점검"
-      />
-    </label>
-
-    <label className="field">
-      <span>회원 이슈</span>
-      <input
-        value={meetingOpsIssues.member}
-        onChange={(e) =>
-          setMeetingOpsIssues((prev) => ({ ...prev, member: e.target.value }))
-        }
-        placeholder="예: 컴플레인 / 상담 필요"
-      />
-    </label>
-
-    <label className="field">
-      <span>현장 체크</span>
-      <input
-        value={meetingOpsIssues.field}
-        onChange={(e) =>
-          setMeetingOpsIssues((prev) => ({ ...prev, field: e.target.value }))
-        }
-        placeholder="예: 청결 / 동선 / 분위기"
-      />
-    </label>
-  </div>
+  <button
+    type="button"
+    className="secondary-btn"
+    onClick={addMeetingCoachReport}
+    style={{ marginTop: '10px' }}
+  >
+    + 코치 보고 추가
+  </button>
 </div>
 
 <div className="meeting-section-box">
