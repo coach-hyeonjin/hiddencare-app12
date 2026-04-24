@@ -23924,3 +23924,24 @@ textarea:focus {
   border-color: #c7d2fe;
   box-shadow: 0 14px 30px rgba(99, 91, 255, 0.1);
 }
+.ops-kanban-columns {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 14px;
+}
+
+.ops-completed-history-card .list-stack {
+  scrollbar-width: thin;
+}
+
+.ops-history-filter-row {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.ops-history-filter-row input,
+.ops-history-filter-row select {
+  min-width: 150px;
+}
