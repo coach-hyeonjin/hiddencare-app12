@@ -24235,9 +24235,24 @@ gap: '16px',
                   />
                 </label>
 
-                <button type="button" className="primary-btn" onClick={handleAddIdea}>
-                  아이디어 추가
-                </button>
+               <div className="inline-actions wrap">
+  <button type="button" className="primary-btn" onClick={handleSaveIdea}>
+    {editingIdeaId ? '메모 수정 저장' : '메모 추가'}
+  </button>
+
+  {editingIdeaId && (
+    <button
+      type="button"
+      className="secondary-btn"
+      onClick={() => {
+        setEditingIdeaId(null)
+        setIdeaForm(createEmptyIdeaItem())
+      }}
+    >
+      수정 취소
+    </button>
+  )}
+</div>
               </div>
 
               <div className="sub-card">
@@ -24431,12 +24446,20 @@ gap: '16px',
                         <div className="compact-text">{item.note || '-'}</div>
                         <div className="inline-actions wrap">
                           <button
-                            type="button"
-                            className="danger-btn"
-                            onClick={() => setFacilityTasks((prev) => prev.filter((v) => v.id !== item.id))}
-                          >
-                            삭제
-                          </button>
+  type="button"
+  className="secondary-btn"
+  onClick={() => handleEditIdea(item)}
+>
+  수정
+</button>
+
+<button
+  type="button"
+  className="danger-btn"
+  onClick={() => handleDeleteIdea(item.id)}
+>
+  삭제
+</button>
                         </div>
                       </div>
                     ))
