@@ -2746,6 +2746,25 @@ const handleDeleteMeetingItem = async (meetingId) => {
 
   setMeetingItems((prev) => prev.filter((item) => item.id !== meetingId))
 }
+  const handleEditMeetingItem = (item) => {
+  setMeetingForm({
+    title: item.title || '',
+    problem: item.problem || '',
+    cause: item.cause || '',
+    ideas: item.ideas || '',
+    decision: item.decision || '',
+    action_title: item.action_title || '',
+    action_due_date: item.action_due_date || '',
+    action_category: item.action_category || '운영',
+    action_priority: item.action_priority || '일반',
+  })
+
+  // 필요하면 탭 이동
+  setOpsAuxTab('meeting')
+
+  // 기존 데이터 삭제 (→ 수정처럼 동작)
+  handleDeleteMeetingItem(item.id)
+}
 const handleCreateTaskFromMeeting = async (meeting) => {
   if (!meeting.action_title?.trim() || !currentAdminId) return
 
@@ -25449,7 +25468,13 @@ gap: '16px',
                       >
                         상세보기
                       </button>
-
+<button
+  type="button"
+  className="secondary-btn"
+  onClick={() => handleEditMeetingItem(item)}
+>
+  수정
+</button>
                       <button
                         type="button"
                         className="danger-btn"
