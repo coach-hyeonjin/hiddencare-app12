@@ -1683,7 +1683,8 @@ const [meetingChecklistRows, setMeetingChecklistRows] = useState([
 ])
   const [meetingSearch, setMeetingSearch] = useState('')
 const [meetingOpenGroups, setMeetingOpenGroups] = useState({})
-  
+  const [meetingListTypeFilter, setMeetingListTypeFilter] = useState('all')
+const [selectedMeetingId, setSelectedMeetingId] = useState(null)
 const [opsTaskSearch, setOpsTaskSearch] = useState('')
 const [opsTaskDateFilter, setOpsTaskDateFilter] = useState('')
 const [opsTaskOpenColumns, setOpsTaskOpenColumns] = useState({
@@ -2114,21 +2115,54 @@ const filteredMeetingItems = useMemo(() => {
   })
 }, [meetingItems, meetingSearch])
 
-const groupedMeetingItems = useMemo(() => {
-  const grouped = {}
+const getMeetingType = (item) => {
+  const title = item.title || ''
 
-  filteredMeetingItems.forEach((item) => {
-    const label = getMeetingGroupLabel(item)
-    if (!grouped[label]) grouped[label] = []
-    grouped[label].push(item)
-  })
+  if (title.includes('결정사항') || (!item.problem && !item.cause && !item.ideas && item.decision)) {
+    return 'decision'
+  }
 
-  return Object.entries(grouped).sort((a, b) => {
-    const aTime = new Date(a[1][0]?.created_at || a[1][0]?.updated_at || 0).getTime()
-    const bTime = new Date(b[1][0]?.created_at || b[1][0]?.updated_at || 0).getTime()
-    return bTime - aTime
-  })
+  if (item.action_title) {
+    return 'action'
+  }
+
+  return 'coach'
+}
+
+const getMeetingTypeLabel = (type) => {
+  if (type === 'decision') return '결정사항'
+  if (type === 'action') return '실행업무'
+  return '코치 보고'
+}
+
+const visibleMeetingItems = useMemo(() => {
+  if (meetingListTypeFilter === 'all') return filteredMeetingItems
+
+  return filteredMeetingItems.filter((item) => getMeetingType(item) === meetingListTypeFilter)
+}, [filteredMeetingItems, meetingListTypeFilter])
+
+const meetingListCounts = useMemo(() => {
+  return {
+    all: filteredMeetingItems.length,
+    coach: filteredMeetingItems.filter((item) => getMeetingType(item) === 'coach').length,
+    decision: filteredMeetingItems.filter((item) => getMeetingType(item) === 'decision').length,
+    action: filteredMeetingItems.filter((item) => getMeetingType(item) === 'action').length,
+  }
 }, [filteredMeetingItems])
+
+const groupedMeetingItems = useMemo(() => {
+  return visibleMeetingItems.reduce((acc, item) => {
+    const key = (item.created_at || item.action_due_date || '').slice(0, 10) || '날짜 없음'
+    if (!acc[key]) acc[key] = []
+    acc[key].push(item)
+    return acc
+  }, {})
+}, [visibleMeetingItems])
+
+const selectedMeetingItem = useMemo(() => {
+  if (!selectedMeetingId) return null
+  return meetingItems.find((item) => item.id === selectedMeetingId) || null
+}, [meetingItems, selectedMeetingId])
 
   const createEmptyMeetingCoachReport = (isOpen = true) => ({
   id: Date.now() + Math.random(),
@@ -25157,73 +25191,181 @@ gap: '16px',
 )}
           </div>
 
-          <div className="sub-card">
-  <h4>회의 목록</h4>
+          <div className="sub-card meeting-list-panel">
+  <div className="meeting-list-head">
+    <div>
+      <h4>회의 목록</h4>
+      <p className="compact-text">코치 보고 / 결정사항 / 실행업무를 카드형으로 확인합니다.</p>
+    </div>
+  </div>
 
-  <input
-    type="text"
-    className="ops-filter-input"
-    placeholder="회의 제목, 문제, 원인, 아이디어, 결정사항 검색"
-    value={meetingSearch}
-    onChange={(e) => setMeetingSearch(e.target.value)}
-    style={{ marginBottom: '12px' }}
-  />
+  <div className="meeting-list-search-row">
+    <input
+      value={meetingSearch}
+      onChange={(e) => setMeetingSearch(e.target.value)}
+      placeholder="회의 제목, 문제, 원인, 아이디어, 결정사항 검색"
+    />
+  </div>
 
-  <div className="list-stack">
-    {groupedMeetingItems.length === 0 ? (
-      <div className="workout-list-empty">조건에 맞는 회의 기록이 없습니다.</div>
-    ) : (
-      groupedMeetingItems.map(([groupLabel, items]) => (
-        <div key={groupLabel} className="sub-card">
-          <button
-            type="button"
-            className="ops-collapse-head"
-            onClick={() => toggleMeetingGroup(groupLabel)}
-          >
-            <h4 style={{ margin: 0 }}>{groupLabel}</h4>
-            <span>{items.length}</span>
-          </button>
+  <div className="meeting-type-tabs">
+    {[
+      { label: '전체', value: 'all', count: meetingListCounts.all },
+      { label: '코치 보고', value: 'coach', count: meetingListCounts.coach },
+      { label: '결정사항', value: 'decision', count: meetingListCounts.decision },
+      { label: '실행업무', value: 'action', count: meetingListCounts.action },
+    ].map((tab) => (
+      <button
+        key={tab.value}
+        type="button"
+        className={meetingListTypeFilter === tab.value ? 'primary-btn' : 'secondary-btn'}
+        onClick={() => setMeetingListTypeFilter(tab.value)}
+      >
+        {tab.label} {tab.count}
+      </button>
+    ))}
+  </div>
 
-          {meetingOpenGroups[groupLabel] !== false && (
-            <div className="list-stack" style={{ marginTop: '12px' }}>
-              {items.map((item) => (
-                <div key={item.id} className="list-card">
-                  <div className="list-card-top">
-                    <strong>{item.title}</strong>
-                    <span className="pill pill-violet">회의</span>
-                  </div>
-
-                 <div className="compact-text">매출 체크: {item.problem || '-'}</div>
-<div className="compact-text">회원 흐름: {item.cause || '-'}</div>
-<div className="compact-text">운영 이슈: {item.ideas || '-'}</div>
-<div className="compact-text">결정 사항: {item.decision || '-'}</div>
-
-                  <div className="inline-actions wrap">
-                    <button
-                      type="button"
-                      className="secondary-btn"
-                      onClick={() => handleCreateTaskFromMeeting(item)}
-                    >
-                      실행 업무 생성
-                    </button>
-                    <button
-                      type="button"
-                      className="danger-btn"
-                     onClick={() => handleDeleteMeetingItem(item.id)}
-                    >
-                      삭제
-                    </button>
-                  </div>
-                </div>
-              ))}
+  <div className="meeting-list-detail-layout">
+    <div className="meeting-card-list">
+      {Object.keys(groupedMeetingItems).length === 0 ? (
+        <div className="workout-list-empty">조건에 맞는 회의 기록이 없습니다.</div>
+      ) : (
+        Object.entries(groupedMeetingItems).map(([date, items]) => (
+          <div key={date} className="meeting-date-group">
+            <div className="meeting-date-head">
+              <strong>{date}</strong>
+              <span>{items.length}</span>
             </div>
-          )}
+
+            <div className="meeting-card-grid">
+              {items.map((item) => {
+                const type = getMeetingType(item)
+                const isSelected = selectedMeetingId === item.id
+
+                return (
+                  <div
+                    key={item.id}
+                    className={`meeting-summary-card ${isSelected ? 'active' : ''}`}
+                  >
+                    <div className="meeting-summary-top">
+                      <strong>{item.title}</strong>
+                      <span className={`meeting-type-badge meeting-type-${type}`}>
+                        {getMeetingTypeLabel(type)}
+                      </span>
+                    </div>
+
+                    <div className="meeting-summary-meta">
+                      {item.problem ? <div>매출 체크 있음</div> : null}
+                      {item.cause ? <div>회원 흐름 있음</div> : null}
+                      {item.ideas ? <div>운영 이슈 있음</div> : null}
+                      {item.decision ? <div>결정사항 있음</div> : null}
+                      {item.action_title ? <div>실행업무: {item.action_title}</div> : null}
+                    </div>
+
+                    <div className="meeting-summary-footer">
+                      <button
+                        type="button"
+                        className="secondary-btn"
+                        onClick={() => setSelectedMeetingId(item.id)}
+                      >
+                        상세보기
+                      </button>
+
+                      <button
+                        type="button"
+                        className="danger-btn"
+                        onClick={() => handleDeleteMeetingItem(item.id)}
+                      >
+                        삭제
+                      </button>
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+          </div>
+        ))
+      )}
+    </div>
+
+    <div className="meeting-detail-panel">
+      {!selectedMeetingItem ? (
+        <div className="meeting-detail-empty">
+          회의 카드를 선택하면 상세 내용을 볼 수 있습니다.
         </div>
-      ))
-    )}
+      ) : (
+        <>
+          <div className="meeting-detail-head">
+            <div>
+              <h4>{selectedMeetingItem.title}</h4>
+              <span className={`meeting-type-badge meeting-type-${getMeetingType(selectedMeetingItem)}`}>
+                {getMeetingTypeLabel(getMeetingType(selectedMeetingItem))}
+              </span>
+            </div>
+
+            <button
+              type="button"
+              className="secondary-btn"
+              onClick={() => setSelectedMeetingId(null)}
+            >
+              닫기
+            </button>
+          </div>
+
+          <div className="meeting-detail-section">
+            <h5>매출 체크</h5>
+            <pre>{selectedMeetingItem.problem || '-'}</pre>
+          </div>
+
+          <div className="meeting-detail-section">
+            <h5>회원 흐름</h5>
+            <pre>{selectedMeetingItem.cause || '-'}</pre>
+          </div>
+
+          <div className="meeting-detail-section">
+            <h5>운영 이슈</h5>
+            <pre>{selectedMeetingItem.ideas || '-'}</pre>
+          </div>
+
+          <div className="meeting-detail-section">
+            <h5>결정 사항</h5>
+            <pre>{selectedMeetingItem.decision || '-'}</pre>
+          </div>
+
+          {selectedMeetingItem.action_title ? (
+            <div className="meeting-detail-section">
+              <h5>실행 업무</h5>
+              <div className="compact-text">
+                {selectedMeetingItem.action_title} / 마감 {selectedMeetingItem.action_due_date || '-'}
+              </div>
+            </div>
+          ) : null}
+
+          <div className="meeting-detail-actions">
+            {selectedMeetingItem.action_title ? (
+              <button
+                type="button"
+                className="secondary-btn"
+                onClick={() => handleCreateTaskFromMeeting(selectedMeetingItem)}
+              >
+                실행 업무 생성
+              </button>
+            ) : null}
+
+            <button
+              type="button"
+              className="danger-btn"
+              onClick={() => handleDeleteMeetingItem(selectedMeetingItem.id)}
+            >
+              삭제
+            </button>
+          </div>
+        </>
+      )}
+    </div>
   </div>
 </div>
-        </div>
+          </div>
       </section>
     )}
   </div>
