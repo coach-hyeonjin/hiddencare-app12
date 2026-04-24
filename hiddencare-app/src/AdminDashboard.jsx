@@ -1713,6 +1713,10 @@ const [opsHistorySearch, setOpsHistorySearch] = useState('')
 const [opsHistoryDateFrom, setOpsHistoryDateFrom] = useState('')
 const [opsHistoryDateTo, setOpsHistoryDateTo] = useState('')
 const [opsHistoryType, setOpsHistoryType] = useState('all')
+  const [opsTodayOpen, setOpsTodayOpen] = useState(true)
+const [opsHistoryOpen, setOpsHistoryOpen] = useState(true)
+
+const [editingIdeaId, setEditingIdeaId] = useState(null)
 const loadOpsManagementData = async () => {
   if (!currentAdminId) return
 
@@ -1795,41 +1799,57 @@ useEffect(() => {
   loadOpsManagementData()
 }, [currentAdminId])
 
-const todayTasks = useMemo(
-  () => opsTasks.filter((task) => getTaskAutoState(task) === '오늘 할 일'),
+const activeOpsTasks = useMemo(
+  () => opsTasks.filter((task) => !task.completed && task.status !== '완료'),
   [opsTasks]
+)
+
+const todayTasks = useMemo(
+  () => activeOpsTasks.filter((task) => getTaskAutoState(task) === '오늘 할 일'),
+  [activeOpsTasks]
 )
 
 const urgentTasks = useMemo(
-  () => opsTasks.filter((task) => getTaskAutoState(task) === '마감 임박'),
-  [opsTasks]
+  () => activeOpsTasks.filter((task) => getTaskAutoState(task) === '마감 임박'),
+  [activeOpsTasks]
 )
 
 const overdueTasks = useMemo(
-  () => opsTasks.filter((task) => getTaskAutoState(task) === '기간 초과'),
-  [opsTasks]
+  () => activeOpsTasks.filter((task) => getTaskAutoState(task) === '기간 초과'),
+  [activeOpsTasks]
 )
 
 const incompleteTasks = useMemo(
   () =>
-    opsTasks.filter(
+    activeOpsTasks.filter(
       (task) =>
         getTaskAutoState(task) === '미완료' ||
         getTaskAutoState(task) === '오늘 할 일' ||
         getTaskAutoState(task) === '마감 임박'
     ),
-  [opsTasks]
+  [activeOpsTasks]
 )
 
 const completionRate = useMemo(() => getCompletionRate(opsTasks), [opsTasks])
 
 const weekdayTasks = useMemo(() => {
-  return opsTasks.filter((task) => getTaskWeekday(task.due_date) === taskWeekdayFilter)
-}, [opsTasks, taskWeekdayFilter])
+  return activeOpsTasks.filter((task) => getTaskWeekday(task.due_date) === taskWeekdayFilter)
+}, [activeOpsTasks, taskWeekdayFilter])
 
-const waitingTasks = useMemo(() => opsTasks.filter((task) => task.status === '대기'), [opsTasks])
-const doingTasks = useMemo(() => opsTasks.filter((task) => task.status === '진행중'), [opsTasks])
-const doneTasks = useMemo(() => opsTasks.filter((task) => task.status === '완료'), [opsTasks])
+const waitingTasks = useMemo(
+  () => opsTasks.filter((task) => task.status === '대기' && !task.completed),
+  [opsTasks]
+)
+
+const doingTasks = useMemo(
+  () => opsTasks.filter((task) => task.status === '진행중' && !task.completed),
+  [opsTasks]
+)
+
+const doneTasks = useMemo(
+  () => opsTasks.filter((task) => task.status === '완료' || task.completed),
+  [opsTasks]
+)
 
 const todayRecords = useMemo(() => opsRecords.filter((item) => item.type === 'today'), [opsRecords])
 const weeklyRecords = useMemo(() => opsRecords.filter((item) => item.type === 'weekly'), [opsRecords])
@@ -2071,6 +2091,15 @@ const mergedOpsHistory = useMemo(() => {
   opsHistoryDateTo,
 ])
 
+const groupedOpsHistoryByDate = useMemo(() => {
+  return mergedOpsHistory.reduce((acc, item) => {
+    const key = item.date || '날짜 없음'
+    if (!acc[key]) acc[key] = []
+    acc[key].push(item)
+    return acc
+  }, {})
+}, [mergedOpsHistory])
+  
 const getMeetingGroupLabel = (item) => {
   const rawDate = item?.created_at || item?.updated_at || null
   if (!rawDate) return '날짜 미확인'
@@ -2463,8 +2492,30 @@ const handleMoveIdeaToTask = async (idea) => {
   setIdeaItems((prev) => prev.filter((item) => item.id !== idea.id))
 }
 
-const handleAddIdea = async () => {
+const handleSaveIdea = async () => {
   if (!ideaForm.title.trim() || !currentAdminId) return
+
+  if (editingIdeaId) {
+    const { data, error } = await supabase
+      .from('ops_ideas')
+      .update({
+        title: ideaForm.title,
+        note: ideaForm.note || '',
+      })
+      .eq('id', editingIdeaId)
+      .select('*')
+      .single()
+
+    if (error) {
+      console.error('handleSaveIdea update error:', error)
+      return
+    }
+
+    setIdeaItems((prev) => prev.map((item) => (item.id === editingIdeaId ? data : item)))
+    setIdeaForm(createEmptyIdeaItem())
+    setEditingIdeaId(null)
+    return
+  }
 
   const { data, error } = await supabase
     .from('ops_ideas')
@@ -2477,12 +2528,44 @@ const handleAddIdea = async () => {
     .single()
 
   if (error) {
-    console.error('handleAddIdea error:', error)
+    console.error('handleSaveIdea insert error:', error)
     return
   }
 
   setIdeaItems((prev) => [data, ...prev])
   setIdeaForm(createEmptyIdeaItem())
+}
+
+const handleEditIdea = (item) => {
+  setEditingIdeaId(item.id)
+  setIdeaForm({
+    id: item.id,
+    title: item.title || '',
+    note: item.note || '',
+  })
+  setOpsAuxTab('ideas')
+}
+
+const handleDeleteIdea = async (ideaId) => {
+  const ok = window.confirm('이 메모를 삭제하시겠습니까?')
+  if (!ok) return
+
+  const { error } = await supabase
+    .from('ops_ideas')
+    .delete()
+    .eq('id', ideaId)
+
+  if (error) {
+    console.error('handleDeleteIdea error:', error)
+    return
+  }
+
+  setIdeaItems((prev) => prev.filter((item) => item.id !== ideaId))
+
+  if (editingIdeaId === ideaId) {
+    setEditingIdeaId(null)
+    setIdeaForm(createEmptyIdeaItem())
+  }
 }
 
 const handleAddChecklist = async () => {
@@ -23386,14 +23469,23 @@ const filteredExercisesAdvanced = exercises.filter((exercise) => {
         <div className="ops-main-layout">
   <div className="ops-main-top">
     <section className="dashboard-panel-card">
-      <div className="dashboard-panel-head">
+            <div className="dashboard-panel-head">
         <div>
           <div className="dashboard-panel-label">TODAY TASKS</div>
           <h3>오늘 할 일 ({taskWeekdayFilter}요일)</h3>
           <p className="sub-text">업무 추가와 요일 기준 정리를 함께 합니다.</p>
         </div>
+
+        <button
+          type="button"
+          className="secondary-btn"
+          onClick={() => setOpsTodayOpen((prev) => !prev)}
+        >
+          {opsTodayOpen ? '▲ 간략히 보기' : '▼ 펼쳐보기'}
+        </button>
       </div>
 
+     {opsTodayOpen && (
       <div className="stack-gap">
         <label className="field">
           <span>업무명</span>
@@ -23482,7 +23574,7 @@ const filteredExercisesAdvanced = exercises.filter((exercise) => {
                 <div>
                   <strong>{task.title}</strong>
                   <div className="compact-text">
-                    {task.priority} / {task.category} / {task.due_date || '-'}
+                    {task.priority} / {task.category} / 마감일 {task.due_date || '-'} / {getTaskWeekday(task.due_date)}요일
                   </div>
                 </div>
 
@@ -23498,8 +23590,9 @@ const filteredExercisesAdvanced = exercises.filter((exercise) => {
               </div>
             ))
           )}
-        </div>
+         </div>
       </div>
+      )}
     </section>
 
     <section className="dashboard-panel-card ops-kanban-section">
@@ -23539,7 +23632,7 @@ const filteredExercisesAdvanced = exercises.filter((exercise) => {
     </button>
   </div>
 
-  <div className="ops-kanban-columns">
+   <div className="ops-kanban-columns" style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '14px' }}>
     <div className="ops-kanban-column-card">
       <button
         type="button"
@@ -23853,34 +23946,97 @@ const filteredExercisesAdvanced = exercises.filter((exercise) => {
   </div>
 
   <div className="sub-card ops-completed-history-card">
-    <div className="list-card-top">
+  <div className="list-card-top">
+    <div>
       <h4>완료 업무 히스토리</h4>
-      <span className="pill pill-green">{completedTaskHistory.length}</span>
+      <div className="compact-text">날짜별로 완료 업무를 검색하고 확인합니다.</div>
     </div>
 
-    <div className="list-stack">
-      {completedTaskHistory.length === 0 ? (
-        <div className="workout-list-empty">완료 업무 히스토리가 없습니다.</div>
-      ) : (
-        completedTaskHistory
-          .filter((item) => includesKeyword(item, opsTaskSearch))
-          .filter((item) => matchesSingleDate(item, opsTaskDateFilter))
-          .slice(0, 10)
-          .map((item) => (
-            <div key={item.id} className="list-card">
-              <div className="list-card-top">
-                <strong>{item.title}</strong>
-                <span className="pill pill-green">완료</span>
-              </div>
-              <div className="compact-text">
-                {item.category} / {item.priority} / 마감 {item.deadline}
-              </div>
-              <div className="compact-text">{item.memo || '-'}</div>
-            </div>
-          ))
-      )}
+    <div className="inline-actions wrap">
+      <span className="pill pill-green">{completedTaskHistory.length}</span>
+      <button
+        type="button"
+        className="secondary-btn"
+        onClick={() => setOpsHistoryOpen((prev) => !prev)}
+      >
+        {opsHistoryOpen ? '▲ 간략히 보기' : '▼ 펼쳐보기'}
+      </button>
     </div>
   </div>
+
+  {opsHistoryOpen && (
+    <>
+      <div className="ops-history-filter-row">
+        <input
+          className="ops-filter-input"
+          placeholder="완료 업무 검색"
+          value={opsHistorySearch}
+          onChange={(e) => setOpsHistorySearch(e.target.value)}
+        />
+
+        <input
+          type="date"
+          className="ops-filter-date"
+          value={opsHistoryDateFrom}
+          onChange={(e) => setOpsHistoryDateFrom(e.target.value)}
+        />
+
+        <input
+          type="date"
+          className="ops-filter-date"
+          value={opsHistoryDateTo}
+          onChange={(e) => setOpsHistoryDateTo(e.target.value)}
+        />
+
+        <button
+          type="button"
+          className="secondary-btn"
+          onClick={() => {
+            setOpsHistorySearch('')
+            setOpsHistoryDateFrom('')
+            setOpsHistoryDateTo('')
+          }}
+        >
+          초기화
+        </button>
+      </div>
+
+      <div className="list-stack" style={{ marginTop: '14px', maxHeight: '360px', overflowY: 'auto' }}>
+        {Object.keys(groupedOpsHistoryByDate).length === 0 ? (
+          <div className="workout-list-empty">완료 업무 히스토리가 없습니다.</div>
+        ) : (
+          Object.entries(groupedOpsHistoryByDate).map(([date, items]) => (
+            <div key={date} className="sub-card">
+              <div className="list-card-top">
+                <strong>{date}</strong>
+                <span className="pill pill-blue">{items.length}</span>
+              </div>
+
+              <div className="list-stack">
+                {items
+                  .filter((item) => item.historyType === 'completed-task')
+                  .map((item) => (
+                    <div key={`${item.historyType}-${item.id}`} className="list-card">
+                      <div className="list-card-top">
+                        <strong>{item.title}</strong>
+                        <span className="pill pill-green">완료</span>
+                      </div>
+
+                      <div className="compact-text">
+                        {item.category} / {item.priority} / 마감 {item.deadline}
+                      </div>
+
+                      <div className="compact-text">{item.memo || '-'}</div>
+                    </div>
+                  ))}
+              </div>
+            </div>
+          ))
+        )}
+      </div>
+    </>
+  )}
+</div>
 </section>
   </div>
 
