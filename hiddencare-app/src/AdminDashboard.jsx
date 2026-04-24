@@ -25053,6 +25053,7 @@ gap: '16px',
     </button>
   </div>
 )}
+          </div>
 
           <div className="sub-card">
   <h4>회의 목록</h4>
