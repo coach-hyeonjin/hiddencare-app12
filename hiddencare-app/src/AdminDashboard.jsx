@@ -14444,10 +14444,7 @@ const isDiamondOrHigherMember = (memberId) => {
   )
 }
 
-const getBenefitExtraXp = (memberId, baseXp = 0) => {
-  if (!isDiamondOrHigherMember(memberId)) return 0
-  return Math.round(Number(baseXp || 0) * 0.1)
-}
+
   
 const getSaleTotalSessionCount = (sale) => {
   return Number(sale?.purchased_session_count || 0) + Number(sale?.service_session_count || 0)
