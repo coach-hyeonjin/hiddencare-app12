@@ -956,7 +956,7 @@ const createEmptyInterviewLinkItem = () => ({
 })
 
 const createEmptyMeetingItem = () => ({
-  id: Date.now() + Math.random(),
+  id: null,
   title: '',
   problem: '',
   cause: '',
@@ -2671,7 +2671,7 @@ const handleSaveCoachReports = async () => {
   if (!currentAdminId) return
 
   // ✅ 수정 모드
-  if (meetingForm.id) {
+  if (typeof meetingForm.id === 'string' && meetingForm.id.length > 20) {
     const { data, error } = await supabase
       .from('ops_meetings')
       .update({
@@ -2729,7 +2729,7 @@ const handleSaveMeetingDecision = async () => {
   if (!currentAdminId) return
 
   // ✅ 수정 모드
-  if (meetingForm.id) {
+ if (typeof meetingForm.id === 'string' && meetingForm.id.length > 20) {
     const { data, error } = await supabase
       .from('ops_meetings')
       .update({
