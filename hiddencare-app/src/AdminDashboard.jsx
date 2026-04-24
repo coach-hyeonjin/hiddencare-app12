@@ -1671,7 +1671,7 @@ const [meetingCoachReports, setMeetingCoachReports] = useState([
 ])
 
 const [meetingDirection, setMeetingDirection] = useState('')
-
+const [meetingInputTab, setMeetingInputTab] = useState('coach')
 const [meetingChecklistRows, setMeetingChecklistRows] = useState([
   { id: 1, label: '전일 매출 확인', checked: false, note: '' },
   { id: 2, label: '금일 예정 매출 확인', checked: false, note: '' },
@@ -2133,82 +2133,6 @@ const groupedMeetingItems = useMemo(() => {
     prev.map((row) => (row.id === id ? { ...row, [field]: value } : row))
   )
 }
-const createEmptyMeetingCoachReport = () => ({
-  id: Date.now() + Math.random(),
-  coachName: '',
-  yesterdaySales: '',
-  todaySales: '',
-  thisMonthSales: '',
-  nextMonthSales: '',
-  reRegister: '',
-  hold: '',
-  trial: '',
-  dormant: '',
-  coachIssue: '',
-  memberIssue: '',
-  facilityIssue: '',
-  fieldCheck: '',
-})
-
-const updateMeetingCoachReport = (id, field, value) => {
-  setMeetingCoachReports((prev) =>
-    prev.map((report) =>
-      report.id === id ? { ...report, [field]: value } : report
-    )
-  )
-}
-
-const addMeetingCoachReport = () => {
-  setMeetingCoachReports((prev) => [...prev, createEmptyMeetingCoachReport()])
-}
-
-const removeMeetingCoachReport = (id) => {
-  setMeetingCoachReports((prev) =>
-    prev.length <= 1 ? prev : prev.filter((report) => report.id !== id)
-  )
-}
-
-const buildMeetingCoachSalesText = () => {
-  return meetingCoachReports
-    .map((report, index) =>
-      [
-        `[${report.coachName || `코치 ${index + 1}`}]`,
-        `전일 실매출: ${report.yesterdaySales || 0}`,
-        `금일 예정 매출: ${report.todaySales || 0}`,
-        `이번달 잔여 매출: ${report.thisMonthSales || 0}`,
-        `다음달 예정 매출: ${report.nextMonthSales || 0}`,
-      ].join('\n')
-    )
-    .join('\n\n')
-}
-
-const buildMeetingMemberFlowText = () => {
-  return meetingCoachReports
-    .map((report, index) =>
-      [
-        `[${report.coachName || `코치 ${index + 1}`}]`,
-        `재등록 예정 회원: ${report.reRegister || '-'}`,
-        `보류 회원: ${report.hold || '-'}`,
-        `체험 예정 회원: ${report.trial || '-'}`,
-        `장기 미방문 회원: ${report.dormant || '-'}`,
-      ].join('\n')
-    )
-    .join('\n\n')
-}
-
-const buildMeetingOpsIssuesText = () => {
-  return meetingCoachReports
-    .map((report, index) =>
-      [
-        `[${report.coachName || `코치 ${index + 1}`}]`,
-        `코치 이슈: ${report.coachIssue || '-'}`,
-        `회원 이슈: ${report.memberIssue || '-'}`,
-        `시설 이슈: ${report.facilityIssue || '-'}`,
-        `현장 체크: ${report.fieldCheck || '-'}`,
-      ].join('\n')
-    )
-    .join('\n\n')
-}
 
 const buildMeetingDecisionText = () => {
   const checklistText = meetingChecklistRows
@@ -2222,6 +2146,7 @@ const buildMeetingDecisionText = () => {
     checklistText || '-',
   ].join('\n')
 }
+  
 const handleAddOpsTask = async () => {
   if (!opsTaskForm.title.trim() || !currentAdminId) return
 
@@ -2519,18 +2444,48 @@ const handleAddInterviewLink = async () => {
   setInterviewForm(createEmptyInterviewLinkItem())
 }
 
-const handleAddMeetingItem = async () => {
-  if (!meetingForm.title.trim() || !currentAdminId) return
+const handleSaveCoachReports = async () => {
+  if (!currentAdminId) return
 
   const { data, error } = await supabase
     .from('ops_meetings')
     .insert({
       admin_id: currentAdminId,
-      title: meetingForm.title,
-    problem: buildMeetingCoachSalesText(),
-cause: buildMeetingMemberFlowText(),
-ideas: buildMeetingOpsIssuesText(),
-decision: buildMeetingDecisionText(),
+      title: meetingForm.title?.trim() || `${getTodayDateString()} 코치 보고`,
+      problem: buildMeetingCoachSalesText(),
+      cause: buildMeetingMemberFlowText(),
+      ideas: buildMeetingOpsIssuesText(),
+      decision: '',
+      action_title: '',
+      action_due_date: null,
+      action_category: '운영',
+      action_priority: '일반',
+    })
+    .select('*')
+    .single()
+
+  if (error) {
+    console.error('handleSaveCoachReports error:', error)
+    return
+  }
+
+  setMeetingItems((prev) => [data, ...prev])
+  setMeetingForm(createEmptyMeetingItem())
+  setMeetingCoachReports([createEmptyMeetingCoachReport(true)])
+}
+
+const handleSaveMeetingDecision = async () => {
+  if (!currentAdminId) return
+
+  const { data, error } = await supabase
+    .from('ops_meetings')
+    .insert({
+      admin_id: currentAdminId,
+      title: meetingForm.title?.trim() || `${getTodayDateString()} 결정사항`,
+      problem: '',
+      cause: '',
+      ideas: '',
+      decision: buildMeetingDecisionText(),
       action_title: meetingForm.action_title || '',
       action_due_date: meetingForm.action_due_date || null,
       action_category: meetingForm.action_category || '운영',
@@ -2540,24 +2495,21 @@ decision: buildMeetingDecisionText(),
     .single()
 
   if (error) {
-    console.error('handleAddMeetingItem error:', error)
+    console.error('handleSaveMeetingDecision error:', error)
     return
   }
 
   setMeetingItems((prev) => [data, ...prev])
   setMeetingForm(createEmptyMeetingItem())
- setMeetingCoachReports([createEmptyMeetingCoachReport()])
-
-setMeetingDirection('')
-
-setMeetingChecklistRows([
-  { id: 1, label: '전일 매출 확인', checked: false, note: '' },
-  { id: 2, label: '금일 예정 매출 확인', checked: false, note: '' },
-  { id: 3, label: '재등록 예정 회원 확인', checked: false, note: '' },
-  { id: 4, label: '보류 회원 확인', checked: false, note: '' },
-  { id: 5, label: '코치 운영 이슈 확인', checked: false, note: '' },
-  { id: 6, label: '시설/현장 이슈 확인', checked: false, note: '' },
-])
+  setMeetingDirection('')
+  setMeetingChecklistRows([
+    { id: 1, label: '전일 매출 확인', checked: false, note: '' },
+    { id: 2, label: '금일 예정 매출 확인', checked: false, note: '' },
+    { id: 3, label: '재등록 예정 회원 확인', checked: false, note: '' },
+    { id: 4, label: '보류 회원 확인', checked: false, note: '' },
+    { id: 5, label: '코치 운영 이슈 확인', checked: false, note: '' },
+    { id: 6, label: '시설/현장 이슈 확인', checked: false, note: '' },
+  ])
 }
 const handleDeleteMeetingItem = async (meetingId) => {
   const ok = window.confirm('이 회의 기록을 삭제하시겠습니까?')
@@ -24793,264 +24745,314 @@ gap: '16px',
               />
             </label>
 
-         <div className="meeting-section-box">
-  <div className="meeting-section-title">코치별 매출 / 회원 흐름 / 운영 이슈 보고</div>
-
-  <div className="meeting-coach-report-list">
-    {meetingCoachReports.map((report, index) => (
-      <div key={report.id} className="meeting-coach-report-card">
-        <div className="meeting-coach-report-head">
-          <strong>코치 보고 {index + 1}</strong>
-
-          <button
-            type="button"
-            className="danger-btn"
-            onClick={() => removeMeetingCoachReport(report.id)}
-            disabled={meetingCoachReports.length <= 1}
-          >
-            삭제
-          </button>
-        </div>
-
-        <label className="field">
-          <span>코치명</span>
-          <input
-            value={report.coachName}
-            onChange={(e) =>
-              updateMeetingCoachReport(report.id, 'coachName', e.target.value)
-            }
-            placeholder="예: 임현진 코치"
-          />
-        </label>
-
-        <div className="meeting-section-title">매출 보고</div>
-        <div className="grid-2">
-          <label className="field">
-            <span>전일 실매출</span>
-            <input
-              value={report.yesterdaySales}
-              onChange={(e) =>
-                updateMeetingCoachReport(report.id, 'yesterdaySales', e.target.value)
-              }
-              placeholder="예: 350000"
-            />
-          </label>
-
-          <label className="field">
-            <span>금일 예정 매출</span>
-            <input
-              value={report.todaySales}
-              onChange={(e) =>
-                updateMeetingCoachReport(report.id, 'todaySales', e.target.value)
-              }
-              placeholder="예: 420000"
-            />
-          </label>
-
-          <label className="field">
-            <span>이번달 잔여 매출</span>
-            <input
-              value={report.thisMonthSales}
-              onChange={(e) =>
-                updateMeetingCoachReport(report.id, 'thisMonthSales', e.target.value)
-              }
-              placeholder="예: 1800000"
-            />
-          </label>
-
-          <label className="field">
-            <span>다음달 예정 매출</span>
-            <input
-              value={report.nextMonthSales}
-              onChange={(e) =>
-                updateMeetingCoachReport(report.id, 'nextMonthSales', e.target.value)
-              }
-              placeholder="예: 2500000"
-            />
-          </label>
-        </div>
-
-        <div className="meeting-section-title">회원 흐름</div>
-        <div className="grid-2">
-          <label className="field">
-            <span>재등록 예정 회원</span>
-            <input
-              value={report.reRegister}
-              onChange={(e) =>
-                updateMeetingCoachReport(report.id, 'reRegister', e.target.value)
-              }
-              placeholder="예: 김OO, 박OO"
-            />
-          </label>
-
-          <label className="field">
-            <span>보류 회원</span>
-            <input
-              value={report.hold}
-              onChange={(e) =>
-                updateMeetingCoachReport(report.id, 'hold', e.target.value)
-              }
-              placeholder="예: 이OO, 최OO"
-            />
-          </label>
-
-          <label className="field">
-            <span>체험 예정 회원</span>
-            <input
-              value={report.trial}
-              onChange={(e) =>
-                updateMeetingCoachReport(report.id, 'trial', e.target.value)
-              }
-              placeholder="예: 2명 / 홍OO"
-            />
-          </label>
-
-          <label className="field">
-            <span>장기 미방문 회원</span>
-            <input
-              value={report.dormant}
-              onChange={(e) =>
-                updateMeetingCoachReport(report.id, 'dormant', e.target.value)
-              }
-              placeholder="예: 정OO, 한OO"
-            />
-          </label>
-        </div>
-
-        <div className="meeting-section-title">운영 이슈</div>
-        <div className="grid-2">
-          <label className="field">
-            <span>코치 이슈</span>
-            <input
-              value={report.coachIssue}
-              onChange={(e) =>
-                updateMeetingCoachReport(report.id, 'coachIssue', e.target.value)
-              }
-              placeholder="예: 스케줄 조정 필요"
-            />
-          </label>
-
-          <label className="field">
-            <span>회원 이슈</span>
-            <input
-              value={report.memberIssue}
-              onChange={(e) =>
-                updateMeetingCoachReport(report.id, 'memberIssue', e.target.value)
-              }
-              placeholder="예: 상담 필요 / 컴플레인"
-            />
-          </label>
-
-          <label className="field">
-            <span>시설 이슈</span>
-            <input
-              value={report.facilityIssue}
-              onChange={(e) =>
-                updateMeetingCoachReport(report.id, 'facilityIssue', e.target.value)
-              }
-              placeholder="예: 기구 점검"
-            />
-          </label>
-
-          <label className="field">
-            <span>현장 체크</span>
-            <input
-              value={report.fieldCheck}
-              onChange={(e) =>
-                updateMeetingCoachReport(report.id, 'fieldCheck', e.target.value)
-              }
-              placeholder="예: 청결 / 동선 / 분위기"
-            />
-          </label>
-        </div>
-      </div>
-    ))}
-  </div>
+        <div className="inline-actions wrap" style={{ marginBottom: '12px' }}>
+  <button
+    type="button"
+    className={meetingInputTab === 'coach' ? 'primary-btn' : 'secondary-btn'}
+    onClick={() => setMeetingInputTab('coach')}
+  >
+    코치 보고
+  </button>
 
   <button
     type="button"
-    className="secondary-btn"
-    onClick={addMeetingCoachReport}
-    style={{ marginTop: '10px' }}
+    className={meetingInputTab === 'decision' ? 'primary-btn' : 'secondary-btn'}
+    onClick={() => setMeetingInputTab('decision')}
   >
-    + 코치 보고 추가
+    결정사항 / 실행업무
   </button>
 </div>
 
-<div className="meeting-section-box">
-  <div className="meeting-section-title">결정 사항 / 오늘 운영 방향</div>
+{meetingInputTab === 'coach' && (
+  <div className="meeting-section-box">
+    <div className="meeting-section-title">코치별 매출 / 회원 흐름 / 운영 이슈 보고</div>
 
-  <label className="field">
-    <span>오늘 운영 방향</span>
-    <textarea
-      rows="3"
-      value={meetingDirection}
-      onChange={(e) => setMeetingDirection(e.target.value)}
-      placeholder="오늘 바로 반영할 결정 사항, 우선순위, 체크 포인트를 적으세요."
-    />
-  </label>
-
-  <div className="meeting-checklist-box">
-    <div className="meeting-section-title" style={{ marginBottom: '8px' }}>
-      체크리스트 표
+    <div className="inline-actions wrap" style={{ marginBottom: '10px' }}>
+      <button type="button" className="secondary-btn" onClick={openAllMeetingCoachReports}>
+        전체 펼치기
+      </button>
+      <button type="button" className="secondary-btn" onClick={closeAllMeetingCoachReports}>
+        전체 접기
+      </button>
     </div>
 
-    <div className="meeting-checklist-table">
-      <div className="meeting-checklist-head">
-        <div>항목</div>
-        <div>완료</div>
-        <div>메모</div>
-      </div>
+    <div className="meeting-coach-report-list">
+      {meetingCoachReports.map((report, index) => (
+        <div key={report.id} className="meeting-coach-report-card">
+          <div className="meeting-coach-report-head">
+            <button
+              type="button"
+              className="meeting-coach-toggle"
+              onClick={() => toggleMeetingCoachReport(report.id)}
+            >
+              <strong>
+                코치 보고 {index + 1}
+                {report.coachName ? ` · ${report.coachName}` : ''}
+              </strong>
+              <span>{report.isOpen ? '▼' : '▶'}</span>
+            </button>
 
-      {meetingChecklistRows.map((row) => (
-        <div key={row.id} className="meeting-checklist-row">
-          <div className="meeting-checklist-label">{row.label}</div>
-
-          <div className="meeting-checklist-check">
-            <input
-              type="checkbox"
-              checked={row.checked}
-              onChange={(e) => updateMeetingChecklistRow(row.id, 'checked', e.target.checked)}
-            />
+            <button
+              type="button"
+              className="danger-btn"
+              onClick={() => removeMeetingCoachReport(report.id)}
+              disabled={meetingCoachReports.length <= 1}
+            >
+              삭제
+            </button>
           </div>
 
-          <div className="meeting-checklist-note">
-            <input
-              value={row.note}
-              onChange={(e) => updateMeetingChecklistRow(row.id, 'note', e.target.value)}
-              placeholder="메모"
-            />
-          </div>
+          {report.isOpen && (
+            <>
+              <label className="field">
+                <span>코치명</span>
+                <input
+                  value={report.coachName}
+                  onChange={(e) =>
+                    updateMeetingCoachReport(report.id, 'coachName', e.target.value)
+                  }
+                  placeholder="예: 임현진 코치"
+                />
+              </label>
+
+              <div className="meeting-section-title">매출 보고</div>
+              <div className="grid-2">
+                <label className="field">
+                  <span>전일 실매출</span>
+                  <input
+                    value={report.yesterdaySales}
+                    onChange={(e) =>
+                      updateMeetingCoachReport(report.id, 'yesterdaySales', e.target.value)
+                    }
+                    placeholder="예: 350000"
+                  />
+                </label>
+
+                <label className="field">
+                  <span>금일 예정 매출</span>
+                  <input
+                    value={report.todaySales}
+                    onChange={(e) =>
+                      updateMeetingCoachReport(report.id, 'todaySales', e.target.value)
+                    }
+                    placeholder="예: 420000"
+                  />
+                </label>
+
+                <label className="field">
+                  <span>이번달 잔여 매출</span>
+                  <input
+                    value={report.thisMonthSales}
+                    onChange={(e) =>
+                      updateMeetingCoachReport(report.id, 'thisMonthSales', e.target.value)
+                    }
+                    placeholder="예: 1800000"
+                  />
+                </label>
+
+                <label className="field">
+                  <span>다음달 예정 매출</span>
+                  <input
+                    value={report.nextMonthSales}
+                    onChange={(e) =>
+                      updateMeetingCoachReport(report.id, 'nextMonthSales', e.target.value)
+                    }
+                    placeholder="예: 2500000"
+                  />
+                </label>
+              </div>
+
+              <div className="meeting-section-title">회원 흐름</div>
+              <div className="grid-2">
+                <label className="field">
+                  <span>재등록 예정 회원</span>
+                  <input
+                    value={report.reRegister}
+                    onChange={(e) =>
+                      updateMeetingCoachReport(report.id, 'reRegister', e.target.value)
+                    }
+                    placeholder="예: 김OO, 박OO"
+                  />
+                </label>
+
+                <label className="field">
+                  <span>보류 회원</span>
+                  <input
+                    value={report.hold}
+                    onChange={(e) =>
+                      updateMeetingCoachReport(report.id, 'hold', e.target.value)
+                    }
+                    placeholder="예: 이OO, 최OO"
+                  />
+                </label>
+
+                <label className="field">
+                  <span>체험 예정 회원</span>
+                  <input
+                    value={report.trial}
+                    onChange={(e) =>
+                      updateMeetingCoachReport(report.id, 'trial', e.target.value)
+                    }
+                    placeholder="예: 2명 / 홍OO"
+                  />
+                </label>
+
+                <label className="field">
+                  <span>장기 미방문 회원</span>
+                  <input
+                    value={report.dormant}
+                    onChange={(e) =>
+                      updateMeetingCoachReport(report.id, 'dormant', e.target.value)
+                    }
+                    placeholder="예: 정OO, 한OO"
+                  />
+                </label>
+              </div>
+
+              <div className="meeting-section-title">운영 이슈</div>
+              <div className="grid-2">
+                <label className="field">
+                  <span>코치 이슈</span>
+                  <input
+                    value={report.coachIssue}
+                    onChange={(e) =>
+                      updateMeetingCoachReport(report.id, 'coachIssue', e.target.value)
+                    }
+                    placeholder="예: 스케줄 조정 필요"
+                  />
+                </label>
+
+                <label className="field">
+                  <span>회원 이슈</span>
+                  <input
+                    value={report.memberIssue}
+                    onChange={(e) =>
+                      updateMeetingCoachReport(report.id, 'memberIssue', e.target.value)
+                    }
+                    placeholder="예: 상담 필요 / 컴플레인"
+                  />
+                </label>
+
+                <label className="field">
+                  <span>시설 이슈</span>
+                  <input
+                    value={report.facilityIssue}
+                    onChange={(e) =>
+                      updateMeetingCoachReport(report.id, 'facilityIssue', e.target.value)
+                    }
+                    placeholder="예: 기구 점검"
+                  />
+                </label>
+
+                <label className="field">
+                  <span>현장 체크</span>
+                  <input
+                    value={report.fieldCheck}
+                    onChange={(e) =>
+                      updateMeetingCoachReport(report.id, 'fieldCheck', e.target.value)
+                    }
+                    placeholder="예: 청결 / 동선 / 분위기"
+                  />
+                </label>
+              </div>
+            </>
+          )}
         </div>
       ))}
     </div>
+
+    <div className="inline-actions wrap" style={{ marginTop: '12px' }}>
+      <button type="button" className="secondary-btn" onClick={addMeetingCoachReport}>
+        + 코치 보고 추가
+      </button>
+
+      <button type="button" className="primary-btn" onClick={handleSaveCoachReports}>
+        코치 보고 저장
+      </button>
+    </div>
   </div>
-</div>
+)}
 
-<div className="grid-2">
-  <label className="field">
-    <span>오늘 실행 업무</span>
-    <input
-      value={meetingForm.action_title}
-      onChange={(e) => setMeetingForm((prev) => ({ ...prev, action_title: e.target.value }))}
-      placeholder="예: 재등록 보류 회원 연락"
-    />
-  </label>
+{meetingInputTab === 'decision' && (
+  <div className="meeting-section-box">
+    <div className="meeting-section-title">결정 사항 / 오늘 운영 방향</div>
 
-  <label className="field">
-    <span>실행 마감일</span>
-    <input
-      type="date"
-      value={meetingForm.action_due_date}
-      onChange={(e) => setMeetingForm((prev) => ({ ...prev, action_due_date: e.target.value }))}
-    />
-  </label>
-</div>
+    <label className="field">
+      <span>오늘 운영 방향</span>
+      <textarea
+        rows="3"
+        value={meetingDirection}
+        onChange={(e) => setMeetingDirection(e.target.value)}
+        placeholder="오늘 바로 반영할 결정 사항, 우선순위, 체크 포인트를 적으세요."
+      />
+    </label>
 
-            <button type="button" className="primary-btn" onClick={handleAddMeetingItem}>
-              회의 기록 저장
-            </button>
+    <div className="meeting-checklist-box">
+      <div className="meeting-section-title" style={{ marginBottom: '8px' }}>
+        체크리스트 표
+      </div>
+
+      <div className="meeting-checklist-table">
+        <div className="meeting-checklist-head">
+          <div>항목</div>
+          <div>완료</div>
+          <div>메모</div>
+        </div>
+
+        {meetingChecklistRows.map((row) => (
+          <div key={row.id} className="meeting-checklist-row">
+            <div className="meeting-checklist-label">{row.label}</div>
+
+            <div className="meeting-checklist-check">
+              <input
+                type="checkbox"
+                checked={row.checked}
+                onChange={(e) => updateMeetingChecklistRow(row.id, 'checked', e.target.checked)}
+              />
+            </div>
+
+            <div className="meeting-checklist-note">
+              <input
+                value={row.note}
+                onChange={(e) => updateMeetingChecklistRow(row.id, 'note', e.target.value)}
+                placeholder="메모"
+              />
+            </div>
           </div>
+        ))}
+      </div>
+    </div>
+
+    <div className="grid-2" style={{ marginTop: '12px' }}>
+      <label className="field">
+        <span>오늘 실행 업무</span>
+        <input
+          value={meetingForm.action_title}
+          onChange={(e) => setMeetingForm((prev) => ({ ...prev, action_title: e.target.value }))}
+          placeholder="예: 재등록 보류 회원 연락"
+        />
+      </label>
+
+      <label className="field">
+        <span>실행 마감일</span>
+        <input
+          type="date"
+          value={meetingForm.action_due_date}
+          onChange={(e) => setMeetingForm((prev) => ({ ...prev, action_due_date: e.target.value }))}
+        />
+      </label>
+    </div>
+
+    <button
+      type="button"
+      className="primary-btn"
+      onClick={handleSaveMeetingDecision}
+      style={{ marginTop: '12px' }}
+    >
+      결정사항 저장
+    </button>
+  </div>
+)}
 
           <div className="sub-card">
   <h4>회의 목록</h4>
