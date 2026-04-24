@@ -2805,9 +2805,23 @@ const handleDeleteMeetingItem = async (meetingId) => {
  const getTextValueByLabel = (text = '', label = '') => {
   const line = String(text || '')
     .split('\n')
-    .find((row) => row.startsWith(`${label}:`))
+    .map((row) => row.trim())
+    .find((row) => row.includes(`${label}:`))
 
-  return line ? line.replace(`${label}:`, '').trim() : ''
+  if (!line) return ''
+
+  return line.split(`${label}:`).slice(1).join(':').trim()
+}
+
+const getCoachNameFromMeetingText = (text = '') => {
+  const line = String(text || '')
+    .split('\n')
+    .map((row) => row.trim())
+    .find((row) => row.startsWith('[') && row.endsWith(']'))
+
+  if (!line) return ''
+
+  return line.replace('[', '').replace(']', '').trim()
 }
 
 const handleEditMeetingItem = (item) => {
@@ -2824,7 +2838,7 @@ const handleEditMeetingItem = (item) => {
     action_priority: item.action_priority || '일반',
   })
 
-  const isCoachReport = item.problem || item.cause || item.ideas
+  const isCoachReport = !!(item.problem || item.cause || item.ideas)
 
   if (isCoachReport) {
     setMeetingInputTab('coach')
@@ -2832,19 +2846,22 @@ const handleEditMeetingItem = (item) => {
     setMeetingCoachReports([
       {
         id: Date.now(),
-        coachName: '',
+        coachName: getCoachNameFromMeetingText(item.problem),
         yesterdaySales: getTextValueByLabel(item.problem, '전일 실매출'),
         todaySales: getTextValueByLabel(item.problem, '금일 예정 매출'),
         thisMonthSales: getTextValueByLabel(item.problem, '이번달 잔여 매출'),
         nextMonthSales: getTextValueByLabel(item.problem, '다음달 예정 매출'),
+
         reRegister: getTextValueByLabel(item.cause, '재등록 예정 회원'),
         hold: getTextValueByLabel(item.cause, '보류 회원'),
         trial: getTextValueByLabel(item.cause, '체험 예정 회원'),
         dormant: getTextValueByLabel(item.cause, '장기 미방문 회원'),
+
         coachIssue: getTextValueByLabel(item.ideas, '코치 이슈'),
         memberIssue: getTextValueByLabel(item.ideas, '회원 이슈'),
         facilityIssue: getTextValueByLabel(item.ideas, '시설 이슈'),
         fieldCheck: getTextValueByLabel(item.ideas, '현장 체크'),
+
         isOpen: true,
       },
     ])
