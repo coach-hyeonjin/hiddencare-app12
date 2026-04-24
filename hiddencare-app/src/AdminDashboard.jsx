@@ -1108,6 +1108,7 @@ const [adminActionLogs, setAdminActionLogs] = useState([])
   const [memberDetailGuideOpen, setMemberDetailGuideOpen] = useState(false)
   const [memberProgramFilter, setMemberProgramFilter] = useState('')
   const [memberStatusFilter, setMemberStatusFilter] = useState('all')
+  const [memberLevelFilter, setMemberLevelFilter] = useState('all')
   const [collapsedMembers, setCollapsedMembers] = useState({})
  
 
@@ -10838,8 +10839,34 @@ const getBurnoutSignalText = (checks = []) => {
   })
 }, [members, workouts, selectedStatsMonth])
 
- const filteredMemberStats = useMemo(() => {
+const memberLevelMap = useMemo(() => {
+  return (memberLevels || []).reduce((acc, row) => {
+    acc[row.member_id] = row
+    return acc
+  }, {})
+}, [memberLevels])
+
+const memberLevelOptions = useMemo(() => {
+  const levelNames = (memberLevels || [])
+    .map((row) => row.level_name)
+    .filter(Boolean)
+
+  return [...new Set(levelNames)]
+}, [memberLevels])
+
+const filteredMemberStats = useMemo(() => {
   return memberStats
+    .map((member) => {
+      const levelInfo = memberLevelMap[member.id] || null
+
+      return {
+        ...member,
+        memberLevelInfo: levelInfo,
+        memberLevelName: levelInfo?.level_name || '등급 없음',
+        memberLevelNo: Number(levelInfo?.level_no || 0),
+        memberTotalXp: Number(levelInfo?.total_xp || 0),
+      }
+    })
     .filter((member) => {
       const matchesKeyword =
         !memberSearch.trim() ||
@@ -10847,18 +10874,25 @@ const getBurnoutSignalText = (checks = []) => {
         textIncludes(member.goal, memberSearch) ||
         textIncludes(member.access_code, memberSearch) ||
         textIncludes(member.programs?.name, memberSearch) ||
-        textIncludes(member.memo, memberSearch)
+        textIncludes(member.memo, memberSearch) ||
+        textIncludes(member.memberLevelName, memberSearch)
 
       const matchesProgram = !memberProgramFilter || member.current_program_id === memberProgramFilter
+
       const matchesStatus =
         memberStatusFilter === 'all' ||
         (memberStatusFilter === 'remaining' && member.remainingSessions > 0) ||
         (memberStatusFilter === 'ended' && member.remainingSessions <= 0)
 
-      return matchesKeyword && matchesProgram && matchesStatus
+      const matchesLevel =
+        memberLevelFilter === 'all' || member.memberLevelName === memberLevelFilter
+
+      return matchesKeyword && matchesProgram && matchesStatus && matchesLevel
     })
     .sort((a, b) => (a.name || '').localeCompare(b.name || '', 'ko-KR'))
-}, [memberStats, memberSearch, memberProgramFilter, memberStatusFilter])
+}, [memberStats, memberSearch, memberProgramFilter, memberStatusFilter, memberLevelFilter, memberLevelMap])
+
+  
 const totalMemberCount = Array.isArray(members) ? members.length : 0
 const visibleMemberCount = Array.isArray(filteredMemberStats) ? filteredMemberStats.length : 0
   const filteredMemberDetails = useMemo(() => {
@@ -14394,6 +14428,60 @@ const handlePartnerUsageReject = async (usageId) => {
   setMessage('제휴 사용 요청이 반려되었습니다.')
   await loadPartnerUsages()
 }
+
+const getSaleTotalSessionCount = (sale) => {
+  return Number(sale?.purchased_session_count || 0) + Number(sale?.service_session_count || 0)
+}
+
+const syncMemberSessionsFromSales = async (memberId) => {
+  if (!memberId) return
+
+  const { data: memberRow, error: memberError } = await supabase
+    .from('members')
+    .select('id, total_sessions')
+    .eq('id', memberId)
+    .single()
+
+  if (memberError) {
+    throw memberError
+  }
+
+  const { data: salesRows, error: salesError } = await supabase
+    .from('sales_records')
+    .select('purchased_session_count, service_session_count')
+    .eq('member_id', memberId)
+
+  if (salesError) {
+    throw salesError
+  }
+
+  const totalPurchasedSessions = (salesRows || []).reduce(
+    (sum, sale) => sum + getSaleTotalSessionCount(sale),
+    0
+  )
+
+  const nextTotalSessions = totalPurchasedSessions
+
+  const { error: updateError } = await supabase
+    .from('members')
+    .update({
+      total_sessions: nextTotalSessions,
+    })
+    .eq('id', memberId)
+
+  if (updateError) {
+    throw updateError
+  }
+
+  setMembers((prev) =>
+    prev.map((member) =>
+      member.id === memberId
+        ? { ...member, total_sessions: nextTotalSessions }
+        : member
+    )
+  )
+}
+  
   const resetSaleForm = () => {
     setSaleForm(emptySaleForm)
     setEditingSaleId(null)
@@ -14424,7 +14512,9 @@ const handlePartnerUsageReject = async (usageId) => {
   }
 
   const targetMonth = String(payload.sale_date).slice(0, 7)
-
+const originalSale = editingSaleId
+  ? salesRecords.find((sale) => sale.id === editingSaleId)
+  : null
   if (editingSaleId) {
   const { error } = await supabase
     .from('sales_records')
@@ -14511,6 +14601,17 @@ const handlePartnerUsageReject = async (usageId) => {
 
   setMessage(finalMessage)
 }
+const affectedMemberIds = [
+  saleForm.member_id,
+  payload.member_id,
+].filter(Boolean)
+
+for (const memberId of [...new Set(affectedMemberIds)]) {
+  await syncMemberSessionsFromSales(memberId)
+}
+
+await loadMembers()
+    
   resetSaleForm()
 
 await loadSalesRecords()
@@ -17486,6 +17587,17 @@ const filteredExercisesAdvanced = exercises.filter((exercise) => {
               <option value="remaining">잔여 있음</option>
               <option value="ended">소진</option>
             </select>
+            <select
+  value={memberLevelFilter}
+  onChange={(e) => setMemberLevelFilter(e.target.value)}
+>
+  <option value="all">전체 등급</option>
+  {memberLevelOptions.map((levelName) => (
+    <option key={levelName} value={levelName}>
+      {levelName}
+    </option>
+  ))}
+</select>
           </div>
         </div>
 
@@ -17523,11 +17635,17 @@ const filteredExercisesAdvanced = exercises.filter((exercise) => {
           }}
         >
           <div className="member-list-modern-name">
-            <strong>{member.name}</strong>
-            <span className={`pill ${statusClass}`}>
-              남은 {remainingSessions}회
-            </span>
-          </div>
+  <strong>{member.name}</strong>
+
+  <span className="pill pill-blue">
+    {member.memberLevelName} · Lv.{member.memberLevelNo}
+  </span>
+
+  <span className={`pill ${statusClass}`}>
+    남은 {remainingSessions}회
+  </span>
+</div>
+          
           <span className="member-collapse-mark">{isCollapsed ? '+' : '−'}</span>
         </button>
 
@@ -17557,6 +17675,15 @@ const filteredExercisesAdvanced = exercises.filter((exercise) => {
             <span>개인운동</span>
             <strong>{member.personalCount}회</strong>
           </div>
+        <div className="member-mini-info">
+  <span>회원 등급</span>
+  <strong>{member.memberLevelName}</strong>
+</div>
+
+<div className="member-mini-info">
+  <span>총 XP</span>
+  <strong>{member.memberTotalXp}XP</strong>
+</div>
         </div>
       )}
 
