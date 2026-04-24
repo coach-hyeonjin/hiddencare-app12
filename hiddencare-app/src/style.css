@@ -23864,3 +23864,63 @@ textarea:focus {
 .meeting-summary-footer .danger-btn {
   font-weight: 600;
 }    
+/* ===== 회의 상세 최종 고급화 ===== */
+
+.meeting-detail-kpi-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-bottom: 16px;
+}
+
+.meeting-kpi-card {
+  padding: 12px;
+  border-radius: 16px;
+  background: linear-gradient(180deg, #f8fafc 0%, #ffffff 100%);
+  border: 1px solid #e2e8f0;
+}
+
+.meeting-kpi-card span {
+  display: block;
+  font-size: 11px;
+  font-weight: 700;
+  color: #64748b;
+  margin-bottom: 6px;
+}
+
+.meeting-kpi-card strong {
+  display: block;
+  font-size: 14px;
+  color: #111827;
+}
+
+.meeting-detail-report-card {
+  margin-bottom: 12px;
+  padding: 14px;
+  border: 1px solid #e5e7eb;
+  border-radius: 18px;
+  background: #ffffff;
+  box-shadow: 0 10px 24px rgba(15, 23, 42, 0.05);
+}
+
+.meeting-detail-report-title {
+  font-size: 13px;
+  font-weight: 800;
+  color: #4f46e5;
+  margin-bottom: 10px;
+}
+
+.meeting-detail-report-card pre {
+  margin: 0;
+  white-space: pre-wrap;
+  word-break: keep-all;
+  font-family: inherit;
+  font-size: 13px;
+  line-height: 1.75;
+  color: #334155;
+}
+
+.meeting-detail-report-card:hover {
+  border-color: #c7d2fe;
+  box-shadow: 0 14px 30px rgba(99, 91, 255, 0.1);
+}
