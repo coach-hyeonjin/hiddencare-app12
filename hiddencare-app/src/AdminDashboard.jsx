@@ -1667,6 +1667,7 @@ const [meetingCoachReports, setMeetingCoachReports] = useState([
     memberIssue: '',
     facilityIssue: '',
     fieldCheck: '',
+     isOpen: true,
   },
 ])
 
@@ -2128,6 +2129,107 @@ const groupedMeetingItems = useMemo(() => {
     return bTime - aTime
   })
 }, [filteredMeetingItems])
+
+  const createEmptyMeetingCoachReport = (isOpen = true) => ({
+  id: Date.now() + Math.random(),
+  coachName: '',
+  yesterdaySales: '',
+  todaySales: '',
+  thisMonthSales: '',
+  nextMonthSales: '',
+  reRegister: '',
+  hold: '',
+  trial: '',
+  dormant: '',
+  coachIssue: '',
+  memberIssue: '',
+  facilityIssue: '',
+  fieldCheck: '',
+  isOpen,
+})
+
+const updateMeetingCoachReport = (id, field, value) => {
+  setMeetingCoachReports((prev) =>
+    prev.map((report) =>
+      report.id === id ? { ...report, [field]: value } : report
+    )
+  )
+}
+
+const toggleMeetingCoachReport = (id) => {
+  setMeetingCoachReports((prev) =>
+    prev.map((report) =>
+      report.id === id ? { ...report, isOpen: !report.isOpen } : report
+    )
+  )
+}
+
+const openAllMeetingCoachReports = () => {
+  setMeetingCoachReports((prev) =>
+    prev.map((report) => ({ ...report, isOpen: true }))
+  )
+}
+
+const closeAllMeetingCoachReports = () => {
+  setMeetingCoachReports((prev) =>
+    prev.map((report) => ({ ...report, isOpen: false }))
+  )
+}
+
+const addMeetingCoachReport = () => {
+  setMeetingCoachReports((prev) => [
+    ...prev,
+    createEmptyMeetingCoachReport(false),
+  ])
+}
+
+const removeMeetingCoachReport = (id) => {
+  setMeetingCoachReports((prev) =>
+    prev.length <= 1 ? prev : prev.filter((report) => report.id !== id)
+  )
+}
+
+const buildMeetingCoachSalesText = () => {
+  return meetingCoachReports
+    .map((report, index) =>
+      [
+        `[${report.coachName || `코치 ${index + 1}`}]`,
+        `전일 실매출: ${report.yesterdaySales || 0}`,
+        `금일 예정 매출: ${report.todaySales || 0}`,
+        `이번달 잔여 매출: ${report.thisMonthSales || 0}`,
+        `다음달 예정 매출: ${report.nextMonthSales || 0}`,
+      ].join('\n')
+    )
+    .join('\n\n')
+}
+
+const buildMeetingMemberFlowText = () => {
+  return meetingCoachReports
+    .map((report, index) =>
+      [
+        `[${report.coachName || `코치 ${index + 1}`}]`,
+        `재등록 예정 회원: ${report.reRegister || '-'}`,
+        `보류 회원: ${report.hold || '-'}`,
+        `체험 예정 회원: ${report.trial || '-'}`,
+        `장기 미방문 회원: ${report.dormant || '-'}`,
+      ].join('\n')
+    )
+    .join('\n\n')
+}
+
+const buildMeetingOpsIssuesText = () => {
+  return meetingCoachReports
+    .map((report, index) =>
+      [
+        `[${report.coachName || `코치 ${index + 1}`}]`,
+        `코치 이슈: ${report.coachIssue || '-'}`,
+        `회원 이슈: ${report.memberIssue || '-'}`,
+        `시설 이슈: ${report.facilityIssue || '-'}`,
+        `현장 체크: ${report.fieldCheck || '-'}`,
+      ].join('\n')
+    )
+    .join('\n\n')
+}
   const updateMeetingChecklistRow = (id, field, value) => {
   setMeetingChecklistRows((prev) =>
     prev.map((row) => (row.id === id ? { ...row, [field]: value } : row))
