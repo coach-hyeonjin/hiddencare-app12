@@ -10847,12 +10847,26 @@ const memberLevelMap = useMemo(() => {
 }, [memberLevels])
 
 const memberLevelOptions = useMemo(() => {
+  const settings = Array.isArray(memberLevelSettings) ? memberLevelSettings : []
+
+  if (settings.length > 0) {
+    return [...settings]
+      .sort((a, b) => Number(a.level_no || 0) - Number(b.level_no || 0))
+      .map((level) => ({
+        name: level.level_name || `Lv.${level.level_no}`,
+        levelNo: Number(level.level_no || 0),
+      }))
+  }
+
   const levelNames = (memberLevels || [])
     .map((row) => row.level_name)
     .filter(Boolean)
 
-  return [...new Set(levelNames)]
-}, [memberLevels])
+  return [...new Set(levelNames)].map((name) => ({
+    name,
+    levelNo: 0,
+  }))
+}, [memberLevelSettings, memberLevels])
 
 const filteredMemberStats = useMemo(() => {
   return memberStats
@@ -17613,11 +17627,11 @@ const filteredExercisesAdvanced = exercises.filter((exercise) => {
   onChange={(e) => setMemberLevelFilter(e.target.value)}
 >
   <option value="all">전체 등급</option>
-  {memberLevelOptions.map((levelName) => (
-    <option key={levelName} value={levelName}>
-      {levelName}
-    </option>
-  ))}
+ {memberLevelOptions.map((level) => (
+  <option key={`${level.levelNo}-${level.name}`} value={level.name}>
+    {level.levelNo ? `Lv.${level.levelNo} · ${level.name}` : level.name}
+  </option>
+))}
 </select>
           </div>
         </div>
