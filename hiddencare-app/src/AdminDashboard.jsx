@@ -14428,7 +14428,27 @@ const handlePartnerUsageReject = async (usageId) => {
   setMessage('제휴 사용 요청이 반려되었습니다.')
   await loadPartnerUsages()
 }
+const getMemberLevelInfo = (memberId) => {
+  return (memberLevels || []).find((level) => level.member_id === memberId) || null
+}
 
+const isDiamondOrHigherMember = (memberId) => {
+  const levelInfo = getMemberLevelInfo(memberId)
+  const levelName = String(levelInfo?.level_name || '')
+
+  return (
+    levelName.includes('다이아') ||
+    levelName.includes('마스터') ||
+    levelName.includes('대표') ||
+    Number(levelInfo?.level_no || 0) >= 10
+  )
+}
+
+const getBenefitExtraXp = (memberId, baseXp = 0) => {
+  if (!isDiamondOrHigherMember(memberId)) return 0
+  return Math.round(Number(baseXp || 0) * 0.1)
+}
+  
 const getSaleTotalSessionCount = (sale) => {
   return Number(sale?.purchased_session_count || 0) + Number(sale?.service_session_count || 0)
 }
@@ -14602,7 +14622,7 @@ const originalSale = editingSaleId
   setMessage(finalMessage)
 }
 const affectedMemberIds = [
-  saleForm.member_id,
+  originalSale?.member_id,
   payload.member_id,
 ].filter(Boolean)
 
@@ -14773,7 +14793,11 @@ const handleBackfillPastSalesXp = async () => {
       return
     }
 
-    await recalcMemberLevelFromLogs(targetSale.member_id)
+      await recalcMemberLevelFromLogs(targetSale.member_id)
+  }
+
+  if (targetSale?.member_id) {
+    await syncMemberSessionsFromSales(targetSale.member_id)
   }
 
   await loadSalesRecords()
