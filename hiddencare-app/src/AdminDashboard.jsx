@@ -2565,7 +2565,22 @@ setMeetingChecklistRows([
   nextMonth: '',
 })
 }
+const handleDeleteMeetingItem = async (meetingId) => {
+  const ok = window.confirm('이 회의 기록을 삭제하시겠습니까?')
+  if (!ok) return
 
+  const { error } = await supabase
+    .from('ops_meetings')
+    .delete()
+    .eq('id', meetingId)
+
+  if (error) {
+    console.error('handleDeleteMeetingItem error:', error)
+    return
+  }
+
+  setMeetingItems((prev) => prev.filter((item) => item.id !== meetingId))
+}
 const handleCreateTaskFromMeeting = async (meeting) => {
   if (!meeting.action_title?.trim() || !currentAdminId) return
 
@@ -25095,7 +25110,7 @@ gap: '16px',
                     <button
                       type="button"
                       className="danger-btn"
-                      onClick={() => setMeetingItems((prev) => prev.filter((v) => v.id !== item.id))}
+                     onClick={() => handleDeleteMeetingItem(item.id)}
                     >
                       삭제
                     </button>
