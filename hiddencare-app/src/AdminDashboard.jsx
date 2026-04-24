@@ -2802,7 +2802,7 @@ const handleDeleteMeetingItem = async (meetingId) => {
 
   setMeetingItems((prev) => prev.filter((item) => item.id !== meetingId))
 }
-  const handleEditMeetingItem = (item) => {
+ const handleEditMeetingItem = (item) => {
   setMeetingForm({
     id: item.id,
     title: item.title || '',
@@ -2816,7 +2816,14 @@ const handleDeleteMeetingItem = async (meetingId) => {
     action_priority: item.action_priority || '일반',
   })
 
+  setMeetingInputTab(item.decision || item.action_title ? 'decision' : 'coach')
+  setMeetingDirection(item.decision || '')
   setSelectedMeetingId(item.id)
+
+  window.scrollTo({
+    top: 0,
+    behavior: 'smooth',
+  })
 }
 const handleCreateTaskFromMeeting = async (meeting) => {
   if (!meeting.action_title?.trim() || !currentAdminId) return
@@ -25524,7 +25531,11 @@ gap: '16px',
 <button
   type="button"
   className="secondary-btn"
-  onClick={() => handleEditMeetingItem(item)}
+  onClick={(e) => {
+    e.preventDefault()
+    e.stopPropagation()
+    handleEditMeetingItem(item)
+  }}
 >
   수정
 </button>
