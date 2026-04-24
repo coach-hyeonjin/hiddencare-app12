@@ -2558,12 +2558,6 @@ setMeetingChecklistRows([
   { id: 5, label: '코치 운영 이슈 확인', checked: false, note: '' },
   { id: 6, label: '시설/현장 이슈 확인', checked: false, note: '' },
 ])
-  setMeetingSales({
-  yesterday: '',
-  today: '',
-  thisMonth: '',
-  nextMonth: '',
-})
 }
 const handleDeleteMeetingItem = async (meetingId) => {
   const ok = window.confirm('이 회의 기록을 삭제하시겠습니까?')
