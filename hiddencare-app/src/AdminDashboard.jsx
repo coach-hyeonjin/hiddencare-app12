@@ -1682,6 +1682,7 @@ const [meetingChecklistRows, setMeetingChecklistRows] = useState([
   { id: 6, label: '시설/현장 이슈 확인', checked: false, note: '' },
 ])
   const [meetingSearch, setMeetingSearch] = useState('')
+  const [meetingDateFilter, setMeetingDateFilter] = useState('')
 const [meetingOpenGroups, setMeetingOpenGroups] = useState({})
   const [meetingListTypeFilter, setMeetingListTypeFilter] = useState('all')
 const [selectedMeetingId, setSelectedMeetingId] = useState(null)
@@ -2125,8 +2126,6 @@ const toggleMeetingGroup = (groupLabel) => {
 const filteredMeetingItems = useMemo(() => {
   const keyword = meetingSearch.trim().toLowerCase()
 
-  if (!keyword) return meetingItems
-
   return meetingItems.filter((item) => {
     const searchable = [
       item?.title,
@@ -2140,9 +2139,14 @@ const filteredMeetingItems = useMemo(() => {
       .join(' ')
       .toLowerCase()
 
-    return searchable.includes(keyword)
+    const matchesKeyword = !keyword || searchable.includes(keyword)
+
+    const itemDate = toDateOnly(item?.created_at || item?.action_due_date || item?.updated_at)
+    const matchesDate = !meetingDateFilter || itemDate === meetingDateFilter
+
+    return matchesKeyword && matchesDate
   })
-}, [meetingItems, meetingSearch])
+}, [meetingItems, meetingSearch, meetingDateFilter])
 
 const getMeetingType = (item) => {
   const title = item.title || ''
@@ -2666,6 +2670,34 @@ const handleAddInterviewLink = async () => {
 const handleSaveCoachReports = async () => {
   if (!currentAdminId) return
 
+  // ✅ 수정 모드
+  if (meetingForm.id) {
+    const { data, error } = await supabase
+      .from('ops_meetings')
+      .update({
+        title: meetingForm.title,
+        problem: buildMeetingCoachSalesText(),
+        cause: buildMeetingMemberFlowText(),
+        ideas: buildMeetingOpsIssuesText(),
+      })
+      .eq('id', meetingForm.id)
+      .select('*')
+      .single()
+
+    if (error) {
+      console.error('handleSaveCoachReports update error:', error)
+      return
+    }
+
+    setMeetingItems((prev) =>
+      prev.map((item) => (item.id === meetingForm.id ? data : item))
+    )
+
+    setMeetingForm(createEmptyMeetingItem())
+    return
+  }
+
+  // ✅ 신규 등록
   const { data, error } = await supabase
     .from('ops_meetings')
     .insert({
@@ -2684,7 +2716,7 @@ const handleSaveCoachReports = async () => {
     .single()
 
   if (error) {
-    console.error('handleSaveCoachReports error:', error)
+    console.error('handleSaveCoachReports insert error:', error)
     return
   }
 
@@ -2696,6 +2728,37 @@ const handleSaveCoachReports = async () => {
 const handleSaveMeetingDecision = async () => {
   if (!currentAdminId) return
 
+  // ✅ 수정 모드
+  if (meetingForm.id) {
+    const { data, error } = await supabase
+      .from('ops_meetings')
+      .update({
+        title: meetingForm.title,
+        decision: buildMeetingDecisionText(),
+        action_title: meetingForm.action_title || '',
+        action_due_date: meetingForm.action_due_date || null,
+        action_category: meetingForm.action_category || '운영',
+        action_priority: meetingForm.action_priority || '일반',
+      })
+      .eq('id', meetingForm.id)
+      .select('*')
+      .single()
+
+    if (error) {
+      console.error('handleSaveMeetingDecision update error:', error)
+      return
+    }
+
+    setMeetingItems((prev) =>
+      prev.map((item) => (item.id === meetingForm.id ? data : item))
+    )
+
+    setMeetingForm(createEmptyMeetingItem())
+    setMeetingDirection('')
+    return
+  }
+
+  // ✅ 신규 등록
   const { data, error } = await supabase
     .from('ops_meetings')
     .insert({
@@ -2714,22 +2777,15 @@ const handleSaveMeetingDecision = async () => {
     .single()
 
   if (error) {
-    console.error('handleSaveMeetingDecision error:', error)
+    console.error('handleSaveMeetingDecision insert error:', error)
     return
   }
 
   setMeetingItems((prev) => [data, ...prev])
   setMeetingForm(createEmptyMeetingItem())
   setMeetingDirection('')
-  setMeetingChecklistRows([
-    { id: 1, label: '전일 매출 확인', checked: false, note: '' },
-    { id: 2, label: '금일 예정 매출 확인', checked: false, note: '' },
-    { id: 3, label: '재등록 예정 회원 확인', checked: false, note: '' },
-    { id: 4, label: '보류 회원 확인', checked: false, note: '' },
-    { id: 5, label: '코치 운영 이슈 확인', checked: false, note: '' },
-    { id: 6, label: '시설/현장 이슈 확인', checked: false, note: '' },
-  ])
 }
+  
 const handleDeleteMeetingItem = async (meetingId) => {
   const ok = window.confirm('이 회의 기록을 삭제하시겠습니까?')
   if (!ok) return
@@ -2748,6 +2804,7 @@ const handleDeleteMeetingItem = async (meetingId) => {
 }
   const handleEditMeetingItem = (item) => {
   setMeetingForm({
+    id: item.id,
     title: item.title || '',
     problem: item.problem || '',
     cause: item.cause || '',
@@ -2759,11 +2816,7 @@ const handleDeleteMeetingItem = async (meetingId) => {
     action_priority: item.action_priority || '일반',
   })
 
-  // 필요하면 탭 이동
-  setOpsAuxTab('meeting')
-
-  // 기존 데이터 삭제 (→ 수정처럼 동작)
-  handleDeleteMeetingItem(item.id)
+  setSelectedMeetingId(item.id)
 }
 const handleCreateTaskFromMeeting = async (meeting) => {
   if (!meeting.action_title?.trim() || !currentAdminId) return
