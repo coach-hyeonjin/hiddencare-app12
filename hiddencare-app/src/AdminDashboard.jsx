@@ -2802,7 +2802,15 @@ const handleDeleteMeetingItem = async (meetingId) => {
 
   setMeetingItems((prev) => prev.filter((item) => item.id !== meetingId))
 }
- const handleEditMeetingItem = (item) => {
+ const getTextValueByLabel = (text = '', label = '') => {
+  const line = String(text || '')
+    .split('\n')
+    .find((row) => row.startsWith(`${label}:`))
+
+  return line ? line.replace(`${label}:`, '').trim() : ''
+}
+
+const handleEditMeetingItem = (item) => {
   setMeetingForm({
     id: item.id,
     title: item.title || '',
@@ -2816,14 +2824,36 @@ const handleDeleteMeetingItem = async (meetingId) => {
     action_priority: item.action_priority || '일반',
   })
 
-  setMeetingInputTab(item.decision || item.action_title ? 'decision' : 'coach')
-  setMeetingDirection(item.decision || '')
-  setSelectedMeetingId(item.id)
+  const isCoachReport = item.problem || item.cause || item.ideas
 
-  window.scrollTo({
-    top: 0,
-    behavior: 'smooth',
-  })
+  if (isCoachReport) {
+    setMeetingInputTab('coach')
+
+    setMeetingCoachReports([
+      {
+        id: Date.now(),
+        coachName: '',
+        yesterdaySales: getTextValueByLabel(item.problem, '전일 실매출'),
+        todaySales: getTextValueByLabel(item.problem, '금일 예정 매출'),
+        thisMonthSales: getTextValueByLabel(item.problem, '이번달 잔여 매출'),
+        nextMonthSales: getTextValueByLabel(item.problem, '다음달 예정 매출'),
+        reRegister: getTextValueByLabel(item.cause, '재등록 예정 회원'),
+        hold: getTextValueByLabel(item.cause, '보류 회원'),
+        trial: getTextValueByLabel(item.cause, '체험 예정 회원'),
+        dormant: getTextValueByLabel(item.cause, '장기 미방문 회원'),
+        coachIssue: getTextValueByLabel(item.ideas, '코치 이슈'),
+        memberIssue: getTextValueByLabel(item.ideas, '회원 이슈'),
+        facilityIssue: getTextValueByLabel(item.ideas, '시설 이슈'),
+        fieldCheck: getTextValueByLabel(item.ideas, '현장 체크'),
+        isOpen: true,
+      },
+    ])
+  } else {
+    setMeetingInputTab('decision')
+    setMeetingDirection(item.decision || '')
+  }
+
+  setSelectedMeetingId(item.id)
 }
 const handleCreateTaskFromMeeting = async (meeting) => {
   if (!meeting.action_title?.trim() || !currentAdminId) return
