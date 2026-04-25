@@ -24255,3 +24255,7 @@ textarea:focus {
 .level-desc {
   white-space: pre-line;
 }
+.member-level-collapsed-text {
+  white-space: pre-line;
+  line-height: 1.7;
+}
