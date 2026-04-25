@@ -4671,7 +4671,12 @@ const filteredMemberAlerts = memberAlerts.filter((alert) =>
       <p><strong>사용 기구:</strong> {item.equipment_name_snapshot || '-'}</p>
       <p><strong>실제 수행 운동:</strong> {item.performed_name || '-'}</p>
     </div>
-
+{item.exercise_purpose && (
+  <div className="detail-box">
+    <p><strong>운동 설명</strong></p>
+    <p className="compact-text">{item.exercise_purpose}</p>
+  </div>
+)}
     {(item.sets || []).length > 0 ? (
       <ul className="set-list">
         {(item.sets || []).map((setRow, idx) => (
