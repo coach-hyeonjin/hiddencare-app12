@@ -26691,11 +26691,15 @@ gap: '16px',
                     </button>
                   </div>
 
-                  {isCollapsed ? (
-                    <div className="compact-text member-level-collapsed-text">
-                      최소 XP {level.min_xp || 0} / 설명 {level.description || '-'}
-                    </div>
-                  ) : (
+                 {isCollapsed ? (
+  <div className="compact-text member-level-collapsed-text">
+    최소 XP {level.min_xp || 0}
+    {'\n'}
+    설명
+    {'\n'}
+    {level.description || '-'}
+  </div>
+) : (
                     <>
                       <div className="grid-2">
                         <label className="field">
@@ -26728,19 +26732,21 @@ gap: '16px',
                         </label>
                       </div>
 
-                      <label className="field">
-                        <span>설명</span>
-                        <input
-                          value={level.description || ''}
-                          onChange={(e) =>
-                            setMemberLevelSettings((prev) =>
-                              prev.map((item) =>
-                                item.id === level.id ? { ...item, description: e.target.value } : item
-                              )
-                            )
-                          }
-                        />
-                      </label>
+                     <label className="field">
+  <span>설명</span>
+  <textarea
+    rows="4"
+    value={level.description || ''}
+    onChange={(e) =>
+      setMemberLevelSettings((prev) =>
+        prev.map((item) =>
+          item.id === level.id ? { ...item, description: e.target.value } : item
+        )
+      )
+    }
+    placeholder="엔터로 줄을 나눠서 입력할 수 있습니다."
+  />
+</label>
                     </>
                   )}
                 </div>
@@ -26794,10 +26800,14 @@ gap: '16px',
                   </div>
 
                   {isCollapsed ? (
-                    <div className="compact-text member-level-collapsed-text">
-                      XP {rule.xp || 0} / 하루 최대 {rule.daily_limit || 0}회 / 설명 {rule.description || '-'}
-                    </div>
-                  ) : (
+  <div className="compact-text member-level-collapsed-text">
+    XP {rule.xp || 0} / 하루 최대 {rule.daily_limit || 0}회
+    {'\n'}
+    설명
+    {'\n'}
+    {rule.description || '-'}
+  </div>
+) : (
                     <>
                       <div className="grid-2">
                         <label className="field">
@@ -26878,19 +26888,21 @@ gap: '16px',
                         </label>
                       </div>
 
-                      <label className="field">
-                        <span>설명</span>
-                        <input
-                          value={rule.description || ''}
-                          onChange={(e) =>
-                            setMemberXpSettings((prev) =>
-                              prev.map((item) =>
-                                item.id === rule.id ? { ...item, description: e.target.value } : item
-                              )
-                            )
-                          }
-                        />
-                      </label>
+                     <label className="field">
+  <span>설명</span>
+  <textarea
+    rows="4"
+    value={rule.description || ''}
+    onChange={(e) =>
+      setMemberXpSettings((prev) =>
+        prev.map((item) =>
+          item.id === rule.id ? { ...item, description: e.target.value } : item
+        )
+      )
+    }
+    placeholder="엔터로 줄을 나눠서 입력할 수 있습니다."
+  />
+</label>
                     </>
                   )}
                 </div>
