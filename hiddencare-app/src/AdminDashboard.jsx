@@ -1162,6 +1162,8 @@ const isMemberDropdownOpen = (type) => {
   const [workoutTypeFilter, setWorkoutTypeFilter] = useState('all')
   const [workoutDateFilter, setWorkoutDateFilter] = useState('')
   const [recordGuideOpen, setRecordGuideOpen] = useState(false)
+const [recordMobileView, setRecordMobileView] = useState('form')
+  
 const [exerciseSearchDropdown, setExerciseSearchDropdown] = useState({
   openType: '',
   itemIndex: null,
@@ -19527,7 +19529,25 @@ const filteredExercisesAdvanced = exercises.filter((exercise) => {
     </div>
   </section>
 )}
-    <div className="two-col">
+        <div className="record-mobile-view-switch">
+      <button
+        type="button"
+        className={recordMobileView === 'form' ? 'active' : ''}
+        onClick={() => setRecordMobileView('form')}
+      >
+        기록 작성
+      </button>
+
+      <button
+        type="button"
+        className={recordMobileView === 'list' ? 'active' : ''}
+        onClick={() => setRecordMobileView('list')}
+      >
+        기록 목록
+      </button>
+    </div>
+
+    {recordMobileView === 'form' && (
       <section className="card record-form-card-modern">
         <div className="record-card-head">
           <div>
@@ -20397,7 +20417,9 @@ const filteredExercisesAdvanced = exercises.filter((exercise) => {
           </div>
         </form>
       </section>
+    )}
 
+    {recordMobileView === 'list' && (
       <section className="card record-list-card-modern">
         <div className="record-card-head">
           <div>
@@ -20707,7 +20729,7 @@ const filteredExercisesAdvanced = exercises.filter((exercise) => {
           ))}
         </div>
       </section>
-    </div>
+    )}
   </div>
 )}
       {activeTab === '운동DB' && (
