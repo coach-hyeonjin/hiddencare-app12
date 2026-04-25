@@ -24210,3 +24210,42 @@ textarea:focus {
     width: 100%;
   }
 }
+.record-mobile-view-switch {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin: 18px 0;
+  position: sticky;
+  top: 0;
+  z-index: 30;
+  background: rgba(244, 247, 251, 0.96);
+  padding: 10px 0;
+}
+
+.record-mobile-view-switch button {
+  min-height: 56px;
+  border-radius: 18px;
+  border: 2px solid #dbe4f0;
+  background: #ffffff;
+  font-size: 17px;
+  font-weight: 900;
+  color: #334155;
+}
+
+.record-mobile-view-switch button.active {
+  border-color: #4f46e5;
+  background: #eef2ff;
+  color: #4338ca;
+  box-shadow: 0 8px 20px rgba(79, 70, 229, 0.16);
+}
+
+@media (max-width: 760px) {
+  .record-page-modern .two-col {
+    display: block;
+  }
+
+  .record-form-card-modern,
+  .record-list-card-modern {
+    width: 100%;
+  }
+}
