@@ -24249,3 +24249,6 @@ textarea:focus {
     width: 100%;
   }
 }
+.member-mobile-view-switch {
+  margin: 18px 0;
+}
