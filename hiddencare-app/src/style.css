@@ -23945,3 +23945,268 @@ textarea:focus {
 .ops-history-filter-row select {
   min-width: 150px;
 }
+/* ================================
+   시니어용 개인운동입력 UI
+   ================================ */
+
+.senior-workout-page {
+  max-width: 980px;
+  margin: 0 auto;
+}
+
+.senior-workout-hero {
+  border-radius: 24px;
+}
+
+.senior-workout-card {
+  padding: 18px;
+  border-radius: 24px;
+}
+
+.senior-field span {
+  font-size: 16px;
+  font-weight: 800;
+  color: #111827;
+}
+
+.senior-field input,
+.senior-field select,
+.senior-field textarea {
+  min-height: 52px;
+  font-size: 17px;
+  border-radius: 16px;
+}
+
+.senior-exercise-card {
+  border: 2px solid #e5e7eb;
+  border-radius: 24px;
+  padding: 18px;
+  background: #ffffff;
+}
+
+.senior-exercise-head {
+  align-items: flex-start;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.senior-exercise-head h3 {
+  font-size: 22px;
+  margin: 0 0 6px;
+}
+
+.senior-exercise-head p {
+  font-size: 15px;
+  color: #6b7280;
+  margin: 0;
+}
+
+.senior-step-box {
+  border: 1px solid #e5e7eb;
+  background: #f9fafb;
+  border-radius: 22px;
+  padding: 16px;
+  margin-top: 14px;
+}
+
+.senior-step-title {
+  font-size: 18px;
+  font-weight: 900;
+  color: #111827;
+  margin-bottom: 12px;
+}
+
+.senior-choice-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.senior-choice-grid.two {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.senior-choice-card {
+  min-height: 92px;
+  border: 2px solid #e5e7eb;
+  border-radius: 20px;
+  background: #ffffff;
+  padding: 16px 12px;
+  text-align: left;
+  cursor: pointer;
+  transition: 0.15s ease;
+}
+
+.senior-choice-card strong {
+  display: block;
+  font-size: 18px;
+  color: #111827;
+  margin-bottom: 6px;
+}
+
+.senior-choice-card span {
+  display: block;
+  font-size: 14px;
+  color: #6b7280;
+  line-height: 1.35;
+}
+
+.senior-choice-card.active {
+  border-color: #2563eb;
+  background: #eff6ff;
+  box-shadow: 0 8px 18px rgba(37, 99, 235, 0.12);
+}
+
+.senior-method-row {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+  margin-bottom: 14px;
+}
+
+.senior-method-btn {
+  min-height: 52px;
+  border: 2px solid #e5e7eb;
+  border-radius: 16px;
+  background: #ffffff;
+  font-size: 15px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.senior-method-btn.active {
+  border-color: #2563eb;
+  background: #eff6ff;
+  color: #1d4ed8;
+}
+
+.senior-set-row {
+  display: grid;
+  grid-template-columns: 72px 1fr 1fr 70px;
+  gap: 8px;
+  align-items: center;
+}
+
+.senior-set-number {
+  font-size: 15px;
+  font-weight: 900;
+  color: #111827;
+}
+
+.senior-set-row input {
+  min-height: 52px;
+  font-size: 17px;
+  border-radius: 16px;
+  text-align: center;
+}
+
+.senior-small-btn {
+  min-height: 44px;
+  border-radius: 14px;
+  font-size: 14px;
+  padding: 0 12px;
+}
+
+.senior-wide-btn,
+.senior-add-exercise-btn {
+  width: 100%;
+  min-height: 54px;
+  border-radius: 18px;
+  font-size: 17px;
+  font-weight: 900;
+}
+
+.senior-add-exercise-btn {
+  margin-top: 14px;
+}
+
+.senior-pain-wrap {
+  border: 2px solid #e5e7eb;
+  border-radius: 24px;
+  padding: 18px;
+  background: #ffffff;
+}
+
+.senior-pain-card {
+  border-radius: 22px;
+  padding: 16px;
+  background: #f9fafb;
+  border: 1px solid #e5e7eb;
+}
+
+.senior-range-help {
+  display: flex;
+  justify-content: space-between;
+  font-size: 13px;
+  color: #6b7280;
+  margin-top: 6px;
+}
+
+.senior-feedback-grid {
+  gap: 14px;
+}
+
+.senior-save-actions {
+  position: sticky;
+  bottom: 0;
+  background: rgba(255, 255, 255, 0.96);
+  padding: 14px 0 4px;
+  z-index: 20;
+}
+
+.senior-save-btn {
+  flex: 1;
+  min-height: 58px;
+  border-radius: 18px;
+  font-size: 18px;
+  font-weight: 900;
+}
+
+.senior-reset-btn {
+  min-height: 58px;
+  border-radius: 18px;
+  font-size: 16px;
+  font-weight: 800;
+}
+
+/* 모바일 최적화 */
+@media (max-width: 640px) {
+  .senior-workout-card {
+    padding: 14px;
+  }
+
+  .senior-choice-grid,
+  .senior-choice-grid.two {
+    grid-template-columns: 1fr;
+  }
+
+  .senior-choice-card {
+    min-height: 82px;
+  }
+
+  .senior-method-row {
+    grid-template-columns: 1fr;
+  }
+
+  .senior-set-row {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .senior-set-number {
+    grid-column: 1 / -1;
+  }
+
+  .senior-set-row .danger-btn {
+    grid-column: 1 / -1;
+    width: 100%;
+  }
+
+  .senior-save-actions {
+    flex-direction: column;
+  }
+
+  .senior-save-btn,
+  .senior-reset-btn {
+    width: 100%;
+  }
+}
