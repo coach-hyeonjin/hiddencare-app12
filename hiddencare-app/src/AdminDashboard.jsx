@@ -20407,14 +20407,29 @@ const filteredExercisesAdvanced = exercises.filter((exercise) => {
             )}
           </div>
 
-          <div className="inline-actions wrap">
-            <button className="primary-btn" type="submit">
-              {workoutForm.id ? '운동 기록 수정' : '운동 기록 저장'}
-            </button>
-            <button type="button" className="secondary-btn" onClick={resetWorkoutForm}>
-              작성 초기화
-            </button>
-          </div>
+         <div className="inline-actions wrap">
+  <button className="primary-btn" type="submit">
+    {workoutForm.id ? '운동 기록 수정' : '운동 기록 저장'}
+  </button>
+
+  {workoutForm.id ? (
+    <button
+      type="button"
+      className="secondary-btn"
+      onClick={() => {
+        resetWorkoutForm()
+        setRecordMobileView('list')
+        window.scrollTo({ top: 0, behavior: 'smooth' })
+      }}
+    >
+      수정 취소
+    </button>
+  ) : null}
+
+  <button type="button" className="secondary-btn" onClick={resetWorkoutForm}>
+    작성 초기화
+  </button>
+</div>
         </form>
       </section>
     )}
@@ -20578,13 +20593,17 @@ const filteredExercisesAdvanced = exercises.filter((exercise) => {
                           {collapsed ? '상세히보기' : '간략히보기'}
                         </button>
 
-                        <button
-                          type="button"
-                          className="secondary-btn"
-                          onClick={() => handleWorkoutEdit(workout)}
-                        >
-                          수정
-                        </button>
+                      <button
+  type="button"
+  className="secondary-btn"
+  onClick={() => {
+    handleWorkoutEdit(workout)
+    setRecordMobileView('form')
+    window.scrollTo({ top: 0, behavior: 'smooth' })
+  }}
+>
+  수정
+</button>
 
                         <button
                           type="button"
