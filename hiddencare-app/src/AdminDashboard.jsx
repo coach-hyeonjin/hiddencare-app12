@@ -1163,6 +1163,7 @@ const isMemberDropdownOpen = (type) => {
   const [workoutDateFilter, setWorkoutDateFilter] = useState('')
   const [recordGuideOpen, setRecordGuideOpen] = useState(false)
 const [recordMobileView, setRecordMobileView] = useState('form')
+  const [memberMobileView, setMemberMobileView] = useState('list')
   
 const [exerciseSearchDropdown, setExerciseSearchDropdown] = useState({
   openType: '',
@@ -17400,15 +17401,14 @@ const filteredExercisesAdvanced = exercises.filter((exercise) => {
   </div>
 ) : null}
       
-     {activeTab === '회원' && (
+    {activeTab === '회원' && (
   <div className="member-page-modern">
     <div className="member-page-hero">
       <div className="member-page-hero-left">
         <div className="member-page-badge">MEMBER MANAGEMENT</div>
         <h2>회원 관리</h2>
         <p className="member-page-hero-text">
-          신규 회원 등록, 기존 회원 수정, 프로그램 연결, 세션 현황 확인까지
-          한 화면에서 정리하는 회원 관리 영역입니다.
+          회원 등록과 회원 목록을 나눠서 더 편하게 관리할 수 있습니다.
         </p>
       </div>
 
@@ -17427,12 +17427,30 @@ const filteredExercisesAdvanced = exercises.filter((exercise) => {
       </div>
     </div>
 
-    <div className="member-page-grid">
+    <div className="record-mobile-view-switch member-mobile-view-switch">
+      <button
+        type="button"
+        className={memberMobileView === 'form' ? 'active' : ''}
+        onClick={() => setMemberMobileView('form')}
+      >
+        회원 등록 / 수정
+      </button>
+
+      <button
+        type="button"
+        className={memberMobileView === 'list' ? 'active' : ''}
+        onClick={() => setMemberMobileView('list')}
+      >
+        회원 목록
+      </button>
+    </div>
+
+    {memberMobileView === 'form' && (
       <section className="card member-form-card-modern">
         <div className="member-card-head">
           <div>
             <div className="member-card-label">MEMBER FORM</div>
-            <h3>{editingMemberId ? '회원 수정' : '회원 등록 / 수정'}</h3>
+            <h3>{editingMemberId ? '회원 수정' : '회원 등록'}</h3>
             <p className="sub-text">
               기본 정보, 프로그램, 세션, 기간, 회원 메모를 입력하는 영역입니다.
             </p>
@@ -17555,6 +17573,7 @@ const filteredExercisesAdvanced = exercises.filter((exercise) => {
                     })
                   }
                 />
+
                 <button
                   type="button"
                   className="secondary-btn"
@@ -17570,8 +17589,22 @@ const filteredExercisesAdvanced = exercises.filter((exercise) => {
 
           <div className="inline-actions wrap">
             <button className="primary-btn" type="submit">
-              {editingMemberId ? '회원 수정' : '회원 추가'}
+              {editingMemberId ? '회원 수정 저장' : '회원 추가'}
             </button>
+
+            {editingMemberId ? (
+              <button
+                type="button"
+                className="secondary-btn"
+                onClick={() => {
+                  resetMemberForm()
+                  setMemberMobileView('list')
+                  window.scrollTo({ top: 0, behavior: 'smooth' })
+                }}
+              >
+                수정 취소
+              </button>
+            ) : null}
 
             <button type="button" className="secondary-btn" onClick={resetMemberForm}>
               초기화
@@ -17579,7 +17612,9 @@ const filteredExercisesAdvanced = exercises.filter((exercise) => {
           </div>
         </form>
       </section>
+    )}
 
+    {memberMobileView === 'list' && (
       <section className="card member-list-card-modern">
         <div className="member-card-head">
           <div>
@@ -17624,17 +17659,18 @@ const filteredExercisesAdvanced = exercises.filter((exercise) => {
               <option value="remaining">잔여 있음</option>
               <option value="ended">소진</option>
             </select>
+
             <select
-  value={memberLevelFilter}
-  onChange={(e) => setMemberLevelFilter(e.target.value)}
->
-  <option value="all">전체 등급</option>
- {memberLevelOptions.map((level) => (
-  <option key={`${level.levelNo}-${level.name}`} value={level.name}>
-    {level.levelNo ? `Lv.${level.levelNo} · ${level.name}` : level.name}
-  </option>
-))}
-</select>
+              value={memberLevelFilter}
+              onChange={(e) => setMemberLevelFilter(e.target.value)}
+            >
+              <option value="all">전체 등급</option>
+              {memberLevelOptions.map((level) => (
+                <option key={`${level.levelNo}-${level.name}`} value={level.name}>
+                  {level.levelNo ? `Lv.${level.levelNo} · ${level.name}` : level.name}
+                </option>
+              ))}
+            </select>
           </div>
         </div>
 
@@ -17644,126 +17680,133 @@ const filteredExercisesAdvanced = exercises.filter((exercise) => {
           ) : null}
 
           {filteredMemberStats.map((member) => {
-  const isSelected = selectedMemberId === member.id
-  const remainingSessions = Number(member.remainingSessions || 0)
-  const statusClass =
-    remainingSessions <= 0
-      ? 'pill-red'
-      : remainingSessions <= 5
-      ? 'pill-amber'
-      : 'pill-green'
+            const isSelected = selectedMemberId === member.id
+            const remainingSessions = Number(member.remainingSessions || 0)
+            const statusClass =
+              remainingSessions <= 0
+                ? 'pill-red'
+                : remainingSessions <= 5
+                ? 'pill-amber'
+                : 'pill-green'
 
-  const isCollapsed = collapsedMembers[member.id] ?? true
+            const isCollapsed = collapsedMembers[member.id] ?? true
 
-  return (
-    <div
-      key={member.id}
-      className={`member-list-modern-card member-list-collapsible-card ${isSelected ? 'selected' : ''}`}
-    >
-      <div className="member-list-modern-top">
-        <button
-          type="button"
-          className="member-list-name-button"
-          onClick={() => {
-            setCollapsedMembers((prev) => ({
-              ...prev,
-              [member.id]: !isCollapsed,
-            }))
-          }}
-        >
-          <div className="member-list-modern-name">
-  <strong>{member.name}</strong>
+            return (
+              <div
+                key={member.id}
+                className={`member-list-modern-card member-list-collapsible-card ${
+                  isSelected ? 'selected' : ''
+                }`}
+              >
+                <div className="member-list-modern-top">
+                  <button
+                    type="button"
+                    className="member-list-name-button"
+                    onClick={() => {
+                      setCollapsedMembers((prev) => ({
+                        ...prev,
+                        [member.id]: !isCollapsed,
+                      }))
+                    }}
+                  >
+                    <div className="member-list-modern-name">
+                      <strong>{member.name}</strong>
 
-  <span className="pill pill-blue">
-    {member.memberLevelName} · Lv.{member.memberLevelNo}
-  </span>
+                      <span className="pill pill-blue">
+                        {member.memberLevelName} · Lv.{member.memberLevelNo}
+                      </span>
 
-  <span className={`pill ${statusClass}`}>
-    남은 {remainingSessions}회
-  </span>
-</div>
-          
-          <span className="member-collapse-mark">{isCollapsed ? '+' : '−'}</span>
-        </button>
+                      <span className={`pill ${statusClass}`}>
+                        남은 {remainingSessions}회
+                      </span>
+                    </div>
 
-        <div className="member-list-modern-program">
-          {member.programs?.name || '프로그램 없음'}
-        </div>
-      </div>
+                    <span className="member-collapse-mark">
+                      {isCollapsed ? '+' : '−'}
+                    </span>
+                  </button>
 
-      {!isCollapsed && (
-        <div className="member-list-modern-grid">
-          <div className="member-mini-info">
-            <span>목표</span>
-            <strong>{member.goal || '-'}</strong>
-          </div>
+                  <div className="member-list-modern-program">
+                    {member.programs?.name || '프로그램 없음'}
+                  </div>
+                </div>
 
-          <div className="member-mini-info">
-            <span>Access</span>
-            <strong>{member.access_code || '-'}</strong>
-          </div>
+                {!isCollapsed && (
+                  <div className="member-list-modern-grid">
+                    <div className="member-mini-info">
+                      <span>목표</span>
+                      <strong>{member.goal || '-'}</strong>
+                    </div>
 
-          <div className="member-mini-info">
-            <span>PT 수업</span>
-            <strong>{member.ptCount}회</strong>
-          </div>
+                    <div className="member-mini-info">
+                      <span>Access</span>
+                      <strong>{member.access_code || '-'}</strong>
+                    </div>
 
-          <div className="member-mini-info">
-            <span>개인운동</span>
-            <strong>{member.personalCount}회</strong>
-          </div>
-        <div className="member-mini-info">
-  <span>회원 등급</span>
-  <strong>{member.memberLevelName}</strong>
-</div>
+                    <div className="member-mini-info">
+                      <span>PT 수업</span>
+                      <strong>{member.ptCount}회</strong>
+                    </div>
 
-<div className="member-mini-info">
-  <span>총 XP</span>
-  <strong>{member.memberTotalXp}XP</strong>
-</div>
-        </div>
-      )}
+                    <div className="member-mini-info">
+                      <span>개인운동</span>
+                      <strong>{member.personalCount}회</strong>
+                    </div>
 
-      <div className="inline-actions wrap member-card-actions">
-        <button
-          type="button"
-          className="secondary-btn"
-          onClick={(e) => {
-            e.stopPropagation()
-            handleMemberEdit(member)
-          }}
-        >
-          수정
-        </button>
+                    <div className="member-mini-info">
+                      <span>회원 등급</span>
+                      <strong>{member.memberLevelName}</strong>
+                    </div>
 
-        <button
-          type="button"
-          className="secondary-btn"
-          onClick={(e) => {
-            e.stopPropagation()
-            copyMemberLink(member)
-          }}
-        >
-          링크 복사
-        </button>
+                    <div className="member-mini-info">
+                      <span>총 XP</span>
+                      <strong>{member.memberTotalXp}XP</strong>
+                    </div>
+                  </div>
+                )}
 
-        <button
-          type="button"
-          className="danger-btn"
-          onClick={(e) => {
-            e.stopPropagation()
-            handleMemberDelete(member.id)
-          }}
-        >
-          삭제
-        </button>
-      </div>
-    </div>
-  )
-})}
+                <div className="inline-actions wrap member-card-actions">
+                  <button
+                    type="button"
+                    className="secondary-btn"
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      handleMemberEdit(member)
+                      setMemberMobileView('form')
+                      window.scrollTo({ top: 0, behavior: 'smooth' })
+                    }}
+                  >
+                    수정
+                  </button>
+
+                  <button
+                    type="button"
+                    className="secondary-btn"
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      copyMemberLink(member)
+                    }}
+                  >
+                    링크 복사
+                  </button>
+
+                  <button
+                    type="button"
+                    className="danger-btn"
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      handleMemberDelete(member.id)
+                    }}
+                  >
+                    삭제
+                  </button>
+                </div>
+              </div>
+            )
+          })}
         </div>
       </section>
-    </div>
+    )}
   </div>
 )}
  
