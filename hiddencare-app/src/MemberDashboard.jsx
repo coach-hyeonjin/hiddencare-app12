@@ -1691,14 +1691,18 @@ const loadExercises = async (adminIdParam = null) => {
       }, {})
     }
 
-    const collapsed = {}
-    workoutData.forEach((workout) => {
-      collapsed[workout.id] = true
-    })
-
     setWorkouts(workoutData)
-    setWorkoutItemsMap(itemMap)
-    setCollapsedWorkouts(collapsed)
+setWorkoutItemsMap(itemMap)
+
+setCollapsedWorkouts((prev) => {
+  const next = {}
+
+  workoutData.forEach((workout) => {
+    next[workout.id] = prev[workout.id] ?? true
+  })
+
+  return next
+})
   }
 
   const loadDietLogs = async () => {
@@ -4621,7 +4625,12 @@ const filteredMemberAlerts = memberAlerts.filter((alert) =>
     : '근력운동'}
 </span>
                           </div>
-
+{item.exercise_purpose ? (
+  <div className="member-exercise-purpose-box">
+    <strong>운동 설명</strong>
+    <p>{item.exercise_purpose}</p>
+  </div>
+) : null}
                           {item.entry_type === 'cardio' ? (
   <div className="detail-box">
     <p><strong>사용 기구:</strong> {item.equipment_name_snapshot || '-'}</p>
