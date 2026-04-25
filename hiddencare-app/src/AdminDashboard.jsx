@@ -76,6 +76,7 @@ const emptyWorkoutItem = {
   exercise_name_snapshot: '',
   equipment_name_snapshot: '',
   performed_name: '',
+  exercise_purpose: '',
 
   entry_type: 'strength', // strength | cardio | care | stretching | pain_only
   is_cardio: false,
@@ -13578,8 +13579,9 @@ const updateSetValue = (itemIndex, setIndex, field, value, subIndex = null) => {
         item.training_method === 'superset'
           ? ''
           : (item.performed_name || item.exercise_name_snapshot || item.equipment_name_snapshot || '').trim(),
-      equipment_name_snapshot: item.equipment_name_snapshot?.trim() || '',
+        equipment_name_snapshot: item.equipment_name_snapshot?.trim() || '',
       performed_name: item.performed_name?.trim() || '',
+      exercise_purpose: item.exercise_purpose?.trim() || '',
       sort_order: index,
       entry_type: item.entry_type || 'strength',
       is_cardio: item.entry_type === 'cardio',
@@ -13600,6 +13602,7 @@ const updateSetValue = (itemIndex, setIndex, field, value, subIndex = null) => {
                   (sub.performed_name || sub.exercise_name_snapshot || sub.equipment_name_snapshot || '').trim(),
                 equipment_name_snapshot: sub.equipment_name_snapshot?.trim() || '',
                 performed_name: sub.performed_name?.trim() || '',
+                exercise_purpose: sub.exercise_purpose?.trim() || '',
                 sets: normalizeSets(sub.sets || []),
               }))
           : [],
@@ -13695,7 +13698,8 @@ const updateSetValue = (itemIndex, setIndex, field, value, subIndex = null) => {
             exercise_id: item.exercise_id || '',
             exercise_name_snapshot: item.exercise_name_snapshot || '',
             equipment_name_snapshot: item.equipment_name_snapshot || item.exercise_name_snapshot || '',
-            performed_name: item.performed_name || item.exercise_name_snapshot || '',
+             performed_name: item.performed_name || item.exercise_name_snapshot || '',
+            exercise_purpose: item.exercise_purpose || '',
             entry_type: item.entry_type || (item.is_cardio ? 'cardio' : 'strength'),
             is_cardio: !!item.is_cardio,
             cardio_minutes: item.cardio_minutes || '',
@@ -13718,7 +13722,8 @@ const updateSetValue = (itemIndex, setIndex, field, value, subIndex = null) => {
                     exercise_id: sub.exercise_id || '',
                     exercise_name_snapshot: sub.exercise_name_snapshot || '',
                     equipment_name_snapshot: sub.equipment_name_snapshot || sub.exercise_name_snapshot || '',
-                    performed_name: sub.performed_name || sub.exercise_name_snapshot || '',
+                     performed_name: sub.performed_name || sub.exercise_name_snapshot || '',
+                    exercise_purpose: sub.exercise_purpose || '',
                     sets: Array.isArray(sub.sets) && sub.sets.length > 0 ? sub.sets : [createEmptySet()],
                   }))
                 : [createEmptySubExercise(), createEmptySubExercise()],
@@ -19916,7 +19921,17 @@ const filteredExercisesAdvanced = exercises.filter((exercise) => {
         placeholder="예: 햄스트링 스트레칭 / 고관절 스트레칭"
       />
     </label>
-
+<label className="field">
+  <span>회원에게 보여줄 스트레칭 설명</span>
+  <textarea
+    rows="3"
+    value={item.exercise_purpose || ''}
+    onChange={(e) =>
+      updateWorkoutItemField(itemIndex, 'exercise_purpose', e.target.value)
+    }
+    placeholder="예: 허벅지 뒤쪽과 골반 주변 긴장을 줄여 허리 부담을 낮추는 스트레칭입니다."
+  />
+</label>
     <div className="form-row">
       <label className="field">
         <span>시간(분)</span>
@@ -20046,6 +20061,18 @@ const filteredExercisesAdvanced = exercises.filter((exercise) => {
                               />
                             </label>
 
+<label className="field">
+  <span>회원에게 보여줄 운동 설명</span>
+  <textarea
+    rows="3"
+    value={item.exercise_purpose || ''}
+    onChange={(e) =>
+      updateWorkoutItemField(itemIndex, 'exercise_purpose', e.target.value)
+    }
+    placeholder="예: 엉덩이와 허벅지 힘을 키우는 운동입니다. 계단 오르기나 무릎 안정성에 도움이 됩니다."
+  />
+</label>
+                            
                             <div className="stack-gap">
                               {(item.sets || []).map((setRow, setIndex) => (
                                 <div className="set-row" key={setIndex}>
@@ -20168,6 +20195,19 @@ const filteredExercisesAdvanced = exercises.filter((exercise) => {
                           />
                         </label>
 
+
+                        <label className="field">
+  <span>회원에게 보여줄 운동 설명</span>
+  <textarea
+    rows="3"
+    value={item.exercise_purpose || ''}
+    onChange={(e) =>
+      updateWorkoutItemField(itemIndex, 'exercise_purpose', e.target.value)
+    }
+    placeholder="예: 심폐지구력과 체지방 관리에 도움이 되는 운동입니다. 무릎 부담이 적은 속도로 진행했습니다."
+  />
+</label>
+                        
                         <label className="field">
                           <span>유산소 시간(분)</span>
                           <input
@@ -20261,7 +20301,17 @@ const filteredExercisesAdvanced = exercises.filter((exercise) => {
                             placeholder="예: 우측 어깨 스포츠마사지, 고관절 컨디셔닝"
                           />
                         </label>
-
+<label className="field">
+  <span>회원에게 보여줄 케어 설명</span>
+  <textarea
+    rows="3"
+    value={item.exercise_purpose || ''}
+    onChange={(e) =>
+      updateWorkoutItemField(itemIndex, 'exercise_purpose', e.target.value)
+    }
+    placeholder="예: 어깨 주변 긴장을 줄이고 팔을 들 때 불편감을 줄이기 위한 케어입니다."
+  />
+</label>
                         <label className="field">
                           <span>케어 시간(분)</span>
                           <input
@@ -20674,16 +20724,20 @@ const filteredExercisesAdvanced = exercises.filter((exercise) => {
                                   </strong>
 
                                   <span className="pill">
-                                    {item.entry_type === 'care'
-                                      ? '케어'
-                                      : item.entry_type === 'cardio'
-                                      ? '유산소'
-                                      : item.training_method === 'superset'
-                                      ? '슈퍼세트'
-                                      : item.training_method === 'dropset'
-                                      ? '드롭세트'
-                                      : '근력운동'}
-                                  </span>
+  {item.entry_type === 'care'
+    ? '케어'
+    : item.entry_type === 'cardio'
+    ? '유산소'
+    : item.entry_type === 'stretching'
+    ? '스트레칭'
+    : item.entry_type === 'pain_only'
+    ? '통증기록'
+    : item.training_method === 'superset'
+    ? '슈퍼세트'
+    : item.training_method === 'dropset'
+    ? '드롭세트'
+    : '근력운동'}
+</span>
                                 </div>
 
                                 {item.equipment_name_snapshot ? (
@@ -20691,7 +20745,12 @@ const filteredExercisesAdvanced = exercises.filter((exercise) => {
                                     사용 기구: {item.equipment_name_snapshot}
                                   </div>
                                 ) : null}
-
+{item.exercise_purpose ? (
+  <div className="workout-purpose-box">
+    <strong>운동 설명</strong>
+    <p>{item.exercise_purpose}</p>
+  </div>
+) : null}
                                 {item.entry_type === 'cardio' ? (
                                   <div className="compact-text">유산소 {item.cardio_minutes || 0}분</div>
                                 ) : item.entry_type === 'care' ? (
