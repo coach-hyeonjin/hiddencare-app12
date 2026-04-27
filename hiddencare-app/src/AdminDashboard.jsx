@@ -25537,8 +25537,8 @@ gap: '16px',
           </div>
         </div>
 
-       <>
-  <div className="meeting-page-tab-row">
+        <div className="meeting-mega-panel">
+          <div className="meeting-page-tab-row">
     <button
       type="button"
       className={meetingPageTab === 'input' ? 'primary-btn' : 'secondary-btn'}
@@ -26128,8 +26128,7 @@ gap: '16px',
     </div>
   </div>
 </div>
-</>
-          </div>
+        </div>
       </section>
     )}
   </div>
