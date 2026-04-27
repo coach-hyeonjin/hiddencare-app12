@@ -24674,8 +24674,8 @@ const filteredExercisesAdvanced = exercises.filter((exercise) => {
     </div>
   </div>
 </section>
-</div>
-        <section className="dashboard-panel-card" style={{ marginBottom: '20px' }}>
+
+<section className="dashboard-panel-card" style={{ marginBottom: '20px' }}>
           <div className="dashboard-panel-head">
             <div>
               <div className="dashboard-panel-label">MANAGEMENT TABS</div>
@@ -25319,6 +25319,7 @@ gap: '16px',
   </div>
 )}
  </section>
+</div>
       </>
     )}
     {opsViewTab === 'coach' && (
