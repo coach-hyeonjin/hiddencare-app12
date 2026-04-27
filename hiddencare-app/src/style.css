@@ -24651,13 +24651,16 @@ textarea:focus {
 .coach-report-box p {
   display: grid;
   grid-template-columns: 1fr auto;
-  align-items: center;
+  align-items: start;
   gap: 10px;
   margin: 8px 0;
   font-size: 12px;
   line-height: 1.5;
+
+  /* 핵심 */
   white-space: normal;
-  word-break: keep-all;
+  word-break: break-word;
+  overflow-wrap: break-word;
 }
 
 .coach-report-box p strong {
