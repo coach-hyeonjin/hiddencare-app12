@@ -24667,3 +24667,10 @@ textarea:focus {
   text-align: right;
   white-space: nowrap;
 }
+.coach-report-box {
+  min-width: 0;
+}
+               .coach-report-box-title {
+  white-space: normal;
+  word-break: keep-all;
+}
