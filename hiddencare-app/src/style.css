@@ -24413,3 +24413,28 @@ textarea:focus {
     grid-template-columns: 1fr !important;
   }
 }
+.meeting-coach-report-list {
+  display: grid;
+  gap: 14px;
+  max-height: 620px;
+  overflow-y: auto;
+  padding-right: 6px;
+}
+
+.meeting-coach-report-card {
+  border: 1px solid #dbe3f3;
+  border-radius: 16px;
+  background: #fff;
+  padding: 16px;
+  box-shadow: 0 8px 20px rgba(15, 23, 42, 0.06);
+}
+
+.meeting-coach-report-card + .meeting-coach-report-card {
+  margin-top: 4px;
+}
+
+.meeting-coach-report-card .meeting-section-title {
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px dashed #dbe3f3;
+}
