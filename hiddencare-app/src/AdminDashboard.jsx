@@ -25908,7 +25908,7 @@ gap: '16px',
                 return (
                   <div
                     key={item.id}
-                    className={`meeting-summary-card ${isSelected ? 'active' : ''}`}
+                    className={`meeting-summary-card meeting-summary-card-${type} ${isSelected ? 'active' : ''}`}
                   >
                     <div className="meeting-summary-top">
                       <strong>{item.title}</strong>
