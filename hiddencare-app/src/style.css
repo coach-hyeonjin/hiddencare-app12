@@ -24584,10 +24584,10 @@ textarea:focus {
 
 .coach-report-metric-grid {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: 1fr;
   gap: 12px;
 }
-
+               
 .coach-report-box {
   border-radius: 16px;
   padding: 14px;
@@ -24631,4 +24631,36 @@ textarea:focus {
   .coach-report-metric-grid {
     grid-template-columns: 1fr;
   }
+}
+.coach-report-detail-card {
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.coach-report-box {
+  min-width: 0;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.coach-report-box-title {
+  font-size: 14px;
+  white-space: normal;
+}
+
+.coach-report-box p {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: center;
+  gap: 10px;
+  margin: 8px 0;
+  font-size: 12px;
+  line-height: 1.5;
+  white-space: normal;
+  word-break: keep-all;
+}
+
+.coach-report-box p strong {
+  text-align: right;
+  white-space: nowrap;
 }
