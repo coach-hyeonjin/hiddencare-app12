@@ -2828,7 +2828,79 @@ const getCoachNameFromMeetingText = (text = '') => {
 
   return line.replace('[', '').replace(']', '').trim()
 }
+const parseMeetingSectionsByCoach = (text = '') => {
+  const blocks = []
+  let current = null
 
+  String(text || '')
+    .split('\n')
+    .map((row) => row.trim())
+    .filter(Boolean)
+    .forEach((line) => {
+      if (line.startsWith('[') && line.endsWith(']')) {
+        current = {
+          coachName: line.replace('[', '').replace(']', '').trim(),
+          values: {},
+        }
+        blocks.push(current)
+        return
+      }
+
+      if (!current) return
+
+      const [label, ...rest] = line.split(':')
+      if (!label) return
+      current.values[label.trim()] = rest.join(':').trim()
+    })
+
+  return blocks
+}
+
+const mergeMeetingCoachReportsFromText = (problem = '', cause = '', ideas = '') => {
+  const salesBlocks = parseMeetingSectionsByCoach(problem)
+  const flowBlocks = parseMeetingSectionsByCoach(cause)
+  const issueBlocks = parseMeetingSectionsByCoach(ideas)
+
+  const coachNames = [
+    ...new Set(
+      [...salesBlocks, ...flowBlocks, ...issueBlocks]
+        .map((block) => block.coachName)
+        .filter(Boolean)
+    ),
+  ]
+
+  if (coachNames.length === 0) {
+    return [createEmptyMeetingCoachReport(true)]
+  }
+
+  return coachNames.map((coachName, index) => {
+    const sales = salesBlocks.find((block) => block.coachName === coachName)?.values || {}
+    const flow = flowBlocks.find((block) => block.coachName === coachName)?.values || {}
+    const issue = issueBlocks.find((block) => block.coachName === coachName)?.values || {}
+
+    return {
+      id: Date.now() + Math.random() + index,
+      coachName,
+      yesterdaySales: sales['전일 실매출'] || '',
+      todaySales: sales['금일 예정 매출'] || '',
+      thisMonthSales: sales['이번달 잔여 매출'] || '',
+      nextMonthSales: sales['다음달 예정 매출'] || '',
+
+      reRegister: flow['재등록 예정 회원'] || '',
+      hold: flow['보류 회원'] || '',
+      trial: flow['체험 예정 회원'] || '',
+      dormant: flow['장기 미방문 회원'] || '',
+
+      coachIssue: issue['코치 이슈'] || '',
+      memberIssue: issue['회원 이슈'] || '',
+      facilityIssue: issue['시설 이슈'] || '',
+      fieldCheck: issue['현장 체크'] || '',
+
+      isOpen: index === 0,
+    }
+  })
+}
+  
 const handleEditMeetingItem = (item) => {
   setMeetingForm({
     id: item.id,
@@ -2848,28 +2920,9 @@ const handleEditMeetingItem = (item) => {
   if (isCoachReport) {
     setMeetingInputTab('coach')
 
-    setMeetingCoachReports([
-      {
-        id: Date.now(),
-        coachName: getCoachNameFromMeetingText(item.problem),
-        yesterdaySales: getTextValueByLabel(item.problem, '전일 실매출'),
-        todaySales: getTextValueByLabel(item.problem, '금일 예정 매출'),
-        thisMonthSales: getTextValueByLabel(item.problem, '이번달 잔여 매출'),
-        nextMonthSales: getTextValueByLabel(item.problem, '다음달 예정 매출'),
-
-        reRegister: getTextValueByLabel(item.cause, '재등록 예정 회원'),
-        hold: getTextValueByLabel(item.cause, '보류 회원'),
-        trial: getTextValueByLabel(item.cause, '체험 예정 회원'),
-        dormant: getTextValueByLabel(item.cause, '장기 미방문 회원'),
-
-        coachIssue: getTextValueByLabel(item.ideas, '코치 이슈'),
-        memberIssue: getTextValueByLabel(item.ideas, '회원 이슈'),
-        facilityIssue: getTextValueByLabel(item.ideas, '시설 이슈'),
-        fieldCheck: getTextValueByLabel(item.ideas, '현장 체크'),
-
-        isOpen: true,
-      },
-    ])
+   setMeetingCoachReports(
+  mergeMeetingCoachReportsFromText(item.problem, item.cause, item.ideas)
+)
   } else {
     setMeetingInputTab('decision')
     setMeetingDirection(item.decision || '')
