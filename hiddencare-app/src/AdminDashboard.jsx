@@ -26123,14 +26123,14 @@ gap: '16px',
               삭제
             </button>
           </div>
-        </>
+          </>
       )}
-      </div>
-            </div>
-          </div>
-        </div>
-      </section>
-    )}
+    </div>
+  </div>
+</div>
+</div>
+</section>
+)}
   </div>
 )}
 {activeTab === '활동랭킹' && (
