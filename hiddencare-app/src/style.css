@@ -24531,3 +24531,104 @@ textarea:focus {
   gap: 8px;
   flex-wrap: wrap;
 }
+.coach-report-detail-list {
+  display: grid;
+  gap: 16px;
+  margin-top: 16px;
+  max-height: 620px;
+  overflow-y: auto;
+  padding-right: 8px;
+}
+
+.coach-report-detail-card {
+  border: 1px solid #dde5f4;
+  border-radius: 20px;
+  background: #ffffff;
+  padding: 16px;
+  box-shadow: 0 12px 28px rgba(15, 23, 42, 0.08);
+}
+
+.coach-report-detail-head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 14px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid #eef2f7;
+}
+
+.coach-report-detail-head strong {
+  display: block;
+  font-size: 15px;
+  color: #0f172a;
+}
+
+.coach-report-detail-head span {
+  display: block;
+  margin-top: 3px;
+  font-size: 12px;
+  color: #64748b;
+}
+
+.coach-avatar {
+  width: 42px;
+  height: 42px;
+  border-radius: 999px;
+  background: #eef2ff;
+  color: #4f46e5;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 800;
+}
+
+.coach-report-metric-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.coach-report-box {
+  border-radius: 16px;
+  padding: 14px;
+  border: 1px solid #e5e7eb;
+}
+
+.coach-report-box-title {
+  font-weight: 800;
+  margin-bottom: 10px;
+}
+
+.coach-report-box p {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  margin: 7px 0;
+  font-size: 12px;
+  color: #475569;
+}
+
+.coach-report-box p strong {
+  color: #111827;
+}
+
+.coach-report-box-blue {
+  background: #f4f7ff;
+  border-color: #bfdbfe;
+}
+
+.coach-report-box-green {
+  background: #f0fdf4;
+  border-color: #bbf7d0;
+}
+
+.coach-report-box-orange {
+  background: #fff7ed;
+  border-color: #fed7aa;
+}
+
+@media (max-width: 900px) {
+  .coach-report-metric-grid {
+    grid-template-columns: 1fr;
+  }
+}
