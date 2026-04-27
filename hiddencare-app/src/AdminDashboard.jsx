@@ -1678,7 +1678,6 @@ const [meetingCoachReports, setMeetingCoachReports] = useState([
 
 const [meetingDirection, setMeetingDirection] = useState('')
 const [meetingInputTab, setMeetingInputTab] = useState('coach')
-  const [meetingPageTab, setMeetingPageTab] = useState('input')
 const [meetingChecklistRows, setMeetingChecklistRows] = useState([
   { id: 1, label: '전일 매출 확인', checked: false, note: '' },
   { id: 2, label: '금일 예정 매출 확인', checked: false, note: '' },
@@ -2939,7 +2938,6 @@ const handleEditMeetingItem = (item) => {
   }
 
   setSelectedMeetingId(item.id)
-  setMeetingPageTab('input')
 }
 const handleCreateTaskFromMeeting = async (meeting) => {
   if (!meeting.action_title?.trim() || !currentAdminId) return
@@ -24674,8 +24672,8 @@ const filteredExercisesAdvanced = exercises.filter((exercise) => {
     </div>
   </div>
 </section>
-
-<section className="dashboard-panel-card" style={{ marginBottom: '20px' }}>
+</div>
+        <section className="dashboard-panel-card" style={{ marginBottom: '20px' }}>
           <div className="dashboard-panel-head">
             <div>
               <div className="dashboard-panel-label">MANAGEMENT TABS</div>
@@ -25319,7 +25317,6 @@ gap: '16px',
   </div>
 )}
  </section>
-</div>
       </>
     )}
     {opsViewTab === 'coach' && (
@@ -25538,28 +25535,15 @@ gap: '16px',
           </div>
         </div>
 
-        <div className="meeting-mega-panel">
-          <div className="meeting-page-tab-row">
-    <button
-      type="button"
-      className={meetingPageTab === 'input' ? 'primary-btn' : 'secondary-btn'}
-      onClick={() => setMeetingPageTab('input')}
-    >
-      회의 입력
-    </button>
-
-    <button
-      type="button"
-      className={meetingPageTab === 'list' ? 'primary-btn' : 'secondary-btn'}
-      onClick={() => setMeetingPageTab('list')}
-    >
-      회의 목록
-    </button>
-  </div>
-
-  <div className="meeting-single-panel-wrap">
-          <div className={`sub-card meeting-input-panel ${meetingPageTab === 'input' ? '' : 'hidden-panel'}`}>
-  <h4>회의 입력</h4>
+        <div
+          style={{
+            display: 'grid',
+            gridTemplateColumns: '0.95fr 1.25fr',
+gap: '16px',
+          }}
+        >
+          <div className="sub-card">
+            <h4>회의 입력</h4>
 
             <label className="field">
               <span>회의 제목</span>
@@ -25879,7 +25863,7 @@ gap: '16px',
 )}
           </div>
 
-          <div className={`sub-card meeting-list-panel ${meetingPageTab === 'list' ? '' : 'hidden-panel'}`}>
+          <div className="sub-card meeting-list-panel">
   <div className="meeting-list-head">
     <div>
       <h4>회의 목록</h4>
@@ -25954,10 +25938,7 @@ gap: '16px',
                       <button
                         type="button"
                         className="secondary-btn"
-                        onClick={() => {
-  setSelectedMeetingId(item.id)
-  setMeetingPageTab('list')
-}}
+                        onClick={() => setSelectedMeetingId(item.id)}
                       >
                         상세보기
                       </button>
@@ -26124,14 +26105,14 @@ gap: '16px',
               삭제
             </button>
           </div>
-          </>
+        </>
       )}
     </div>
   </div>
 </div>
-</div>
-</section>
-)}
+          </div>
+      </section>
+    )}
   </div>
 )}
 {activeTab === '활동랭킹' && (
