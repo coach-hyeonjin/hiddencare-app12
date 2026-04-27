@@ -2900,7 +2900,16 @@ const mergeMeetingCoachReportsFromText = (problem = '', cause = '', ideas = '') 
     }
   })
 }
-  
+  const parseCoachReportCards = (problem = '', cause = '', ideas = '') => {
+  return mergeMeetingCoachReportsFromText(problem, cause, ideas)
+}
+
+const moneyText = (value) => {
+  if (value === '' || value === '-' || value == null) return '-'
+  const numberValue = Number(String(value).replaceAll(',', ''))
+  if (Number.isNaN(numberValue)) return value
+  return numberValue.toLocaleString()
+}
 const handleEditMeetingItem = (item) => {
   setMeetingForm({
     id: item.id,
@@ -26007,25 +26016,66 @@ gap: '16px',
   </div>
 </div>
 
-<div className="meeting-detail-report-card">
-  <div className="meeting-detail-report-title">매출 체크</div>
-  <pre>{selectedMeetingItem.problem || '-'}</pre>
-</div>
+{getMeetingType(selectedMeetingItem) === 'coach' ? (
+  <div className="coach-report-detail-list">
+    {parseCoachReportCards(
+      selectedMeetingItem.problem,
+      selectedMeetingItem.cause,
+      selectedMeetingItem.ideas
+    ).map((report, index) => (
+      <div key={`${report.coachName}-${index}`} className="coach-report-detail-card">
+        <div className="coach-report-detail-head">
+          <div className="coach-avatar">
+            {report.coachName ? report.coachName.slice(0, 1) : '코'}
+          </div>
 
-<div className="meeting-detail-report-card">
-  <div className="meeting-detail-report-title">회원 흐름</div>
-  <pre>{selectedMeetingItem.cause || '-'}</pre>
-</div>
+          <div>
+            <strong>{report.coachName || `코치 ${index + 1}`}</strong>
+            <span>코치 보고 요약</span>
+          </div>
+        </div>
 
-<div className="meeting-detail-report-card">
-  <div className="meeting-detail-report-title">운영 이슈</div>
-  <pre>{selectedMeetingItem.ideas || '-'}</pre>
-</div>
+        <div className="coach-report-metric-grid">
+          <div className="coach-report-box coach-report-box-blue">
+            <div className="coach-report-box-title">매출 체크</div>
+            <p>전일 실매출 <strong>{moneyText(report.yesterdaySales)}</strong></p>
+            <p>금일 예정 매출 <strong>{moneyText(report.todaySales)}</strong></p>
+            <p>이번달 잔여 매출 <strong>{moneyText(report.thisMonthSales)}</strong></p>
+            <p>다음달 예정 매출 <strong>{moneyText(report.nextMonthSales)}</strong></p>
+          </div>
 
-<div className="meeting-detail-report-card">
-  <div className="meeting-detail-report-title">결정 사항</div>
-  <pre>{selectedMeetingItem.decision || '-'}</pre>
-</div>
+          <div className="coach-report-box coach-report-box-green">
+            <div className="coach-report-box-title">회원 흐름</div>
+            <p>재등록 예정 <strong>{report.reRegister || '-'}</strong></p>
+            <p>보류 회원 <strong>{report.hold || '-'}</strong></p>
+            <p>체험 예정 <strong>{report.trial || '-'}</strong></p>
+            <p>장기 미방문 <strong>{report.dormant || '-'}</strong></p>
+          </div>
+
+          <div className="coach-report-box coach-report-box-orange">
+            <div className="coach-report-box-title">운영 이슈</div>
+            <p>코치 이슈 <strong>{report.coachIssue || '-'}</strong></p>
+            <p>회원 이슈 <strong>{report.memberIssue || '-'}</strong></p>
+            <p>시설 이슈 <strong>{report.facilityIssue || '-'}</strong></p>
+            <p>현장 체크 <strong>{report.fieldCheck || '-'}</strong></p>
+          </div>
+        </div>
+      </div>
+    ))}
+  </div>
+) : (
+  <>
+    <div className="meeting-detail-report-card">
+      <div className="meeting-detail-report-title">결정 사항</div>
+      <pre>{selectedMeetingItem.decision || '-'}</pre>
+    </div>
+
+    <div className="meeting-detail-report-card">
+      <div className="meeting-detail-report-title">실행 업무</div>
+      <pre>{selectedMeetingItem.action_title || '-'}</pre>
+    </div>
+  </>
+)}
 
           {selectedMeetingItem.action_title ? (
             <div className="meeting-detail-section">
